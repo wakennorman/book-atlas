@@ -10,6 +10,8 @@
 - **关系网络**：力导向图，节点按阵营着色、按关系数放大；点节点看档案，点连线看「关系 + 依据事件」
 - **事件轴**：按阶段（建村 → 婚礼 → 内战 → 香蕉时代 → 大雨 → 飓风）列出标志性事件，点事件高亮相关人物
 - **两人关系**：选两个人 → BFS 最短路 → 每一跳列出关系类型与定义该关系的小事件（本地计算，不依赖 AI）
+- **三种布局**：自由（力导向）/ 代际·横（按代分层，从左到右）/ 代际·纵（从上到下）；一键「重置」重新布局并复位缩放
+- **易混提示**：同名人物（三个「蕾梅黛丝」、两个「何塞·阿尔卡蒂奥」）在档案里有 ⚠️ 消歧说明
 - **阵营筛选 / 搜索 / 拖拽 / 深浅色**：图例点选聚焦某一阵营；搜索支持别名（如「上校」）
 - **PWA**：可添加到手机主屏幕，离线可看（Service Worker 缓存）
 - **多本可复用**：每本书一个 JSON，前端不改
@@ -30,7 +32,8 @@ npx serve .
 book-atlas/
 ├── index.html                 # 单页应用
 ├── css/style.css
-├── js/app.js                  # 渲染 / 交互 / BFS
+├── js/app.js                  # 渲染 / 交互 / BFS / 布局切换
+├── scripts/                   # draft.mjs（AI 草稿）· validate.mjs（数据校验）
 ├── vendor/echarts.min.js      # Apache-2.0
 ├── data/
 │   ├── books.json             # 书目清单
@@ -66,6 +69,22 @@ book-atlas/
 1. 复制 `data/one-hundred-years-of-solitude.json` 为 `data/<新书 slug>.json`，按规范填写
 2. 在 `data/books.json` 的 `books` 数组里加一行
 3. 提交推送即可（前端无需改动）
+
+## 脚本（可选，需 Node 18+）
+
+```bash
+# 数据校验（每次改完数据必跑）
+node scripts/validate.mjs data/one-hundred-years-of-solitude.json
+node scripts/validate.mjs --all
+
+# AI 出草稿：只当「打字员」，出完必须人工校对
+# 环境变量：DEEPSEEK_API_KEY（或 LLM_API_KEY）；可选 LLM_BASE_URL / LLM_MODEL
+node scripts/draft.mjs --title "书名"
+node scripts/draft.mjs --title "书名" --text book.txt    # 有原文时按原文抽取，质量高得多
+```
+
+> 本机 Node 不在 PATH 时，直接用绝对路径运行，例如：
+> `& "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" scripts\validate.mjs`
 
 ## 部署（GitHub Pages）
 

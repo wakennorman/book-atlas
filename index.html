@@ -41,6 +41,13 @@
         <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
         <button id="label-btn" class="ghost" type="button" title="显示全部名字会重叠，默认只显示主要人物">标签：主要</button>
       </div>
+      <div class="view-row" role="group" aria-label="布局方式">
+        <span class="view-label">布局</span>
+        <button class="seg active" type="button" data-view="force" title="力导向自由布局">自由</button>
+        <button class="seg" type="button" data-view="gen-h" title="按代际分列，从左到右">代际·横</button>
+        <button class="seg" type="button" data-view="gen-v" title="按代际分行，从上到下">代际·纵</button>
+        <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移">重置</button>
+      </div>
     </div>
 
     <div id="graph" aria-label="人物关系网络图"></div>

@@ -20,6 +20,9 @@
     activeEvent: null,
     activeFaction: null,
     allLabels: false,
+    view: 'force',         // force | gen-h | gen-v
+    bands: new Map(),      // 代际视图：generation -> 主坐标
+    freezeTimer: null,
   };
 
   /* ---------------- 工具 ---------------- */
@@ -63,6 +66,8 @@
       state.adj.get(r.from).push({ to: r.to, rel: r });
       state.adj.get(r.to).push({ to: r.from, rel: r });
     }
+    state.view = 'force';
+    state.bands = new Map();
     clearHighlight(false);
     history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`);
     renderHeader();
@@ -163,6 +168,7 @@
 
     return {
       backgroundColor: 'transparent',
+      graphic: buildGuides(),
       tooltip: {
         trigger: 'item', confine: true,
         backgroundColor: panel, borderColor: line, borderWidth: 1,
@@ -189,9 +195,14 @@
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], layoutAnimation: true, friction: 0.6, initLayout: 'circular' },
         data, links,
-        label: { show: true, position: 'right', distance: 4, fontSize: 10.5, color: ink, formatter: '{b}' },
+        label: {
+          show: true,
+          position: state.view === 'force' ? 'right' : 'bottom',
+          distance: 4, fontSize: 10.5, color: ink, formatter: '{b}',
+        },
         labelLayout: { hideOverlap: true, moveOverlap: 'shiftY' },
         lineStyle: { color: 'source' },
+        scaleLimit: { min: 0.4, max: 3 },
         emphasis: {
           focus: 'adjacency',
           label: { show: true, fontWeight: 'bold' },
@@ -205,6 +216,28 @@
         selectedMode: 'single',
       }],
     };
+  }
+
+  function relaxPositions(iterations = 140) {
+    if (state.pos.size < 2) return;
+    const ids = [...state.pos.keys()];
+    const pad = 12;
+    for (let it = 0; it < iterations; it++) {
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = state.pos.get(ids[i]), b = state.pos.get(ids[j]);
+          let dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const min = (symbolSize(ids[i]) + symbolSize(ids[j])) / 2 + pad;
+          if (d < min) {
+            const k = (min - d) / d / 2;
+            dx *= k; dy *= k;
+            state.pos.set(ids[i], { x: a.x - dx, y: a.y - dy });
+            state.pos.set(ids[j], { x: b.x + dx, y: b.y + dy });
+          }
+        }
+      }
+    }
   }
 
   function fitPositions() {
@@ -254,20 +287,111 @@
       if (id && layout) state.pos.set(id, { x: layout[0] ?? layout.x, y: layout[1] ?? layout.y });
     }
     state.frozen = true;
+    relaxPositions();
     fitPositions();
     computeLabels();
     state.chart.setOption(buildOption());
   }
 
+  function buildGuides() {
+    if (state.view === 'force' || !state.book || !state.bands.size) return [];
+    const rect = document.getElementById('graph').getBoundingClientRect();
+    const W = rect.width || 900, H = rect.height || 600;
+    const muted = cssVar('--muted') || '#6c7482';
+    const items = [];
+    for (const [g, p] of state.bands) {
+      if (state.view === 'gen-h') {
+        items.push({
+          type: 'text', left: Math.round(W / 2 + p) - 22, top: 8, silent: true,
+          style: { text: genText(g), fill: muted, font: '11px sans-serif' },
+        });
+      } else {
+        items.push({
+          type: 'text', left: 10, top: Math.round(H / 2 + p) - 7, silent: true,
+          style: { text: genText(g), fill: muted, font: '11px sans-serif' },
+        });
+      }
+    }
+    return items;
+  }
+
+  function applyViewHeight() {
+    const el = document.getElementById('graph');
+    if (!el || !state.book) return;
+    if (state.view === 'gen-v') {
+      const bands = new Set(state.book.characters.map((c) => c.generation)).size || 8;
+      el.style.height = Math.max(720, bands * 96) + 'px';
+    } else {
+      el.style.height = '';
+    }
+  }
+
+  function buildGenerationPositions(view) {
+    const rect = document.getElementById('graph').getBoundingClientRect();
+    const W = rect.width || 900, H = rect.height || 600;
+    const gens = [...new Set(state.book.characters.map((c) => c.generation))].sort((a, b) => a - b);
+    const factionOrder = new Map(state.book.factions.map((f, i) => [f.key, i]));
+    const byGen = new Map(gens.map((g) => [g, []]));
+    for (const c of state.book.characters) byGen.get(c.generation).push(c);
+    for (const list of byGen.values()) {
+      list.sort((a, b) =>
+        (factionOrder.get(a.faction) - factionOrder.get(b.faction)) ||
+        (nodeDegree(b.id) - nodeDegree(a.id)) ||
+        a.name.localeCompare(b.name));
+    }
+    state.pos = new Map();
+    state.bands = new Map();
+    const mainPad = 110, crossPad = 78;
+    const mainLen = (view === 'gen-h' ? W : H) - mainPad * 2;
+    const crossLen = (view === 'gen-h' ? H : W) - crossPad * 2;
+    gens.forEach((g, gi) => {
+      const center = gens.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (gens.length - 1);
+      state.bands.set(g, center);
+      const list = byGen.get(g);
+      const step = list.length > 1 ? crossLen / (list.length - 1) : 0;
+      list.forEach((c, ci) => {
+        const off = list.length === 1 ? 0 : -crossLen / 2 + ci * step;
+        state.pos.set(c.id, view === 'gen-h' ? { x: center, y: off } : { x: off, y: center });
+      });
+    });
+  }
+
+  function setView(view) {
+    state.view = view;
+    document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === view));
+    applyViewHeight();
+    if (!state.chart) return;
+    clearTimeout(state.freezeTimer);
+    if (view === 'force') {
+      state.frozen = false;
+      state.pos = new Map();
+      state.bands = new Map();
+      state.labels = null;
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+      state.freezeTimer = setTimeout(() => freezeNow(), 6000);
+    } else {
+      state.frozen = true;
+      buildGenerationPositions(view);
+      relaxPositions(60);
+      fitPositions();
+      computeLabels();
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+    }
+  }
+
   function initChart() {
     const el = $('#graph');
     if (state.chart) { state.chart.dispose(); }
+    clearTimeout(state.freezeTimer);
     state.chart = echarts.init(el, null, { renderer: 'canvas' });
     state.frozen = false;
     state.pos = new Map();
+    state.bands = new Map();
     state.chart.setOption(buildOption());
     // 力导向跑一会儿后自动冻结并适配画布
-    setTimeout(() => freezeNow(), 6000);
+    state.freezeTimer = setTimeout(() => freezeNow(), 6000);
 
     state.chart.on('click', (p) => {
       if (p.dataType === 'edge') {
@@ -281,8 +405,13 @@
 
     const onResize = () => {
       if (!state.chart) return;
+      applyViewHeight();
       state.chart.resize();
-      if (state.frozen) { fitPositions(); computeLabels(); state.chart.setOption(buildOption()); }
+      if (state.frozen) {
+        if (state.view === 'force') fitPositions(); else buildGenerationPositions(state.view);
+        computeLabels();
+        state.chart.setOption(buildOption());
+      }
     };
     new ResizeObserver(onResize).observe(el);
     window.addEventListener('resize', onResize);
@@ -379,6 +508,7 @@
     panel().innerHTML = `
       <div class="card-title">${esc(c.name)}</div>
       <div class="card-sub">${esc(genText(c.generation))} · ${esc(c.title)}</div>
+      ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
@@ -500,6 +630,11 @@
       if (!state.allLabels) computeLabels();
       if (state.chart) state.chart.setOption(buildOption());
     });
+
+    document.querySelectorAll('.seg').forEach((btn) => {
+      btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+    $('#reset-btn').addEventListener('click', () => setView(state.view));
 
     $('#path-go').addEventListener('click', runPath);
     $('#path-clear').addEventListener('click', () => {

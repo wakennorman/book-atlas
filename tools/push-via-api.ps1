@@ -1,11 +1,12 @@
 ﻿# 通过 GitHub REST API 发布本地目录内容（git push 被墙时的替代方案）
+# v2：改用 curl.exe 发请求（PowerShell 的 Invoke-RestMethod 在本机会因 IPv6/代理超时）
 # 用法：powershell -ExecutionPolicy Bypass -File tools\push-via-api.ps1
 param(
   [string]$RepoRoot = "D:\Claude Code+DeepSeekV4\book-atlas",
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.1：百年孤独数据 + 关系图/事件轴/两人关系查询"
+  [string]$Message = "书脉 BookAtlas v0.2：39人/72关系/29事件 + 代际横纵布局 + 易混提示 + draft/validate 脚本"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,20 +18,29 @@ $probe = $payload | & git credential fill 2>$null
 $token = ($probe | Where-Object { $_ -match '^password=' } | Select-Object -First 1) -replace '^password=',''
 if (-not $token) { throw "No token from git credential manager" }
 
-$headers = @{
-  Authorization = "Bearer $token"
-  Accept = "application/vnd.github+json"
-  "User-Agent" = "book-atlas-publisher"
-}
-
 function Api {
   param([string]$Method, [string]$Uri, $Body)
-  if ($Method -eq 'GET') { return Invoke-RestMethod -Method Get -Uri $Uri -Headers $headers }
+  $curlArgs = @('-s', '-L', '--max-time', '180', '-X', $Method, $Uri,
+    '-H', "Authorization: Bearer $token",
+    '-H', 'Accept: application/vnd.github+json',
+    '-H', 'User-Agent: book-atlas-publisher')
+  $tmp = $null
   if ($null -ne $Body) {
-    $bytes = [Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Depth 20 -Compress))
-    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers -Body $bytes -ContentType 'application/json'
+    $tmp = [IO.Path]::GetTempFileName()
+    [IO.File]::WriteAllText($tmp, ($Body | ConvertTo-Json -Depth 20 -Compress), (New-Object System.Text.UTF8Encoding($false)))
+    $curlArgs += @('--data-binary', "@$tmp", '-H', 'Content-Type: application/json')
   }
-  return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers
+  try {
+    $out = & curl.exe @curlArgs '-w', "`n%{http_code}"
+  } finally {
+    if ($tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
+  }
+  $lines = $out -split "`n"
+  $code = ($lines[-1]).Trim()
+  $text = ($lines[0..($lines.Count - 2)] -join "`n").Trim()
+  if ($code -notmatch '^2') { throw "HTTP $code :: $($text.Substring(0, [Math]::Min(300, $text.Length)))" }
+  if (-not $text) { return $null }
+  return $text | ConvertFrom-Json
 }
 
 "token ok ($($token.Length) chars)"
@@ -45,12 +55,13 @@ $files = Get-ChildItem -Path $RepoRoot -Recurse -File -Force | Where-Object { $_
 # 2.5) 空仓库需要先有第一个提交（blobs API 在空仓库会 409）
 $initFile = Join-Path $RepoRoot ".nojekyll"
 if (Test-Path $initFile) {
-  $initB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($initFile))
   try {
+    $null = Api GET "$api/repos/$Owner/$Repo/git/ref/heads/$Branch"
+    "repo already has $Branch"
+  } catch {
+    $initB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($initFile))
     $null = Api PUT "$api/repos/$Owner/$Repo/contents/.nojekyll" @{ message = "chore: init repo"; content = $initB64; branch = $Branch }
     "init commit created"
-  } catch {
-    Write-Host "init skipped: $($_.Exception.Message)"
   }
 }
 
@@ -84,17 +95,16 @@ if ($parents.Count) {
 "branch $Branch updated"
 
 # 6) 本地 git 与远程对齐（内容一致，仅 SHA 不同）
-git -C $RepoRoot update-ref "refs/remotes/origin/$Branch" $commit.sha
-git -C $RepoRoot update-ref "refs/heads/$Branch" $commit.sha
+git -C $RepoRoot update-ref "refs/remotes/origin/$Branch" $commit.sha 2>$null
+git -C $RepoRoot update-ref "refs/heads/$Branch" $commit.sha 2>$null
 git -C $RepoRoot config "branch.$Branch.remote" origin
 git -C $RepoRoot config "branch.$Branch.merge" "refs/heads/$Branch"
 "local repo aligned"
 
-# 7) 开启 GitHub Pages
+# 7) 开启 GitHub Pages（已开启会报 409，忽略）
 try {
   $pages = Api POST "$api/repos/$Owner/$Repo/pages" @{ source = @{ branch = $Branch; path = "/" } }
   "pages: $($pages.html_url)"
 } catch {
-  Write-Host "pages create failed: $($_.Exception.Message)"
-  try { $p = Api GET "$api/repos/$Owner/$Repo/pages"; "pages exists: $($p.html_url)" } catch { "pages status unknown" }
+  try { $p2 = Api GET "$api/repos/$Owner/$Repo/pages"; "pages exists: $($p2.html_url)"; } catch { "pages status unknown: $($_.Exception.Message)" }
 }
