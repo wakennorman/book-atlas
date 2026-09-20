@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.5.1：修复缩放/平移失控（默认只平移画布、节点拖动改开关）、收紧缩放范围、新增复位视图/双击空白复位"
+  [string]$Message = "书脉 BookAtlas v0.6：编辑器新增 AI 草稿（浏览器直连 OpenAI 兼容端点，Key 只存本机；支持覆盖/合并/查看 JSON）"
 )
 
 $ErrorActionPreference = "Stop"

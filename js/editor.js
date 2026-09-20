@@ -165,7 +165,7 @@
   }
 
   function renderBody() {
-    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, relations: listRelations, phases: listPhases, events: listEvents };
+    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi };
     $('#ed-body').innerHTML = (f[ed.section] || formMeta)();
   }
 
@@ -355,6 +355,99 @@
     </form>`;
   }
 
+  /* —— AI 草稿（浏览器直连 OpenAI 兼容端点；Key 只存本机） —— */
+  const AI_SCHEMA = `{
+  "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
+  "factions": [{ "key": "", "name": "", "color": "#hex" }],
+  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
+  "relations": [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章" }] }],
+  "phases": [{ "id": "p1", "name": "", "order": 1 }],
+  "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "summary": "", "impact": "", "quote": "" }]
+}`;
+
+  function formAi() {
+    const key = localStorage.getItem('ba-ai-key') || '';
+    const base = localStorage.getItem('ba-ai-base') || 'https://api.deepseek.com/v1';
+    const model = localStorage.getItem('ba-ai-model') || 'deepseek-chat';
+    return `${head('AI 草稿', '粘贴原文 → AI 按 schema 出草稿 → 人工校对后才算数（Key 只存在这台浏览器里）',
+      '<button class="primary" type="button" data-tool="ai-generate">生成草稿</button>')}
+      <div class="ed-grid">
+        <label>API 地址（OpenAI 兼容）<input id="ai-base" value="${esc(base)}"></label>
+        <label>API Key<input id="ai-key" type="password" value="${esc(key)}" placeholder="sk-...（只存 localStorage）"></label>
+        <label>模型<input id="ai-model" value="${esc(model)}"></label>
+      </div>
+      <label class="wide" style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);margin-top:10px">原文节选（建议粘贴要整理的那几章；不粘也能生成，但错误会明显更多）
+        <textarea id="ai-text" style="min-height:150px" placeholder="把电子书里的一章或几章粘贴到这里…"></textarea></label>
+      <div id="ai-out" class="ed-msg"></div>`;
+  }
+
+  async function generateDraft() {
+    const base = (($('#ai-base') || {}).value || '').trim().replace(/\/$/, '');
+    const key = (($('#ai-key') || {}).value || '').trim();
+    const model = (($('#ai-model') || {}).value || '').trim() || 'deepseek-chat';
+    const text = (($('#ai-text') || {}).value || '').trim();
+    const out = $('#ai-out');
+    if (!out) return;
+    if (!key) { out.className = 'ed-msg bad'; out.textContent = '请先填 API Key（只存在本机浏览器，不会上传别处）'; return; }
+    try {
+      localStorage.setItem('ba-ai-key', key);
+      localStorage.setItem('ba-ai-base', base);
+      localStorage.setItem('ba-ai-model', model);
+    } catch (e) { /* 忽略 */ }
+    out.className = 'ed-msg';
+    out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
+    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
+    const user = `请为《${ed.book.meta.title || '未命名'}》生成数据草稿。\n\nJSON schema（必须完全遵循）：\n${AI_SCHEMA}\n` +
+      (text ? `\n以下是原文节选，请优先从中抽取：\n<<<原文开始>>>\n${text.slice(0, 100000)}\n<<<原文结束>>>\n`
+            : '\n注意：没有提供原文，请仅依据广泛公认的公开资料；不确定的细节宁可省略或写进 note。\n');
+    try {
+      const res = await fetch(`${base}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, temperature: 0.4, max_tokens: 8192, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}：${(await res.text().catch(() => '')).slice(0, 200)}`);
+      const json = await res.json();
+      const raw = json.choices?.[0]?.message?.content || '';
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('返回里没有找到 JSON：' + raw.slice(0, 120));
+      ed.aiDraft = JSON.parse(m[0]);
+      const n = { c: (ed.aiDraft.characters || []).length, r: (ed.aiDraft.relations || []).length, e: (ed.aiDraft.events || []).length };
+      out.className = 'ed-msg ok';
+      out.innerHTML = `✓ 生成完成：${n.c} 人 / ${n.r} 关系 / ${n.e} 事件
+        <div style="margin-top:8px"><button class="primary" type="button" data-tool="ai-apply">覆盖当前书</button>
+        <button class="ghost" type="button" data-tool="ai-merge">合并进来（去重）</button>
+        <button class="ghost" type="button" data-tool="ai-view">查看 JSON</button></div>
+        <p class="hint" style="margin-top:6px">提醒：AI 只是打字员，务必逐条校对（尤其同名人物与关系方向）。</p>`;
+    } catch (e) {
+      out.className = 'ed-msg bad';
+      out.textContent = '生成失败：' + e.message;
+    }
+  }
+
+  function applyAi(merge) {
+    if (!ed.aiDraft) return;
+    if (!merge) {
+      adopt(ed.aiDraft, true);
+    } else {
+      const b = ed.book;
+      const dup = new Set(b.characters.map((c) => c.id));
+      for (const c of ed.aiDraft.characters || []) if (!dup.has(c.id)) { b.characters.push(c); dup.add(c.id); }
+      const relKey = (r) => `${r.from}|${r.to}|${r.type}`;
+      const seen = new Set(b.relations.map(relKey));
+      for (const r of ed.aiDraft.relations || []) if (!seen.has(relKey(r))) { b.relations.push(r); seen.add(relKey(r)); }
+      const evIds = new Set(b.events.map((e) => e.id));
+      for (const e of ed.aiDraft.events || []) if (!evIds.has(e.id)) b.events.push(e);
+      const phIds = new Set(b.phases.map((p) => p.id));
+      for (const p of ed.aiDraft.phases || []) if (!phIds.has(p.id)) b.phases.push(p);
+      const fk = new Set(b.factions.map((f) => f.key));
+      for (const f of ed.aiDraft.factions || []) if (!fk.has(f.key)) { b.factions.push(f); fk.add(f.key); }
+      adopt(b, true);
+    }
+    saveDraft();
+    toast('已应用 AI 草稿（记得逐条校对）');
+  }
+
   /* ---------------- 交互 ---------------- */
   function bind() {
     $('#ed-nav').addEventListener('click', (ev) => {
@@ -514,6 +607,15 @@
         const slug = ed.book.meta.slug || slugify(ed.book.meta.title);
         const cmd = `node scripts/validate.mjs data/${slug}.json`;
         navigator.clipboard?.writeText(cmd).then(() => toast('已复制：' + cmd)).catch(() => toast(cmd));
+      }
+      if (btn.dataset.tool === 'ai-generate') generateDraft();
+      if (btn.dataset.tool === 'ai-apply') applyAi(false);
+      if (btn.dataset.tool === 'ai-merge') applyAi(true);
+      if (btn.dataset.tool === 'ai-view') {
+        const box = document.createElement('textarea');
+        box.value = JSON.stringify(ed.aiDraft, null, 2);
+        box.style.width = '100%'; box.style.minHeight = '220px'; box.style.marginTop = '8px';
+        document.getElementById('ai-out').appendChild(box);
       }
     });
   }
