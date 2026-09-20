@@ -5,6 +5,12 @@
       "title": "百年孤独",
       "author": "加西亚·马尔克斯",
       "file": "data/one-hundred-years-of-solitude.json"
+    },
+    {
+      "slug": "crime-and-punishment",
+      "title": "罪与罚",
+      "author": "陀思妥耶夫斯基",
+      "file": "data/crime-and-punishment.json"
     }
   ]
 }

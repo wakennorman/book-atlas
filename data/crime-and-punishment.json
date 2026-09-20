@@ -1,0 +1,1146 @@
+{
+  "meta": {
+    "slug": "crime-and-punishment",
+    "title": "罪与罚",
+    "titleEn": "Crime and Punishment",
+    "author": "费奥多尔·米哈伊洛维奇·陀思妥耶夫斯基",
+    "translator": "汝龙 译（人物译名依汝龙译本）",
+    "chapters": 41,
+    "note": "章节号按「6 部 + 尾声」顺排：第一部 1–7 章＝1–7；第二部＝8–14；第三部＝15–20；第四部＝21–26；第五部＝27–31；第六部＝32–39；尾声＝40–41。本数据是阅读辅助整理，不是原著全文。",
+    "license": "本数据：CC BY-SA 4.0；原著版权归权利人所有",
+    "updated": "2026-09-21",
+    "style": "与前一本同规范：① 先写全名，外号/称呼写进括号；② 一句一个主语，不用「他／她」跨句指代不同人；③ 亲属称谓必须与具体人名连用；④ 事件文案脱离上下文也能读懂。",
+    "sources": [
+      {
+        "name": "原著（汝龙译本）"
+      },
+      {
+        "name": "俄语原题：Преступление и наказание（1866）"
+      }
+    ]
+  },
+  "factions": [
+    {
+      "key": "hero",
+      "name": "主角与其家人",
+      "color": "#c99a3f"
+    },
+    {
+      "key": "marmeladov",
+      "name": "玛尔美拉朵夫一家",
+      "color": "#c0504d"
+    },
+    {
+      "key": "police",
+      "name": "警察与司法",
+      "color": "#4a7fd4"
+    },
+    {
+      "key": "predator",
+      "name": "斯维德利盖洛夫与卢仁",
+      "color": "#9a6fb0"
+    },
+    {
+      "key": "commoner",
+      "name": "底层与市井",
+      "color": "#5a9e5a"
+    }
+  ],
+  "characters": [
+    {
+      "id": "raskolnikov",
+      "name": "罗季昂·罗曼内奇·拉斯柯尔尼科夫",
+      "aliases": [
+        "罗佳",
+        "罗季卡",
+        "拉斯柯尔尼科夫"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "hero",
+      "title": "大学生",
+      "desc": "穷困潦倒的大学生，写下一篇「非凡的人有权越界」的文章，也真的越了过去。",
+      "fate": "自首，被判八年苦役；在西伯利亚的河边终于握住了索尼娅的手。",
+      "note": "昵称「罗佳」「罗季卡」，书中也常直接用姓「拉斯柯尔尼科夫」。"
+    },
+    {
+      "id": "pulkheria",
+      "name": "普尔赫莉雅·亚历山大罗芙娜·拉斯柯尔尼科娃",
+      "aliases": [
+        "罗佳的母亲",
+        "普尔赫莉雅"
+      ],
+      "generation": 1,
+      "gender": "f",
+      "firstCh": 3,
+      "faction": "hero",
+      "title": "罗佳的母亲",
+      "desc": "外省的寡妇，把全部指望放在儿子身上。",
+      "fate": "在儿子自首前后病倒死去。",
+      "note": "别与杜尼娅混淆：她与女儿一起到彼得堡来。"
+    },
+    {
+      "id": "dunya",
+      "name": "阿芙朵嘉·罗曼诺芙娜·拉斯柯尔尼科娃",
+      "aliases": [
+        "杜尼雅",
+        "杜涅奇卡",
+        "杜尼娅"
+      ],
+      "generation": 1,
+      "gender": "f",
+      "firstCh": 3,
+      "faction": "hero",
+      "title": "罗佳的妹妹",
+      "desc": "骄傲、果断，为了哥哥答应嫁给卢仁，又亲手撕毁这门婚事。",
+      "fate": "与符拉祖米欣相恋，计划结婚。",
+      "note": "昵称「杜尼雅」「杜涅奇卡」。"
+    },
+    {
+      "id": "razumikhin",
+      "name": "德米特利·普罗科菲伊奇·符拉祖米欣",
+      "aliases": [
+        "拉祖米欣",
+        "符拉祖米欣"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 8,
+      "faction": "hero",
+      "title": "大学生，罗佳的同学",
+      "desc": "热心、能干活；罗佳病倒时全靠他张罗。",
+      "fate": "照顾罗佳一家，最后与杜尼娅在一起。",
+      "note": "汝龙译本译作「符拉祖米欣」，常简称「拉祖米欣」。"
+    },
+    {
+      "id": "marmeladov",
+      "name": "谢敏·扎哈洛维奇·玛尔美拉朵夫",
+      "aliases": [
+        "退职九品文官",
+        "玛尔美拉朵夫",
+        "玛尔美拉多夫"
+      ],
+      "generation": 2,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "marmeladov",
+      "title": "退职九品文官",
+      "desc": "在小酒馆里向罗佳讲自己一家的故事：他把女儿索尼娅推上了街头。",
+      "fate": "被马车碾成重伤，死在索尼娅怀里。"
+    },
+    {
+      "id": "katerina",
+      "name": "卡捷莉娜·伊凡诺芙娜·玛尔美拉多娃",
+      "aliases": [
+        "卡捷琳娜",
+        "卡捷莉娜"
+      ],
+      "generation": 2,
+      "gender": "f",
+      "firstCh": 14,
+      "faction": "marmeladov",
+      "title": "玛尔美拉朵夫的妻子",
+      "desc": "军官之女出身，痨病缠身、脾气暴烈，念念不忘昔日的体面。",
+      "fate": "丈夫死后发疯，带着孩子上街乞讨，倒在血泊里死去。"
+    },
+    {
+      "id": "sonya",
+      "name": "索菲雅·谢敏诺芙娜·玛尔美拉朵娃",
+      "aliases": [
+        "索尼雅",
+        "索涅奇卡",
+        "索尼娅"
+      ],
+      "generation": 2,
+      "gender": "f",
+      "firstCh": 14,
+      "faction": "marmeladov",
+      "title": "玛尔美拉朵夫的女儿",
+      "desc": "怯生生的姑娘；为了继母和弟妹走上街头，却一直跟着罗佳走到了西伯利亚。",
+      "fate": "跟随罗佳去苦役地，在那里等到了他的爱。"
+    },
+    {
+      "id": "polina",
+      "name": "波丽娜",
+      "aliases": [
+        "波莉卡",
+        "波连卡"
+      ],
+      "generation": 2,
+      "gender": "f",
+      "firstCh": 14,
+      "faction": "marmeladov",
+      "title": "卡捷莉娜与前夫的长女",
+      "desc": "母亲发疯后，她带着弟妹在街上唱歌讨钱。",
+      "fate": "被送进孤儿院。"
+    },
+    {
+      "id": "alyona",
+      "name": "阿辽娜·伊凡诺芙娜",
+      "aliases": [
+        "放高利贷的老太婆",
+        "阿辽娜"
+      ],
+      "generation": 5,
+      "gender": "f",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "放高利贷的老太婆",
+      "desc": "刻薄贪婪；罗佳拿表来抵押，她只肯给一个半卢布。",
+      "fate": "被罗佳用斧头砍死。"
+    },
+    {
+      "id": "lizaveta",
+      "name": "丽扎维达·伊凡诺芙娜",
+      "aliases": [
+        "丽扎维达"
+      ],
+      "generation": 5,
+      "gender": "f",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "阿辽娜的妹妹",
+      "desc": "胆小、逆来顺受，常送东西给别人。",
+      "fate": "提前回家，撞见血，也被罗佳杀死。"
+    },
+    {
+      "id": "svidrigailov",
+      "name": "阿尔卡吉·伊凡诺维奇·斯维德利盖洛夫",
+      "aliases": [
+        "斯维里加洛夫",
+        "斯维德利盖洛夫"
+      ],
+      "generation": 4,
+      "gender": "m",
+      "firstCh": 20,
+      "faction": "predator",
+      "title": "地主",
+      "desc": "玛尔法·彼得罗芙娜的丈夫；一个把欲望和表演当空气的人。",
+      "fate": "放走了杜尼娅，散尽钱财，在雨中的桥上开枪自杀。"
+    },
+    {
+      "id": "marfa",
+      "name": "玛尔法·彼得罗芙娜·斯维德利盖洛娃",
+      "generation": 4,
+      "gender": "f",
+      "firstCh": 20,
+      "faction": "predator",
+      "title": "斯维德利盖洛夫的妻子",
+      "desc": "杜尼娅曾在她家做家庭教师；她临终前留了遗嘱给杜尼娅一笔钱。",
+      "fate": "病死；流言说她是被丈夫毒死的。",
+      "aliases": [
+        "玛尔法"
+      ]
+    },
+    {
+      "id": "luzhin",
+      "name": "彼得·彼得罗维奇·卢仁",
+      "aliases": [
+        "卢仁律师",
+        "卢仁"
+      ],
+      "generation": 4,
+      "gender": "m",
+      "firstCh": 21,
+      "faction": "predator",
+      "title": "律师，杜尼娅的未婚夫",
+      "desc": "四十五岁，精于算计，主张「先爱自己」。",
+      "fate": "被杜尼娅赶走；后来陷害索尼娅，被当众揭穿。"
+    },
+    {
+      "id": "lebezyatnikov",
+      "name": "安德烈·谢敏诺维奇·列别齐亚特尼科夫",
+      "generation": 4,
+      "gender": "m",
+      "firstCh": 27,
+      "faction": "predator",
+      "title": "卢仁的朋友、邻居",
+      "desc": "满口时髦理论的年轻人，恰好当了卢仁陷害索尼娅的目击者。",
+      "fate": "当众揭穿了卢仁。",
+      "aliases": [
+        "列别齐亚特尼科夫"
+      ]
+    },
+    {
+      "id": "landlady",
+      "name": "普拉斯科维雅·巴甫洛芙娜",
+      "aliases": [
+        "巴宪卡",
+        "普拉斯科维雅"
+      ],
+      "generation": 5,
+      "gender": "f",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "罗佳的女房东",
+      "desc": "罗佳欠着她房租，宁可溜下楼梯也不愿听她唠叨。",
+      "fate": "被卷进门口那场与卢仁有关的闹剧。"
+    },
+    {
+      "id": "nastasya",
+      "name": "娜斯达霞",
+      "generation": 5,
+      "gender": "f",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "女仆",
+      "desc": "给罗佳端饭、报信，是唯一敢随意跟他说话的人。",
+      "fate": "继续在底层替人做事。",
+      "aliases": [
+        "娜斯达霞"
+      ]
+    },
+    {
+      "id": "amalia",
+      "name": "阿玛丽雅·伊凡诺芙娜·里普威赫节尔",
+      "generation": 5,
+      "gender": "f",
+      "firstCh": 14,
+      "faction": "commoner",
+      "title": "玛尔美拉朵夫家的女房东",
+      "desc": "自称有体面亲戚的女房东，与卡捷莉娜水火不容。",
+      "fate": "在卡捷莉娜的丧饭上被大闹一场。",
+      "aliases": [
+        "阿玛丽雅"
+      ]
+    },
+    {
+      "id": "zosimov",
+      "name": "左西莫夫",
+      "aliases": [
+        "医生",
+        "左西莫夫"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 9,
+      "faction": "police",
+      "title": "医生",
+      "desc": "符拉祖米欣请来的医生，诊断罗佳是「高烧与偏执」。",
+      "fate": "后来不再出现。"
+    },
+    {
+      "id": "zametov",
+      "name": "扎麦托夫",
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 9,
+      "faction": "police",
+      "title": "警察分局办事员",
+      "desc": "在酒馆里被罗佳一句「要是我杀了那个老太婆呢」吓得变了脸色。",
+      "fate": "一直记着罗佳这张脸。",
+      "aliases": [
+        "扎麦托夫"
+      ]
+    },
+    {
+      "id": "nikodim",
+      "name": "尼科丁·佛米奇",
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 9,
+      "faction": "police",
+      "title": "区警察分局局长",
+      "desc": "老成持重，替罗佳结了欠条那桩事。",
+      "fate": "凶案最终还是落到了他的辖区里。",
+      "aliases": [
+        "尼科丁"
+      ]
+    },
+    {
+      "id": "ilya",
+      "name": "伊里亚·彼得罗维奇",
+      "aliases": [
+        "中尉",
+        "火药桶",
+        "伊里亚"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 9,
+      "faction": "police",
+      "title": "警察分局副局长，中尉",
+      "desc": "脾气火爆，动不动就动手。",
+      "fate": "在罗佳自首时当班。"
+    },
+    {
+      "id": "porfiry",
+      "name": "波尔菲利·彼得罗维奇",
+      "aliases": [
+        "侦查科长",
+        "波尔菲利"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 19,
+      "faction": "police",
+      "title": "警察分局侦查科长",
+      "desc": "笑起来像在打趣，问起话来像在收网。",
+      "fate": "没有逮捕罗佳，而是劝他去自首，还替他宽限了两天。"
+    },
+    {
+      "id": "nikolai",
+      "name": "尼古拉·杰缅季耶夫",
+      "aliases": [
+        "米科莱",
+        "尼古拉什卡",
+        "尼古拉"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 25,
+      "faction": "police",
+      "title": "油漆工人",
+      "desc": "虔信的老实人；在人群里喊出「是我杀的」，把案子搅成一团。",
+      "fate": "替别人认了罪，让波尔菲利只好放走罗佳。"
+    },
+    {
+      "id": "mityka",
+      "name": "德米特利",
+      "aliases": [
+        "米季卡",
+        "米特莱"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "firstCh": 25,
+      "faction": "police",
+      "title": "油漆工人",
+      "desc": "尼古拉的同伴，两人一起在地下室刷漆。",
+      "fate": "听说同伴认了罪，又气又怕。"
+    }
+  ],
+  "relations": [
+    {
+      "from": "raskolnikov",
+      "to": "pulkheria",
+      "type": "母子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "母亲普尔赫莉雅从外省寄来长信：杜尼娅为了哥哥答应了卢仁的婚事，而她已经在张罗着来看他。",
+          "chapter": "第3章"
+        },
+        {
+          "text": "自首前他去看她最后一眼；她病倒在床上，后来病死。",
+          "chapter": "第38–39章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "dunya",
+      "type": "兄妹",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿芙朵嘉·罗曼诺芙娜（杜尼雅）为哥哥牺牲自己，答应嫁给卢仁；罗佳却当面对她说：这不是婚事，是卖身。",
+          "chapter": "第21–22章"
+        }
+      ]
+    },
+    {
+      "from": "dunya",
+      "to": "luzhin",
+      "type": "未婚夫妻",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "婚约是杜尼娅的母亲和哥哥替她张罗的；卢仁却连罗佳都不肯见，还在众人面前把索尼娅说成「女贼」。",
+          "chapter": "第22–23章"
+        },
+        {
+          "text": "最后杜尼娅当着全家把他赶出了门。",
+          "chapter": "第23章"
+        }
+      ]
+    },
+    {
+      "from": "dunya",
+      "to": "svidrigailov",
+      "type": "纠缠（家庭教师时期）",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "杜尼娅在斯维德利盖洛夫家做家庭教师时，他反复纠缠她；她宁可丢掉职位也不答应。",
+          "chapter": "第20章"
+        },
+        {
+          "text": "最后一夜他把杜尼娅骗到自己的房间里，又放她走了——他知道自己留不住她。",
+          "chapter": "第36–37章"
+        }
+      ]
+    },
+    {
+      "from": "dunya",
+      "to": "razumikhin",
+      "type": "恋人",
+      "style": "solid",
+      "events": [
+        {
+          "text": "符拉祖米欣照顾病中的罗佳，也照顾他的母亲和妹妹；杜尼娅起初嫌他笨，后来习惯了他在身边。",
+          "chapter": "第15–16章"
+        },
+        {
+          "text": "结尾里，两人打算等事情了结就结婚。",
+          "chapter": "第41章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "razumikhin",
+      "type": "同学／朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "罗佳病得昏天黑地时，符拉祖米欣替他请医生、买衣服、挡警察，什么都干。",
+          "chapter": "第9–10章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "marmeladov",
+      "type": "酒馆相遇",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "小酒馆里，退职文官玛尔美拉朵夫把自己的一生讲给他听：讲到女儿索尼娅时，他一口把酒喝干。",
+          "chapter": "第2章"
+        },
+        {
+          "text": "第二天罗佳把母亲刚寄来的钱拿去给这一家办丧事。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "katerina",
+      "type": "交情",
+      "style": "solid",
+      "events": [
+        {
+          "text": "丈夫被马车撞死时，卡捷莉娜一家连丧事的钱都没有；罗佳把自己所有的钱掏了出来。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "sonya",
+      "type": "罪人与赎罪者",
+      "style": "solid",
+      "events": [
+        {
+          "text": "他第一次走进索尼娅的屋子，请她读《拉撒路复活》；读完他说：「你也是越过界线的人。」",
+          "chapter": "第24章"
+        },
+        {
+          "text": "他终于跪在她面前承认：「是我把阿辽娜·伊凡诺芙娜和她的妹妹丽扎维达都杀了。」索尼娅抱住他说：「你到什么苦地方，我都跟你去。」",
+          "chapter": "第30章"
+        },
+        {
+          "text": "在西伯利亚的河边，他扑倒在她脚边哭；她明白了他爱她，而他也终于知道了。",
+          "chapter": "第41章"
+        }
+      ]
+    },
+    {
+      "from": "marmeladov",
+      "to": "sonya",
+      "type": "父女",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "玛尔美拉朵夫亲手把女儿索尼娅推上街头，又把她挣来的钱一枚枚拿去换酒。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "katerina",
+      "to": "sonya",
+      "type": "继母女",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卡捷莉娜嘴上骂索尼娅「吃闲饭」，转身又替她挡下卢仁的当众侮辱。",
+          "chapter": "第27章"
+        }
+      ]
+    },
+    {
+      "from": "katerina",
+      "to": "marmeladov",
+      "type": "夫妻",
+      "style": "solid",
+      "events": [
+        {
+          "text": "玛尔美拉朵夫丢了差事，卡捷莉娜病着，还得拿头巾去换酒钱。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "sonya",
+      "to": "polina",
+      "type": "姐妹",
+      "style": "solid",
+      "events": [
+        {
+          "text": "母亲疯后，波丽娜带着弟妹在街上唱歌讨钱；索尼娅赶回来时，她把孩子们拉到自己身后。",
+          "chapter": "第31章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "alyona",
+      "type": "抵押者与放贷者",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "拉斯柯尔尼科夫拿父亲留下的表来抵押，老太婆只肯给一个半卢布；出门时他对自己说：「多么贪心的老太婆。」",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "lizaveta",
+      "type": "意外",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "他本来算准丽扎维达不在家——结果她提前回来，正撞见血。",
+          "chapter": "第7章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "porfiry",
+      "type": "猫与鼠",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "第一次见面，波尔菲利就把他那篇《论犯罪》翻出来问：「非凡的人是不是都有权杀人？」",
+          "chapter": "第19章"
+        },
+        {
+          "text": "最后一次，波尔菲利直说：「是您干的，罗季昂·罗曼诺维奇。」然后劝他去自首，还替他宽限了两天。",
+          "chapter": "第33章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "zametov",
+      "type": "试探",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "他在酒馆里突然说：「要是我杀了那个老太婆呢？」扎麦托夫的脸色变了。",
+          "chapter": "第13章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "svidrigailov",
+      "type": "两个越界的人",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "他对这个地主有种奇怪的兴趣：两个人的罪不一样，可都知道「越过去」是什么滋味。",
+          "chapter": "第20章"
+        },
+        {
+          "text": "最后一夜他们各自散场：斯维德利盖洛夫去死，罗佳去自首。",
+          "chapter": "第36–37章"
+        }
+      ]
+    },
+    {
+      "from": "svidrigailov",
+      "to": "marfa",
+      "type": "夫妻",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "流言说他毒死了妻子玛尔法·彼得罗芙娜；他自己既不承认也不否认。",
+          "chapter": "第20章"
+        }
+      ]
+    },
+    {
+      "from": "luzhin",
+      "to": "lebezyatnikov",
+      "type": "朋友／同住",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "卢仁住在列别齐亚特尼科夫家，一边嫌这个年轻人思想自由，一边利用他当见证人——结果被这个年轻人当众揭穿。",
+          "chapter": "第28–29章"
+        }
+      ]
+    },
+    {
+      "from": "luzhin",
+      "to": "sonya",
+      "type": "陷害",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卢仁悄悄把一百卢布塞进索尼娅的口袋，然后当众指控她偷钱——只因为罗佳没请他参加丧饭。",
+          "chapter": "第28–29章"
+        }
+      ]
+    },
+    {
+      "from": "nikolai",
+      "to": "porfiry",
+      "type": "自首的油漆工",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "尼古拉·杰缅季耶夫在人群里喊出「是我杀的」，把波尔菲利精心布下的局搅乱了。",
+          "chapter": "第25–26章"
+        }
+      ]
+    },
+    {
+      "from": "mityka",
+      "to": "nikolai",
+      "type": "同伴",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "两人一起在地下室刷漆；米季卡听说同伴「认了罪」，又气又怕。",
+          "chapter": "第25章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "nastasya",
+      "type": "日常",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "娜斯达霞给他端来茶和剩饭，还告诉他「你有信」；女房东只惦记那点房租。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "landlady",
+      "type": "房东与房客",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "他欠着普拉斯科维雅·巴甫洛芙娜的房租，宁可像猫一样溜下楼梯，也不愿听她唠叨。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "raskolnikov",
+      "to": "zosimov",
+      "type": "病人与医生",
+      "style": "solid",
+      "events": [
+        {
+          "text": "左西莫夫量了体温，说这是高烧和偏执；其实罗佳只是不肯吃饭、不肯说话。",
+          "chapter": "第9章"
+        }
+      ]
+    },
+    {
+      "from": "pulkheria",
+      "to": "dunya",
+      "type": "母女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "母女俩在彼得堡替罗佳租房子、缝衣服，把唯一的指望放在他身上。",
+          "chapter": "第15章"
+        }
+      ]
+    },
+    {
+      "from": "pulkheria",
+      "to": "razumikhin",
+      "type": "未来女婿",
+      "style": "solid",
+      "events": [
+        {
+          "text": "普尔赫莉雅把这个照顾儿子的年轻人当自家人；临终时是他和杜尼娅守在床边。",
+          "chapter": "第38章"
+        }
+      ]
+    },
+    {
+      "from": "sonya",
+      "to": "lizaveta",
+      "type": "熟人",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "丽扎维达生前待索尼娅亲厚；罗佳后来才知道，自己杀的人里有一个和索尼娅相熟。",
+          "chapter": "第30章"
+        }
+      ]
+    },
+    {
+      "from": "katerina",
+      "to": "amalia",
+      "type": "女房东与租客",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "两个女人为了一块地毯、一把钥匙吵了几年；丧饭那天终于当众打成一团。",
+          "chapter": "第31章"
+        }
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "第一部：一具良心",
+      "order": 1
+    },
+    {
+      "id": "p2",
+      "name": "第二部：血与高烧",
+      "order": 2
+    },
+    {
+      "id": "p3",
+      "name": "第三部：罪与辩",
+      "order": 3
+    },
+    {
+      "id": "p4",
+      "name": "第四部：罪与爱",
+      "order": 4
+    },
+    {
+      "id": "p5",
+      "name": "第五部：罪与疯",
+      "order": 5
+    },
+    {
+      "id": "p6",
+      "name": "第六部：罪与罚",
+      "order": 6
+    },
+    {
+      "id": "p7",
+      "name": "尾声：西伯利亚",
+      "order": 7
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "phase": "p1",
+      "order": 1,
+      "ch": 6,
+      "name": "把斧头缝进大衣",
+      "chars": [
+        "raskolnikov",
+        "lizaveta",
+        "alyona"
+      ],
+      "summary": "罗季昂·罗曼诺维奇·拉斯柯尔尼科夫在酒店里听见丽扎维达说第二天晚上七点不在家，于是把斧头缝进大衣里——他算准了阿辽娜·伊凡诺芙娜独处的时间。",
+      "impact": "「一件那么大的事」就要发生。"
+    },
+    {
+      "id": "e2",
+      "phase": "p1",
+      "order": 2,
+      "ch": 7,
+      "name": "行凶",
+      "chars": [
+        "raskolnikov",
+        "alyona",
+        "lizaveta"
+      ],
+      "summary": "拉斯柯尔尼科夫用斧头砍死了放高利贷的阿辽娜·伊凡诺芙娜；丽扎维达回来撞见血，也被他杀死。他翻遍血泊只找到一点钱，连门都差点忘了锁。",
+      "impact": "两条人命，两件再也洗不掉的事。"
+    },
+    {
+      "id": "e3",
+      "phase": "p2",
+      "order": 1,
+      "ch": 8,
+      "name": "埋掉抢来的东西",
+      "chars": [
+        "raskolnikov"
+      ],
+      "summary": "拉斯柯尔尼科夫把抢来的东西埋在一座荒院子的石头下，从此再没动过——他要的从来不是钱。",
+      "impact": "他背上压着的不是那点财物。"
+    },
+    {
+      "id": "e4",
+      "phase": "p2",
+      "order": 2,
+      "ch": 9,
+      "name": "在警察局昏倒",
+      "chars": [
+        "raskolnikov",
+        "ilya",
+        "nikodim",
+        "zametov",
+        "nastasya"
+      ],
+      "summary": "拉斯柯尔尼科夫收到警察局传票，原来只是要他补一张欠条；听到屋里的人在议论凶案，他当场昏倒。",
+      "impact": "扎麦托夫记住了他这张脸。"
+    },
+    {
+      "id": "e5",
+      "phase": "p2",
+      "order": 3,
+      "ch": 14,
+      "name": "玛尔美拉朵夫之死",
+      "chars": [
+        "marmeladov",
+        "sonya",
+        "katerina",
+        "polina",
+        "raskolnikov"
+      ],
+      "summary": "退职文官玛尔美拉朵夫被马车碾过，拉斯柯尔尼科夫把他抱回家；索尼娅第一次出现在他眼前，他把母亲寄来的钱全掏给了这家孤儿寡母。",
+      "impact": "索尼娅走进了他的世界。"
+    },
+    {
+      "id": "e6",
+      "phase": "p3",
+      "order": 1,
+      "ch": 15,
+      "name": "母亲与妹妹到来",
+      "chars": [
+        "pulkheria",
+        "dunya",
+        "razumikhin",
+        "raskolnikov"
+      ],
+      "summary": "母亲普尔赫莉雅和妹妹杜尼娅从外省来到彼得堡；符拉祖米欣替她们张罗住处，也把病中的拉斯柯尔尼科夫交还给她们。",
+      "impact": "三个人、三份心事挤进一间小屋。"
+    },
+    {
+      "id": "e7",
+      "phase": "p3",
+      "order": 2,
+      "ch": 19,
+      "name": "波尔费利的试探",
+      "chars": [
+        "raskolnikov",
+        "porfiry",
+        "razumikhin"
+      ],
+      "summary": "侦查科长波尔菲利·彼得罗维奇把拉斯柯尔尼科夫半年前写的文章翻出来，当面问他：「非凡的人是不是都有权杀人？」",
+      "impact": "猫和老鼠的第一回合。"
+    },
+    {
+      "id": "e8",
+      "phase": "p3",
+      "order": 3,
+      "ch": 20,
+      "name": "斯维德利盖洛夫现身",
+      "chars": [
+        "svidrigailov",
+        "raskolnikov",
+        "dunya"
+      ],
+      "summary": "地主斯维德利盖洛夫找上门来，自称只是「一个爱说话的人」；他绕着杜尼娅过去的事说个不停，让拉斯柯尔尼科夫浑身不自在。",
+      "impact": "另一个越界的人登场了。"
+    },
+    {
+      "id": "e9",
+      "phase": "p4",
+      "order": 1,
+      "ch": 23,
+      "name": "卢仁被赶出门",
+      "chars": [
+        "luzhin",
+        "dunya",
+        "raskolnikov",
+        "lebezyatnikov"
+      ],
+      "summary": "卢仁在小屋里数落拉斯柯尔尼科夫，又挑剔杜尼娅的客人；杜尼娅当着母亲的面把他赶出了门。",
+      "impact": "这门婚事正式断了。"
+    },
+    {
+      "id": "e10",
+      "phase": "p4",
+      "order": 2,
+      "ch": 24,
+      "name": "索尼娅读《拉撒路复活》",
+      "chars": [
+        "sonya",
+        "raskolnikov",
+        "lizaveta"
+      ],
+      "summary": "拉斯柯尔尼科夫请索尼娅读《约翰福音》里拉撒路复活的那一段；读到最后他说：「你也是越过界线的人。」",
+      "impact": "他把自己的罪和她的牺牲摆到了同一张桌上。"
+    },
+    {
+      "id": "e11",
+      "phase": "p4",
+      "order": 3,
+      "ch": 25,
+      "name": "米科莱认罪",
+      "chars": [
+        "nikolai",
+        "porfiry",
+        "raskolnikov"
+      ],
+      "summary": "油漆工尼古拉·杰缅季耶夫（米科莱）在人群里喊出「是我杀的」，把波尔菲利布下的局搅乱了；拉斯柯尔尼科夫被放了出来。",
+      "impact": "他捡回了几天自由，也丢掉了自首的勇气。"
+    },
+    {
+      "id": "e12",
+      "phase": "p5",
+      "order": 1,
+      "ch": 28,
+      "name": "卢仁陷害索尼娅",
+      "chars": [
+        "luzhin",
+        "sonya",
+        "lebezyatnikov",
+        "katerina"
+      ],
+      "summary": "卢仁把一百卢布偷偷塞进索尼娅的口袋，当众指控她偷钱；列别齐亚特尼科夫站出来作证，卢仁的算计当场露了底。",
+      "impact": "卡捷莉娜一家最后的体面也碎了。"
+    },
+    {
+      "id": "e13",
+      "phase": "p5",
+      "order": 2,
+      "ch": 30,
+      "name": "罗佳向索尼娅认罪",
+      "chars": [
+        "raskolnikov",
+        "sonya"
+      ],
+      "summary": "拉斯柯尔尼科夫在索尼娅屋里跪下，说出「是我杀了老太婆和她的妹妹」；索尼娅抱住他，说愿意跟他到任何苦地方去。",
+      "impact": "他终于把话说出口，也把自己交给了她。"
+    },
+    {
+      "id": "e14",
+      "phase": "p5",
+      "order": 3,
+      "ch": 31,
+      "name": "卡捷莉娜之死",
+      "chars": [
+        "katerina",
+        "sonya",
+        "polina",
+        "raskolnikov"
+      ],
+      "summary": "卡捷莉娜·伊凡诺芙娜疯了似的带着孩子上街乞讨、唱歌，最后倒在血泊里死去；索尼娅替她合上了眼睛。",
+      "impact": "玛尔美拉朵夫一家彻底散了。"
+    },
+    {
+      "id": "e15",
+      "phase": "p6",
+      "order": 1,
+      "ch": 33,
+      "name": "波尔费利摊牌",
+      "chars": [
+        "porfiry",
+        "raskolnikov"
+      ],
+      "summary": "波尔菲利直说：「是您干的，罗季昂·罗曼诺维奇。」他没有逮捕拉斯柯尔尼科夫，反而劝他去自首，还替他宽限了两天。",
+      "impact": "猫不再追了——老鼠得自己去认账。"
+    },
+    {
+      "id": "e16",
+      "phase": "p6",
+      "order": 2,
+      "ch": 36,
+      "name": "斯维德利盖洛夫的自杀",
+      "chars": [
+        "svidrigailov",
+        "dunya"
+      ],
+      "summary": "斯维德利盖洛夫把杜尼娅骗到自己房里，又放她走了；当夜他住进一家小旅馆，把仅剩的钱留给别人，在雨中的桥上开枪自杀。",
+      "impact": "一个什么都不信的人自己了结了自己。"
+    },
+    {
+      "id": "e17",
+      "phase": "p6",
+      "order": 3,
+      "ch": 38,
+      "name": "母亲之死",
+      "chars": [
+        "pulkheria",
+        "dunya",
+        "razumikhin",
+        "raskolnikov"
+      ],
+      "summary": "母亲普尔赫莉雅病倒在床上；她至死都在念叨拉斯柯尔尼科夫，由杜尼娅和符拉祖米欣送终。",
+      "impact": "她没有等到儿子回来。"
+    },
+    {
+      "id": "e18",
+      "phase": "p6",
+      "order": 4,
+      "ch": 39,
+      "name": "罗佳自首",
+      "chars": [
+        "raskolnikov",
+        "sonya",
+        "ilya"
+      ],
+      "summary": "拉斯柯尔尼科夫走进警察分局，平静地承认自己是凶手；他先退出去走了几步，又回来说了第二遍。",
+      "impact": "罪有了着落，罚正要开始。"
+    },
+    {
+      "id": "e19",
+      "phase": "p7",
+      "order": 1,
+      "ch": 40,
+      "name": "判决与上路",
+      "chars": [
+        "raskolnikov",
+        "sonya"
+      ],
+      "summary": "拉斯柯尔尼科夫被判八年苦役，押往西伯利亚；临行前索尼娅来看他，答应随后就来。",
+      "impact": "他跟着那双怯生生的眼睛去了更远的地方。"
+    },
+    {
+      "id": "e20",
+      "phase": "p7",
+      "order": 2,
+      "ch": 40,
+      "name": "索尼娅来到西伯利亚",
+      "chars": [
+        "sonya",
+        "raskolnikov"
+      ],
+      "summary": "索尼娅真的来了，在镇上做裁缝、替犯人们带东西；苦役场里的人都愿意跟她说话。",
+      "impact": "他还有一个人可以等。"
+    },
+    {
+      "id": "e21",
+      "phase": "p7",
+      "order": 3,
+      "ch": 41,
+      "name": "河边的和解",
+      "chars": [
+        "raskolnikov",
+        "sonya"
+      ],
+      "summary": "在西伯利亚的河边，拉斯柯尔尼科夫扑倒在索尼娅脚边痛哭；她吓了一跳，随即明白了他一直不肯承认的爱。从那一刻起，两个人都觉得对方是自己活下去的由头。",
+      "impact": "小说的最后一句：一个新的故事、一个人逐渐再生的故事已经开始了。"
+    }
+  ]
+}
