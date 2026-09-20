@@ -165,7 +165,7 @@
   }
 
   function renderBody() {
-    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi };
+    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi, batch: formBatch };
     $('#ed-body').innerHTML = (f[ed.section] || formMeta)();
   }
 
@@ -430,22 +430,249 @@
     if (!merge) {
       adopt(ed.aiDraft, true);
     } else {
-      const b = ed.book;
-      const dup = new Set(b.characters.map((c) => c.id));
-      for (const c of ed.aiDraft.characters || []) if (!dup.has(c.id)) { b.characters.push(c); dup.add(c.id); }
-      const relKey = (r) => `${r.from}|${r.to}|${r.type}`;
-      const seen = new Set(b.relations.map(relKey));
-      for (const r of ed.aiDraft.relations || []) if (!seen.has(relKey(r))) { b.relations.push(r); seen.add(relKey(r)); }
-      const evIds = new Set(b.events.map((e) => e.id));
-      for (const e of ed.aiDraft.events || []) if (!evIds.has(e.id)) b.events.push(e);
-      const phIds = new Set(b.phases.map((p) => p.id));
-      for (const p of ed.aiDraft.phases || []) if (!phIds.has(p.id)) b.phases.push(p);
-      const fk = new Set(b.factions.map((f) => f.key));
-      for (const f of ed.aiDraft.factions || []) if (!fk.has(f.key)) { b.factions.push(f); fk.add(f.key); }
-      adopt(b, true);
+      const st = mergeDraft(ed.aiDraft);
+      adopt(ed.book, true);
+      toast(`已合并：+${st.cAdd} 人 / +${st.rAdd} 关系 / +${st.eAdd} 事件 / +${st.evAdd} 条小事件`);
     }
     saveDraft();
     toast('已应用 AI 草稿（记得逐条校对）');
+  }
+
+  /* —— 整本生成：上传/粘贴 → 分章 → 逐章生成 → 合并去重 —— */
+  function aiConfig() {
+    const read = (id, key, dft) => {
+      const el = document.getElementById(id);
+      const v = (el && 'value' in el ? el.value : localStorage.getItem(key)) || dft || '';
+      return String(v).trim();
+    };
+    return {
+      base: read('ai-base', 'ba-ai-base', 'https://api.deepseek.com/v1').replace(/\/$/, ''),
+      key: read('ai-key', 'ba-ai-key'),
+      model: read('ai-model', 'ba-ai-model', 'deepseek-chat'),
+    };
+  }
+
+  function saveAiConfig(cfg) {
+    try {
+      localStorage.setItem('ba-ai-base', cfg.base);
+      localStorage.setItem('ba-ai-key', cfg.key);
+      localStorage.setItem('ba-ai-model', cfg.model);
+    } catch (e) { /* 忽略 */ }
+  }
+
+  async function callLLM(system, user) {
+    const cfg = aiConfig();
+    if (!cfg.key) throw new Error('请先填 API Key（只存在本机浏览器）');
+    saveAiConfig(cfg);
+    const res = await fetch(`${cfg.base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
+      body: JSON.stringify({ model: cfg.model, temperature: 0.4, max_tokens: 8192, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}：${(await res.text().catch(() => '')).slice(0, 200)}`);
+    const json = await res.json();
+    const raw = json.choices?.[0]?.message?.content || '';
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('返回里没有找到 JSON：' + raw.slice(0, 120));
+    return JSON.parse(m[0]);
+  }
+
+  function splitChapters(text) {
+    const t = String(text || '').replace(/\r\n?/g, '\n');
+    const re = /^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[章回节卷][^\n]{0,40}$/gm;
+    const marks = [...t.matchAll(re)].map((m) => ({ idx: m.index, title: m[0].trim() }));
+    if (marks.length < 2) return t.trim() ? [{ title: '全文（未识别到章节，按一整段处理）', text: t.trim() }] : [];
+    const out = [];
+    for (let i = 0; i < marks.length; i++) {
+      const start = marks[i].idx;
+      const end = i + 1 < marks.length ? marks[i + 1].idx : t.length;
+      out.push({ title: marks[i].title.slice(0, 40), text: t.slice(start, end).trim() });
+    }
+    return out;
+  }
+
+  function formBatch() {
+    const cfgKey = localStorage.getItem('ba-ai-key') || '';
+    const cfgBase = localStorage.getItem('ba-ai-base') || 'https://api.deepseek.com/v1';
+    const cfgModel = localStorage.getItem('ba-ai-model') || 'deepseek-chat';
+    const chapters = ed.chapters || [];
+    const results = ed.genResults || [];
+    const list = chapters.map((c, i) => {
+      const r = results[i];
+      const flag = r ? (r.error ? ' ✗' : ` ✓ ${(r.characters || []).length}人/${(r.relations || []).length}关系`) : '';
+      return `<label class="ed-chk"><input type="checkbox" data-ch="${i}" ${ed.genSkip && ed.genSkip.has(i) ? '' : 'checked'}> ${esc(c.title)} <span class="hint">(${c.text.length} 字${flag})</span></label>`;
+    }).join('');
+    return `${head('整本生成', '上传/粘贴整本 → ① 分章 → ② 逐章生成（人物 id 沿用名单，保证能合并）→ ③ 合并去重 → 人工校对',
+      '<button class="primary" type="button" data-tool="batch-split">① 分章</button>' +
+      '<button class="primary" type="button" data-tool="batch-run">② 逐章生成</button>' +
+      '<button class="ghost" type="button" data-tool="batch-stop">停止</button>' +
+      '<button class="primary" type="button" data-tool="batch-merge">③ 合并去重</button>' +
+      '<button class="ghost" type="button" data-tool="batch-view">查看结果 JSON</button>')}
+      <div class="ed-grid">
+        <label>API 地址<input id="ai-base" value="${esc(cfgBase)}"></label>
+        <label>API Key<input id="ai-key" type="password" value="${esc(cfgKey)}" placeholder="sk-...（只存 localStorage）"></label>
+        <label>模型<input id="ai-model" value="${esc(cfgModel)}"></label>
+      </div>
+      <div class="ed-sub">
+        <div class="ed-sub-head">整本原文
+          <label class="ghost tiny" style="cursor:pointer">上传 txt<input type="file" id="batch-file" accept=".txt,text/plain" hidden></label>
+          <button class="ghost tiny" type="button" data-tool="batch-clear">清空</button>
+        </div>
+        <textarea id="batch-text" style="min-height:150px" placeholder="把整本 txt 粘贴到这里（或上传 .txt 文件）…">${ed.batchText ? esc(ed.batchText) : ''}</textarea>
+      </div>
+      ${chapters.length ? `<div class="ed-sub">
+        <div class="ed-sub-head">已分章 ${chapters.length} 章
+          <button class="ghost tiny" type="button" data-tool="batch-all">全选</button>
+          <button class="ghost tiny" type="button" data-tool="batch-none">全不选</button>
+        </div>
+        <div class="ed-chars" id="batch-list">${list}</div>
+      </div>` : ''}
+      <div id="batch-out" class="ed-msg"></div>`;
+  }
+
+  function batchLog(text, cls) {
+    const out = document.getElementById('batch-out');
+    if (!out) return;
+    out.className = 'ed-msg ' + (cls || '');
+    out.innerHTML = `<div>${text}</div>` + (out.innerHTML || '');
+  }
+
+  function batchSplit() {
+    const box = document.getElementById('batch-text');
+    ed.batchText = box ? box.value : (ed.batchText || '');
+    ed.chapters = splitChapters(ed.batchText);
+    ed.genResults = [];
+    renderBody();
+    batchLog(ed.chapters.length
+      ? `已分章：${ed.chapters.length} 章。勾选要生成的部分，然后点「② 逐章生成」。`
+      : '没有内容可分章，请先粘贴或上传 txt。', ed.chapters.length ? 'ok' : 'bad');
+  }
+
+  function batchRoster() {
+    const names = new Map();
+    for (const c of ed.book.characters) names.set(c.id, c.name);
+    for (const r of ed.genResults || []) for (const c of (r && r.characters) || []) if (!names.has(c.id)) names.set(c.id, c.name);
+    return [...names.entries()].slice(0, 300).map(([id, name]) => `${id}: ${name}`).join('；');
+  }
+
+  async function batchRun() {
+    const chapters = ed.chapters || [];
+    if (!chapters.length) { batchLog('请先点「① 分章」', 'bad'); return; }
+    const picks = [...document.querySelectorAll('#batch-list input[data-ch]')]
+      .filter((c) => c.checked).map((c) => Number(c.dataset.ch));
+    if (!picks.length) { batchLog('请至少勾选一章', 'bad'); return; }
+    const cfg = aiConfig();
+    if (!cfg.key) { batchLog('请先填 API Key', 'bad'); return; }
+    saveAiConfig(cfg);
+    ed.genResults = ed.genResults || [];
+    ed.generating = true;
+    batchLog(`开始：共 ${picks.length} 章（每章约 1–2 分钟，可随时点「停止」）`, '');
+    let ok = 0;
+    for (let n = 0; n < picks.length; n++) {
+      if (!ed.generating) break;
+      const idx = picks[n];
+      const ch = chapters[idx];
+      batchLog(`⏳ ${n + 1}/${picks.length} 正在生成：${esc(ch.title)}…`, '');
+      try {
+        const draft = await callLLM(batchSystem(), batchUser(ch, idx));
+        ed.genResults[idx] = draft;
+        ok++;
+        batchLog(`✓ ${n + 1}/${picks.length} ${esc(ch.title)}：${(draft.characters || []).length} 人 / ${(draft.relations || []).length} 关系 / ${(draft.events || []).length} 事件`, 'ok');
+      } catch (e) {
+        ed.genResults[idx] = { error: String(e.message) };
+        batchLog(`✗ ${esc(ch.title)}：${esc(String(e.message))}`, 'bad');
+      }
+    }
+    ed.generating = false;
+    batchLog(`本轮结束：成功 ${ok} / ${picks.length} 章。点「③ 合并去重」把它们并进当前书。`, ok ? 'ok' : 'bad');
+  }
+
+  function batchSystem() {
+    return '你是文学作品的资料整理员，正在**逐章**整理一本书，供「人物关系 + 事件时间轴」应用使用。硬性要求：' +
+      '严格输出 JSON（不要 markdown 围栏、不要解释）；**只从给定章节抽取**，不要引入本章没出现的内容；' +
+      '人物 id 必须沿用「已有名单」里对应的 id，若是名单外的新人物才新起 id（拼音 kebab-case）；' +
+      'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」；' +
+      'events 的 ch 写这一章的章号，phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
+      'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文。';
+  }
+
+  function batchUser(ch, idx) {
+    const n = idx + 1;
+    const body = ch.text.length > 40000 ? ch.text.slice(0, 40000) + '\n…（本章过长，已截断）' : ch.text;
+    const roster = batchRoster();
+    return `书名《${ed.book.meta.title || '未命名'}》，共 ${(ed.chapters || []).length} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
+      (roster ? `已有名单（同一个人必须沿用这些 id）：\n${roster}\n\n` : '') +
+      `JSON schema：\n${AI_SCHEMA}\n\n` +
+      `请只从本章抽取，输出 JSON。events[].ch = ${n}；relations[].events[].chapter 写「第${n}章」。\n\n` +
+      `<<<本章原文开始>>>\n${body}\n<<<本章原文结束>>>`;
+  }
+
+  function mergeDraft(draft) {
+    const b = ed.book;
+    const st = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0 };
+    const byId = new Map(b.characters.map((c) => [c.id, c]));
+    const byName = new Map(b.characters.map((c) => [c.name, c]));
+    const mergeInto = (t, c) => {
+      t.aliases = [...new Set([...(t.aliases || []), ...(c.aliases || [])])];
+      if (!t.desc && c.desc) t.desc = c.desc;
+      if (!t.fate && c.fate) t.fate = c.fate;
+      if (!t.title && c.title) t.title = c.title;
+      if (!t.faction && c.faction) t.faction = c.faction;
+      if (!t.note && c.note) t.note = c.note;
+      if (!t.gender && c.gender) t.gender = c.gender;
+      if (!t.firstCh && c.firstCh) t.firstCh = c.firstCh;
+    };
+    for (const c of draft.characters || []) {
+      const id = String(c.id || '').trim() || uid('c');
+      if (byId.has(id)) { mergeInto(byId.get(id), c); continue; }
+      if (c.name && byName.has(c.name)) { mergeInto(byName.get(c.name), c); continue; }
+      const item = { ...c, id };
+      b.characters.push(item);
+      byId.set(id, item);
+      if (item.name) byName.set(item.name, item);
+      st.cAdd++;
+    }
+    for (const f of draft.factions || []) if (f.key && !b.factions.some((x) => x.key === f.key)) { b.factions.push(f); }
+    for (const p of draft.phases || []) if (p.id && !b.phases.some((x) => x.id === p.id)) b.phases.push(p);
+    const fallbackPhase = (b.phases[0] || { id: 'p1' }).id;
+    const relKey = (r) => `${r.from}|${r.to}|${(r.type || '').trim()}`;
+    const relMap = new Map(b.relations.map((r) => [relKey(r), r]));
+    for (const r of draft.relations || []) {
+      const k = relKey(r);
+      if (relMap.has(k)) {
+        const t = relMap.get(k);
+        const seen = new Set((t.events || []).map((e) => e.text));
+        for (const e of r.events || []) if (e.text && !seen.has(e.text)) { t.events.push(e); st.evAdd++; }
+      } else {
+        const item = { ...r, events: [...(r.events || [])] };
+        b.relations.push(item);
+        relMap.set(k, item);
+        st.rAdd++;
+      }
+    }
+    const evIds = new Set(b.events.map((e) => e.id));
+    for (const e of draft.events || []) {
+      const ev = { ...e, id: e.id || uid('e'), ch: e.ch ?? 0 };
+      if (!b.phases.some((p) => p.id === ev.phase)) ev.phase = fallbackPhase;
+      if (evIds.has(ev.id)) continue;
+      b.events.push(ev);
+      evIds.add(ev.id);
+      st.eAdd++;
+    }
+    return st;
+  }
+
+  function batchMerge() {
+    const results = (ed.genResults || []).filter((r) => r && !r.error);
+    if (!results.length) { batchLog('还没有可合并的结果，先跑「② 逐章生成」', 'bad'); return; }
+    const total = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0 };
+    for (const d of results) {
+      const st = mergeDraft(d);
+      total.cAdd += st.cAdd; total.rAdd += st.rAdd; total.eAdd += st.eAdd; total.evAdd += st.evAdd;
+    }
+    adopt(ed.book, true);
+    saveDraft();
+    batchLog(`✓ 合并完成：+${total.cAdd} 人 / +${total.rAdd} 关系 / +${total.eAdd} 事件 / +${total.evAdd} 条小事件（并按 id 或姓名合并了重复人物）。记得逐条校对。`, 'ok');
   }
 
   /* ---------------- 交互 ---------------- */
@@ -509,9 +736,39 @@
     });
 
     body.addEventListener('input', (ev) => {
+      const id = ev.target.id;
+      if (id === 'ai-base' || id === 'ai-key' || id === 'ai-model') {
+        try { localStorage.setItem('ba-' + id, ev.target.value); } catch (e) { /* 忽略 */ }
+        return;
+      }
+      if (id === 'batch-text') { ed.batchText = ev.target.value; return; }
       const el = ev.target.closest('[data-field]');
       if (!el || !ed.form) return;
       setPath(ed.form, el.dataset.field, el.value);
+    });
+
+    // 下拉/勾选类输入也顺手存一下 API 配置（防止只 change 不 input 的浏览器）
+    body.addEventListener('change', (ev) => {
+      const id = ev.target.id;
+      if (id === 'ai-base' || id === 'ai-key' || id === 'ai-model') {
+        try { localStorage.setItem('ba-' + id, ev.target.value); } catch (e) { /* 忽略 */ }
+      }
+    });
+
+    // 整本 txt 上传
+    document.addEventListener('change', (ev) => {
+      if (ev.target.id !== 'batch-file') return;
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        ed.batchText = String(reader.result || '');
+        ed.chapters = [];
+        ed.genResults = [];
+        renderBody();
+        batchLog(`已读入 ${esc(file.name)}（${ed.batchText.length} 字），点「① 分章」`, 'ok');
+      };
+      reader.readAsText(file, 'utf-8');
     });
 
     body.addEventListener('change', (ev) => {
@@ -611,6 +868,20 @@
       if (btn.dataset.tool === 'ai-generate') generateDraft();
       if (btn.dataset.tool === 'ai-apply') applyAi(false);
       if (btn.dataset.tool === 'ai-merge') applyAi(true);
+      if (btn.dataset.tool === 'batch-split') batchSplit();
+      if (btn.dataset.tool === 'batch-run') batchRun();
+      if (btn.dataset.tool === 'batch-stop') { ed.generating = false; batchLog('已请求停止：当前这一章跑完就停。', ''); }
+      if (btn.dataset.tool === 'batch-merge') batchMerge();
+      if (btn.dataset.tool === 'batch-clear') { ed.batchText = ''; ed.chapters = []; ed.genResults = []; renderBody(); }
+      if (btn.dataset.tool === 'batch-all') document.querySelectorAll('#batch-list input[data-ch]').forEach((c) => { c.checked = true; });
+      if (btn.dataset.tool === 'batch-none') document.querySelectorAll('#batch-list input[data-ch]').forEach((c) => { c.checked = false; });
+      if (btn.dataset.tool === 'batch-view') {
+        const out = document.getElementById('batch-out');
+        const box = document.createElement('textarea');
+        box.value = JSON.stringify((ed.genResults || []).map((r, i) => ({ chapter: (ed.chapters || [])[i] && ed.chapters[i].title, result: r })), null, 2).slice(0, 200000);
+        box.style.width = '100%'; box.style.minHeight = '200px'; box.style.marginTop = '8px';
+        out.appendChild(box);
+      }
       if (btn.dataset.tool === 'ai-view') {
         const box = document.createElement('textarea');
         box.value = JSON.stringify(ed.aiDraft, null, 2);

@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.7.2：修复代际图注免重置即正确（重排时补算节点包围盒）+ 图注定位兜底"
+  [string]$Message = "书脉 BookAtlas v0.8：编辑器「整本生成」（上传/粘贴 → 自动分章 → 逐章生成 → 合并去重，人物按 id/姓名合并）+ API 配置输入即存"
 )
 
 $ErrorActionPreference = "Stop"
