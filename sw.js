@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v6';
+const CACHE = 'bookatlas-v7';
 const SHELL = [
   './',
   './index.html',
@@ -9,7 +9,10 @@ const SHELL = [
   './data/books.json',
   './data/one-hundred-years-of-solitude.json',
   './manifest.webmanifest',
-  './assets/icon.svg'
+  './assets/icon.svg',
+  './editor.html',
+  './css/editor.css',
+  './js/editor.js'
 ];
 
 self.addEventListener('install', (e) => {

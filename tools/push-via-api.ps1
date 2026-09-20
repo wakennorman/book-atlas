@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.7：补齐家人边（21条，含养亲/兄弟姐妹/父子母子）+ 关系事件按章过滤、结局按最后出场章锁定（修剧透泄露）"
+  [string]$Message = "书脉 BookAtlas v0.7.1：代际图注专用边距标准（横=顶部110px / 纵=左侧150px，按节点包围盒定位）+ 编辑器纳入离线缓存"
 )
 
 $ErrorActionPreference = "Stop"

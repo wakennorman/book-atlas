@@ -23,6 +23,7 @@
     view: 'force',         // force | gen-h | gen-v
     bands: new Map(),      // 代际视图：generation -> 主坐标
     fit: { s: 1, cx: 0, cy: 0 }, // 最近一次 fitPositions 的变换（供代际参考线换算）
+    bbox: null,            // 节点包围盒（缩放后、居中于 0）——图注按它定位
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
@@ -239,24 +240,22 @@
       };
     });
 
-    // 代际视图：把「前史 / 第1代 …」做成图里的虚拟节点，跟随缩放与平移
+    // 代际视图：把「前史 / 第1代 …」做成图里的虚拟节点，跟随缩放与平移；
+    // 位置固定在节点包围盒之外（横向在顶部 gutter、纵向在左侧 gutter）
     if (state.view !== 'force' && state.bands.size) {
-      const rect = document.getElementById('graph').getBoundingClientRect();
-      const W = rect.width || 900, H = rect.height || 600;
       const isH = state.view === 'gen-h';
-      const { s, cx, cy } = state.fit;
-      const rawX = -(W / 2) + 24, rawY = -(H / 2) + 18;
+      const bb = state.bbox || { minX: -(document.getElementById('graph').getBoundingClientRect().width || 900) / 2, minY: -(document.getElementById('graph').getBoundingClientRect().height || 600) / 2 };
       for (const [g, band] of state.bands) {
         data.push({
           id: `__gen_${g}`,
           name: genText(g),
           symbol: 'circle',
           symbolSize: 3,
-          x: isH ? band : (rawX - cx) * s,
-          y: isH ? (rawY - cy) * s : band,
+          x: isH ? band : bb.minX - 30,
+          y: isH ? bb.minY - 26 : band,
           label: {
             show: true, color: muted, fontSize: 11.5, fontWeight: 'bold',
-            position: isH ? 'bottom' : 'right', distance: 4,
+            position: isH ? 'top' : 'left', distance: 4,
           },
           itemStyle: { color: 'transparent' },
           labelLayout: { hideOverlap: false },
@@ -366,7 +365,10 @@
   function fitPositions() {
     if (!state.pos.size || !state.chart) return;
     const rect = document.getElementById('graph').getBoundingClientRect();
-    const W = rect.width || 800, H = rect.height || 500, padX = 108, padY = 64;
+    const W = rect.width || 800, H = rect.height || 500;
+    // 边距＝图注专用通道（gutter）：横向留顶部、纵向留左侧
+    const padX = state.view === 'gen-v' ? 150 : 90;
+    const padY = state.view === 'gen-h' ? 110 : 70;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const p of state.pos.values()) {
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
@@ -382,6 +384,8 @@
       cy: prev.cy + cy / (prev.s || 1),
     };
     for (const [id, p] of state.pos) state.pos.set(id, { x: (p.x - cx) * s, y: (p.y - cy) * s });
+    // 节点包围盒（已缩放、居中于 0）——图注按它定位，保证在节点区之外
+    state.bbox = { minX: -(w * s) / 2, maxX: (w * s) / 2, minY: -(h * s) / 2, maxY: (h * s) / 2 };
     // 代际参考线同步缩放，保证「前史 / 第 N 代」始终对着对应那一列/行
     if (state.view === 'gen-h') {
       for (const [g, v] of state.bands) state.bands.set(g, (v - cx) * s);
@@ -438,7 +442,8 @@
       const counts = new Map();
       for (const c of state.book.characters) counts.set(c.generation, (counts.get(c.generation) || 0) + 1);
       const maxCount = Math.max(1, ...counts.values());
-      el.style.height = Math.max(560, maxCount * 62 + 140) + 'px';
+      // 节点区（人数×60）+ 上下边距（顶部给图注 110、底部留白）
+      el.style.height = Math.max(620, maxCount * 60 + 260) + 'px';
     } else {
       el.style.height = '';
     }
