@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.8：编辑器「整本生成」（上传/粘贴 → 自动分章 → 逐章生成 → 合并去重，人物按 id/姓名合并）+ API 配置输入即存"
+  [string]$Message = "书脉 BookAtlas v0.9：C 期补数据（+10 条小事件 / +1 关系 / +1 事件：寿衣、费尔南达的规矩、浴室两小时、老宅旅馆等）"
 )
 
 $ErrorActionPreference = "Stop"

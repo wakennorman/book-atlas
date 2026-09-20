@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v9';
+const CACHE = 'bookatlas-v10';
 const SHELL = [
   './',
   './index.html',
