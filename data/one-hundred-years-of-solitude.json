@@ -1495,6 +1495,274 @@
           "chapter": "第15章"
         }
       ]
+    },
+    {
+      "from": "jose-arcadio-buendia",
+      "to": "rebeca",
+      "type": "养父女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "何塞·阿尔卡蒂奥·布恩迪亚按信里的嘱托收留了丽贝卡，让她跟自家的孩子一起长大。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "rebeca",
+      "to": "aureliano-colonel",
+      "type": "家人（同宅长大）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "丽贝卡的辈分很乱：她管奥雷里亚诺叫「叔叔」，管阿玛兰妲和阿尔卡蒂奥叫「弟弟妹妹」，可大家都吃住在一起。",
+          "chapter": "第3章"
+        },
+        {
+          "text": "奥雷里亚诺上校被押回马孔多等着枪决时，丽贝卡每天凌晨三点就起床，守着墓地方向的那面墙，怕他们悄悄把他处决。",
+          "chapter": "第7章"
+        }
+      ]
+    },
+    {
+      "from": "rebeca",
+      "to": "arcadio",
+      "type": "养姐弟",
+      "style": "solid",
+      "events": [
+        {
+          "text": "丽贝卡和阿尔卡蒂奥、阿玛兰妲一起长大，直到她嫁给何塞·阿尔卡蒂奥（第二代）被赶出家门。",
+          "chapter": "第3–5章"
+        },
+        {
+          "text": "多年后阿尔卡蒂奥掌了权，端着咖啡到丽贝卡家，把父亲何塞·阿尔卡蒂奥（第二代）占地的官司办成了合法买卖。",
+          "chapter": "第6章"
+        }
+      ]
+    },
+    {
+      "from": "amaranta",
+      "to": "jose-arcadio-2",
+      "type": "兄妹",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿玛兰妲是家中最小的女儿；何塞·阿尔卡蒂奥（第二代）带着丽贝卡回来结婚那天，她恨透了这两个人，从此再没原谅。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "amaranta",
+      "to": "aureliano-colonel",
+      "type": "兄妹",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿玛兰妲与奥雷里亚诺上校是同父同母的兄妹：一个终生不嫁，一个半生打仗，晚年同住一宅却很少说话。",
+          "chapter": "第2章"
+        },
+        {
+          "text": "他被押回马孔多那天，她挤在人群里看着他，他冲她笑了笑，问：「你的手怎么啦？」",
+          "chapter": "第7章"
+        }
+      ]
+    },
+    {
+      "from": "amaranta",
+      "to": "arcadio",
+      "type": "姑侄（同岁玩伴）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "姑侄俩年纪相仿，从小跟着维希塔香学说瓜希拉语，在一间屋子里长大。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "amaranta",
+      "to": "ursula",
+      "type": "母女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿玛兰妲终生不嫁、缝寿衣度日，乌尔苏拉既心疼又拿她没办法；一个死在寿衣缝完那天，一个活到一百二十岁。",
+          "chapter": "第16章"
+        }
+      ]
+    },
+    {
+      "from": "amaranta",
+      "to": "jose-arcadio-buendia",
+      "type": "父女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿玛兰妲是老何塞唯一的女儿；老何塞疯掉被绑在栗树下时，她正在这座院子里长大。",
+          "chapter": "第4章"
+        }
+      ]
+    },
+    {
+      "from": "ursula",
+      "to": "aureliano-colonel",
+      "type": "母子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "临刑前夜，乌尔苏拉带着干净衣服、他结婚时穿的皮鞋和一包奶油蜜饯，去牢里看他。",
+          "chapter": "第7章"
+        },
+        {
+          "text": "晚年奥雷里亚诺上校做小金鱼，乌尔苏拉活到一百二十岁；她后来说，奥雷里亚诺上校「没有爱的能力」。",
+          "chapter": "第8章"
+        }
+      ]
+    },
+    {
+      "from": "aureliano-colonel",
+      "to": "aureliano-jose",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "奥雷里亚诺·何塞是上校与皮拉尔·特内拉的私生子，由阿玛兰妲抚养；长大后他跟着奥雷里亚诺上校打仗，又因迷恋姑妈阿玛兰妲逃了回来。",
+          "chapter": "第4、7章"
+        }
+      ]
+    },
+    {
+      "from": "arcadio",
+      "to": "aureliano-jose",
+      "type": "同母异父的兄弟（也是堂兄弟）",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "皮拉尔·特内拉为兄弟俩各生了一个儿子：阿尔卡蒂奥和奥雷里亚诺·何塞既是堂兄弟，又是同母异父的兄弟。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "arcadio",
+      "to": "aureliano-segundo",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿尔卡蒂奥死时，圣索菲亚正怀着双胞胎；这对双胞胎在他被枪决五个月后才出生。",
+          "chapter": "第6–7章"
+        }
+      ]
+    },
+    {
+      "from": "arcadio",
+      "to": "jose-arcadio-segundo",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿尔卡蒂奥死时，圣索菲亚正怀着双胞胎；这对双胞胎在他被枪决五个月后才出生。",
+          "chapter": "第6–7章"
+        }
+      ]
+    },
+    {
+      "from": "santa-sofia",
+      "to": "aureliano-segundo",
+      "type": "母子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "桑塔索菲亚·德拉·彼达一个人把双胞胎和美人儿蕾梅黛丝带大；阿尔卡蒂奥死后，她继续操持这个家几十年。",
+          "chapter": "第6章"
+        }
+      ]
+    },
+    {
+      "from": "santa-sofia",
+      "to": "jose-arcadio-segundo",
+      "type": "母子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "桑塔索菲亚·德拉·彼达一个人把双胞胎和美人儿蕾梅黛丝带大；阿尔卡蒂奥死后，她继续操持这个家几十年。",
+          "chapter": "第6章"
+        }
+      ]
+    },
+    {
+      "from": "aureliano-segundo",
+      "to": "jose-arcadio-5",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "何塞·阿尔卡蒂奥（第五代）被母亲费尔南达送去罗马读神学；父亲奥雷里亚诺第二晚年只疼小女儿。",
+          "chapter": "第12章"
+        }
+      ]
+    },
+    {
+      "from": "meme",
+      "to": "jose-arcadio-5",
+      "type": "姐弟",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "梅梅被送走时，弟弟何塞·阿尔卡蒂奥（第五代）还小；此后家里几乎不再提她的名字。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "meme",
+      "to": "amaranta-ursula",
+      "type": "姐妹",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "梅梅被送走时，阿玛兰妲·乌尔苏拉还小；很多年后，回到马孔多的阿玛兰妲·乌尔苏拉才知道自己有过一个姐姐。",
+          "chapter": "第14、17章"
+        }
+      ]
+    },
+    {
+      "from": "mauricio",
+      "to": "aureliano-babilonia",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "奥雷里亚诺·巴比伦从没见过自己的父亲：马乌里肖·巴比伦被打瘫，梅梅被送进修道院，孩子被送回布恩迪亚家。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "pilar-ternera",
+      "to": "aureliano-babilonia",
+      "type": "忘年交／推手",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "老得几乎成精的皮拉尔·特内拉鼓励孤寂的小奥雷里亚诺去爱阿玛兰妲·乌尔苏拉。",
+          "chapter": "第17章"
+        }
+      ]
+    },
+    {
+      "from": "ursula",
+      "to": "aureliano-jose",
+      "type": "祖孙",
+      "style": "solid",
+      "events": [
+        {
+          "text": "奥雷里亚诺·何塞被抱回大宅时，是乌尔苏拉决定把他留下养；乌尔苏拉看着他长成了像老何塞一样的高个子。",
+          "chapter": "第4章"
+        }
+      ]
     }
   ],
   "phases": [

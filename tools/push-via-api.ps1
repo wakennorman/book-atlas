@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.6：编辑器新增 AI 草稿（浏览器直连 OpenAI 兼容端点，Key 只存本机；支持覆盖/合并/查看 JSON）"
+  [string]$Message = "书脉 BookAtlas v0.7：补齐家人边（21条，含养亲/兄弟姐妹/父子母子）+ 关系事件按章过滤、结局按最后出场章锁定（修剧透泄露）"
 )
 
 $ErrorActionPreference = "Stop"

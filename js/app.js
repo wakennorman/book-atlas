@@ -47,6 +47,21 @@
   const charLocked = (c) => !!c && lockedCh(charCh(c));
   const relLocked = (r) => lockedCh(relCh(r));
   const eventLocked = (e) => lockedCh(typeof e.ch === 'number' ? e.ch : 0);
+  const eventChOf = (ev) => chOf(ev?.chapter) ?? 0;
+  const visibleRelEvents = (r) => (r.events || []).filter((ev) => state.progress === null || eventChOf(ev) <= state.progress);
+  const relHiddenEventCount = (r) => (r.events || []).length - visibleRelEvents(r).length;
+  // 人物的「最后出场章」＝本人出场章、相关事件章、相关关系事件章的最大值（用来决定结局能不能显示）
+  const charLastCh = (c) => {
+    if (!c || !state.book) return 0;
+    let last = charCh(c);
+    for (const e of state.book.events) if ((e.chars || []).includes(c.id)) last = Math.max(last, e.ch || 0);
+    for (const r of state.book.relations) {
+      if (r.from !== c.id && r.to !== c.id) continue;
+      for (const ev of r.events || []) last = Math.max(last, eventChOf(ev));
+    }
+    return last;
+  };
+  const fateLocked = (c) => state.progress !== null && charLastCh(c) > state.progress;
   const maxChapter = () => state.book?.meta?.chapters || Math.max(
     0,
     ...state.book.characters.map(charCh),
@@ -280,8 +295,11 @@
             const rel = findRel(p.data.source, p.data.target);
             if (!rel) return '';
             const [first, second] = orderPair(rel.from, rel.to);
-            const evs = (rel.events || []).map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b><br>${evs}`;
+            const vis = visibleRelEvents(rel);
+            const hidden = (rel.events || []).length - vis.length;
+            const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b><br>${evs}` +
+              (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条事件在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
           if (!c) return '';
@@ -290,7 +308,7 @@
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
             `<span style="color:${muted}">${esc(genText(c.generation))} · ${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
-            `<span style="color:${muted}">结局：${esc(c.fate)}</span>`;
+            `<span style="color:${muted}">结局：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>`;
         },
       },
       series: [{
@@ -642,13 +660,15 @@
     const lockedCount = allRels.length - rels.length;
     const relHtml = rels.map((r) => {
       const other = r.from === c.id ? r.to : r.from;
-      const evs = (r.events || []).map((e) =>
+      const vis = visibleRelEvents(r);
+      const hidden = (r.events || []).length - vis.length;
+      const evs = vis.map((e) =>
         `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
         </div>
-        ${evs}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
       </li>`;
     }).join('');
 
@@ -663,7 +683,7 @@
         <span class="badge">关系 ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
-      <p class="card-fate"><b>结局：</b>${esc(c.fate)}</p>
+      <p class="card-fate"><b>结局：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
       ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
       <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>`;
@@ -725,11 +745,13 @@
     setHighlight(nodes, edges, null, null);
 
     const html = steps.map((s, i) => {
-      const evs = (s.rel.events || []).map((e) =>
+      const vis = visibleRelEvents(s.rel);
+      const hidden = (s.rel.events || []).length - vis.length;
+      const evs = vis.map((e) =>
         `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span> ${charLink(s.to)}</div>
-        ${evs}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
       </li>`;
     }).join('');
     panel().innerHTML = `
