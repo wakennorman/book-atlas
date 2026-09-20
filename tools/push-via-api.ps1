@@ -6,10 +6,11 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.2.1：修复图例取消筛选 + 发布脚本改用 curl"
+  [string]$Message = "书脉 BookAtlas v0.3：文案全名化+主语规范（validate 自动检查）+ 代际参考线跟随缩放 + 定位这条线 + 默认代际纵"
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $api = "https://api.github.com"
 
 # 1) 从 Git 凭据管理器取 token（不落盘、不打印）
@@ -20,27 +21,34 @@ if (-not $token) { throw "No token from git credential manager" }
 
 function Api {
   param([string]$Method, [string]$Uri, $Body)
-  $curlArgs = @('-s', '-L', '--max-time', '180', '-X', $Method, $Uri,
+  $baseArgs = @('-s', '-L', '--max-time', '180', '-X', $Method, $Uri,
     '-H', "Authorization: Bearer $token",
     '-H', 'Accept: application/vnd.github+json',
     '-H', 'User-Agent: book-atlas-publisher')
-  $tmp = $null
+  $bodyFile = $null
+  $respFile = [IO.Path]::GetTempFileName()
   if ($null -ne $Body) {
-    $tmp = [IO.Path]::GetTempFileName()
-    [IO.File]::WriteAllText($tmp, ($Body | ConvertTo-Json -Depth 20 -Compress), (New-Object System.Text.UTF8Encoding($false)))
-    $curlArgs += @('--data-binary', "@$tmp", '-H', 'Content-Type: application/json')
+    $bodyFile = [IO.Path]::GetTempFileName()
+    [IO.File]::WriteAllText($bodyFile, ($Body | ConvertTo-Json -Depth 20 -Compress), (New-Object System.Text.UTF8Encoding($false)))
+    $baseArgs += @('--data-binary', "@$bodyFile", '-H', 'Content-Type: application/json')
   }
   try {
-    $out = & curl.exe @curlArgs '-w', "`n%{http_code}"
+    $text = ''
+    for ($n = 1; $n -le 4; $n++) {
+      $code = ((& curl.exe @baseArgs -o $respFile -w "%{http_code}") -join '').Trim()
+      $text = if (Test-Path $respFile) { Get-Content -Raw -Encoding UTF8 $respFile } else { '' }
+      if ($code -match '^2') {
+        if (-not $text) { return $null }
+        return ($text | ConvertFrom-Json)
+      }
+      Write-Host "    (API $code，重试 $n/4)"
+      Start-Sleep -Seconds 6
+    }
+    throw "API failed after retries :: $($text.Substring(0, [Math]::Min(200, $text.Length)))"
   } finally {
-    if ($tmp) { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
+    if ($bodyFile) { Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue }
+    if ($respFile) { Remove-Item $respFile -Force -ErrorAction SilentlyContinue }
   }
-  $lines = $out -split "`n"
-  $code = ($lines[-1]).Trim()
-  $text = ($lines[0..($lines.Count - 2)] -join "`n").Trim()
-  if ($code -notmatch '^2') { throw "HTTP $code :: $($text.Substring(0, [Math]::Min(300, $text.Length)))" }
-  if (-not $text) { return $null }
-  return $text | ConvertFrom-Json
 }
 
 "token ok ($($token.Length) chars)"

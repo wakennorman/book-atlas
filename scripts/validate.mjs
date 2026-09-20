@@ -84,6 +84,48 @@ function validate(file) {
     for (const cid of e.chars || []) if (!ids.has(cid)) err(`${where} 引用了不存在的角色 ${cid}`);
   }
 
+  // ---------- 文案规范检查（v0.3 起：防「主语跳来跳去 / 称谓不明 / 提到的人不在 chars 里」） ----------
+  const KIN = /(哥哥|弟弟|姐姐|妹妹|父亲|母亲|儿子|女儿|丈夫|妻子|叔叔|姑姑|侄子|侄女|祖父|祖母|外公|外婆|曾祖|孙子|孙女)/;
+  const nameIndex = chars.map((c) => ({ id: c.id, n: [c.name, ...(c.aliases || [])].filter(Boolean) }));
+  const hasName = (text) => nameIndex.some((x) => x.n.some((nn) => text.includes(nn)));
+  const sentences = (s) => String(s || '').split(/[。；！？]/).map((x) => x.trim()).filter(Boolean);
+  const firstSentence = (s) => sentences(s)[0] || '';
+
+  for (const e of events) {
+    const where = `事件 ${e.id}`;
+    const text = e.summary || '';
+    const mentions = (name) => {
+      let i = text.indexOf(name);
+      while (i !== -1) {
+        const before = text.slice(Math.max(0, i - 3), i);
+        const after = text.slice(i + name.length, i + name.length + 2);
+        const nested = before.endsWith('何塞·') || before.endsWith('·') || after.startsWith('·') || after.startsWith('（第');
+        if (!nested) return true;
+        i = text.indexOf(name, i + 1);
+      }
+      return false;
+    };
+    for (const { id, n } of nameIndex) {
+      if (n.some((nn) => mentions(nn)) && !(e.chars || []).includes(id)) {
+        warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
+      }
+    }
+    if (/^[他她]/.test(firstSentence(text))) {
+      warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`);
+    }
+    for (const s of sentences(text)) {
+      if (KIN.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+    }
+  }
+  for (const r of rels) {
+    const where = `关系 ${r.from}→${r.to}`;
+    for (const ev of r.events || []) {
+      for (const s of sentences(ev.text)) {
+        if (KIN.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+      }
+    }
+  }
+
   console.log(`  角色 ${chars.length} · 关系 ${rels.length} · 事件 ${events.length} ⇒ ${errors ? 'FAIL' : 'OK'}（${errors} error / ${warns} warning）`);
 }
 

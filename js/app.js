@@ -22,6 +22,7 @@
     allLabels: false,
     view: 'force',         // force | gen-h | gen-v
     bands: new Map(),      // 代际视图：generation -> 主坐标
+    fit: { s: 1, cx: 0, cy: 0 }, // 最近一次 fitPositions 的变换（供代际参考线换算）
     freezeTimer: null,
   };
 
@@ -66,7 +67,8 @@
       state.adj.get(r.from).push({ to: r.to, rel: r });
       state.adj.get(r.to).push({ to: r.from, rel: r });
     }
-    state.view = 'force';
+    const savedView = localStorage.getItem('ba-view');
+    state.view = ['force', 'gen-h', 'gen-v'].includes(savedView) ? savedView : 'gen-v';
     state.bands = new Map();
     clearHighlight(false);
     history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`);
@@ -152,6 +154,34 @@
       };
     });
 
+    // 代际视图：把「前史 / 第1代 …」做成图里的虚拟节点，跟随缩放与平移
+    if (state.view !== 'force' && state.bands.size) {
+      const rect = document.getElementById('graph').getBoundingClientRect();
+      const W = rect.width || 900, H = rect.height || 600;
+      const isH = state.view === 'gen-h';
+      const { s, cx, cy } = state.fit;
+      const rawX = -(W / 2) + 24, rawY = -(H / 2) + 18;
+      for (const [g, band] of state.bands) {
+        data.push({
+          id: `__gen_${g}`,
+          name: genText(g),
+          symbol: 'circle',
+          symbolSize: 3,
+          x: isH ? band : (rawX - cx) * s,
+          y: isH ? (rawY - cy) * s : band,
+          label: {
+            show: true, color: muted, fontSize: 11.5, fontWeight: 'bold',
+            position: isH ? 'bottom' : 'right', distance: 4,
+          },
+          itemStyle: { color: 'transparent' },
+          labelLayout: { hideOverlap: false },
+          emphasis: { disabled: true },
+          tooltip: { show: false },
+          silent: true,
+        });
+      }
+    }
+
     const links = b.relations.filter((r) => state.byId.has(r.from) && state.byId.has(r.to)).map((r) => {
       const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
@@ -168,7 +198,6 @@
 
     return {
       backgroundColor: 'transparent',
-      graphic: buildGuides(),
       tooltip: {
         trigger: 'item', confine: true,
         backgroundColor: panel, borderColor: line, borderWidth: 1,
@@ -200,7 +229,7 @@
           position: state.view === 'force' ? 'right' : 'bottom',
           distance: 4, fontSize: 10.5, color: ink, formatter: '{b}',
         },
-        labelLayout: { hideOverlap: true, moveOverlap: 'shiftY' },
+        labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
         scaleLimit: { min: 0.4, max: 3 },
         emphasis: {
@@ -252,7 +281,19 @@
     const w = Math.max(maxX - minX, 1), h = Math.max(maxY - minY, 1);
     const s = Math.max(0.3, Math.min((W - 2 * padX) / w, (H - 2 * padY) / h, 1.4));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const prev = state.fit || { s: 1, cx: 0, cy: 0 };
+    state.fit = {
+      s: prev.s * s,
+      cx: prev.cx + cx / (prev.s || 1),
+      cy: prev.cy + cy / (prev.s || 1),
+    };
     for (const [id, p] of state.pos) state.pos.set(id, { x: (p.x - cx) * s, y: (p.y - cy) * s });
+    // 代际参考线同步缩放，保证「前史 / 第 N 代」始终对着对应那一列/行
+    if (state.view === 'gen-h') {
+      for (const [g, v] of state.bands) state.bands.set(g, (v - cx) * s);
+    } else if (state.view === 'gen-v') {
+      for (const [g, v] of state.bands) state.bands.set(g, (v - cy) * s);
+    }
   }
 
   function computeLabels() {
@@ -291,28 +332,6 @@
     fitPositions();
     computeLabels();
     state.chart.setOption(buildOption());
-  }
-
-  function buildGuides() {
-    if (state.view === 'force' || !state.book || !state.bands.size) return [];
-    const rect = document.getElementById('graph').getBoundingClientRect();
-    const W = rect.width || 900, H = rect.height || 600;
-    const muted = cssVar('--muted') || '#6c7482';
-    const items = [];
-    for (const [g, p] of state.bands) {
-      if (state.view === 'gen-h') {
-        items.push({
-          type: 'text', left: Math.round(W / 2 + p) - 22, top: 8, silent: true,
-          style: { text: genText(g), fill: muted, font: '11px sans-serif' },
-        });
-      } else {
-        items.push({
-          type: 'text', left: 10, top: Math.round(H / 2 + p) - 7, silent: true,
-          style: { text: genText(g), fill: muted, font: '11px sans-serif' },
-        });
-      }
-    }
-    return items;
   }
 
   function applyViewHeight() {
@@ -356,9 +375,14 @@
     });
   }
 
+  function syncViewButtons() {
+    document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
+  }
+
   function setView(view) {
     state.view = view;
-    document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === view));
+    try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
+    syncViewButtons();
     applyViewHeight();
     if (!state.chart) return;
     clearTimeout(state.freezeTimer);
@@ -366,6 +390,7 @@
       state.frozen = false;
       state.pos = new Map();
       state.bands = new Map();
+      state.fit = { s: 1, cx: 0, cy: 0 };
       state.labels = null;
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
@@ -389,11 +414,11 @@
     state.frozen = false;
     state.pos = new Map();
     state.bands = new Map();
-    state.chart.setOption(buildOption());
-    // 力导向跑一会儿后自动冻结并适配画布
-    state.freezeTimer = setTimeout(() => freezeNow(), 6000);
+    state.fit = { s: 1, cx: 0, cy: 0 };
+    setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
 
     state.chart.on('click', (p) => {
+      if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
       if (p.dataType === 'edge') {
         const rel = findRel(p.data.source, p.data.target);
         if (rel) selectRelation(rel);
@@ -488,6 +513,12 @@
   function bindGoto(root) {
     root.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => selectCharacter(el.dataset.goto)));
     root.querySelectorAll('[data-event]').forEach((el) => el.addEventListener('click', () => selectEvent(el.dataset.event)));
+    root.querySelectorAll('[data-focus-rel]').forEach((el) => el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const [a, b] = String(el.dataset.focusRel).split('|');
+      const rel = findRel(a, b);
+      if (rel) selectRelation(rel);
+    }));
   }
 
   function renderCharacterPanel(c) {
@@ -500,7 +531,9 @@
       const evs = (r.events || []).map((e) =>
         `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span> ${c.id === r.from ? '（对方）' : ''}</div>
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>
+          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
+        </div>
         ${evs}
       </li>`;
     }).join('');
