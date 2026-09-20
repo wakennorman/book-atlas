@@ -25,6 +25,7 @@
     fit: { s: 1, cx: 0, cy: 0 }, // 最近一次 fitPositions 的变换（供代际参考线换算）
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
+    nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
   };
 
   /* ---------------- 工具 ---------------- */
@@ -295,7 +296,7 @@
       series: [{
         type: 'graph',
         layout: state.frozen ? 'none' : 'force',
-        roam: true, draggable: true,
+        roam: true, draggable: state.nodeDrag,
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], layoutAnimation: true, friction: 0.6, initLayout: 'circular' },
         data, links,
@@ -306,7 +307,7 @@
         },
         labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
-        scaleLimit: { min: 0.4, max: 3 },
+        scaleLimit: { min: 0.5, max: 2.5 },
         emphasis: {
           focus: 'adjacency',
           label: { show: true, fontWeight: 'bold' },
@@ -486,6 +487,13 @@
     }
   }
 
+  function resetRoam() {
+    if (!state.chart) return;
+    // clear + setOption 会把缩放/平移复位，但保留当前布局坐标
+    state.chart.clear();
+    state.chart.setOption(buildOption(), { notMerge: true });
+  }
+
   function initChart() {
     const el = $('#graph');
     if (state.chart) { state.chart.dispose(); }
@@ -507,6 +515,18 @@
       }
     });
     state.chart.getZr().on('click', (e) => { if (!e.target) clearHighlight(); });
+    // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
+    state.chart.getZr().on('dblclick', (e) => { if (!e.target) resetRoam(); });
+    // 拖动节点后同步坐标，避免下次重绘把它拉回去
+    state.chart.on('dragend', () => {
+      const d = state.chart.getModel().getSeriesByIndex(0).getData();
+      for (let i = 0; i < d.count(); i++) {
+        const id = d.getId(i);
+        if (!id || String(id).startsWith('__gen_')) continue;
+        const l = d.getItemLayout(i);
+        if (l) state.pos.set(id, { x: l[0] ?? l.x, y: l[1] ?? l.y });
+      }
+    });
 
     const onResize = () => {
       if (!state.chart) return;
@@ -515,7 +535,7 @@
       if (state.frozen) {
         if (state.view === 'force') fitPositions(); else buildGenerationPositions(state.view);
         computeLabels();
-        state.chart.setOption(buildOption());
+        resetRoam();   // 用 clear+setOption，顺带复位缩放/平移，避免 resize 后视图偏移叠加
       }
     };
     new ResizeObserver(onResize).observe(el);
@@ -598,7 +618,8 @@
 
   function renderPanelWelcome() {
     panel().innerHTML = `
-      <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 拖拽可移动节点<br>
+      <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」<br>
+      空白处拖动＝平移画布，滚轮＝缩放，<b>双击空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
       底部「两人关系」会算出最短关系链，并列出每一跳的依据事件。</p>`;
   }
 
@@ -811,6 +832,13 @@
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     $('#reset-btn').addEventListener('click', () => setView(state.view));
+    $('#view-reset-btn').addEventListener('click', resetRoam);
+    const dragBtn = $('#drag-btn');
+    dragBtn.addEventListener('click', () => {
+      state.nodeDrag = !state.nodeDrag;
+      dragBtn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
+      resetRoam();
+    });
 
     // 剧透弹窗：用事件委托 + Esc，确保任何情况下都关得掉
     document.addEventListener('click', (ev) => {

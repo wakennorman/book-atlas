@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.5：本地编辑器（新建/导入/编辑/导出/预览）+ 本地草稿可在图谱中直接打开 + 图例性别符号统一"
+  [string]$Message = "书脉 BookAtlas v0.5.1：修复缩放/平移失控（默认只平移画布、节点拖动改开关）、收紧缩放范围、新增复位视图/双击空白复位"
 )
 
 $ErrorActionPreference = "Stop"
