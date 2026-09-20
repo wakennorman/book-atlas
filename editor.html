@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>书脉 · 本地编辑器</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img class="logo" src="assets/icon.svg" alt="书脉">
+    <div class="brand-text">
+      <h1>书脉编辑器 <span>BookAtlas Editor</span></h1>
+      <p id="ed-status" class="meta">未载入</p>
+    </div>
+  </div>
+  <div class="tools">
+    <select id="ed-source" title="选择要编辑的书"></select>
+    <button id="ed-load" class="icon-btn" type="button">载入</button>
+    <button id="ed-new" class="icon-btn" type="button">新建空白</button>
+    <label class="icon-btn" title="导入本地 JSON">导入 JSON<input type="file" id="ed-import" accept=".json,application/json" hidden></label>
+    <button id="ed-save" class="icon-btn" type="button">保存到本地</button>
+    <button id="ed-export" class="icon-btn" type="button">导出 JSON</button>
+    <button id="ed-preview" class="icon-btn" type="button">预览</button>
+    <a class="icon-btn" href="index.html" title="回到图谱">← 图谱</a>
+  </div>
+</header>
+
+<main class="ed-main">
+  <nav class="ed-nav" id="ed-nav">
+    <button class="seg active" type="button" data-sec="meta">基本信息</button>
+    <button class="seg" type="button" data-sec="factions">阵营</button>
+    <button class="seg" type="button" data-sec="characters">人物</button>
+    <button class="seg" type="button" data-sec="relations">关系</button>
+    <button class="seg" type="button" data-sec="phases">阶段</button>
+    <button class="seg" type="button" data-sec="events">事件</button>
+  </nav>
+  <section id="ed-body" class="ed-body"></section>
+</main>
+
+<script src="js/editor.js"></script>
+</body>
+</html>

@@ -72,11 +72,31 @@
     }
     if (!state.books.length) { $('#book-meta').textContent = '还没有书目数据'; return; }
 
+    const params = new URLSearchParams(location.search);
+    const wanted0 = params.get('book');
+    const wantLocal = params.get('local') === '1';
+
+    // 浏览器本地草稿（编辑器保存的）也放进书目列表
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith('ba-draft-')) continue;
+      try {
+        const draft = JSON.parse(localStorage.getItem(key));
+        const slug = draft?.meta?.slug || key.replace('ba-draft-', '');
+        const entry = { slug, title: `${draft?.meta?.title || slug}（本地草稿）`, local: true };
+        const idx = state.books.findIndex((b) => b.slug === slug);
+        if (idx >= 0) {
+          if (wantLocal && slug === wanted0) state.books[idx] = entry;   // 预览本地草稿时覆盖正式版
+          continue;
+        }
+        state.books.push(entry);
+      } catch (e) { /* 忽略坏草稿 */ }
+    }
+
     const sel = $('#book-select');
     sel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(b.title)}</option>`).join('');
     sel.addEventListener('change', () => loadBook(sel.value));
 
-    const params = new URLSearchParams(location.search);
     const wanted = params.get('book');
     const slug = state.books.some((b) => b.slug === wanted) ? wanted : state.books[0].slug;
     sel.value = slug;
@@ -85,8 +105,13 @@
 
   async function loadBook(slug) {
     const meta = state.books.find((b) => b.slug === slug);
-    const res = await fetch(meta.file, { cache: 'no-cache' });
-    const book = await res.json();
+    let book;
+    if (meta && meta.local) {
+      book = JSON.parse(localStorage.getItem('ba-draft-' + slug));
+    } else {
+      const res = await fetch(meta.file, { cache: 'no-cache' });
+      book = await res.json();
+    }
     state.book = book;
     state.byId = new Map(book.characters.map((c) => [c.id, c]));
     state.adj = new Map(book.characters.map((c) => [c.id, []]));
@@ -118,8 +143,8 @@
 
   /* ---------------- 头部 / 图例 / 表单 ---------------- */
   function renderHeader() {
-    const b = state.book, m = b.meta;
-    $('#book-meta').textContent = `《${m.title}》· ${m.author} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`;
+    const b = state.book, m = b.meta || {};
+    $('#book-meta').textContent = `《${m.title || b.meta?.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`;
     $('#footer-note').textContent = `${m.note || ''} ${m.prophecy ? '「' + m.prophecy + '」' : ''}`.trim();
   }
 
@@ -182,7 +207,12 @@
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
         symbolSize: symbolSize(c.id) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1),
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
-        itemStyle: { opacity: dim ? 0.16 : (locked ? 0.4 : 1), color: locked ? '#9aa3b0' : undefined },
+        itemStyle: {
+          opacity: dim ? 0.16 : (locked ? 0.4 : 1),
+          color: locked ? '#9aa3b0' : ((b.factions.find((f) => f.key === c.faction) || {}).color || '#8b94a7'),
+          borderColor: panel,
+          borderWidth: 1,
+        },
         label: {
           color: dim ? muted : ink,
           opacity: dim ? 0.35 : 1,

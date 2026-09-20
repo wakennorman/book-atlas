@@ -90,6 +90,10 @@ main {
 .legend-row { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; min-width: 0; }
 .view-row { display: flex; align-items: center; gap: 6px; flex: 1 1 100%; flex-wrap: wrap; }
 .view-label { font-size: 12.5px; color: var(--muted); }
+.shape-legend { display: inline-flex; align-items: center; gap: 5px; }
+.shape-legend .sh { display: inline-block; width: 10px; height: 10px; background: var(--muted); }
+.shape-legend .sh-m { border-radius: 50%; }
+.shape-legend .sh-f { border-radius: 3px; }
 .seg { border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; }
 .seg:hover { background: var(--soft); }
 .seg.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

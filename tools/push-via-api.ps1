@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.4.1：修复剧透弹窗关不掉（display:flex 盖过 [hidden]）+ 增加 ✕/Esc 关闭 + 弹窗按钮改事件委托"
+  [string]$Message = "书脉 BookAtlas v0.5：本地编辑器（新建/导入/编辑/导出/预览）+ 本地草稿可在图谱中直接打开 + 图例性别符号统一"
 )
 
 $ErrorActionPreference = "Stop"
