@@ -161,6 +161,33 @@ main {
 
 .footer { padding: 4px 16px 18px; color: var(--muted); font-size: 12px; }
 
+/* ---------- 剧透保护 ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 80; padding: 18px;
+  background: rgba(16, 20, 28, .55);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.modal {
+  width: 100%; max-width: 520px; max-height: 90vh; overflow: auto;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 18px; box-shadow: var(--shadow); padding: 20px;
+}
+.modal h2 { font-size: 18px; margin-bottom: 6px; }
+.spoiler-options { display: grid; gap: 10px; margin: 14px 0; }
+.spoiler-opt {
+  display: flex; flex-direction: column; gap: 6px; text-align: left;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px;
+}
+button.spoiler-opt { cursor: pointer; }
+button.spoiler-opt:hover { background: var(--soft); }
+.spoiler-opt b { font-size: 15px; }
+.spoiler-opt span { color: var(--muted); font-size: 13px; }
+.spoiler-opt .primary { align-self: flex-start; }
+.event-chip.locked { cursor: not-allowed; opacity: .6; }
+.event-chip.locked .ev-name { color: var(--muted); }
+
 /* ---------- 移动端 ---------- */
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; padding: 10px; gap: 10px; }

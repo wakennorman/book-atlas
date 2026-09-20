@@ -49,6 +49,8 @@ function validate(file) {
     req(c, 'id', where); req(c, 'name', where); req(c, 'faction', where);
     req(c, 'title', where); req(c, 'desc', where); req(c, 'fate', where);
     if (typeof c.generation !== 'number') err(`${where} generation 必须是数字`);
+    if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`);
+    if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`);
     if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
     if (ids.has(c.id)) err(`角色 id 重复：${c.id}`);
     ids.add(c.id);
@@ -66,7 +68,10 @@ function validate(file) {
     req(r, 'type', where);
     if (!STYLES.has(r.style)) err(`${where} 的 style「${r.style}」不合法（solid|dashed|dotted）`);
     if (!Array.isArray(r.events) || !r.events.length) warn(`${where} 没有「定义关系的小事件」`);
-    for (const e of r.events || []) if (!e.text) err(`${where} 的事件缺少 text`);
+    for (const e of r.events || []) {
+      if (!e.text) err(`${where} 的事件缺少 text`);
+      else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`);
+    }
   }
 
   const phases = new Set((book.phases || []).map((p) => p.id));
@@ -81,6 +86,7 @@ function validate(file) {
     evIds.add(e.id);
     if (e.phase && !phases.has(e.phase)) err(`${where} 的 phase「${e.phase}」未定义`);
     if (typeof e.order !== 'number') err(`${where} order 必须是数字`);
+    if (typeof e.ch !== 'number') warn(`${where} 缺少 ch（发生章）——剧透保护要用`);
     for (const cid of e.chars || []) if (!ids.has(cid)) err(`${where} 引用了不存在的角色 ${cid}`);
   }
 

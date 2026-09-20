@@ -24,6 +24,7 @@
     bands: new Map(),      // 代际视图：generation -> 主坐标
     fit: { s: 1, cx: 0, cy: 0 }, // 最近一次 fitPositions 的变换（供代际参考线换算）
     freezeTimer: null,
+    progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
   };
 
   /* ---------------- 工具 ---------------- */
@@ -32,6 +33,33 @@
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
   const charName = (id) => state.byId.get(id)?.name || id;
+
+  /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
+  const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
+  const charCh = (c) => (typeof c?.firstCh === 'number' ? c.firstCh : (chOf(c?.chapter) || 0));
+  const relCh = (r) => {
+    const list = (r.events || []).map((e) => chOf(e.chapter)).filter((n) => n !== null);
+    if (list.length) return Math.min(...list);
+    return Math.min(charCh(state.byId.get(r.from)), charCh(state.byId.get(r.to)));
+  };
+  const lockedCh = (ch) => state.progress !== null && ch > state.progress;
+  const charLocked = (c) => !!c && lockedCh(charCh(c));
+  const relLocked = (r) => lockedCh(relCh(r));
+  const eventLocked = (e) => lockedCh(typeof e.ch === 'number' ? e.ch : 0);
+  const maxChapter = () => state.book?.meta?.chapters || Math.max(
+    0,
+    ...state.book.characters.map(charCh),
+    ...state.book.events.map((e) => e.ch || 0)
+  );
+  const orderPair = (a, b) => {
+    const pa = state.pos.get(a), pb = state.pos.get(b);
+    if (pa && pb) {
+      const horizontal = Math.abs(pb.x - pa.x) >= Math.abs(pb.y - pa.y);
+      const first = horizontal ? (pa.x <= pb.x ? a : b) : (pa.y <= pb.y ? a : b);
+      return [first, first === a ? b : a];
+    }
+    return [a, b];
+  };
 
   /* ---------------- 数据加载 ---------------- */
   async function boot() {
@@ -70,6 +98,11 @@
     const savedView = localStorage.getItem('ba-view');
     state.view = ['force', 'gen-h', 'gen-v'].includes(savedView) ? savedView : 'gen-v';
     state.bands = new Map();
+    const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
+    state.progress = null;
+    if (savedSpoiler) {
+      try { const s = JSON.parse(savedSpoiler); state.progress = s.on ? s.ch : null; } catch (e) { state.progress = null; }
+    }
     clearHighlight(false);
     history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`);
     renderHeader();
@@ -79,6 +112,8 @@
     renderTimeline();
     renderPanelWelcome();
     initChart();
+    syncSpoilerButton();
+    if (!savedSpoiler) setTimeout(() => openSpoilerModal(), 400);
   }
 
   /* ---------------- 头部 / 图例 / 表单 ---------------- */
@@ -107,12 +142,14 @@
   }
 
   function renderDatalist() {
-    $('#char-list').innerHTML = state.book.characters.map((c) =>
-      `<option value="${esc(c.name)}">${esc(c.title)}</option>`).join('');
+    $('#char-list').innerHTML = state.book.characters
+      .filter((c) => !charLocked(c))
+      .map((c) => `<option value="${esc(c.name)}">${esc(c.title)}</option>`).join('');
   }
 
   function renderPathSelects() {
-    const opts = state.book.characters.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    const opts = state.book.characters.filter((c) => !charLocked(c))
+      .map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
     const a = $('#path-a'), b = $('#path-b');
     a.innerHTML = `<option value="">人物 A</option>${opts}`;
     b.innerHTML = `<option value="">人物 B</option>${opts}`;
@@ -137,19 +174,21 @@
 
     const data = b.characters.map((c) => {
       const dim = anyDim && !state.hlNodes.has(c.id);
+      const locked = charLocked(c);
       const pos = state.pos.get(c.id);
       return {
-        id: c.id, name: c.name, value: c.title,
+        id: c.id, name: locked ? '🔒' : c.name, value: c.title,
         category: categoryOf(c),
+        symbol: c.gender === 'f' ? 'roundRect' : 'circle',
         symbolSize: symbolSize(c.id) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1),
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
-        itemStyle: { opacity: dim ? 0.16 : 1 },
+        itemStyle: { opacity: dim ? 0.16 : (locked ? 0.4 : 1), color: locked ? '#9aa3b0' : undefined },
         label: {
           color: dim ? muted : ink,
           opacity: dim ? 0.35 : 1,
           textBorderColor: panel,
           textBorderWidth: 3,
-          show: state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4),
+          show: locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4)),
         },
       };
     });
@@ -182,7 +221,9 @@
       }
     }
 
-    const links = b.relations.filter((r) => state.byId.has(r.from) && state.byId.has(r.to)).map((r) => {
+    const links = b.relations
+      .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
+      .map((r) => {
       const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
       return {
@@ -207,11 +248,15 @@
           if (p.dataType === 'edge') {
             const rel = findRel(p.data.source, p.data.target);
             if (!rel) return '';
+            const [first, second] = orderPair(rel.from, rel.to);
             const evs = (rel.events || []).map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(rel.from))} — ${esc(rel.type)} — ${esc(charName(rel.to))}</b><br>${evs}`;
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b><br>${evs}`;
           }
           const c = state.byId.get(p.data.id);
           if (!c) return '';
+          if (charLocked(c)) {
+            return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个人物在第 ${charCh(c)} 章才出场；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
+          }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
             `<span style="color:${muted}">${esc(genText(c.generation))} · ${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
             `<span style="color:${muted}">结局：${esc(c.fate)}</span>`;
@@ -340,6 +385,11 @@
     if (state.view === 'gen-v') {
       const bands = new Set(state.book.characters.map((c) => c.generation)).size || 8;
       el.style.height = Math.max(720, bands * 96) + 'px';
+    } else if (state.view === 'gen-h') {
+      const counts = new Map();
+      for (const c of state.book.characters) counts.set(c.generation, (counts.get(c.generation) || 0) + 1);
+      const maxCount = Math.max(1, ...counts.values());
+      el.style.height = Math.max(560, maxCount * 62 + 140) + 'px';
     } else {
       el.style.height = '';
     }
@@ -473,9 +523,21 @@
     if (updateVisual && state.chart) state.chart.setOption(buildOption());
   }
 
+  function renderLockedPanel(kind, item) {
+    const ch = kind === 'character' ? charCh(item) : (item.ch || 0);
+    panel().innerHTML = `
+      <div class="card-title">🔒 剧透保护中</div>
+      <p class="card-desc">这一部分对应第 ${ch} 章；你现在读到第 ${state.progress} 章，所以先锁起来。</p>
+      <p class="hint">读完再回来，或者到右上角「剧透保护」里改进度。</p>
+      <p style="margin-top:10px"><button class="primary" type="button" id="panel-open-spoiler">调整进度</button></p>`;
+    const btn = document.getElementById('panel-open-spoiler');
+    if (btn) btn.addEventListener('click', () => openSpoilerModal());
+  }
+
   function selectCharacter(id) {
     const c = state.byId.get(id);
     if (!c) return;
+    if (charLocked(c)) { renderLockedPanel('character', c); return; }
     const nodes = new Set([id]);
     const edges = new Set();
     for (const e of state.adj.get(id)) { nodes.add(e.to); edges.add(edgeKey(id, e.to)); }
@@ -493,6 +555,7 @@
   function selectEvent(id) {
     const ev = state.book.events.find((e) => e.id === id);
     if (!ev) return;
+    if (eventLocked(ev)) { renderLockedPanel('event', ev); return; }
     const nodes = new Set(ev.chars || []);
     const edges = new Set();
     for (const r of state.book.relations) if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
@@ -523,9 +586,9 @@
 
   function renderCharacterPanel(c) {
     const faction = state.book.factions.find((f) => f.key === c.faction);
-    const rels = state.book.relations
-      .filter((r) => r.from === c.id || r.to === c.id)
-      .sort((a, b) => (a.type > b.type ? 1 : -1));
+    const allRels = state.book.relations.filter((r) => r.from === c.id || r.to === c.id);
+    const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
+    const lockedCount = allRels.length - rels.length;
     const relHtml = rels.map((r) => {
       const other = r.from === c.id ? r.to : r.from;
       const evs = (r.events || []).map((e) =>
@@ -544,21 +607,24 @@
       ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
+        <span class="badge">${c.gender === 'f' ? '♀ 女' : '♂ 男'}</span>
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
-        <span class="badge">关系 ${rels.length} 条</span>
+        <span class="badge">关系 ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
       <p class="card-fate"><b>结局：</b>${esc(c.fate)}</p>
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
+      ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
       <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>`;
     bindGoto(panel());
   }
 
   function renderRelationPanel(r) {
+    const [first, second] = orderPair(r.from, r.to);
     const evs = (r.events || []).map((e) =>
       `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
     panel().innerHTML = `
-      <div class="card-title">${charLink(r.from)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span> ${charLink(r.to)}</div>
+      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span> ${charLink(second)}</div>
       <p class="card-sub">定义这段关系的事件</p>
       ${evs || '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
@@ -631,14 +697,56 @@
       if (!evs.length) return '';
       return `<div class="phase">
         <div class="phase-title">${esc(p.name)}</div>
-        ${evs.map((e) => `
-          <button type="button" class="event-chip" data-event="${esc(e.id)}">
-            <span class="ev-name">${esc(e.name)}</span>
-            <span class="ev-sum">${esc(e.summary)}</span>
-          </button>`).join('')}
+        ${evs.map((e) => eventLocked(e)
+          ? `<button type="button" class="event-chip locked" disabled title="剧透保护：第 ${e.ch} 章的事件">
+               <span class="ev-name">🔒 第 ${e.ch} 章的事件</span>
+               <span class="ev-sum">剧透保护中 · 读到再解锁</span>
+             </button>`
+          : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
+               <span class="ev-name">${esc(e.name)}</span>
+               <span class="ev-sum">${esc(e.summary)}</span>
+             </button>`).join('')}
       </div>`;
     }).join('');
     el.querySelectorAll('.event-chip').forEach((btn) => btn.addEventListener('click', () => selectEvent(btn.dataset.event)));
+  }
+
+  /* ---------------- 剧透保护 UI ---------------- */
+  function syncSpoilerButton() {
+    const btn = document.getElementById('spoiler-btn');
+    if (!btn) return;
+    btn.textContent = state.progress === null ? '🔓 剧透保护：关' : `🔒 剧透保护：读到第 ${state.progress} 章`;
+  }
+
+  function openSpoilerModal() {
+    const modal = document.getElementById('spoiler-modal');
+    if (!modal || !state.book) return;
+    const sel = document.getElementById('spoiler-ch');
+    const total = maxChapter() || 20;
+    sel.innerHTML = Array.from({ length: total }, (_, i) => `<option value="${i + 1}">第 ${i + 1} 章</option>`).join('');
+    if (state.progress) sel.value = String(state.progress);
+    modal.hidden = false;
+  }
+
+  function closeSpoilerModal() {
+    const modal = document.getElementById('spoiler-modal');
+    if (modal) modal.hidden = true;
+  }
+
+  function applySpoiler(on, ch) {
+    const slug = state.book?.meta?.slug || 'book';
+    try {
+      localStorage.setItem('ba-spoiler-' + slug, JSON.stringify(on ? { on: true, ch } : { on: false }));
+    } catch (e) { /* 隐私模式忽略 */ }
+    state.progress = on ? ch : null;
+    closeSpoilerModal();
+    clearHighlight(false);
+    renderDatalist();
+    renderPathSelects();
+    renderTimeline();
+    renderPanelWelcome();
+    initChart();
+    syncSpoilerButton();
   }
 
   /* ---------------- 搜索 / 主题 / 事件绑定 ---------------- */
@@ -647,10 +755,11 @@
     const doSearch = () => {
       const q = search.value.trim();
       if (!q) return;
-      const c = state.book.characters.find((x) => x.name === q)
-        || state.book.characters.find((x) => (x.aliases || []).includes(q))
-        || state.book.characters.find((x) => x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q)));
-      if (c) selectCharacter(c.id); else $('#path-hint').textContent = `没找到「${q}」`;
+      const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
+      const c = state.book.characters.find((x) => !charLocked(x) && match(x));
+      if (c) { selectCharacter(c.id); return; }
+      const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
+      $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（剧透保护）` : `没找到「${q}」`;
     };
     search.addEventListener('change', doSearch);
     search.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
@@ -668,6 +777,16 @@
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     $('#reset-btn').addEventListener('click', () => setView(state.view));
+
+    const spoilerBtn = document.getElementById('spoiler-btn');
+    if (spoilerBtn) spoilerBtn.addEventListener('click', openSpoilerModal);
+    const offBtn = document.getElementById('spoiler-off');
+    if (offBtn) offBtn.addEventListener('click', () => applySpoiler(false));
+    const onBtn = document.getElementById('spoiler-on');
+    if (onBtn) onBtn.addEventListener('click', () => {
+      const ch = Number(document.getElementById('spoiler-ch').value) || 1;
+      applySpoiler(true, ch);
+    });
 
     $('#path-go').addEventListener('click', runPath);
     $('#path-clear').addEventListener('click', () => {

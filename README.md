@@ -19,12 +19,27 @@
 ## 本地预览
 
 ```bash
-# 任选其一（需要 HTTP 服务，直接双击 file:// 会被浏览器拦截 fetch）
+# 最省事：双击「本地预览.bat」（需要本机有 Python），会自动起服务并打开浏览器
+# 或者手动：
 python -m http.server 8765
 npx serve .
 ```
 
 然后打开 `http://localhost:8765/`。
+
+> **不需要联网、不需要 GitHub**：整个应用就是本目录的静态文件；GitHub 只是把同一套文件放到公网上的发布渠道。
+
+## 剧透保护（按阅读进度锁定）
+
+- 数据要求：`characters[].firstCh`（首次出场章）、`events[].ch`（发生章）、`meta.chapters`（总章数）；关系的解锁章号取 `relations[].events[].chapter` 里的最小章号
+- 首次打开会**强制选一条路线**：① 不介意剧透（全部解锁）② 我在读（选读到第几章）
+- 锁定效果：未读人物＝灰色 🔒 节点且不画它的关系；未读事件＝「🔒 第 N 章的事件」；搜索、两人关系下拉都会排除未读人物
+- 进度存在浏览器本地（`localStorage`，按书分开），右上角「剧透保护」随时可改
+- 没写 `ch/firstCh` 的书：自动退化为全部解锁（不影响使用）
+
+## 性别区分
+
+`characters[].gender`：`m` 画成**圆形**、`f` 画成**圆角方形**；人物档案里也有 ♂/♀ 徽章。
 
 ## 目录结构
 
@@ -48,13 +63,14 @@ book-atlas/
 
 ```jsonc
 {
-  "meta":      { "slug": "", "title": "", "author": "", "prophecy": "", "note": "", "license": "", "sources": [] },
+  "meta":      { "slug": "", "title": "", "author": "", "chapters": 20, "prophecy": "", "note": "", "license": "", "sources": [] },
   "factions":  [{ "key": "", "name": "", "color": "#hex" }],
-  "characters":[{ "id": "pinyin-kebab", "name": "", "aliases": [], "generation": 1, "faction": "", "title": "", "desc": "", "fate": "" }],
+  "characters":[{ "id": "pinyin-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1,
+                  "faction": "", "title": "", "desc": "", "fate": "" }],
   "relations": [{ "from": "id", "to": "id", "type": "关系名", "style": "solid|dashed|dotted",
                   "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章" }] }],
   "phases":    [{ "id": "p1", "name": "阶段名", "order": 1 }],
-  "events":    [{ "id": "e01", "phase": "p1", "order": 1, "name": "", "chars": ["id"],
+  "events":    [{ "id": "e01", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"],
                   "summary": "", "impact": "", "quote": "" }]
 }
 ```

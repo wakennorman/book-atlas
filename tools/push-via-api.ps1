@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.3：文案全名化+主语规范（validate 自动检查）+ 代际参考线跟随缩放 + 定位这条线 + 默认代际纵"
+  [string]$Message = "书脉 BookAtlas v0.4：性别形状区分 + 剧透保护（按章节进度锁定）+ 名字按视觉位置排序 + 代际横加高 + 小事件一层"
 )
 
 $ErrorActionPreference = "Stop"

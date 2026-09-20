@@ -26,6 +26,7 @@
       <select id="book-select" title="选择书目"></select>
     </label>
     <button id="theme-btn" class="icon-btn" type="button" title="切换深浅色">🌙 夜间</button>
+    <button id="spoiler-btn" class="icon-btn" type="button" title="按阅读进度锁定，防剧透">🔓 剧透保护：关</button>
   </div>
 </header>
 
@@ -47,6 +48,7 @@
         <button class="seg" type="button" data-view="gen-h" title="按代际分列，从左到右">代际·横</button>
         <button class="seg" type="button" data-view="gen-v" title="按代际分行，从上到下">代际·纵</button>
         <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移">重置</button>
+        <span class="view-label">形状：● 男 / ▢ 女</span>
       </div>
     </div>
 
@@ -80,6 +82,25 @@
 <footer class="footer">
   <span id="footer-note">数据：精读整理 + 公开资料核对 · 阅读辅助用途</span>
 </footer>
+
+<div id="spoiler-modal" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spoiler-title">
+    <h2 id="spoiler-title">开始前，先选一条路线</h2>
+    <p class="hint">这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。</p>
+    <div class="spoiler-options">
+      <button type="button" class="spoiler-opt" id="spoiler-off">
+        <b>① 我不介意剧透，全部解锁</b>
+        <span>直接看完整关系图</span>
+      </button>
+      <div class="spoiler-opt" id="spoiler-on-box">
+        <b>② 我在读，按进度解锁</b>
+        <span>我读到了：<select id="spoiler-ch"></select></span>
+        <button type="button" class="primary" id="spoiler-on">按这个进度解锁</button>
+      </div>
+    </div>
+    <p class="hint">之后随时可以点右上角「剧透保护」修改。</p>
+  </div>
+</div>
 
 <script src="vendor/echarts.min.js"></script>
 <script src="js/app.js"></script>
