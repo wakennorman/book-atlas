@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.7.1：代际图注专用边距标准（横=顶部110px / 纵=左侧150px，按节点包围盒定位）+ 编辑器纳入离线缓存"
+  [string]$Message = "书脉 BookAtlas v0.7.2：修复代际图注免重置即正确（重排时补算节点包围盒）+ 图注定位兜底"
 )
 
 $ErrorActionPreference = "Stop"

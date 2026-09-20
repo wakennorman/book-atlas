@@ -244,7 +244,19 @@
     // 位置固定在节点包围盒之外（横向在顶部 gutter、纵向在左侧 gutter）
     if (state.view !== 'force' && state.bands.size) {
       const isH = state.view === 'gen-h';
-      const bb = state.bbox || { minX: -(document.getElementById('graph').getBoundingClientRect().width || 900) / 2, minY: -(document.getElementById('graph').getBoundingClientRect().height || 600) / 2 };
+      let bb = state.bbox;
+      if (!bb && state.pos.size) {   // 兜底：没有包围盒时，就用当前节点坐标现算一个
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const p of state.pos.values()) {
+          minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+        }
+        bb = { minX, maxX, minY, maxY };
+      }
+      if (!bb) {
+        const r = document.getElementById('graph').getBoundingClientRect();
+        bb = { minX: -((r.width || 900) / 2), minY: -((r.height || 600) / 2) };
+      }
       for (const [g, band] of state.bands) {
         data.push({
           id: `__gen_${g}`,
@@ -556,9 +568,14 @@
       applyViewHeight();
       state.chart.resize();
       if (state.frozen) {
-        if (state.view === 'force') fitPositions(); else buildGenerationPositions(state.view);
+        if (state.view === 'force') {
+          fitPositions();
+        } else {
+          buildGenerationPositions(state.view);
+          fitPositions();          // 关键：重建位置后必须重算包围盒，图注才不会压到节点
+        }
         computeLabels();
-        resetRoam();   // 用 clear+setOption，顺带复位缩放/平移，避免 resize 后视图偏移叠加
+        resetRoam();
       }
     };
     new ResizeObserver(onResize).observe(el);
