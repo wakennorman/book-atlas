@@ -94,7 +94,7 @@
     el.querySelectorAll('.legend-item').forEach((btn) => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.faction;
-        if (state.activeFaction === key) { state.activeFaction = null; applyVisual(); return; }
+        if (state.activeFaction === key) { clearHighlight(); return; }
         state.activeFaction = key;
         const nodes = new Set(state.book.characters.filter((c) => c.faction === key).map((c) => c.id));
         const edges = new Set();

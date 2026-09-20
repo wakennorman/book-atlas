@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.2：39人/72关系/29事件 + 代际横纵布局 + 易混提示 + draft/validate 脚本"
+  [string]$Message = "书脉 BookAtlas v0.2.1：修复图例取消筛选 + 发布脚本改用 curl"
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,12 +94,20 @@ if ($parents.Count) {
 }
 "branch $Branch updated"
 
-# 6) 本地 git 与远程对齐（内容一致，仅 SHA 不同）
-git -C $RepoRoot update-ref "refs/remotes/origin/$Branch" $commit.sha 2>$null
-git -C $RepoRoot update-ref "refs/heads/$Branch" $commit.sha 2>$null
-git -C $RepoRoot config "branch.$Branch.remote" origin
-git -C $RepoRoot config "branch.$Branch.merge" "refs/heads/$Branch"
-"local repo aligned"
+# 6) 本地 git 对齐（本地没有远程 commit 对象时跳过，等能连 github.com 再 fetch）
+$eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+git -C $RepoRoot cat-file -e "$($commit.sha)^{commit}" 2>$null
+$hasObj = ($LASTEXITCODE -eq 0)
+if ($hasObj) {
+  git -C $RepoRoot update-ref "refs/remotes/origin/$Branch" $commit.sha 2>$null
+  git -C $RepoRoot update-ref "refs/heads/$Branch" $commit.sha 2>$null
+  git -C $RepoRoot config "branch.$Branch.remote" origin
+  git -C $RepoRoot config "branch.$Branch.merge" "refs/heads/$Branch"
+  "local repo aligned"
+} else {
+  "local repo NOT aligned（本地缺远程对象；能连 github.com 时执行 git fetch 即可拉齐）"
+}
+$ErrorActionPreference = $eap
 
 # 7) 开启 GitHub Pages（已开启会报 409，忽略）
 try {
