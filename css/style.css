@@ -168,6 +168,14 @@ main {
   display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(3px);
 }
+.modal-backdrop[hidden] { display: none; }
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.modal-close {
+  flex: none; width: 34px; height: 34px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel);
+  cursor: pointer; font-size: 15px; line-height: 1;
+}
+.modal-close:hover { background: var(--soft); }
 .modal {
   width: 100%; max-width: 520px; max-height: 90vh; overflow: auto;
   background: var(--panel); border: 1px solid var(--line);

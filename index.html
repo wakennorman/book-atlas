@@ -85,7 +85,10 @@
 
 <div id="spoiler-modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spoiler-title">
-    <h2 id="spoiler-title">开始前，先选一条路线</h2>
+    <div class="modal-head">
+      <h2 id="spoiler-title">开始前，先选一条路线</h2>
+      <button type="button" class="modal-close" id="spoiler-close" title="关闭（＝不开启剧透保护，全部解锁）">✕</button>
+    </div>
     <p class="hint">这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。</p>
     <div class="spoiler-options">
       <button type="button" class="spoiler-opt" id="spoiler-off">
@@ -98,7 +101,7 @@
         <button type="button" class="primary" id="spoiler-on">按这个进度解锁</button>
       </div>
     </div>
-    <p class="hint">之后随时可以点右上角「剧透保护」修改。</p>
+    <p class="hint">点「✕」关闭＝不开启保护（全部解锁）；之后随时可以点右上角「剧透保护」修改。</p>
   </div>
 </div>
 

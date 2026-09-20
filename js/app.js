@@ -734,18 +734,22 @@
   }
 
   function applySpoiler(on, ch) {
+    closeSpoilerModal();
+    state.progress = on ? ch : null;
     const slug = state.book?.meta?.slug || 'book';
     try {
       localStorage.setItem('ba-spoiler-' + slug, JSON.stringify(on ? { on: true, ch } : { on: false }));
     } catch (e) { /* 隐私模式忽略 */ }
-    state.progress = on ? ch : null;
-    closeSpoilerModal();
-    clearHighlight(false);
-    renderDatalist();
-    renderPathSelects();
-    renderTimeline();
-    renderPanelWelcome();
-    initChart();
+    try {
+      clearHighlight(false);
+      renderDatalist();
+      renderPathSelects();
+      renderTimeline();
+      renderPanelWelcome();
+      initChart();
+    } catch (e) {
+      console.warn('applySpoiler:', e);
+    }
     syncSpoilerButton();
   }
 
@@ -778,14 +782,19 @@
     });
     $('#reset-btn').addEventListener('click', () => setView(state.view));
 
-    const spoilerBtn = document.getElementById('spoiler-btn');
-    if (spoilerBtn) spoilerBtn.addEventListener('click', openSpoilerModal);
-    const offBtn = document.getElementById('spoiler-off');
-    if (offBtn) offBtn.addEventListener('click', () => applySpoiler(false));
-    const onBtn = document.getElementById('spoiler-on');
-    if (onBtn) onBtn.addEventListener('click', () => {
-      const ch = Number(document.getElementById('spoiler-ch').value) || 1;
-      applySpoiler(true, ch);
+    // 剧透弹窗：用事件委托 + Esc，确保任何情况下都关得掉
+    document.addEventListener('click', (ev) => {
+      if (ev.target.closest('#spoiler-off') || ev.target.closest('#spoiler-close')) { applySpoiler(false); return; }
+      if (ev.target.closest('#spoiler-on')) {
+        const ch = Number(document.getElementById('spoiler-ch')?.value) || 1;
+        applySpoiler(true, ch);
+        return;
+      }
+      if (ev.target.closest('#spoiler-btn')) openSpoilerModal();
+    });
+    document.addEventListener('keydown', (ev) => {
+      const modal = document.getElementById('spoiler-modal');
+      if (ev.key === 'Escape' && modal && !modal.hidden) applySpoiler(false);
     });
 
     $('#path-go').addEventListener('click', runPath);
