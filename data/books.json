@@ -1,0 +1,10 @@
+{
+  "books": [
+    {
+      "slug": "one-hundred-years-of-solitude",
+      "title": "百年孤独",
+      "author": "加西亚·马尔克斯",
+      "file": "data/one-hundred-years-of-solitude.json"
+    }
+  ]
+}

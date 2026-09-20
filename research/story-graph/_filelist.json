@@ -1,0 +1,51 @@
+{
+	"type": "gh",
+	"name": "Drwei3155/story-graph",
+	"version": "main",
+	"default": null,
+	"files": [
+		{
+			"name": "/.env.example",
+			"hash": "jlDCW2V0/sUCJC6jBsHwbaMYLo5y1FLIiJpSjYsEde0=",
+			"size": 178
+		},
+		{
+			"name": "/.gitignore",
+			"hash": "ARB/hXLImPSzaKDlrh5TZ+nJ0CMhEpuX9jw79xm+kIs=",
+			"size": 26
+		},
+		{
+			"name": "/generate-examples.js",
+			"hash": "1vomoxkbTTLDdzpYxQgejto/JlkSapMa8Xg2vWGVFGs=",
+			"size": 5260
+		},
+		{
+			"name": "/index.html",
+			"hash": "qdiLHP8UdlyCIRgxq9gm1NlMAJpXf+1ayqnag1B6KrM=",
+			"size": 129292
+		},
+		{
+			"name": "/package.json",
+			"hash": "sD9N+jWKTAHUiwTIGH+RiYs78KYn/89QMtjHhp4NbMs=",
+			"size": 339
+		},
+		{
+			"name": "/package-lock.json",
+			"hash": "RgypblvJo2d6J6+3xxedQTtqvRTwfYAP6RpFm8pdNj4=",
+			"size": 39035
+		},
+		{
+			"name": "/README.md",
+			"hash": "5L0J4RDE7jyTH2ckQPs54NbFJHGEFZIXHbopGeQ69DI=",
+			"size": 4375
+		},
+		{
+			"name": "/server.js",
+			"hash": "kQiKXefbmo2CPTugPJUs9Xq6jBhghxv3Zg3TEKcSRMs=",
+			"size": 11454
+		}
+	],
+	"links": {
+		"stats": "https://data.jsdelivr.com/v1/stats/packages/gh/Drwei3155/story-graph@main"
+	}
+}

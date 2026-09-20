@@ -1,0 +1,2543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小说人物关系图谱</title>
+<script src="https://unpkg.com/vis-data@7.1.9/peer/umd/vis-data.min.js"></script>
+<script src="https://unpkg.com/vis-network@9.1.9/peer/umd/vis-network.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1119;--surface:#1a1d2e;--border:#2a2d3e;
+  --text:#e0e0e0;--text-dim:#888;--accent:#f0c040;
+  --shu:#e74c3c;--wei:#3498db;--wu:#2ecc71;--han:#9b59b6;--jin:#e67e22;--other:#666;
+  --danger:#ff4757;--shadow:0 4px 24px rgba(0,0,0,.5);
+}
+html.light{--bg:#f0f2f5;--surface:#ffffff;--border:#d0d4dd;--text:#1a1a2e;--text-dim:#999;--accent:#c8a832;--danger:#e04040;--shadow:0 4px 24px rgba(0,0,0,.12)}
+body{font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw}
+
+/* Header */
+#header{position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:12px;padding:12px 20px;background:linear-gradient(180deg,rgba(15,17,25,.98) 60%,rgba(15,17,25,0));pointer-events:none}
+#header>*{pointer-events:auto}
+#logo{font-size:22px;font-weight:700;color:var(--accent);white-space:nowrap;letter-spacing:1px}
+#search-wrap{flex:1;max-width:480px;position:relative}
+#search-input{width:100%;padding:10px 44px 10px 16px;border-radius:24px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:15px;outline:none;transition:border-color .2s}
+#search-input:focus{border-color:var(--accent)}
+#search-input::placeholder{color:var(--text-dim)}
+#voice-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:18px;transition:color .2s;display:flex;align-items:center;justify-content:center}
+#voice-btn:hover{color:var(--accent)}
+#voice-btn.listening{color:var(--danger);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#legend{display:flex;gap:14px;font-size:12px;margin-left:auto}
+.legend-item{display:flex;align-items:center;gap:5px;white-space:nowrap;transition:opacity .2s}
+.legend-item.active-filter{opacity:1!important}
+.legend-item.active-filter .legend-dot{box-shadow:0 0 8px currentColor}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#generate-btn{padding:6px 16px;border-radius:18px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;cursor:pointer;transition:all .2s;margin-left:8px;white-space:nowrap}
+#generate-btn:hover{background:rgba(240,192,64,.12)}
+#export-btn{background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;font-size:16px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#export-btn:hover{color:var(--accent);border-color:var(--accent)}
+#share-btn{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:16px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#share-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+/* Graph */
+#graph-container{position:absolute;top:0;left:0;right:0;bottom:80px;z-index:1}
+
+/* Timeline */
+#timeline{position:absolute;bottom:0;left:0;right:0;height:80px;z-index:100;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;overflow-x:auto;gap:0}
+#timeline::-webkit-scrollbar{height:4px}
+#timeline::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.tl-event{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 10px;cursor:pointer;border-radius:8px;transition:background .2s;position:relative;min-width:64px}
+.tl-event:hover{background:rgba(255,255,255,.05)}
+.tl-event.active{background:rgba(240,192,64,.12)}
+.tl-event .tl-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.tl-event .tl-year{font-size:11px;color:var(--accent);font-weight:600}
+.tl-event .tl-name{font-size:11px;color:var(--text-dim);text-align:center;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-line{flex-shrink:0;width:24px;height:1px;background:var(--border)}
+.tl-line:last-child{display:none}
+
+/* Info panel */
+#info-panel{position:absolute;right:20px;top:100px;width:340px;max-height:calc(100vh - 200px);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:100;overflow-y:auto;display:none;padding:20px}
+#info-panel.show{display:block}
+#info-panel::-webkit-scrollbar{width:4px}
+#info-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#info-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px}
+#info-close:hover{color:var(--text)}
+#info-name{font-size:20px;font-weight:700;margin-bottom:4px}
+#info-faction{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;margin-bottom:12px}
+#info-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:14px}
+#info-relations h4{font-size:13px;color:var(--text);margin-bottom:8px}
+.rel-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.rel-item:last-child{border-bottom:none}
+.rel-target{color:var(--accent);cursor:pointer;font-weight:500}
+.rel-target:hover{text-decoration:underline}
+.rel-type{color:var(--text-dim);font-size:12px}
+
+/* Path highlight card */
+#path-card{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:12px;box-shadow:var(--shadow);z-index:100;padding:16px 22px;display:none;max-width:620px;max-height:340px;overflow-y:auto}
+#path-card.show{display:block}
+#path-card h4{font-size:14px;color:var(--accent);margin-bottom:8px}
+#path-card .path-step{font-size:13px;padding:3px 0;color:var(--text)}
+#path-card .path-relation{color:var(--text-dim)}
+#path-card::-webkit-scrollbar{width:4px}
+#path-card::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Modal overlay */
+#modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#modal-overlay.show{display:flex}
+#modal-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:440px;width:90%;box-shadow:var(--shadow);animation:slideUp .25s ease-out}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+#modal-card h2{font-size:20px;color:var(--text);margin-bottom:6px}
+#modal-card p{font-size:13px;color:var(--text-dim);margin-bottom:20px}
+#modal-card input{width:100%;padding:11px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;outline:none;margin-bottom:16px;transition:border-color .2s}
+#modal-card input:focus{border-color:var(--accent)}
+#modal-card .btn-row{display:flex;gap:10px}
+#modal-card button{flex:1;padding:10px 0;border-radius:10px;font-size:14px;cursor:pointer;transition:all .2s;border:none}
+.btn-primary{background:var(--accent);color:#0f1119;font-weight:600}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border)!important}
+.btn-ghost:hover{color:var(--text);border-color:var(--text-dim)}
+#modal-card .api-hint{font-size:11px;color:var(--text-dim);margin-top:12px;text-align:center}
+
+/* Loading overlay */
+#loading-overlay{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;backdrop-filter:blur(6px)}
+#loading-overlay.show{display:flex}
+#loading-progress-wrap{width:280px;max-width:80vw;text-align:center}
+#loading-progress-bar{width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;position:relative}
+#loading-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#f6d365);border-radius:3px;transition:width .5s ease;position:relative}
+#loading-progress-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+#loading-stage{font-size:13px;color:var(--accent);margin-top:8px;min-height:1.4em}
+#loading-text{color:var(--text);font-size:15px}
+#loading-cancel{margin-top:8px;padding:8px 24px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:13px;cursor:pointer;transition:all .2s}
+#loading-cancel:hover{color:var(--danger);border-color:var(--danger)}
+
+/* Error toast */
+#error-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:220;background:rgba(255,71,87,.15);border:1px solid var(--danger);color:var(--danger);padding:12px 24px;border-radius:10px;font-size:14px;display:none;max-width:500px;text-align:center;animation:slideUp .3s ease-out}
+
+/* Responsive */
+@media(max-width:1024px) and (min-width:769px){
+  #info-panel{width:280px;right:12px;top:90px}
+  #legend{gap:8px;font-size:11px}
+  .legend-item{gap:3px}
+}
+@media(max-width:768px){
+  #header{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  #logo{font-size:16px;order:0;flex:1}
+  #search-wrap{order:2;flex:1 1 100%;max-width:100%}
+  #legend{display:none}
+  #generate-btn{font-size:12px;padding:5px 10px;order:1}
+  #info-panel{right:0;left:0;width:auto;top:auto;bottom:0;max-height:50vh;border-radius:16px 16px 0 0;border-bottom:none;padding:16px 16px 24px;touch-action:pan-y}
+  #info-panel::before{content:'';display:block;width:36px;height:4px;border-radius:2px;background:var(--border);margin:-8px auto 12px}
+  #path-card{left:8px;right:8px;transform:none;bottom:100px;max-width:100%}
+  #timeline{height:64px;padding:0 10px}
+  .tl-event{min-width:52px;padding:4px 6px}
+  .tl-event .tl-name{max-width:56px}
+  #modal-card{padding:24px 20px}
+}
+@media(max-width:480px){
+  #header{padding:8px 8px}
+  #logo{font-size:14px}
+  #search-input{font-size:13px;padding:8px 40px 8px 12px}
+  #generate-btn{font-size:11px;padding:4px 8px}
+  #voice-btn{width:28px;height:28px;font-size:15px}
+  #info-panel{padding:12px 12px 20px}
+  #info-name{font-size:17px}
+  .tl-event{min-width:44px;padding:3px 4px}
+  .tl-event .tl-name{font-size:10px;max-width:44px}
+  .tl-event .tl-year{font-size:10px}
+}
+
+/* API Key settings */
+#api-key-toggle{font-size:12px;color:var(--text-dim);cursor:pointer;text-align:center;margin-top:8px;user-select:none}
+#api-key-toggle:hover{color:var(--accent)}
+#api-key-row{display:none;margin-top:8px}
+#api-key-row.show{display:block}
+#api-key-input{width:100%;padding:9px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;font-family:monospace;transition:border-color .2s}
+#api-key-input:focus{border-color:var(--accent)}
+.api-key-saved{font-size:11px;color:var(--text-dim);margin-top:4px}
+
+/* Novel tabs */
+#novel-tabs{position:absolute;top:56px;left:0;right:0;z-index:80;display:flex;gap:2px;padding:0 16px;height:28px;overflow-x:auto;pointer-events:none}
+#novel-tabs>*{pointer-events:auto}
+#novel-tabs::-webkit-scrollbar{height:0}
+.novel-tab{display:flex;align-items:center;gap:4px;padding:3px 12px;border-radius:8px 8px 0 0;font-size:12px;background:var(--surface);border:1px solid var(--border);border-bottom:none;color:var(--text-dim);cursor:pointer;white-space:nowrap;transition:all .15s;opacity:.6;flex-shrink:0}
+.novel-tab:hover{opacity:.9;color:var(--text)}
+.novel-tab.active{opacity:1;color:var(--accent);background:var(--bg);border-color:var(--accent);position:relative}
+.novel-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:var(--bg)}
+.novel-tab .tab-close{font-size:10px;margin-left:2px;padding:1px 3px;border-radius:3px;background:none;border:none;color:var(--text-dim);cursor:pointer}
+.novel-tab .tab-close:hover{color:var(--danger);background:rgba(255,71,87,.15)}
+#novel-tab-add{display:flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:8px 8px 0 0;font-size:14px;background:transparent;border:1px dashed var(--border);border-bottom:none;color:var(--text-dim);cursor:pointer;transition:all .2s;flex-shrink:0}
+#novel-tab-add:hover{color:var(--accent);border-color:var(--accent)}
+
+/* History panel */
+#history-toggle{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:color .2s;flex-shrink:0}
+#history-toggle:hover{color:var(--accent);background:rgba(255,255,255,.05)}
+#history-toggle.has-items{color:var(--accent)}
+#history-panel{position:absolute;left:0;top:60px;width:220px;max-height:calc(100vh - 80px);background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 0;z-index:90;padding:12px;overflow-y:auto;transform:translateX(-100%);transition:transform .25s ease;box-shadow:var(--shadow)}
+#history-panel.show{transform:translateX(0)}
+#history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#history-header span{font-size:14px;font-weight:600;color:var(--accent)}
+#history-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px}
+#history-close:hover{color:var(--text)}
+#history-list{display:flex;flex-direction:column;gap:2px}
+.history-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .2s}
+.history-item:hover{background:rgba(255,255,255,.05)}
+.history-item .hq{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);min-width:0}
+.history-item .h-time{font-size:10px;color:var(--text-dim);white-space:nowrap;flex-shrink:0}
+.history-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px 4px;border-radius:4px;flex-shrink:0}
+.history-del:hover{color:var(--danger);background:rgba(255,71,87,.1)}
+#history-clear{width:100%;padding:6px;margin-top:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer;transition:all .2s}
+#history-clear:hover{color:var(--danger);border-color:var(--danger)}
+
+/* Stats panel */
+#stats-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:16px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#stats-toggle:hover{color:var(--accent);border-color:var(--accent)}
+#stats-panel{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);width:380px;max-height:70vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;z-index:110;padding:20px 24px;overflow-y:auto;display:none;box-shadow:var(--shadow);animation:slideUp .25s ease-out}
+#stats-panel.show{display:block}
+#stats-panel::-webkit-scrollbar{width:4px}
+#stats-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#stats-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+#stats-header span{font-size:16px;font-weight:600;color:var(--accent)}
+#stats-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;padding:2px}
+#stats-close:hover{color:var(--text)}
+#stats-content{font-size:13px}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);color:var(--text)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--text-dim)}
+.stat-value{font-weight:600}
+.stat-section-title{font-size:14px;font-weight:600;color:var(--text);margin:14px 0 8px}
+.bar-chart{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.bar-item{display:flex;align-items:center;gap:8px}
+.bar-label{width:60px;font-size:12px;color:var(--text-dim);text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:16px;background:var(--bg);border-radius:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:8px;transition:width .6s ease;min-width:4px}
+.bar-count{font-size:11px;color:var(--text-dim);width:24px;text-align:right}
+.stat-top-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:13px;color:var(--text)}
+.stat-top-item .rank{width:18px;height:18px;border-radius:50%;background:var(--accent);color:#0f1119;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.stat-top-item .rank.r2{background:#a0a0b0}
+.stat-top-item .rank.r3{background:#cd7f32}
+
+/* Edit mode */
+#edit-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:15px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#edit-toggle:hover{color:var(--text);border-color:var(--border)}
+#edit-toggle.active{color:var(--accent);border-color:var(--accent);background:rgba(240,192,64,.1)}
+#theme-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:15px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#theme-toggle:hover{color:var(--text);border-color:var(--border)}
+
+/* Settings panel */
+#lang-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:12px;font-weight:700;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#lang-toggle:hover{color:var(--accent);border-color:var(--accent)}
+#settings-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:16px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+#settings-toggle:hover{color:var(--accent);border-color:var(--accent)}
+#settings-panel{position:absolute;right:20px;top:100px;width:300px;max-height:calc(100vh - 180px);background:var(--surface);border:1px solid var(--border);border-radius:12px;z-index:110;padding:20px;overflow-y:auto;display:none;box-shadow:var(--shadow)}
+#settings-panel.show{display:block}
+#settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+#settings-header span{font-size:16px;font-weight:600;color:var(--accent)}
+#settings-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;padding:2px}
+#settings-close:hover{color:var(--text)}
+.setting-section{margin-bottom:16px}
+.setting-label{font-size:12px;color:var(--text-dim);margin-bottom:6px}
+.setting-btn{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;cursor:pointer;transition:all .2s;text-align:left}
+.setting-btn:hover{background:rgba(255,255,255,.05);border-color:var(--text-dim)}
+.setting-btn-row{display:flex;gap:8px}
+.setting-btn-row .setting-btn{flex:1;text-align:center}
+#settings-nickname{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
+#settings-nickname:focus{border-color:var(--accent)}
+#settings-favorites{font-size:12px;color:var(--text-dim);margin-bottom:6px}
+.fav-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;color:var(--text)}
+.fav-item .fav-load{cursor:pointer;color:var(--accent)}
+.fav-item .fav-load:hover{text-decoration:underline}
+.fav-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px}
+#graph-container.edit-mode{border:1px dashed var(--accent);border-radius:4px}
+#edit-toolbar{position:absolute;left:20px;bottom:100px;z-index:90;display:flex;flex-direction:column;gap:8px;display:none}
+#edit-toolbar.show{display:flex}
+#edit-toolbar button{padding:8px 16px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:13px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);white-space:nowrap}
+#edit-toolbar button:hover{background:rgba(240,192,64,.12)}
+#save-layout-btn{} /* inherited from toolbar now */
+#add-rel-btn.active{background:rgba(240,192,64,.2);border-color:var(--accent)}
+#add-rel-indicator{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:95;padding:8px 20px;border-radius:20px;background:var(--surface);border:1px solid var(--accent);color:var(--text);font-size:14px;box-shadow:var(--shadow);transition:opacity .3s;pointer-events:none}
+#add-rel-indicator.hidden{opacity:0;pointer-events:none}
+#add-rel-indicator b{color:var(--accent)}
+
+
+/* TTS button */
+.tts-btn{background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;vertical-align:middle;margin-left:6px}
+.tts-btn:hover{color:var(--accent);border-color:var(--accent)}
+.tts-btn.speaking{color:var(--accent);border-color:var(--accent);background:rgba(240,192,64,.1);animation:pulse 1.2s infinite}
+</style>
+</head>
+<body>
+
+<header id="header">
+  <div id="logo">三国演义 · 人物谱</div>
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="试试：孙悟空的师傅是谁 · 刘备和曹操什么关系…">
+    <button id="voice-btn" title="语音搜索">🎤</button>
+  </div>
+  <button id="history-toggle" title="搜索历史">📋</button>
+  <button id="lang-toggle" title="切换语言"><span id="lang-label">中</span></button>
+  <button id="theme-toggle" title="切换主题">🌓</button>
+  <button id="settings-toggle" title="设置">⚙️</button>
+  <button id="stats-toggle" title="数据统计">📊</button>
+  <button id="edit-toggle" title="编辑模式：拖拽调整节点位置">✏️</button>
+  <div id="legend"></div>
+  <button id="share-btn" title="分享图谱">📤</button>
+  <button id="export-btn" title="导出图谱为图片">📷</button>
+  <button id="generate-btn" title="输入任意小说名，AI 自动生成人物关系图谱">✨ 更换小说</button>
+</header>
+
+<div id="novel-tabs"></div>
+
+<div id="history-panel">
+  <div id="history-header">
+    <span>搜索历史</span>
+    <button id="history-close">✕</button>
+  </div>
+  <div id="history-list"></div>
+  <button id="history-clear">清空历史</button>
+</div>
+
+<div id="graph-container"></div>
+<div id="edit-toolbar">
+  <button id="add-rel-btn" title="添加关系连线">➕ 添加关系</button>
+  <button id="save-layout-btn" title="保存当前节点布局">💾 保存布局</button>
+</div>
+<div id="add-rel-indicator" class="hidden">请点击<b>起点</b>角色</div>
+
+<div id="info-panel">
+  <button id="info-close">✕</button>
+  <div id="info-name"></div>
+  <span id="info-faction"></span>
+  <p id="info-desc"></p>
+  <div id="info-relations"><h4>人物关系</h4></div>
+</div>
+
+<div id="path-card">
+  <h4>🔗 关系路径</h4>
+  <div id="path-content"></div>
+</div>
+
+<div id="stats-panel">
+  <div id="stats-header">
+    <span>📊 数据统计</span>
+    <button id="stats-close">✕</button>
+  </div>
+  <div id="stats-content"></div>
+</div>
+
+<div id="settings-panel">
+  <div id="settings-header">
+    <span>⚙️ 设置</span>
+    <button id="settings-close">✕</button>
+  </div>
+  <div id="settings-content">
+    <div class="setting-section">
+      <div class="setting-label">昵称</div>
+      <input id="settings-nickname" type="text" placeholder="输入你的昵称" maxlength="20">
+    </div>
+    <div class="setting-section">
+      <div class="setting-label">主题</div>
+      <button id="settings-theme-btn" class="setting-btn">切换暗色/亮色</button>
+    </div>
+    <div class="setting-section">
+      <div class="setting-label">语言</div>
+      <button id="settings-lang-btn" class="setting-btn">中 / EN / 日</button>
+    </div>
+    <div class="setting-section">
+      <div class="setting-label">收藏的小说</div>
+      <div id="settings-favorites"></div>
+      <button id="settings-star-novel" class="setting-btn">⭐ 收藏当前小说</button>
+    </div>
+    <div class="setting-section">
+      <div class="setting-label">数据同步</div>
+      <div class="setting-btn-row">
+        <button id="settings-export" class="setting-btn">📤 导出数据</button>
+        <button id="settings-import" class="setting-btn">📥 导入数据</button>
+      </div>
+      <input id="settings-import-file" type="file" accept=".json" style="display:none">
+    </div>
+  </div>
+</div>
+
+<nav id="timeline"></nav>
+
+<!-- Generate Modal -->
+<div id="modal-overlay">
+  <div id="modal-card">
+    <h2>生成人物关系图谱</h2>
+    <p>输入任意小说名称，AI 将自动分析并生成人物关系网络</p>
+    <input id="modal-input" type="text" placeholder="例如：红楼梦、哈利波特、百年孤独…">
+    <div id="api-key-toggle">⚙️ 设置 API Key（跳过服务器，浏览器直连）</div>
+    <div id="api-key-row">
+      <input id="api-key-input" type="password" placeholder="粘贴你的 DeepSeek API Key（sk-…）">
+      <div class="api-key-saved">Key 仅保存在当前浏览器会话中，关闭页面后自动清除</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ghost" id="modal-cancel">取消</button>
+      <button class="btn-primary" id="modal-generate">⚡ 生成图谱</button>
+    </div>
+    <div class="api-hint">由 DeepSeek 驱动 · 约 10-30 秒</div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <div id="loading-progress-wrap">
+    <div id="loading-progress-bar"><div id="loading-progress-fill"></div></div>
+    <div id="loading-stage">正在准备…</div>
+  </div>
+  <div id="loading-text">正在分析《三国演义》的人物关系…</div>
+  <button id="loading-cancel">取消</button>
+</div>
+
+<!-- Error Toast -->
+<div id="error-toast"></div>
+
+<script>
+// ===================== I18N =====================
+let currentLang = localStorage.getItem('lang') || 'zh-CN';
+const LANGS = ['zh-CN', 'en', 'ja'];
+const LANG_LABELS = { 'zh-CN': '中', 'en': 'EN', 'ja': '日' };
+
+const I18N = {
+  'app.title':{'zh-CN':'{0} · 人物谱','en':'{0} · Characters','ja':'{0} · 人物譜'},
+  'app.pageTitle':{'zh-CN':'{0} · 人物关系图谱','en':'{0} · Character Graph','ja':'{0} · 人物関係図'},
+  'app.demoLogo':{'zh-CN':'三国演义 · 人物谱','en':'Three Kingdoms · Graph','ja':'三国志演義 · 人物譜'},
+  'header.voice':{'zh-CN':'语音搜索','en':'Voice Search','ja':'音声検索'},
+  'header.history':{'zh-CN':'搜索历史','en':'Search History','ja':'検索履歴'},
+  'header.theme':{'zh-CN':'切换主题','en':'Toggle Theme','ja':'テーマ切替'},
+  'header.stats':{'zh-CN':'数据统计','en':'Statistics','ja':'データ統計'},
+  'header.edit':{'zh-CN':'编辑模式：拖拽调整节点位置','en':'Edit Mode: drag nodes','ja':'編集：ノードを移動'},
+  'header.share':{'zh-CN':'分享图谱','en':'Share Graph','ja':'共有'},
+  'header.export':{'zh-CN':'导出图谱为图片','en':'Export as Image','ja':'画像出力'},
+  'header.generate':{'zh-CN':'输入任意小说名，AI 自动生成人物关系图谱','en':'Enter novel name, AI auto-generates graph','ja':'小説名を入力、AIが自動生成'},
+  'header.settings':{'zh-CN':'设置','en':'Settings','ja':'設定'},
+  'header.lang':{'zh-CN':'切换语言','en':'Switch Language','ja':'言語切替'},
+  'search.placeholder':{'zh-CN':'试试：孙悟空的师傅是谁 · 刘备和曹操什么关系…','en':'Try: Who is mentor of Harry Potter...','ja':'例：孫悟空の師匠は誰…'},
+  'history.title':{'zh-CN':'搜索历史','en':'Search History','ja':'検索履歴'},
+  'history.empty':{'zh-CN':'暂无搜索记录','en':'No search history','ja':'検索履歴なし'},
+  'history.clear':{'zh-CN':'清空历史','en':'Clear History','ja':'履歴を消去'},
+  'history.delete':{'zh-CN':'删除','en':'Delete','ja':'削除'},
+  'edit.addRel':{'zh-CN':'➕ 添加关系','en':'➕ Add Relation','ja':'➕ 関係追加'},
+  'edit.cancelRel':{'zh-CN':'❌ 取消连线','en':'❌ Cancel','ja':'❌ 取消'},
+  'edit.saveLayout':{'zh-CN':'💾 保存布局','en':'💾 Save Layout','ja':'💾 配置保存'},
+  'edit.saved':{'zh-CN':'✅ 已保存','en':'✅ Saved','ja':'✅ 保存済'},
+  'edit.selectSource':{'zh-CN':'请点击<b>起点</b>角色','en':'Click <b>source</b> character','ja':'<b>始点</b>をクリック'},
+  'edit.selectTarget':{'zh-CN':'请点击<b>终点</b>角色','en':'Click <b>target</b> character','ja':'<b>終点</b>をクリック'},
+  'edit.relPrompt':{'zh-CN':'请输入关系类型（如：义父女、结拜、君臣…）','en':'Enter relation type (e.g. family, ally...)','ja':'関係を入力（例：義父娘、兄弟…）'},
+  'edit.edgePrompt':{'zh-CN':'关系：{0}\n\n输入新关系名 → 修改 | 输入"删除" → 删除此关系 | 取消 → 不变','en':'Relation: {0}\n\nNew name → edit | "del" → delete | Cancel → keep','ja':'関係：{0}\n\n新名称→変更 | "削除"→削除 | 取消→維持'},
+  'edit.delKeyword':{'zh-CN':'删除','en':'del','ja':'削除'},
+  'edit.addTab':{'zh-CN':'添加新小说','en':'Add Novel','ja':'小説追加'},
+  'edit.filterReset':{'zh-CN':'✕ 显示全部','en':'✕ Show All','ja':'✕ 全て表示'},
+  'info.relations':{'zh-CN':'人物关系 ({0}条)','en':'Relations ({0})','ja':'関係 ({0}件)'},
+  'info.title':{'zh-CN':'人物关系','en':'Relations','ja':'人物関係'},
+  'path.title':{'zh-CN':'🔗 关系路径','en':'🔗 Relation Path','ja':'🔗 関係パス'},
+  'path.noPath':{'zh-CN':'未找到"{0}"与"{1}"之间的关联路径','en':'No path found between "{0}" and "{1}"','ja':'「{0}」と「{1}」の経路なし'},
+  'path.heading':{'zh-CN':'{0} 与 {1} 的关系路径','en':'Relation path: {0} ↔ {1}','ja':'{0} と {1} の関係経路'},
+  'path.analyzing':{'zh-CN':'🤔 分析关系…','en':'🤔 Analyzing...','ja':'🤔 分析中…'},
+  'path.fallback':{'zh-CN':'关系路径如上所示','en':'Relation path shown above','ja':'関係経路は上記の通り'},
+  'path.thinking':{'zh-CN':'🤔 AI 正在理解你的问题…','en':'🤔 AI is analyzing...','ja':'🤔 AI分析中…'},
+  'path.notParsed':{'zh-CN':'未能解析这个问题，试试换个问法？','en':'Cannot parse, try rephrasing?','ja':'解析できません、言い換えてください'},
+  'path.aiUnavailable':{'zh-CN':'AI 搜索暂不可用，试试输入角色名字直接查找','en':'AI search unavailable, try character name','ja':'AI検索不可、名前で検索を'},
+  'path.relatedChars':{'zh-CN':'相关人物：','en':'Related: ','ja':'関連人物：'},
+  'path.foundCount':{'zh-CN':'找到 {0} 个关联：','en':'Found {0} relations:','ja':'{0}件の関係：'},
+  'path.arrowLabel':{'zh-CN':'关联','en':'related','ja':'関連'},
+  'modal.title':{'zh-CN':'生成人物关系图谱','en':'Generate Character Graph','ja':'人物関係図を生成'},
+  'modal.desc':{'zh-CN':'输入任意小说名称，AI 将自动分析并生成人物关系网络','en':'Enter a novel name, AI analyzes and builds the character network','ja':'小説名を入力、AIが人物関係を分析'},
+  'modal.placeholder':{'zh-CN':'例如：红楼梦、哈利波特、百年孤独…','en':'e.g. Harry Potter, Dream of Red Chamber...','ja':'例：ハリポタ、紅楼夢…'},
+  'modal.apiToggle':{'zh-CN':'⚙️ 设置 API Key（跳过服务器，浏览器直连）','en':'⚙️ Set API Key (browser direct)','ja':'⚙️ APIキー設定（直結）'},
+  'modal.apiPlaceholder':{'zh-CN':'粘贴你的 DeepSeek API Key（sk-…）','en':'Paste DeepSeek API Key (sk-...)','ja':'APIキーを貼付（sk-…）'},
+  'modal.apiHint1':{'zh-CN':'Key 仅保存在当前浏览器会话中，关闭页面后自动清除','en':'Key stored in session only, cleared on close','ja':'キーはセッション保存、閉じると消去'},
+  'modal.cancel':{'zh-CN':'取消','en':'Cancel','ja':'取消'},
+  'modal.generate':{'zh-CN':'⚡ 生成图谱','en':'⚡ Generate','ja':'⚡ 生成'},
+  'modal.apiHint2':{'zh-CN':'由 DeepSeek 驱动 · 约 10-30 秒','en':'Powered by DeepSeek · ~10-30s','ja':'DeepSeek駆動 · 約10-30秒'},
+  'loading.ready':{'zh-CN':'正在准备…','en':'Preparing...','ja':'準備中…'},
+  'loading.checkCache':{'zh-CN':'正在查询缓存…','en':'Checking cache...','ja':'キャッシュ確認中…'},
+  'loading.requestAI':{'zh-CN':'正在请求 AI 引擎…','en':'Requesting AI...','ja':'AI処理中…'},
+  'loading.directAPI':{'zh-CN':'正在通过浏览器直连 DeepSeek…','en':'Connecting directly to DeepSeek...','ja':'DeepSeekに直結中…'},
+  'loading.building':{'zh-CN':'数据已就绪，正在构建图谱…','en':'Data loaded, building graph...','ja':'データ取得、図を構築中…'},
+  'loading.analyzing':{'zh-CN':'正在分析《{0}》的人物关系…','en':'Analyzing "{0}"...','ja':'「{0}」を分析中…'},
+  'toast.copied':{'zh-CN':'✅ 链接已复制，发送给朋友即可打开图谱','en':'✅ Link copied!','ja':'✅ リンクをコピーしました'},
+  'toast.copiedFallback':{'zh-CN':'✅ 链接已复制到剪贴板','en':'✅ Link copied to clipboard','ja':'✅ クリップボードにコピー'},
+  'toast.exported':{'zh-CN':'✅ 图片已导出','en':'✅ Image exported','ja':'✅ 画像出力完了'},
+  'toast.noGraph':{'zh-CN':'暂无图谱可导出','en':'No graph to export','ja':'出力する図がありません'},
+  'toast.noShare':{'zh-CN':'暂无图谱可分享','en':'No graph to share','ja':'共有する図がありません'},
+  'toast.dupEdge':{'zh-CN':'这两个角色之间已有关系','en':'These characters already have a relation','ja':'この二人は既に関係があります'},
+  'toast.edgeDeleted':{'zh-CN':'关系已删除','en':'Relation deleted','ja':'関係を削除しました'},
+  'toast.invalidName':{'zh-CN':'请输入有效的小说名称（至少 2 个字）','en':'Please enter a valid novel name (min 2 chars)','ja':'有効な小説名を入力（2文字以上）'},
+  'toast.exportFail':{'zh-CN':'导出失败：{0}','en':'Export failed: {0}','ja':'出力失敗：{0}'},
+  'toast.voiceUnsupported':{'zh-CN':'您的浏览器不支持语音识别。请使用 Chrome 或 Edge 浏览器。','en':'Voice recognition unsupported. Use Chrome or Edge.','ja':'音声認識非対応。Chrome/Edgeを使ってください'},
+  'stats.title':{'zh-CN':'📊 数据统计','en':'📊 Statistics','ja':'📊 データ統計'},
+  'stats.noData':{'zh-CN':'暂无数据','en':'No data','ja':'データなし'},
+  'stats.novelName':{'zh-CN':'📖 小说名称','en':'📖 Novel','ja':'📖 作品名'},
+  'stats.charCount':{'zh-CN':'👤 角色总数','en':'👤 Characters','ja':'👤 登場人物'},
+  'stats.relCount':{'zh-CN':'🔗 关系总数','en':'🔗 Relations','ja':'🔗 関係数'},
+  'stats.factionCount':{'zh-CN':'🏳️ 阵营数量','en':'🏳️ Factions','ja':'🏳️ 陣営数'},
+  'stats.eventCount':{'zh-CN':'📅 事件数量','en':'📅 Events','ja':'📅 出来事'},
+  'stats.density':{'zh-CN':'📊 网络密度','en':'📊 Network Density','ja':'📊 密度'},
+  'stats.topChars':{'zh-CN':'🏆 关联最多的角色','en':'🏆 Most Connected','ja':'🏆 最多関係者'},
+  'stats.factionDist':{'zh-CN':'🏳️ 阵营分布','en':'🏳️ Faction Distribution','ja':'🏳️ 陣営分布'},
+  'stats.unitRel':{'zh-CN':'条关系','en':' relations','ja':'件'},
+  'share.exportName':{'zh-CN':'{0} · 人物关系图谱.png','en':'{0} · Character Graph.png','ja':'{0} · 人物関係図.png'},
+  'btn.generate':{'zh-CN':'✨ 更换小说','en':'✨ Change Novel','ja':'✨ 小説変更'},
+  'btn.cancel':{'zh-CN':'取消','en':'Cancel','ja':'取消'},
+};
+
+function t(key, ...args) {
+  const entry = I18N[key];
+  let str = entry ? (entry[currentLang] || entry['zh-CN']) : key;
+  args.forEach((a, i) => { str = str.replace('{'+i+'}', a); });
+  return str;
+}
+
+function applyLanguage() {
+  // Update data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  // Update title attributes
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+}
+
+function cycleLanguage() {
+  const idx = LANGS.indexOf(currentLang);
+  currentLang = LANGS[(idx + 1) % LANGS.length];
+  localStorage.setItem('lang', currentLang);
+  applyLanguage();
+  // Update lang button label
+  const lb = document.getElementById('lang-label');
+  if (lb) lb.textContent = LANG_LABELS[currentLang];
+  // Rebuild legend (filter reset text)
+  rebuildLegend();
+}
+
+// ===================== DEMO DATA: 三国演义 =====================
+const DEMO_DATA = {
+  novelName: '三国演义',
+  factions: [
+    { key:'shu',  name:'蜀汉',      color:'#e74c3c' },
+    { key:'wei',  name:'曹魏',      color:'#3498db' },
+    { key:'wu',   name:'东吴',      color:'#2ecc71' },
+    { key:'han',  name:'群雄/汉室', color:'#9b59b6' },
+    { key:'jin',  name:'西晋',      color:'#e67e22' },
+  ],
+  characters: [
+    { id:'liubei',name:'刘备',faction:'shu',title:'汉昭烈帝',desc:'字玄德，蜀汉开国皇帝。以仁德闻名，与关羽张飞桃园结义，三顾茅庐请出诸葛亮，最终在成都称帝。'},
+    { id:'guanyu',name:'关羽',faction:'shu',title:'汉寿亭侯',desc:'字云长，五虎上将之首。温酒斩华雄、过五关斩六将、水淹七军威震华夏，后大意失荆州被东吴所擒。'},
+    { id:'zhangfei',name:'张飞',faction:'shu',title:'车骑将军',desc:'字翼德，五虎上将之一。长坂坡一声喝退曹军，粗中有细，后被部下范疆张达所害。'},
+    { id:'zhugeliang',name:'诸葛亮',faction:'shu',title:'丞相·武乡侯',desc:'字孔明，号卧龙。隆中对策定三分天下，辅佐刘备成就帝业，后六出祁山北伐中原，病逝五丈原。'},
+    { id:'zhaoyun',name:'赵云',faction:'shu',title:'镇军将军',desc:'字子龙，五虎上将之一。长坂坡七进七出救阿斗，一身是胆，汉水之战以寡敌众大破曹军。'},
+    { id:'huangzhong',name:'黄忠',faction:'shu',title:'后将军',desc:'字汉升，五虎上将之一。定军山阵斩夏侯渊，老当益壮年逾七旬仍征战沙场。'},
+    { id:'machao',name:'马超',faction:'shu',title:'骠骑将军',desc:'字孟起，五虎上将之一。西凉锦马超，渭水之战杀得曹操割须弃袍，后归降刘备镇守西境。'},
+    { id:'jiangwei',name:'姜维',faction:'shu',title:'大将军',desc:'字伯约，诸葛亮弟子。继承北伐遗志九伐中原，蜀汉灭亡后试图复国事败身死。'},
+    { id:'weiyan',name:'魏延',faction:'shu',title:'汉中太守',desc:'字文长，蜀汉大将。镇守汉中十余年，提出子午谷奇谋未被采纳，后因谋反罪名被杀。'},
+    { id:'liushan',name:'刘禅',faction:'shu',title:'后主',desc:'字公嗣，刘备之子。在位四十年，宠信宦官黄皓，最终降魏，留下"乐不思蜀"的典故。'},
+    { id:'pangtong',name:'庞统',faction:'shu',title:'军师中郎将',desc:'字士元，号凤雏。与诸葛亮齐名，辅佐刘备入蜀，在落凤坡中箭身亡。'},
+    { id:'fazheng',name:'法正',faction:'shu',title:'尚书令',desc:'字孝直，原刘璋部下。助刘备取益州、夺汉中，奇谋画策深得刘备信任。'},
+    { id:'caocao',name:'曹操',faction:'wei',title:'魏武帝',desc:'字孟德，曹魏奠基者。挟天子以令诸侯，官渡之战击败袁绍统一北方，文武兼备一代枭雄。'},
+    { id:'caopi',name:'曹丕',faction:'wei',title:'魏文帝',desc:'字子桓，曹操之子。代汉自立建立魏国，与曹植有七步诗之争，在位七年去世。'},
+    { id:'caozhi',name:'曹植',faction:'wei',title:'陈王',desc:'字子建，曹操之子。才高八斗，七步成诗，代表作《洛神赋》，因争嗣失败郁郁而终。'},
+    { id:'xiahoudun',name:'夏侯惇',faction:'wei',title:'大将军',desc:'字元让，曹操从兄弟。拔矢啖睛勇猛无双，长期镇守后方，为曹魏宗室第一大将。'},
+    { id:'xunyu',name:'荀彧',faction:'wei',title:'尚书令',desc:'字文若，曹操首席谋士。被曹操誉为"吾之子房"，后因反对曹操称公而自杀。'},
+    { id:'simayi',name:'司马懿',faction:'wei',title:'太傅',desc:'字仲达，魏国重臣。隐忍善谋，对抗诸葛亮北伐，高平陵之变夺权，为西晋奠基人。'},
+    { id:'xuchu',name:'许褚',faction:'wei',title:'武卫将军',desc:'字仲康，曹操贴身护卫。勇力绝人号"虎痴"，裸衣斗马超，典韦之后曹营第一猛将。'},
+    { id:'zhangliao',name:'张辽',faction:'wei',title:'前将军',desc:'字文远，曹魏五子良将之首。逍遥津之战以八百破十万，威震江东可止小儿夜啼。'},
+    { id:'dianwei',name:'典韦',faction:'wei',title:'校尉',desc:'古之恶来，曹操贴身护卫。宛城之战为保曹操撤退力战而死，曹操为之痛哭流涕。'},
+    { id:'guojia',name:'郭嘉',faction:'wei',title:'军师祭酒',desc:'字奉孝，曹操重要谋士。遗计定辽东，被曹操称为"奇佐"，英年早逝令曹操惋惜不已。'},
+    { id:'jiaxu',name:'贾诩',faction:'wei',title:'太尉',desc:'字文和，三国第一毒士。计谋狠辣算无遗策，先后事李傕张绣曹操，善终而逝。'},
+    { id:'sunquan',name:'孙权',faction:'wu',title:'吴大帝',desc:'字仲谋，东吴开国皇帝。继承父兄基业坐断东南，赤壁之战联刘抗曹，在位最久。'},
+    { id:'zhouyu',name:'周瑜',faction:'wu',title:'大都督',desc:'字公瑾，东吴名将。赤壁之战火烧曹军八十三万，精通音律"曲有误周郎顾"，英年早逝。'},
+    { id:'lusu',name:'鲁肃',faction:'wu',title:'大都督',desc:'字子敬，东吴战略家。主张联刘抗曹，维护孙刘联盟，周瑜之后接任大都督。'},
+    { id:'lvmeng',name:'吕蒙',faction:'wu',title:'大都督',desc:'字子明，"士别三日当刮目相看"的典范。白衣渡江奇袭荆州擒杀关羽，后病逝。'},
+    { id:'luxun',name:'陆逊',faction:'wu',title:'大都督',desc:'字伯言，东吴名将。夷陵之战火烧连营七百里大败刘备，后卷入立嗣之争被孙权逼死。'},
+    { id:'sunjian',name:'孙坚',faction:'wu',title:'破虏将军',desc:'字文台，孙策孙权之父。讨伐董卓时获得传国玉玺，后在征讨刘表时中箭身亡。'},
+    { id:'sunge',name:'孙策',faction:'wu',title:'讨逆将军',desc:'字伯符，孙权之兄。平定江东六郡号称"小霸王"，被刺客所伤英年早逝。'},
+    { id:'huanggai',name:'黄盖',faction:'wu',title:'偏将军',desc:'字公覆，东吴老将。赤壁之战献苦肉计诈降曹操，以火攻奠定胜局。'},
+    { id:'ganning',name:'甘宁',faction:'wu',title:'折冲将军',desc:'字兴霸，东吴猛将。原为锦帆贼，归顺孙权后屡立战功，百骑劫曹营全身而退。'},
+    { id:'lvbu',name:'吕布',faction:'han',title:'温侯',desc:'字奉先，三国第一猛将。有三姓家奴之称，为貂蝉杀董卓，最终被曹操所擒缢杀于白门楼。'},
+    { id:'dongzhuo',name:'董卓',faction:'han',title:'太师',desc:'字仲颖，汉末权臣。废少帝立献帝迁都长安，暴虐无道，被吕布所杀后满朝欢庆。'},
+    { id:'diaochan',name:'貂蝉',faction:'han',title:'绝世舞姬',desc:'古代四大美女之一。王允以美人计使其离间董卓与吕布，连环计成功除去董卓。'},
+    { id:'yuanshao',name:'袁绍',faction:'han',title:'大将军',desc:'字本初，四世三公。坐拥河北最强势力的诸侯，官渡之战被曹操以少胜多击败。'},
+    { id:'huaxiong',name:'华雄',faction:'han',title:'骁骑校尉',desc:'董卓部将。汜水关前连斩联军数将，被关羽温酒之间斩于马下。'},
+    { id:'xian-di',name:'汉献帝',faction:'han',title:'汉朝末帝',desc:'名刘协，汉朝最后一位皇帝。先被董卓挟持后被曹操迎至许都，最终禅位于曹丕。'},
+    { id:'simashi',name:'司马师',faction:'jin',title:'大将军',desc:'字子元，司马懿长子。继承父亲权位，废曹芳立曹髦，平定淮南叛乱后病逝。'},
+    { id:'simazhao',name:'司马昭',faction:'jin',title:'晋王',desc:'字子上，司马懿次子。"司马昭之心路人皆知"，灭蜀汉为西晋奠基。'},
+    { id:'dengai',name:'邓艾',faction:'jin',title:'征西将军',desc:'字士载，魏国名将。偷渡阴平灭蜀汉，立不世之功却被钟会诬陷而死。'},
+    { id:'zhonghui',name:'钟会',faction:'jin',title:'司徒',desc:'字士季，魏国大臣。与邓艾分兵灭蜀，后据蜀叛乱被部下所杀。'}
+  ],
+  relations: [
+    {from:'liubei',to:'guanyu',type:'结义兄弟',style:'solid'},{from:'liubei',to:'zhangfei',type:'结义兄弟',style:'solid'},{from:'guanyu',to:'zhangfei',type:'结义兄弟',style:'solid'},
+    {from:'liubei',to:'zhugeliang',type:'鱼水君臣',style:'solid'},{from:'liubei',to:'zhaoyun',type:'君臣',style:'solid'},{from:'liubei',to:'huangzhong',type:'君臣',style:'solid'},
+    {from:'liubei',to:'machao',type:'君臣',style:'solid'},{from:'liubei',to:'fazheng',type:'心腹谋主',style:'solid'},{from:'liubei',to:'pangtong',type:'军师',style:'solid'},
+    {from:'liubei',to:'liushan',type:'父子',style:'solid'},{from:'liubei',to:'weiyan',type:'君臣',style:'solid'},{from:'zhugeliang',to:'jiangwei',type:'师徒',style:'dotted'},
+    {from:'zhugeliang',to:'pangtong',type:'挚友同僚',style:'dotted'},{from:'zhugeliang',to:'liushan',type:'托孤辅政',style:'solid'},{from:'zhugeliang',to:'weiyan',type:'上下级',style:'dashed'},
+    {from:'caocao',to:'caopi',type:'父子',style:'solid'},{from:'caocao',to:'caozhi',type:'父子',style:'solid'},{from:'caocao',to:'xiahoudun',type:'从兄弟',style:'solid'},
+    {from:'caocao',to:'xunyu',type:'谋主',style:'solid'},{from:'caocao',to:'simayi',type:'君臣',style:'solid'},{from:'caocao',to:'xuchu',type:'贴身护卫',style:'solid'},
+    {from:'caocao',to:'zhangliao',type:'君臣',style:'solid'},{from:'caocao',to:'dianwei',type:'贴身护卫',style:'solid'},{from:'caocao',to:'guojia',type:'心腹谋士',style:'solid'},
+    {from:'caocao',to:'jiaxu',type:'君臣',style:'solid'},{from:'caopi',to:'caozhi',type:'兄弟争嗣',style:'dashed'},{from:'simayi',to:'simashi',type:'父子',style:'solid'},
+    {from:'simayi',to:'simazhao',type:'父子',style:'solid'},{from:'sunquan',to:'zhouyu',type:'君臣',style:'solid'},{from:'sunquan',to:'lusu',type:'君臣',style:'solid'},
+    {from:'sunquan',to:'lvmeng',type:'君臣',style:'solid'},{from:'sunquan',to:'luxun',type:'君臣',style:'solid'},{from:'sunquan',to:'ganning',type:'君臣',style:'solid'},
+    {from:'sunjian',to:'sunge',type:'父子',style:'solid'},{from:'sunjian',to:'sunquan',type:'父子',style:'solid'},{from:'sunge',to:'zhouyu',type:'挚友',style:'dotted'},
+    {from:'sunge',to:'sunquan',type:'兄弟',style:'solid'},{from:'zhouyu',to:'lusu',type:'同僚挚友',style:'dotted'},{from:'lusu',to:'lvmeng',type:'举荐',style:'dotted'},
+    {from:'lvmeng',to:'luxun',type:'举荐',style:'dotted'},{from:'dongzhuo',to:'lvbu',type:'义父子(反目)',style:'dashed'},{from:'lvbu',to:'diaochan',type:'情侣',style:'dotted'},
+    {from:'dongzhuo',to:'xian-di',type:'挟持废立',style:'dashed'},{from:'caocao',to:'xian-di',type:'挟天子',style:'solid'},{from:'huaxiong',to:'dongzhuo',type:'部将',style:'solid'},
+    {from:'caocao',to:'yuanshao',type:'对手',style:'dashed'},{from:'caocao',to:'liubei',type:'亦敌亦友',style:'dashed'},{from:'caocao',to:'guanyu',type:'惜才厚待',style:'dashed'},
+    {from:'zhugeliang',to:'simayi',type:'宿命之敌',style:'dashed'},{from:'zhugeliang',to:'zhouyu',type:'亦敌亦友',style:'dashed'},{from:'guanyu',to:'lvmeng',type:'擒杀之仇',style:'dashed'},
+    {from:'guanyu',to:'huangzhong',type:'对手归降',style:'dashed'},{from:'caocao',to:'zhugeliang',type:'一生未交手',style:'dashed'},{from:'liubei',to:'luxun',type:'夷陵之仇',style:'dashed'},
+    {from:'jiangwei',to:'dengai',type:'宿敌',style:'dashed'},{from:'jiangwei',to:'zhonghui',type:'合谋复国',style:'dashed'},{from:'dengai',to:'zhonghui',type:'同僚相忌',style:'dashed'},
+    {from:'liushan',to:'dengai',type:'降伏',style:'dashed'},{from:'simayi',to:'zhugeliang',type:'宿命之敌',style:'dashed'},{from:'lvbu',to:'zhangfei',type:'死敌',style:'dashed'},
+    {from:'zhaoyun',to:'caocao',type:'长坂坡之仇',style:'dashed'},{from:'huanggai',to:'caocao',type:'苦肉诈降',style:'dashed'},{from:'sunjian',to:'dongzhuo',type:'讨伐',style:'dashed'},
+    {from:'yuanshao',to:'caocao',type:'官渡对手',style:'dashed'},
+  ],
+  events: [
+    {year:184,name:'黄巾起义',chars:['liubei','guanyu','zhangfei','caocao'],summary:'张角以"苍天已死，黄天当立"为号发动农民起义，天下大乱。刘备、关羽、张飞于此乱世中初聚义兵，曹操亦因镇压黄巾起家，三国序幕由此拉开。'},
+    {year:190,name:'董卓之乱',chars:['dongzhuo','lvbu','caocao','yuanshao','sunjian'],summary:'董卓废少帝立献帝，迁都长安，焚毁洛阳。曹操发檄文号召十八路诸侯讨伐董卓，孙坚率先攻入洛阳获得传国玉玺，吕布于此时崭露头角。'},
+    {year:198,name:'吕布殒命',chars:['lvbu','caocao','liubei','diaochan'],summary:'吕布据守下邳，曹操引水灌城。部将叛变将其绑缚献降，刘备一句"公不见丁原、董卓之事乎"断送吕布生机，白门楼上缢杀一代飞将。'},
+    {year:200,name:'官渡之战',chars:['caocao','yuanshao','guanyu','xunyu','jiaxu'],summary:'曹操以不足两万兵力对阵袁绍十一万大军，许攸夜投曹营献袭乌巢之计，火烧袁军粮草大获全胜。此战奠定曹操统一北方的基础。'},
+    {year:207,name:'三顾茅庐',chars:['liubei','zhugeliang','guanyu','zhangfei'],summary:'刘备三赴隆中拜访诸葛亮，诸葛亮提出"三分天下"战略——先取荆州，再图益州，联吴抗魏。卧龙出山，天下大势从此改变。'},
+    {year:208,name:'赤壁之战',chars:['caocao','sunquan','liubei','zhouyu','zhugeliang','huanggai'],summary:'曹操率八十三万大军南下，孙刘联盟以火攻破敌。周瑜运筹帷幄、黄盖苦肉诈降、诸葛亮巧借东风，一把大火烧尽曹操统一天下之梦，三国鼎立格局正式确立。'},
+    {year:214,name:'刘备入蜀',chars:['liubei','zhugeliang','pangtong','zhaoyun','fazheng'],summary:'刘备应刘璋之邀入川，以助其抵御张鲁为名图谋益州。庞统献上中下三计，刘备取中计逐步蚕食，最终夺取成都。庞统在落凤坡中箭身亡。'},
+    {year:219,name:'关羽失荆州',chars:['guanyu','lvmeng','luxun','caocao'],summary:'关羽北伐樊城水淹七军威震华夏，不料吕蒙白衣渡江奇袭江陵，陆逊截断退路。关羽腹背受敌败走麦城被东吴擒杀，荆州易手，孙刘联盟彻底破裂。'},
+    {year:220,name:'曹丕称帝',chars:['caopi','caocao','xian-di','caozhi'],summary:'曹操病逝洛阳，曹丕继位后逼迫汉献帝禅让，正式代汉自立。曹植七步成诗"本是同根生，相煎何太急"，兄弟相争的残酷尽显于此。'},
+    {year:221,name:'刘备称帝',chars:['liubei','zhugeliang'],summary:'刘备以汉室宗亲身份在成都称帝，诸葛亮任丞相。刘备立誓为关羽报仇，不顾劝阻执意伐吴，为夷陵惨败埋下祸根。'},
+    {year:222,name:'夷陵之战',chars:['liubei','luxun','sunquan'],summary:'刘备尽起蜀中精锐东征，陆逊避其锋芒以逸待劳。盛夏酷暑刘备联营七百里，陆逊一把火烧毁蜀军连营。刘备败退白帝城，次年含恨而终。'},
+    {year:227,name:'出师表',chars:['zhugeliang','liushan'],summary:'诸葛亮北伐前上疏《出师表》，文辞恳切感人至深。"亲贤臣远小人"、"苟全性命于乱世，不求闻达于诸侯"，千古名篇写尽忠臣之心。'},
+    {year:234,name:'五丈原',chars:['zhugeliang','simayi','jiangwei'],summary:'诸葛亮最后一次北伐屯兵五丈原，与司马懿对峙百日。司马懿坚守不出，诸葛亮积劳成疾病逝军中。"死诸葛走生仲达"，一代名相陨落。'},
+    {year:249,name:'高平陵之变',chars:['simayi'],summary:'曹爽陪同曹芳出城祭扫高平陵，司马懿趁京城空虚发动政变控制洛阳，诛杀曹爽三族。曹魏军政大权尽归司马氏，为西晋代魏埋下伏笔。'},
+    {year:263,name:'蜀汉灭亡',chars:['liushan','dengai','zhonghui','jiangwei'],summary:'邓艾偷渡阴平直逼成都，刘禅未战而降。姜维假意投降钟会策反试图复国却事败身亡，蜀汉四十二年基业终告灭亡。刘禅至洛阳"乐不思蜀"。'},
+    {year:280,name:'三国归晋',chars:[],summary:'司马炎逼迫魏元帝禅让建立西晋，十五年后发兵攻吴，吴主孙皓投降。自黄巾起义起近百年分裂动荡终归一统——天下大势，分久必合，合久必分。'}
+  ]
+};
+
+// ===================== STATE =====================
+let currentData = null;       // 当前加载的小说数据
+let charMap = {};             // id/name → character
+let adj = {};                 // 邻接表
+let edgeByPair = {};          // "a--b" → relation
+let allCharIds = [];          // 所有角色 id 列表
+
+const outOfDataChars = new Set(); // API 返回数据中不存在的角色 id（搜索路径时容错）
+
+// ===================== DOM REFS =====================
+const logo        = document.getElementById('logo');
+const searchInput = document.getElementById('search-input');
+const voiceBtn    = document.getElementById('voice-btn');
+const legendEl    = document.getElementById('legend');
+const generateBtn = document.getElementById('generate-btn');
+const infoPanel   = document.getElementById('info-panel');
+const infoClose   = document.getElementById('info-close');
+const infoName    = document.getElementById('info-name');
+const infoFaction = document.getElementById('info-faction');
+const infoDesc    = document.getElementById('info-desc');
+const infoRelations = document.getElementById('info-relations');
+const pathCard    = document.getElementById('path-card');
+const pathContent = document.getElementById('path-content');
+const timelineEl  = document.getElementById('timeline');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingText = document.getElementById('loading-text');
+const loadingCancel = document.getElementById('loading-cancel');
+const errorToast  = document.getElementById('error-toast');
+const modalOverlay = document.getElementById('modal-overlay');
+const modalInput  = document.getElementById('modal-input');
+const modalGenerate = document.getElementById('modal-generate');
+const modalCancel = document.getElementById('modal-cancel');
+
+// History DOM
+const historyToggle = document.getElementById('history-toggle');
+const historyPanel = document.getElementById('history-panel');
+const historyClose = document.getElementById('history-close');
+const historyList = document.getElementById('history-list');
+const historyClear = document.getElementById('history-clear');
+
+// Theme toggle
+const themeToggle = document.getElementById('theme-toggle');
+function setTheme(theme) {
+  document.documentElement.classList.toggle('light', theme === 'light');
+  localStorage.setItem('theme', theme);
+}
+themeToggle.addEventListener('click', function() {
+  const isLight = document.documentElement.classList.contains('light');
+  setTheme(isLight ? 'dark' : 'light');
+});
+// Restore theme on load
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') setTheme('light');
+
+// Edit mode DOM
+const editToggle = document.getElementById('edit-toggle');
+const editToolbar = document.getElementById('edit-toolbar');
+const addRelBtn = document.getElementById('add-rel-btn');
+const saveLayoutBtn = document.getElementById('save-layout-btn');
+const addRelIndicator = document.getElementById('add-rel-indicator');
+let editMode = false;
+let addEdgeMode = false;
+let addEdgeSource = null;
+
+// ===================== NETWORK =====================
+const nodes = new vis.DataSet();
+const edges = new vis.DataSet();
+
+const container = document.getElementById('graph-container');
+const network = new vis.Network(container, { nodes, edges }, {
+  physics: {
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: { gravitationalConstant: -40, centralGravity: 0.005, springLength: 160, springConstant: 0.04, damping: 0.5 },
+    stabilization: { iterations: 200 },
+  },
+  interaction: { hover: true, tooltipDelay: 200, navigationButtons: true, keyboard: true },
+  layout: { improvedLayout: true },
+});
+
+// ===================== HELPERS =====================
+function edgeKey(a, b) { return [a, b].sort().join('--'); }
+
+function factionBadgeStyle(factionKey) {
+  const f = (currentData && currentData.factions || []).find(x => x.key === factionKey);
+  const color = f ? f.color : '#666';
+  return `background:${color}22;color:${color};display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px`;
+}
+
+// ===================== LOAD DATA =====================
+let abortController = null;
+
+function loadNovelData(data) {
+  currentData = data;
+  activeFactionFilter = null;
+  charMap = {};
+  adj = {};
+  edgeByPair = {};
+  allCharIds = [];
+  outOfDataChars.clear();
+
+  // 建立角色索引
+  data.characters.forEach(c => {
+    charMap[c.id] = c;
+    charMap[c.name] = c;
+    allCharIds.push(c.id);
+  });
+
+  // 建立邻接表 & 边索引
+  data.relations.forEach(r => {
+    if (!adj[r.from]) adj[r.from] = [];
+    if (!adj[r.to]) adj[r.to] = [];
+    adj[r.from].push(r.to);
+    adj[r.to].push(r.from);
+    edgeByPair[edgeKey(r.from, r.to)] = r;
+  });
+
+  // 重建 faction 色板 → vis.js groups
+  const groups = {};
+  (data.factions || []).forEach(f => {
+    groups[f.key] = { color: { background: f.color } };
+  });
+  network.setOptions({ groups });
+
+  // 重建 nodes
+  nodes.clear();
+  nodes.add(data.characters.map(c => {
+    const f = (data.factions || []).find(x => x.key === c.faction);
+    const bg = f ? f.color : '#666';
+    return {
+      id: c.id,
+      label: c.name,
+      group: c.faction,
+      title: `<b>${c.name}</b><br>${c.title || ''}<br><i>${f ? f.name : c.faction}</i>`,
+      color: { background: bg, border: '#fff', highlight: { background: bg, border: '#f0c040' } },
+      font: { color: '#e0e0e0', size: 13, strokeWidth: 2, strokeColor: '#0f1119' },
+      shape: 'dot', size: 28, borderWidth: 2,
+    };
+  }));
+
+  // 重建 edges
+  edges.clear();
+  edges.add(data.relations.map(r => ({
+    from: r.from, to: r.to, label: r.type,
+    dashes: r.style === 'dashed' ? [8, 4] : (r.style === 'dotted' ? [3, 3] : false),
+    color: { color: r.style === 'dashed' ? '#555' : '#888', hover: '#f0c040' },
+    font: { color: '#666', size: 10, strokeWidth: 2, strokeColor: '#0f1119' },
+    width: r.style === 'solid' ? 1.5 : 1,
+    smooth: { type: 'continuous' },
+    arrows: { to: { enabled: r.style === 'dashed', scaleFactor: 0.5 } },
+  })));
+
+  // Load custom edges (user-added)
+  const customEdges = loadCustomEdges();
+  customEdges.forEach(r => {
+    // Skip if already exists from API data
+    const exists = data.relations.some(er =>
+      (er.from === r.from && er.to === r.to) || (er.from === r.to && er.to === r.from)
+    );
+    if (exists) return;
+    data.relations.push(r);
+    if (!adj[r.from]) adj[r.from] = [];
+    if (!adj[r.to]) adj[r.to] = [];
+    adj[r.from].push(r.to);
+    adj[r.to].push(r.from);
+    edgeByPair[edgeKey(r.from, r.to)] = r;
+    edges.add({
+      from: r.from, to: r.to, label: r.type,
+      dashes: r.style === 'dashed' ? [8, 4] : (r.style === 'dotted' ? [3, 3] : false),
+      color: { color: r.style === 'dashed' ? '#555' : '#888', hover: '#f0c040' },
+      font: { color: '#666', size: 10, strokeWidth: 2, strokeColor: '#0f1119' },
+      width: r.style === 'solid' ? 1.5 : 1,
+      smooth: { type: 'continuous' },
+      arrows: { to: { enabled: r.style === 'dashed', scaleFactor: 0.5 } },
+    });
+  });
+
+  // 更新 UI
+  logo.textContent = t('app.title', data.novelName || '未知小说');
+  document.title = t('app.pageTitle', data.novelName || '小说');
+  rebuildLegend();
+  buildTimeline();
+  closeAllPanels();
+
+  // Register in multi-novel map
+  const nName = data.novelName;
+  if (nName && !novelTabOrder.includes(nName)) {
+    novelDataMap[nName] = { data };
+    novelTabOrder.push(nName);
+  }
+  rebuildNovelTabs();
+
+  network.once('stabilizationIterationsDone', function() {
+    network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+    loadSavedLayout();
+  });
+  network.stabilize(100);
+}
+
+function closeAllPanels() {
+  infoPanel.classList.remove('show');
+  pathCard.classList.remove('show');
+  network.selectNodes([]);
+  timelineEl.querySelectorAll('.tl-event').forEach(e => e.classList.remove('active'));
+  searchInput.value = '';
+}
+
+// ===================== LEGEND & FILTER =====================
+let activeFactionFilter = null;
+
+function setFactionFilter(factionKey) {
+  if (activeFactionFilter === factionKey) {
+    // Toggle off
+    activeFactionFilter = null;
+  } else {
+    activeFactionFilter = factionKey;
+  }
+
+  if (!activeFactionFilter || !currentData) {
+    // Show all nodes
+    currentData && currentData.characters.forEach(c => { nodes.update({ id: c.id, hidden: false }); });
+    rebuildLegend();
+    return;
+  }
+
+  // Hide characters not in this faction
+  currentData.characters.forEach(c => {
+    nodes.update({ id: c.id, hidden: c.faction !== activeFactionFilter });
+  });
+  rebuildLegend();
+  // Focus on visible nodes
+  const visible = currentData.characters.filter(c => c.faction === activeFactionFilter).map(c => c.id);
+  if (visible.length > 0) network.fit({ nodes: visible, animation: { duration: 500 } });
+}
+
+function rebuildLegend() {
+  const factions = (currentData && currentData.factions) || [];
+  let html = factions.map(f => {
+    const active = activeFactionFilter === f.key;
+    return `<span class="legend-item ${active ? 'active-filter' : ''}" data-faction="${f.key}" style="cursor:pointer;${active ? 'opacity:1' : ''}">
+      <span class="legend-dot" style="background:${f.color}"></span>${f.name}
+    </span>`;
+  }).join('');
+  if (activeFactionFilter) {
+    html += `<span class="legend-item" id="filter-reset" style="cursor:pointer;color:var(--accent);font-size:11px;margin-left:4px">✕ 显示全部</span>`;
+  }
+  legendEl.innerHTML = html;
+
+  // Attach click handlers
+  legendEl.querySelectorAll('.legend-item[data-faction]').forEach(el => {
+    el.addEventListener('click', () => setFactionFilter(el.dataset.faction));
+  });
+  const resetBtn = document.getElementById('filter-reset');
+  if (resetBtn) resetBtn.addEventListener('click', () => setFactionFilter(null));
+}
+
+// ===================== INFO PANEL =====================
+function showCharacter(charId) {
+  const c = charMap[charId];
+  if (!c) return;
+  const f = (currentData && currentData.factions || []).find(x => x.key === c.faction);
+  infoName.textContent = c.name;
+  infoFaction.textContent = (c.title || '') + (f ? ' · ' + f.name : '');
+  infoFaction.style.cssText = factionBadgeStyle(c.faction);
+  infoDesc.textContent = c.desc || '';
+
+  const rels = (currentData && currentData.relations || []).filter(r => r.from === charId || r.to === charId);
+  const factions = currentData && currentData.factions || [];
+  const relsHtml = rels.map(r => {
+    const targetId = r.from === charId ? r.to : r.from;
+    const target = charMap[targetId];
+    if (!target) return '';
+    const tf = factions.find(x => x.key === target.faction);
+    return `<div class="rel-item">
+      <span class="legend-dot" style="background:${tf?tf.color:'#666'};width:8px;height:8px"></span>
+      <span class="rel-target" data-char="${targetId}">${target.name}</span>
+      <span class="rel-type">${r.type}</span>
+    </div>`;
+  }).join('');
+  infoRelations.innerHTML = '<h4>人物关系 (' + rels.length + '条)</h4>' + relsHtml;
+
+  infoRelations.querySelectorAll('.rel-target').forEach(el => {
+    el.addEventListener('click', () => showCharacter(el.dataset.char));
+  });
+
+  infoPanel.classList.add('show');
+  network.selectNodes([charId]);
+  network.focus(charId, { scale: 1.5, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+}
+
+infoClose.addEventListener('click', () => {
+  infoPanel.classList.remove('show');
+  network.selectNodes([]);
+  resetNodeOpacity();
+  timelineEl.querySelectorAll('.tl-event').forEach(e => e.classList.remove('active'));
+  network.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+});
+
+network.on('click', function(params) {
+  // Add-edge mode: node selection
+  if (addEdgeMode) {
+    if (params.nodes.length === 1) {
+      const nodeId = params.nodes[0];
+      if (!addEdgeSource) {
+        addEdgeSource = nodeId;
+        addRelIndicator.innerHTML = t('edit.selectTarget');
+        network.selectNodes([nodeId]);
+        return;
+      } else if (nodeId !== addEdgeSource) {
+        // Both source and target selected — create edge
+        const relType = prompt(t('edit.relPrompt'), '义父女');
+        if (relType && relType.trim()) {
+          const styleMap = { '父':'solid','母':'solid','兄':'solid','姐':'solid','子':'solid','女':'solid','师':'dotted','徒':'dotted','敌':'dashed','仇':'dashed' };
+          let style = 'solid';
+          for (const [kw, s] of Object.entries(styleMap)) {
+            if (relType.includes(kw)) { style = s; break; }
+          }
+          // Check if edge already exists
+          const existing = edges.get().find(e =>
+            (e.from === addEdgeSource && e.to === nodeId) || (e.from === nodeId && e.to === addEdgeSource)
+          );
+          if (existing) {
+            showError(t('toast.dupEdge'));
+          } else {
+            addEdgeToGraph(addEdgeSource, nodeId, relType.trim(), style);
+            saveCustomEdge(addEdgeSource, nodeId, relType.trim(), style);
+          }
+        }
+        // Reset for next
+        addEdgeSource = null;
+        addRelIndicator.innerHTML = t('edit.selectSource');
+        network.selectNodes([]);
+        return;
+      }
+    }
+    return; // In add-edge mode, ignore other clicks
+  }
+
+  // Edit mode: edge editing
+  if (editMode) {
+    if (params.edges && params.edges.length === 1) {
+      const edgeId = params.edges[0];
+      const edge = edges.get(edgeId);
+      if (edge) {
+        const action = prompt(t('edit.edgePrompt', edge.label || '无标签'), edge.label || '');
+        if (action === null) return;
+        if (action.trim() === t('edit.delKeyword')) {
+          edges.remove(edgeId);
+          // Remove from currentData
+          if (currentData) {
+            const idx = currentData.relations.findIndex(r =>
+              (r.from === edge.from && r.to === edge.to) || (r.from === edge.to && r.to === edge.from)
+            );
+            if (idx !== -1) currentData.relations.splice(idx, 1);
+            // Remove from adjacency
+            const ek = edgeKey(edge.from, edge.to);
+            delete edgeByPair[ek];
+            if (adj[edge.from]) adj[edge.from] = adj[edge.from].filter(id => id !== edge.to);
+            if (adj[edge.to]) adj[edge.to] = adj[edge.to].filter(id => id !== edge.from);
+          }
+          deleteCustomEdge(edge.from, edge.to);
+          showError(t('toast.edgeDeleted'));
+        } else if (action.trim()) {
+          edges.update({ id: edgeId, label: action.trim() });
+          // Update in currentData
+          if (currentData) {
+            const idx = currentData.relations.findIndex(r =>
+              (r.from === edge.from && r.to === edge.to) || (r.from === edge.to && r.to === edge.from)
+            );
+            if (idx !== -1) currentData.relations[idx].type = action.trim();
+          }
+          // Save as custom override
+          saveCustomEdge(edge.from, edge.to, action.trim(), edge.dashes ? (edge.dashes[0] === 3 ? 'dotted' : 'dashed') : 'solid');
+        }
+      }
+      return;
+    }
+  }
+
+  // Normal mode: node click → show info
+  if (params.nodes.length === 1) {
+    showCharacter(params.nodes[0]);
+  } else {
+    infoPanel.classList.remove('show');
+    pathCard.classList.remove('show');
+    network.selectNodes([]);
+    resetNodeOpacity();
+    timelineEl.querySelectorAll('.tl-event').forEach(e => e.classList.remove('active'));
+  }
+});
+
+network.on('doubleClick', function(params) {
+  if (params.nodes.length === 1) {
+    network.focus(params.nodes[0], { scale: 2, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+  }
+});
+
+// ===================== SEARCH HISTORY =====================
+let historyEnabled = true;
+
+function getSearchHistory() {
+  try { return JSON.parse(localStorage.getItem('search_history') || '[]'); } catch { return []; }
+}
+
+function saveSearchHistory(arr) {
+  localStorage.setItem('search_history', JSON.stringify(arr.slice(0, 20)));
+  if (arr.length > 0) historyToggle.classList.add('has-items');
+  else historyToggle.classList.remove('has-items');
+}
+
+function addSearchHistory(query) {
+  if (!historyEnabled) return;
+  const arr = getSearchHistory();
+  // Remove duplicate if exists
+  const existingIdx = arr.findIndex(item => item.query === query);
+  if (existingIdx !== -1) arr.splice(existingIdx, 1);
+  arr.unshift({ query, timestamp: Date.now(), novelName: currentData?.novelName || '' });
+  saveSearchHistory(arr);
+  renderSearchHistory();
+}
+
+function deleteSearchHistory(index) {
+  const arr = getSearchHistory();
+  arr.splice(index, 1);
+  saveSearchHistory(arr);
+  renderSearchHistory();
+}
+
+function clearSearchHistory() {
+  localStorage.removeItem('search_history');
+  renderSearchHistory();
+  historyToggle.classList.remove('has-items');
+}
+
+function renderSearchHistory() {
+  const arr = getSearchHistory();
+  if (arr.length === 0) {
+    historyList.innerHTML = '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:12px">暂无搜索记录</div>';
+    return;
+  }
+  historyList.innerHTML = arr.map((item, i) => {
+    const d = new Date(item.timestamp);
+    const timeStr = String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    return `<div class="history-item" data-idx="${i}">
+      <span class="hq" title="${item.query.replace(/"/g,'&quot;')}">${item.query}</span>
+      <span class="h-time">${timeStr}</span>
+      <button class="history-del" data-idx="${i}" title="删除">✕</button>
+    </div>`;
+  }).join('');
+  historyList.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('.history-del')) return;
+      const idx = parseInt(this.dataset.idx);
+      const arr = getSearchHistory();
+      if (arr[idx]) {
+        closeAllPanels();
+        searchInput.value = arr[idx].query;
+        searchRelations(arr[idx].query);
+        historyPanel.classList.remove('show');
+      }
+    });
+  });
+  historyList.querySelectorAll('.history-del').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      deleteSearchHistory(parseInt(this.dataset.idx));
+    });
+  });
+}
+
+// ===================== SEARCH =====================
+function findBFS(startId, endId) {
+  if (startId === endId) return [startId];
+  const queue = [[startId]];
+  const visited = new Set([startId]);
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const current = path[path.length - 1];
+    const neighbors = adj[current] || [];
+    for (const n of neighbors) {
+      if (n === endId) return [...path, n];
+      if (!visited.has(n)) {
+        visited.add(n);
+        queue.push([...path, n]);
+      }
+    }
+  }
+  return null;
+}
+
+// ── 模糊找角色（支持部分名、字号、别称） ──
+function fuzzyFindChar(name) {
+  name = name.trim();
+  if (!name) return null;
+  for (const c of (currentData && currentData.characters || [])) {
+    if (c.name === name || c.name.includes(name) || (c.title || '').includes(name) || c.id.includes(name)) return c;
+  }
+  // 去掉末尾的"的"、"之"等虚词再试
+  const cleaned = name.replace(/[的之]$/, '');
+  if (cleaned !== name) return fuzzyFindChar(cleaned);
+  return null;
+}
+
+// ── 自然语言问答解析 ──
+const NL_PATTERNS = [
+  // "X的师傅/师父/老师是谁"  → find X's teacher
+  { regex: /^(.+?)的(师傅|师父|老师|导师|恩师)\s*是?谁/, rel: '师' },
+  // "X的徒弟/学生/弟子/门生是谁" → find X's students
+  { regex: /^(.+?)的(徒弟|学生|弟子|门生|传人)\s*是?谁/, rel: '徒' },
+  // "X的父亲/爸爸/爹/母亲/妈妈/娘是谁"
+  { regex: /^(.+?)的(父亲|爸爸|爹|母亲|妈妈|娘|父|母)\s*是?谁/, rel: '亲' },
+  // "X的儿子/女儿/孩子/子女是谁"
+  { regex: /^(.+?)的(儿子|女儿|孩子|子女|子嗣)\s*是?谁/, rel: '子' },
+  // "X的兄弟/哥哥/弟弟/姐妹/姐姐/妹妹是谁"
+  { regex: /^(.+?)的(兄弟|哥哥|弟弟|姐姐|妹妹|姐妹|兄长|手足)\s*是?谁/, rel: '兄' },
+  // "X的丈夫/妻子/老婆/老公/爱人是谁"
+  { regex: /^(.+?)的(丈夫|妻子|老婆|老公|爱人|配偶)\s*是?谁/, rel: '偶' },
+  // "X的主公/上司/领导/主子是谁"
+  { regex: /^(.+?)的(主公|上司|领导|主子|君主|头领|大王)\s*是?谁/, rel: '君' },
+  // "谁杀了/害了/灭了/干掉了 X"
+  { regex: /^谁(杀了|害了|灭了|干掉了|弄死了|做了)(.+)/, rel: '杀' },
+  // "X被谁(杀了|害了|灭了)"
+  { regex: /^(.+?)被谁(杀了|害了|灭了|打败了)/, rel: '杀' },
+  // "X和Y是什么关系" → 两角色间路径
+  { regex: /^(.+?)[和与](.+?)是什么关系/, rel: 'path' },
+  // "X和Y什么关系"
+  { regex: /^(.+?)[和与](.+?)(的|什么)?关?系/, rel: 'path' },
+  // 兜底: "X是谁"
+  { regex: /^(.+?)是谁[？?]?$/, rel: 'who' },
+];
+
+function parseNaturalQuery(query) {
+  for (const { regex, rel } of NL_PATTERNS) {
+    const m = query.match(regex);
+    if (!m) continue;
+
+    if (rel === 'path') {
+      const a = fuzzyFindChar(m[1]), b = fuzzyFindChar(m[2]);
+      if (a && b) return { type: 'path', chars: [a, b] };
+      if (a || b) return { type: 'single', char: a || b };
+      return null;
+    }
+
+    // 关系类问题：提取角色名，然后按关系类型搜索边
+    let charName;
+    if (rel === '杀' && m[2]) charName = m[2]; // "谁杀了X"
+    else if (rel === '杀' && m[1]) charName = m[1]; // "X被谁杀了"
+    else charName = m[1];
+
+    const char = fuzzyFindChar(charName);
+    if (!char) continue;
+
+    return { type: 'relation', char, relHint: rel, rawGroups: m };
+  }
+  return null;
+}
+
+// ── 根据关系提示词搜索相关边 ──
+function findRelatedChars(charId, relHint) {
+  const rels = (currentData && currentData.relations || []);
+  const results = [];
+
+  const hintMap = {
+    '师': ['师', '徒', '教', '授', '学'],
+    '徒': ['徒', '学', '弟', '生'],
+    '亲': ['父', '母', '子', '女', '亲', '爸', '妈', '娘', '爹'],
+    '子': ['子', '女', '儿', '孩', '后'],
+    '兄': ['兄', '弟', '姐', '妹', '手足'],
+    '偶': ['妻', '夫', '配', '偶', '爱', '情', '侣'],
+    '君': ['君', '主', '臣', '上', '下', '忠', '事'],
+    '杀': ['杀', '害', '灭', '死', '仇', '敌', '斩'],
+  };
+
+  const keywords = hintMap[relHint] || [];
+
+  for (const r of rels) {
+    if (r.from === charId || r.to === charId) {
+      const otherId = r.from === charId ? r.to : r.from;
+      const other = charMap[otherId];
+      if (!other) continue;
+
+      // 匹配关系类型中的关键词
+      if (keywords.some(kw => r.type.includes(kw))) {
+        results.push({ character: other, relation: r, direction: r.from === charId ? 'out' : 'in' });
+      }
+    }
+  }
+
+  // 如果没有关键词匹配，返回所有关联角色
+  if (results.length === 0) {
+    for (const r of rels) {
+      if (r.from === charId || r.to === charId) {
+        const otherId = r.from === charId ? r.to : r.from;
+        const other = charMap[otherId];
+        if (other) results.push({ character: other, relation: r, direction: r.from === charId ? 'out' : 'in' });
+      }
+    }
+  }
+
+  return results;
+}
+
+// ── LLM 智能搜索：复杂关系问题交给 AI ──
+async function callLLMSearch(query) {
+  const chars = (currentData && currentData.characters || []);
+  const rels = (currentData && currentData.relations || []);
+  const directKey = apiKeyInput.value.trim();
+
+  const slimChars = chars.map(c => ({ id: c.id, name: c.name, faction: c.faction, title: c.title || '', desc: (c.desc || '').slice(0, 60) }));
+  const slimRels = rels.map(r => ({ from: r.from, to: r.to, type: r.type }));
+
+  const body = JSON.stringify({ query, characters: slimChars, relations: slimRels });
+
+  // 优先走服务器
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(15000) : undefined,
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.found) return data;
+      return null;
+    }
+    // 如果服务器返回"未配置 API Key"，且有直连 Key，走直连
+    if (resp.status === 503 && directKey) throw new Error('server-no-key');
+  } catch (err) {
+    if (err.message === 'server-no-key' || err.name === 'TypeError' || err.message.includes('fetch')) {
+      // 服务器不可达，尝试直连
+    } else {
+      return null;
+    }
+  }
+
+  // 备选：浏览器直连 DeepSeek
+  if (!directKey) return null;
+
+  try {
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${directKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        max_tokens: 512,
+        temperature: 0.1,
+        messages: [
+          { role: 'system', content: 'You are a character relationship search engine. Given character list, relation list, and a natural-language question, answer in JSON only: {"found":true,"answer":"中文回答","highlightIds":["id1","id2"],"pathIds":["id1","id3","id2"]}. If not relevant, return {"found":false}.' },
+          { role: 'user', content: `Characters:\n${JSON.stringify(slimChars)}\n\nRelations:\n${JSON.stringify(slimRels)}\n\nQuestion: ${query}` },
+        ],
+      }),
+    });
+
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    const raw = json.choices?.[0]?.message?.content || '';
+    try {
+      const data = extractJSON(raw);
+      return (data && data.found) ? data : null;
+    } catch (_) { return null; }
+  } catch (_) {
+    return null;
+  }
+}
+
+// ── 判断是否像自然语言问题 ──
+function looksLikeQuestion(query) {
+  const qPatterns = [/是谁/, /什么关系/, /有没有/, /哪.*关系/, /谁.*了/, /怎么.*的/, /为什么/, /啥关系/, /有关系/, /认识/, /跟.*什么/];
+  return qPatterns.some(p => p.test(query)) || query.length > 8 || query.includes('？') || query.includes('?');
+}
+
+function searchRelations(query) {
+  infoPanel.classList.remove('show');
+  pathCard.classList.remove('show');
+  network.selectNodes([]);
+  resetNodeOpacity();
+  addSearchHistory(query);
+
+  // ── 第一步：尝试自然语言问答 ──
+  const nl = parseNaturalQuery(query);
+
+  if (nl) {
+    if (nl.type === 'path') {
+      const a = nl.chars[0], b = nl.chars[1];
+      const path = findBFS(a.id, b.id);
+      const factions = currentData && currentData.factions || [];
+
+      if (!path) {
+        pathContent.innerHTML = `<span style="color:var(--text-dim)">${t('path.noPath', a.name, b.name)}</span>`;
+        pathCard.classList.add('show');
+        return;
+      }
+      let html = `<div style="font-size:15px;color:var(--text);margin-bottom:8px">📖 ${t('path.heading', a.name, b.name)}</div>`;
+      for (let i = 0; i < path.length; i++) {
+        const ch = charMap[path[i]];
+        if (!ch) { outOfDataChars.add(path[i]); continue; }
+        const tf = factions.find(x => x.key === ch.faction);
+        html += `<div class="path-step"><span class="legend-dot" style="background:${tf?tf.color:'#666'};width:10px;height:10px;display:inline-block;border-radius:50%"></span> <b style="color:#f0c040;cursor:pointer" data-char="${ch.id}">${ch.name}</b> <span style="color:var(--text-dim);font-size:11px">${tf?tf.name:ch.faction}</span></div>`;
+        if (i < path.length - 1) {
+          const e = edgeByPair[edgeKey(path[i], path[i+1])];
+          html += `<div class="path-relation">  ↳ ${e ? e.type : '关联'}  ↴</div>`;
+        }
+      }
+      pathContent.innerHTML = html + '<div style="font-size:12px;color:var(--text-dim);margin-top:8px" id="explain-loading">🤔 分析关系…</div>';
+      pathContent.querySelectorAll('[data-char]').forEach(el => el.addEventListener('click', () => showCharacter(el.dataset.char)));
+      pathCard.classList.add('show');
+      const validPath = path.filter(id => !outOfDataChars.has(id));
+      network.selectNodes(validPath);
+      network.fit({ nodes: validPath, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+
+      // ── 异步获取 AI 关系解释 ──
+      (async () => {
+        const rels = [];
+        for (let i = 0; i < path.length - 1; i++) {
+          const ek = edgeKey(path[i], path[i+1]);
+          const e = edgeByPair[ek];
+          if (e && charMap[path[i]] && charMap[path[i+1]]) {
+            rels.push({ aName: charMap[path[i]].name, bName: charMap[path[i+1]].name, type: e.type });
+          }
+        }
+        if (rels.length === 0) return;
+
+        const nov = (currentData && currentData.novelName) || '未知';
+        let expText = '';
+
+        try {
+          const resp = await fetch('/api/explain-path', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ charA: a, charB: b, relations: rels, novelName: nov }),
+          });
+          if (resp.ok) { const d = await resp.json(); expText = d.explanation || ''; }
+        } catch (_) {}
+
+        if (!expText) {
+          const dk = apiKeyInput.value.trim();
+          if (dk) {
+            try {
+              const relSummary = rels.map(r => `${r.aName} -[${r.type}]-> ${r.bName}`).join('; ');
+              const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${dk}` },
+                body: JSON.stringify({
+                  model: 'deepseek-chat', max_tokens: 256, temperature: 0.3,
+                  messages: [
+                    { role: 'system', content: '用1-2句中文回答人物关系，简洁直接。' },
+                    { role: 'user', content: `小说《${nov}》中，${a.name}和${b.name}的关系链：${relSummary}。一句话概括他们的关系。` },
+                  ],
+                }),
+              });
+              if (resp.ok) { const j = await resp.json(); expText = j.choices?.[0]?.message?.content || ''; }
+            } catch (_) {}
+          }
+        }
+
+        const el = document.getElementById('explain-loading');
+        if (el) {
+          if (expText) {
+            el.innerHTML = `💡 <span style="color:var(--accent)">${expText}</span> <button class="tts-btn" title="朗读解释">🔊</button>`;
+            const ttsBtn = el.querySelector('.tts-btn');
+            if (ttsBtn && window.speechSynthesis) {
+              ttsBtn.addEventListener('click', function() { speakExplanation(expText, this); });
+            } else if (ttsBtn) {
+              ttsBtn.style.display = 'none';
+            }
+          } else {
+            el.innerHTML = `<span style="color:var(--text-dim)">(关系路径如上所示)</span>`;
+          }
+        }
+      })();
+      return;
+    }
+
+    if (nl.type === 'single') {
+      showCharacter(nl.char.id);
+      return;
+    }
+
+    if (nl.type === 'relation') {
+      const results = findRelatedChars(nl.char.id, nl.relHint);
+      const factions = currentData && currentData.factions || [];
+
+      if (results.length === 0) {
+        // 本地没找到，先退回 LLM 搜索
+      } else {
+        const tf = factions.find(x => x.key === nl.char.faction);
+        let html = `<div style="font-size:15px;color:var(--text);margin-bottom:6px">📖 ${nl.char.name} <span style="color:var(--text-dim);font-size:12px">${tf?tf.name:''}</span></div>`;
+
+        if (results.length === 1) {
+          const r = results[0];
+          html += `<div style="font-size:16px;color:var(--accent);margin-bottom:4px">→ ${r.character.name}</div>`;
+          html += `<div style="font-size:13px;color:var(--text-dim)">关系：${r.relation.type}</div>`;
+        } else {
+          html += `<div style="font-size:13px;color:var(--text-dim);margin-bottom:6px">找到 ${results.length} 个关联：</div>`;
+          results.forEach(r => {
+            const tf2 = factions.find(x => x.key === r.character.faction);
+            html += `<div class="path-step"><span class="legend-dot" style="background:${tf2?tf2.color:'#666'};width:8px;height:8px;display:inline-block;border-radius:50%"></span> <b style="color:#f0c040;cursor:pointer" data-char="${r.character.id}">${r.character.name}</b> <span style="color:var(--text-dim);font-size:11px">${r.relation.type}</span></div>`;
+          });
+        }
+
+        pathContent.innerHTML = html;
+        pathContent.querySelectorAll('[data-char]').forEach(el => el.addEventListener('click', () => showCharacter(el.dataset.char)));
+        pathCard.classList.add('show');
+
+        const highlightIds = [nl.char.id, ...results.map(r => r.character.id)];
+        highlightEventChars(highlightIds);
+        network.selectNodes(highlightIds);
+        network.fit({ nodes: highlightIds, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+        return;
+      }
+    }
+  }
+
+  // ── 第二步：按角色名称直接匹配（原有逻辑） ──
+  const foundChars = [];
+  for (const c of (currentData && currentData.characters || [])) {
+    if (query.includes(c.name)) foundChars.push(c);
+  }
+
+  if (foundChars.length === 0) {
+    const match = fuzzyFindChar(query);
+    if (match) return showCharacter(match.id);
+
+    // ── 第三步：本地全失败 → LLM 智能搜索 ──
+    if (looksLikeQuestion(query)) {
+      pathContent.innerHTML = `<div style="text-align:center;padding:12px"><span style="color:var(--text-dim);font-size:14px">🤔 AI 正在理解你的问题…</span></div>`;
+      pathCard.classList.add('show');
+
+      callLLMSearch(query).then(data => {
+        if (!data || !data.found || !data.highlightIds || data.highlightIds.length === 0) {
+          pathContent.innerHTML = `<span style="color:var(--text-dim)">未能解析这个问题，试试换个问法？</span>`;
+          pathCard.classList.add('show');
+          return;
+        }
+
+        // 过滤有效的 ID
+        const validIds = data.highlightIds.filter(id => charMap[id]);
+        const factions = currentData && currentData.factions || [];
+
+        let html = `<div style="font-size:15px;color:var(--accent);margin-bottom:8px">💡 ${data.answer || ''}</div>`;
+
+        if (data.pathIds && data.pathIds.length >= 2) {
+          // 显示路径
+          const validPath = data.pathIds.filter(id => charMap[id]);
+          for (let i = 0; i < validPath.length; i++) {
+            const ch = charMap[validPath[i]];
+            if (!ch) continue;
+            const tf = factions.find(x => x.key === ch.faction);
+            html += `<div class="path-step"><span class="legend-dot" style="background:${tf?tf.color:'#666'};width:10px;height:10px;display:inline-block;border-radius:50%"></span> <b style="color:#f0c040;cursor:pointer" data-char="${ch.id}">${ch.name}</b> <span style="color:var(--text-dim);font-size:11px">${tf?tf.name:ch.faction}</span></div>`;
+            if (i < validPath.length - 1) {
+              const ek = edgeKey(validPath[i], validPath[i+1]);
+              const e = edgeByPair[ek];
+              html += `<div class="path-relation">  ↳ ${e ? e.type : '关联'}  ↴</div>`;
+            }
+          }
+        } else if (validIds.length > 0) {
+          html += `<div style="font-size:13px;color:var(--text-dim);margin-top:6px">相关人物：`;
+          validIds.forEach(id => {
+            const ch = charMap[id];
+            const tf = factions.find(x => x.key === ch.faction);
+            html += `<span style="color:#f0c040;cursor:pointer;margin:0 4px" data-char="${ch.id}">${ch.name}</span>`;
+          });
+          html += `</div>`;
+        }
+
+        pathContent.innerHTML = html;
+        pathContent.querySelectorAll('[data-char]').forEach(el => el.addEventListener('click', () => showCharacter(el.dataset.char)));
+        pathCard.classList.add('show');
+
+        if (validIds.length > 0) {
+          highlightEventChars(validIds);
+          network.selectNodes(validIds);
+          network.fit({ nodes: validIds, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+        }
+      }).catch(() => {
+        pathContent.innerHTML = `<span style="color:var(--text-dim)">AI 搜索暂不可用，试试输入角色名字直接查找</span>`;
+        pathCard.classList.add('show');
+      });
+    }
+    return;
+  }
+
+  if (foundChars.length === 1) {
+    showCharacter(foundChars[0].id);
+    return;
+  }
+
+  const a = foundChars[0], b = foundChars[1];
+  const path = findBFS(a.id, b.id);
+  const factions = currentData && currentData.factions || [];
+
+  if (!path) {
+    pathContent.innerHTML = `<span style="color:var(--text-dim)">未找到"${a.name}"与"${b.name}"之间的关联路径</span>`;
+    pathCard.classList.add('show');
+    return;
+  }
+
+  let html = '';
+  for (let i = 0; i < path.length; i++) {
+    const ch = charMap[path[i]];
+    if (!ch) { outOfDataChars.add(path[i]); continue; }
+    const tf = factions.find(x => x.key === ch.faction);
+    html += `<div class="path-step"><span class="legend-dot" style="background:${tf?tf.color:'#666'};width:10px;height:10px;display:inline-block;border-radius:50%"></span> <b style="color:#f0c040;cursor:pointer" data-char="${ch.id}">${ch.name}</b> <span style="color:var(--text-dim);font-size:11px">${tf?tf.name:ch.faction}</span></div>`;
+    if (i < path.length - 1) {
+      const e = edgeByPair[edgeKey(path[i], path[i+1])];
+      html += `<div class="path-relation">  ↳ ${e ? e.type : '关联'}  ↴</div>`;
+    }
+  }
+  pathContent.innerHTML = html;
+  pathContent.querySelectorAll('[data-char]').forEach(el => {
+    el.addEventListener('click', () => showCharacter(el.dataset.char));
+  });
+  pathCard.classList.add('show');
+  network.selectNodes(path.filter(id => !outOfDataChars.has(id)));
+  network.fit({ nodes: path.filter(id => !outOfDataChars.has(id)), animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+}
+
+searchInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const query = this.value.trim();
+    if (query) searchRelations(query);
+  }
+});
+
+searchInput.addEventListener('input', function() {
+  if (!this.value.trim()) {
+    pathCard.classList.remove('show');
+    infoPanel.classList.remove('show');
+    network.selectNodes([]);
+    resetNodeOpacity();
+    timelineEl.querySelectorAll('.tl-event').forEach(e => e.classList.remove('active'));
+    network.fit({ animation: { duration: 500 } });
+  }
+});
+
+// History toggle
+historyToggle.addEventListener('click', function() {
+  renderSearchHistory();
+  historyPanel.classList.toggle('show');
+});
+historyClose.addEventListener('click', function() { historyPanel.classList.remove('show'); });
+historyClear.addEventListener('click', clearSearchHistory);
+
+// Close history panel when clicking outside
+document.addEventListener('click', function(e) {
+  if (historyPanel.classList.contains('show') && !historyPanel.contains(e.target) && e.target !== historyToggle && !historyToggle.contains(e.target)) {
+    historyPanel.classList.remove('show');
+  }
+});
+
+// ===================== VOICE SEARCH =====================
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = function(event) {
+    const transcript = event.results[0][0].transcript.trim();
+    searchInput.value = transcript;
+    voiceBtn.classList.remove('listening');
+    if (transcript) searchRelations(transcript);
+  };
+  recognition.onerror = function() { voiceBtn.classList.remove('listening'); };
+  recognition.onend = function() { voiceBtn.classList.remove('listening'); };
+}
+
+voiceBtn.addEventListener('click', function() {
+  if (!recognition) {
+    alert(t('toast.voiceUnsupported'));
+    return;
+  }
+  if (voiceBtn.classList.contains('listening')) {
+    recognition.abort();
+    voiceBtn.classList.remove('listening');
+  } else {
+    voiceBtn.classList.add('listening');
+    searchInput.value = '';
+    recognition.start();
+  }
+});
+
+// ===================== TIMELINE =====================
+function highlightEventChars(charIds) {
+  const relatedSet = new Set(charIds);
+  const nodeUpdates = allCharIds.map(id => ({
+    id,
+    opacity: relatedSet.has(id) ? 1.0 : 0.12,
+    font: { color: relatedSet.has(id) ? '#e0e0e0' : 'rgba(224,224,224,0.12)', size: relatedSet.has(id) ? 13 : 11, strokeWidth: 2, strokeColor: '#0f1119' }
+  }));
+  nodes.update(nodeUpdates);
+
+  const allEdges = edges.get();
+  const edgeUpdates = allEdges.map(e => {
+    const bothRelated = relatedSet.has(e.from) && relatedSet.has(e.to);
+    if (bothRelated) {
+      return { id: e.id, color: { color: '#ccc', hover: '#f0c040' }, width: e.width || 1.5, font: { color: '#999', size: 10, strokeWidth: 2, strokeColor: '#0f1119' } };
+    } else {
+      return { id: e.id, color: { color: 'rgba(136,136,136,0.08)', hover: 'rgba(240,192,64,0.3)' }, width: 0.3, font: { color: 'rgba(102,102,102,0.08)', size: 10, strokeWidth: 2, strokeColor: '#0f1119' } };
+    }
+  });
+  edges.update(edgeUpdates);
+}
+
+function resetNodeOpacity() {
+  const nodeUpdates = allCharIds.map(id => ({
+    id, opacity: 1.0,
+    font: { color: '#e0e0e0', size: 13, strokeWidth: 2, strokeColor: '#0f1119' }
+  }));
+  nodes.update(nodeUpdates);
+
+  const allEdges = edges.get();
+  const edgeUpdates = allEdges.map(e => ({
+    id: e.id,
+    color: { color: e.dashes ? '#555' : '#888', hover: '#f0c040' },
+    width: e.dashes ? 1 : 1.5,
+    font: { color: '#666', size: 10, strokeWidth: 2, strokeColor: '#0f1119' }
+  }));
+  edges.update(edgeUpdates);
+}
+
+function buildTimeline() {
+  const evts = (currentData && currentData.events) || [];
+  if (evts.length === 0) { timelineEl.innerHTML = ''; return; }
+
+  let html = '';
+  evts.forEach((evt, i) => {
+    html += `<div class="tl-event" data-event="${i}">
+      <span class="tl-dot"></span>
+      <span class="tl-year">${evt.year != null ? evt.year : '—'}</span>
+      <span class="tl-name">${evt.name}</span>
+    </div>`;
+    html += '<div class="tl-line"></div>';
+  });
+  timelineEl.innerHTML = html;
+
+  timelineEl.querySelectorAll('.tl-event').forEach(el => {
+    el.addEventListener('click', function() {
+      const idx = parseInt(this.dataset.event);
+      const evt = evts[idx];
+      const wasActive = this.classList.contains('active');
+      timelineEl.querySelectorAll('.tl-event').forEach(e => e.classList.remove('active'));
+      if (wasActive) {
+        network.selectNodes([]);
+        network.fit({ animation: { duration: 500 } });
+        resetNodeOpacity();
+        pathCard.classList.remove('show');
+        return;
+      }
+      this.classList.add('active');
+      const validChars = (evt.chars || []).filter(id => charMap[id]);
+      if (validChars.length > 0) {
+        highlightEventChars(validChars);
+        network.selectNodes(validChars);
+        network.fit({ nodes: validChars, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+      }
+      pathContent.innerHTML = `
+        <div style="font-size:18px;color:var(--accent);margin-bottom:4px">${evt.name} <span style="font-size:13px;color:var(--text-dim)">${evt.year != null ? '· ' + evt.year + '年' : ''}</span></div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid var(--accent)">${evt.summary || ''}</div>
+        <div style="font-size:13px;color:var(--text)">相关人物：${(evt.chars||[]).map(id => {
+          const c = charMap[id];
+          return c ? `<span style="color:#f0c040;cursor:pointer" data-char="${c.id}">${c.name}</span>` : '';
+        }).join('、')}</div>
+      `;
+      pathCard.classList.add('show');
+      pathContent.querySelectorAll('[data-char]').forEach(el => {
+        el.addEventListener('click', () => showCharacter(el.dataset.char));
+      });
+    });
+  });
+}
+
+// ===================== GENERATE: API CALL =====================
+const apiKeyInput = document.getElementById('api-key-input');
+const apiKeyRow = document.getElementById('api-key-row');
+const apiKeyToggle = document.getElementById('api-key-toggle');
+
+// 从 sessionStorage 恢复已保存的 API Key
+const STORED_KEY = sessionStorage.getItem('deepseek_api_key');
+if (STORED_KEY) {
+  apiKeyInput.value = STORED_KEY;
+  apiKeyRow.classList.add('show');
+  apiKeyToggle.textContent = '⚙️ API Key 已设置（点击切换）';
+}
+
+apiKeyToggle.addEventListener('click', function() {
+  apiKeyRow.classList.toggle('show');
+  if (apiKeyRow.classList.contains('show')) {
+    apiKeyToggle.textContent = '⚙️ 隐藏 API Key 设置';
+  } else {
+    apiKeyToggle.textContent = STORED_KEY ? '⚙️ API Key 已设置（点击切换）' : '⚙️ 设置 API Key（跳过服务器，浏览器直连）';
+  }
+});
+
+// LLM 系统提示词（语言自适应）
+function getSystemPrompt(novelName) {
+  const isEnglish = /^[A-Za-z0-9\s:;&!?,.'"()-]+$/.test(novelName || '');
+  if (isEnglish) {
+    return `You are a literary analyst. Output a character graph in STRICT JSON:
+
+{
+  "novelName":"Novel Title",
+  "characters":[{"id":"name-kebab","name":"Character Name","faction":"faction-key","title":"Role/Title","desc":"One line description"}],
+  "factions":[{"key":"faction-key","name":"Faction Name","color":"#hex"}],
+  "relations":[{"from":"id","to":"id","type":"relation type","style":"solid|dashed|dotted"}],
+  "events":[{"year":number_or_null,"name":"Event Name","chars":["id"],"summary":"Brief summary"}]
+}
+
+Rules:
+- 20-35 characters, 3-6 factions (assign distinct #hex colors), 30-60 relations, 8-14 events
+- solid=family/ally/loyalty, dashed=rivary/enemy/betrayal, dotted=mentor/former/indirect
+- Use the novel's original language for names
+- No markdown fences, raw JSON only`;
+  }
+  return `You are a literary analyst. Output a character graph in STRICT JSON with Chinese text fields:
+
+{
+  "novelName":"书名",
+  "characters":[{"id":"pinyin-kebab","name":"角色名","faction":"阵营key","title":"身份","desc":"一句话描述"}],
+  "factions":[{"key":"阵营key","name":"阵营名","color":"#hex"}],
+  "relations":[{"from":"id","to":"id","type":"关系类型","style":"solid|dashed|dotted"}],
+  "events":[{"year":数字或null,"name":"事件名","chars":["id"],"summary":"概述"}]
+}
+
+Rules:
+- 20-35 characters, 3-6 factions (assign distinct #hex colors), 30-60 relations, 8-14 events
+- solid=family/ally/loyalty, dashed=rivary/enemy/betrayal, dotted=mentor/former/indirect
+- All text in Chinese, ids in pinyin-kebab
+- No markdown fences, raw JSON only`;
+
+// 辅助：从 LLM 文本响应中提取 JSON
+function extractJSON(text) {
+  try { return JSON.parse(text); } catch (_) {}
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) { try { return JSON.parse(fence[1].trim()); } catch (_) {} }
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try { return JSON.parse(text.slice(firstBrace, lastBrace + 1)); } catch (_) {}
+  }
+  return null;
+}
+
+// 直接调用 DeepSeek API（无需服务器）
+async function callDeepSeekDirect(novelName, apiKey) {
+  const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      max_tokens: 8192,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: getSystemPrompt(novelName) },
+        { role: 'user', content: /^[A-Za-z0-9\s:;&!?,.'"()-]+$/.test(novelName) ? `Generate the character relationship graph for "${novelName}".` : `请生成小说《${novelName}》的人物关系图谱。` },
+      ],
+    }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.json().catch(() => ({}));
+    if (resp.status === 401) throw new Error('API Key 无效，请检查后重试');
+    if (resp.status === 429) throw new Error('API 请求过于频繁，请稍后重试');
+    throw new Error(errBody.error?.message || `API 错误（${resp.status}）`);
+  }
+
+  const json = await resp.json();
+  const rawText = json.choices?.[0]?.message?.content || '';
+
+  const data = extractJSON(rawText);
+  if (!data) throw new Error('AI 返回格式异常，请重试');
+  if (!data.factions) data.factions = [];
+  const palette = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#e67e22','#1abc9c','#f39c12','#e91e63'];
+  data.factions.forEach((f, i) => { if (!f.color) f.color = palette[i % palette.length]; });
+  return data;
+}
+
+function showError(msg) {
+  errorToast.textContent = msg;
+  errorToast.style.display = 'block';
+  clearTimeout(errorToast._timeout);
+  errorToast._timeout = setTimeout(() => { errorToast.style.display = 'none'; }, 5000);
+}
+
+function showLoading(novelName) {
+  loadingText.textContent = t('loading.analyzing', novelName);
+  document.getElementById('loading-progress-fill').style.width = '0%';
+  updateProgress(0, t('loading.ready'));
+  loadingOverlay.classList.add('show');
+}
+
+function updateProgress(pct, stage) {
+  const fill = document.getElementById('loading-progress-fill');
+  const stageEl = document.getElementById('loading-stage');
+  if (fill) fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+  if (stageEl && stage) stageEl.textContent = stage;
+}
+
+function hideLoading() {
+  loadingOverlay.classList.remove('show');
+  abortController = null;
+}
+
+async function generateNovel(novelName) {
+  // ── 先查浏览器缓存 ──
+  const cacheKey = 'novel_' + novelName.trim();
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const data = JSON.parse(cached);
+      console.log(`📦 浏览器缓存命中：「${novelName}」`);
+      loadNovelData(data);
+      return;
+    }
+  } catch (_) {}
+
+  showLoading(novelName);
+  updateProgress(5, t('loading.checkCache'));
+  abortController = new AbortController();
+  const signal = abortController.signal;
+  const directKey = apiKeyInput.value.trim();
+
+  // 策略：优先走服务器代理；如果设置了 API Key 则直连作为备选
+  try {
+    updateProgress(15, t('loading.requestAI'));
+    // 尝试服务器代理
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ novelName }),
+      signal,
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `服务器错误（${resp.status}）`);
+    }
+
+    const data = await resp.json();
+    if (!data.characters || data.characters.length === 0) {
+      throw new Error('AI 未能识别出该小说的人物信息，请尝试更知名的小说');
+    }
+
+    updateProgress(70, t('loading.building'));
+    loadNovelData(data);
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+    hideLoading();
+    console.log(`✅ 加载完成：${data.characters.length} 人物 · ${data.relations.length} 关系 · ${data.events.length} 事件`);
+  } catch (err) {
+    if (err.name === 'AbortError') { hideLoading(); return; }
+
+    // 如果服务器不可达且有直连 Key，尝试浏览器直连
+    const isNetworkError = err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+    if (isNetworkError && directKey) {
+      console.log('🔄 服务器不可达，尝试浏览器直连 DeepSeek API…');
+      updateProgress(20, t('loading.directAPI'));
+      try {
+        const data = await callDeepSeekDirect(novelName, directKey);
+        if (!data.characters || data.characters.length === 0) {
+          throw new Error('AI 未能识别出该小说的人物信息，请尝试更知名的小说');
+        }
+        // 保存 API Key 到当前会话
+        sessionStorage.setItem('deepseek_api_key', directKey);
+        updateProgress(70, t('loading.building'));
+        loadNovelData(data);
+        hideLoading();
+        console.log(`✅ 直连加载完成：${data.characters.length} 人物 · ${data.relations.length} 关系 · ${data.events.length} 事件`);
+        return;
+      } catch (directErr) {
+        hideLoading();
+        if (directErr.name === 'AbortError') return;
+        showError(directErr.message);
+        return;
+      }
+    }
+
+    hideLoading();
+    if (isNetworkError) {
+      showError('无法连接到服务器。你可以：\n1. 运行 node server.js 启动本地服务\n2. 或在上方输入 DeepSeek API Key 后重试（浏览器直连）');
+    } else {
+      showError(err.message);
+    }
+  }
+}
+
+// ===================== MODAL =====================
+function openModal() {
+  modalInput.value = '';
+  modalOverlay.classList.add('show');
+  setTimeout(() => modalInput.focus(), 150);
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('show');
+}
+
+generateBtn.addEventListener('click', openModal);
+modalCancel.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', function(e) {
+  if (e.target === modalOverlay) closeModal();
+});
+
+modalGenerate.addEventListener('click', function() {
+  const name = modalInput.value.trim();
+  if (name.length < 2) {
+    showError(t('toast.invalidName'));
+    return;
+  }
+  closeModal();
+  generateNovel(name);
+});
+
+modalInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') modalGenerate.click();
+});
+
+// API Key 自动保存
+apiKeyInput.addEventListener('input', function() {
+  const val = this.value.trim();
+  if (val.startsWith('sk-')) {
+    sessionStorage.setItem('deepseek_api_key', val);
+  }
+});
+
+// Loading cancel
+loadingCancel.addEventListener('click', function() {
+  if (abortController) abortController.abort();
+  hideLoading();
+});
+
+// ===================== MULTI-NOVEL TABS =====================
+let novelDataMap = {};
+let novelTabOrder = [];
+const novelTabsEl = document.getElementById('novel-tabs');
+
+function saveCurrentNovelState() {
+  if (!currentData || !currentData.novelName) return;
+  const name = currentData.novelName;
+  try {
+    const positions = network.getPositions();
+    novelDataMap[name] = { data: JSON.parse(JSON.stringify(currentData)), positions };
+  } catch (_) { novelDataMap[name] = { data: currentData }; }
+  if (!novelTabOrder.includes(name)) novelTabOrder.push(name);
+}
+
+function rebuildNovelTabs() {
+  if (novelTabOrder.length < 2) { novelTabsEl.innerHTML = ''; return; }
+  const currentName = currentData ? currentData.novelName : '';
+  let html = novelTabOrder.map(name =>
+    `<div class="novel-tab ${name === currentName ? 'active' : ''}" data-tab="${name.replace(/"/g,'&quot;')}">
+      ${name.length > 8 ? name.slice(0, 8) + '…' : name}
+      <button class="tab-close" data-tab="${name.replace(/"/g,'&quot;')}" title="关闭">✕</button>
+    </div>`
+  ).join('');
+  html += '<div id="novel-tab-add" title="添加新小说">＋</div>';
+  novelTabsEl.innerHTML = html;
+
+  novelTabsEl.querySelectorAll('.novel-tab').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('.tab-close')) return;
+      const name = this.dataset.tab;
+      if (name !== currentName) switchToNovel(name);
+    });
+  });
+  novelTabsEl.querySelectorAll('.tab-close').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const name = this.dataset.tab;
+      closeNovelTab(name);
+    });
+  });
+  document.getElementById('novel-tab-add').addEventListener('click', function() {
+    openModal();
+  });
+}
+
+function switchToNovel(name) {
+  if (!novelDataMap[name]) return;
+  saveCurrentNovelState();
+  const entry = novelDataMap[name];
+  loadNovelData(entry.data);
+  if (entry.positions) {
+    setTimeout(() => {
+      try { network.moveNode(entry.positions); } catch (_) {}
+      network.fit({ animation: { duration: 300 } });
+    }, 200);
+  }
+  // Refresh tab highlight
+  rebuildNovelTabs();
+}
+
+function closeNovelTab(name) {
+  if (!novelDataMap[name]) return;
+  if (novelTabOrder.length <= 1) return; // Keep at least one
+  const idx = novelTabOrder.indexOf(name);
+  delete novelDataMap[name];
+  novelTabOrder.splice(idx, 1);
+  // If current tab was closed, switch to another
+  if (currentData && currentData.novelName === name) {
+    const next = novelTabOrder[Math.min(idx, novelTabOrder.length - 1)];
+    if (next && novelDataMap[next]) switchToNovel(next);
+  }
+  rebuildNovelTabs();
+}
+
+// ===================== KEYBOARD =====================
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (addEdgeMode) { exitAddEdgeMode(); return; }
+    if (modalOverlay.classList.contains('show')) { closeModal(); return; }
+    closeAllPanels();
+    resetNodeOpacity();
+    network.fit({ animation: { duration: 500 } });
+  }
+  if (e.key === '/' && document.activeElement !== searchInput && !modalOverlay.classList.contains('show')) {
+    e.preventDefault();
+    searchInput.focus();
+  }
+});
+
+// ===================== GRAPH EXPORT =====================
+const exportBtn = document.getElementById('export-btn');
+const containerEl = document.getElementById('graph-container');
+
+async function exportGraph() {
+  if (!currentData) { showError('暂无图谱可导出'); return; }
+  exportBtn.textContent = '⏳';
+  exportBtn.style.pointerEvents = 'none';
+  try {
+    // Temporarily hide UI overlays on canvas
+    const canvas = containerEl.querySelector('canvas');
+    if (!canvas) throw new Error('图谱画布未就绪');
+
+    const captured = await html2canvas(containerEl, {
+      backgroundColor: '#0f1119',
+      useCORS: true,
+      scale: 2,
+      logging: false,
+    });
+    const link = document.createElement('a');
+    link.download = (currentData.novelName || '人物图谱') + '_人物关系图谱.png';
+    link.href = captured.toDataURL('image/png');
+    link.click();
+    // Brief toast
+    const orig = errorToast.textContent;
+    errorToast.textContent = t('toast.exported');
+    errorToast.style.display = 'block';
+    setTimeout(() => {
+      errorToast.textContent = orig;
+      if (!orig) errorToast.style.display = 'none';
+    }, 2000);
+  } catch (err) {
+    showError('导出失败：' + err.message);
+  } finally {
+    exportBtn.textContent = '📷';
+    exportBtn.style.pointerEvents = 'auto';
+  }
+}
+
+exportBtn.addEventListener('click', exportGraph);
+
+// Stats
+const statsToggle = document.getElementById('stats-toggle');
+const statsPanel = document.getElementById('stats-panel');
+const statsClose = document.getElementById('stats-close');
+const statsContent = document.getElementById('stats-content');
+
+function renderStats() {
+  if (!currentData) { statsContent.innerHTML = '<div style="color:var(--text-dim)">' + t('stats.noData') + '</div>'; return; }
+  const d = currentData;
+  const chars = d.characters || [];
+  const rels = d.relations || [];
+  const factions = d.factions || [];
+  const events = d.events || [];
+  const n = chars.length;
+  const m = rels.length;
+  const density = n > 1 ? (m / (n * (n - 1) / 2) * 100).toFixed(1) : '0.0';
+
+  // Count relations per character
+  const relCount = {};
+  chars.forEach(c => { relCount[c.id] = 0; });
+  rels.forEach(r => {
+    if (relCount[r.from] !== undefined) relCount[r.from]++;
+    if (relCount[r.to] !== undefined) relCount[r.to]++;
+  });
+  const topChars = Object.entries(relCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id, cnt]) => ({ char: charMap[id] || chars.find(c => c.id === id), count: cnt, id }))
+    .filter(item => item.char);
+
+  // Faction breakdown
+  const factionCounts = {};
+  chars.forEach(c => {
+    factionCounts[c.faction] = (factionCounts[c.faction] || 0) + 1;
+  });
+  const maxFaction = Math.max(...Object.values(factionCounts), 1);
+
+  let html = `
+    <div class="stat-row"><span class="stat-label">${t('stats.novelName')}</span><span class="stat-value">${d.novelName || '未知'}</span></div>
+    <div class="stat-row"><span class="stat-label">${t('stats.charCount')}</span><span class="stat-value">${n}</span></div>
+    <div class="stat-row"><span class="stat-label">${t('stats.relCount')}</span><span class="stat-value">${m}</span></div>
+    <div class="stat-row"><span class="stat-label">${t('stats.factionCount')}</span><span class="stat-value">${factions.length}</span></div>
+    <div class="stat-row"><span class="stat-label">${t('stats.eventCount')}</span><span class="stat-value">${events.length}</span></div>
+    <div class="stat-row"><span class="stat-label">${t('stats.density')}</span><span class="stat-value">${density}%</span></div>
+  `;
+
+  if (topChars.length > 0) {
+    html += '<div class="stat-section-title">' + t('stats.topChars') + '</div>';
+    topChars.forEach((item, i) => {
+      const rankClass = i === 0 ? '' : (i === 1 ? 'r2' : (i === 2 ? 'r3' : ''));
+      const f = factions.find(x => x.key === item.char.faction);
+      html += `<div class="stat-top-item">
+        <span class="rank ${rankClass}">${i + 1}</span>
+        <span class="legend-dot" style="background:${f ? f.color : '#666'};width:8px;height:8px"></span>
+        <span style="flex:1">${item.char.name}</span>
+        <span style="color:var(--accent);font-weight:600">${item.count}</span>
+        <span style="color:var(--text-dim);font-size:11px">${t('stats.unitRel')}</span>
+      </div>`;
+    });
+  }
+
+  if (factions.length > 0) {
+    html += '<div class="stat-section-title">' + t('stats.factionDist') + '</div>';
+    html += '<div class="bar-chart">';
+    factions.forEach(f => {
+      const count = factionCounts[f.key] || 0;
+      const pct = (count / maxFaction * 100).toFixed(0);
+      html += `<div class="bar-item">
+        <span class="bar-label">${f.name}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${f.color}"></div></div>
+        <span class="bar-count">${count}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  statsContent.innerHTML = html;
+}
+
+statsToggle.addEventListener('click', function() {
+  renderStats();
+  statsPanel.classList.toggle('show');
+});
+statsClose.addEventListener('click', () => statsPanel.classList.remove('show'));
+// Close on click outside
+statsPanel.addEventListener('click', function(e) {
+  if (e.target === statsPanel) this.classList.remove('show');
+});
+
+// Share
+const shareBtn = document.getElementById('share-btn');
+shareBtn.addEventListener('click', function() {
+  const name = currentData ? currentData.novelName : '';
+  if (!name) { showError('暂无图谱可分享'); return; }
+  const url = location.origin + location.pathname + '?q=' + encodeURIComponent(name);
+  navigator.clipboard.writeText(url).then(() => {
+    errorToast.textContent = t('toast.copied');
+    errorToast.style.display = 'block';
+    setTimeout(() => { errorToast.style.display = 'none'; }, 3000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showError(t('toast.copiedFallback'));
+  });
+});
+
+// ===================== EDIT MODE =====================
+function toggleEditMode() {
+  editMode = !editMode;
+  editToggle.classList.toggle('active', editMode);
+  document.getElementById('graph-container').classList.toggle('edit-mode', editMode);
+  editToolbar.classList.toggle('show', editMode);
+
+  if (editMode) {
+    network.setOptions({ physics: { enabled: false } });
+    network.setOptions({ interaction: { dragNodes: true } });
+  } else {
+    exitAddEdgeMode();
+    network.setOptions({ physics: { enabled: true } });
+    network.stabilize(100);
+  }
+}
+
+function saveLayout() {
+  if (!currentData) return;
+  const positions = network.getPositions();
+  const layoutKey = 'layout_' + (currentData.novelName || 'unknown');
+  // Only save positions for known character IDs
+  const validPositions = {};
+  currentData.characters.forEach(c => {
+    if (positions[c.id]) validPositions[c.id] = positions[c.id];
+  });
+  try {
+    localStorage.setItem(layoutKey, JSON.stringify(validPositions));
+  } catch (_) {}
+  // Flash feedback
+  saveLayoutBtn.textContent = '✅ 已保存';
+  setTimeout(() => { saveLayoutBtn.textContent = '💾 保存布局'; }, 1500);
+}
+
+function loadSavedLayout() {
+  if (!currentData) return;
+  const layoutKey = 'layout_' + (currentData.novelName || 'unknown');
+  try {
+    const saved = localStorage.getItem(layoutKey);
+    if (!saved) return;
+    const positions = JSON.parse(saved);
+    const valid = {};
+    currentData.characters.forEach(c => {
+      if (positions[c.id] && typeof positions[c.id].x === 'number') {
+        valid[c.id] = { x: positions[c.id].x, y: positions[c.id].y };
+      }
+    });
+    const keys = Object.keys(valid);
+    if (keys.length > 0) {
+      // Apply after a short delay to let the network initialize
+      setTimeout(() => {
+        network.moveNode(valid);
+        network.fit({ animation: { duration: 300 } });
+      }, 100);
+    }
+  } catch (_) {}
+}
+
+editToggle.addEventListener('click', toggleEditMode);
+
+addRelBtn.addEventListener('click', function() {
+  if (addEdgeMode) {
+    exitAddEdgeMode();
+  } else {
+    enterAddEdgeMode();
+  }
+});
+
+function enterAddEdgeMode() {
+  addEdgeMode = true;
+  addEdgeSource = null;
+  addRelBtn.classList.add('active');
+  addRelBtn.textContent = '❌ 取消连线';
+  addRelIndicator.classList.remove('hidden');
+  addRelIndicator.innerHTML = t('edit.selectSource');
+  network.setOptions({ interaction: { dragNodes: false } });
+}
+
+function exitAddEdgeMode() {
+  addEdgeMode = false;
+  addEdgeSource = null;
+  addRelBtn.classList.remove('active');
+  addRelBtn.textContent = '➕ 添加关系';
+  addRelIndicator.classList.add('hidden');
+  network.setOptions({ interaction: { dragNodes: true } });
+}
+
+function getCustomEdgesKey() {
+  return 'custom_edges_' + (currentData ? currentData.novelName || 'unknown' : 'unknown');
+}
+
+function saveCustomEdge(from, to, type, style) {
+  const key = getCustomEdgesKey();
+  let edges = [];
+  try { edges = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+  edges.push({ from, to, type, style: style || 'solid', _custom: true });
+  localStorage.setItem(key, JSON.stringify(edges));
+}
+
+function deleteCustomEdge(from, to) {
+  const key = getCustomEdgesKey();
+  try {
+    let edges = JSON.parse(localStorage.getItem(key) || '[]');
+    edges = edges.filter(e => !(e.from === from && e.to === to) && !(e.from === to && e.to === from));
+    localStorage.setItem(key, JSON.stringify(edges));
+  } catch {}
+}
+
+function loadCustomEdges() {
+  const key = getCustomEdgesKey();
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+}
+
+function addEdgeToGraph(from, to, type, style) {
+  const newEdge = {
+    from, to, label: type,
+    dashes: style === 'dashed' ? [8, 4] : (style === 'dotted' ? [3, 3] : false),
+    color: { color: style === 'dashed' ? '#555' : '#888', hover: '#f0c040' },
+    font: { color: '#666', size: 10, strokeWidth: 2, strokeColor: '#0f1119' },
+    width: style === 'solid' ? 1.5 : 1,
+    smooth: { type: 'continuous' },
+    arrows: { to: { enabled: style === 'dashed', scaleFactor: 0.5 } },
+  };
+  edges.add(newEdge);
+  // Also add to currentData.relations so search works
+  if (currentData) {
+    currentData.relations.push({ from, to, type, style: style || 'solid', _custom: true });
+    // Update adjacency and edgeByPair
+    if (!adj[from]) adj[from] = [];
+    if (!adj[to]) adj[to] = [];
+    adj[from].push(to);
+    adj[to].push(from);
+    edgeByPair[edgeKey(from, to)] = { from, to, type, style: style || 'solid', _custom: true };
+  }
+}
+
+saveLayoutBtn.addEventListener('click', saveLayout);
+
+// ===================== USER SYSTEM =====================
+let userProfile = null;
+let userFavorites = [];
+
+function loadUserProfile() {
+  try { userProfile = JSON.parse(localStorage.getItem('user_profile')); } catch { userProfile = null; }
+  if (!userProfile) userProfile = { name: '', createdAt: Date.now() };
+}
+function saveUserProfile() { localStorage.setItem('user_profile', JSON.stringify(userProfile)); }
+
+function loadUserFavorites() {
+  try { userFavorites = JSON.parse(localStorage.getItem('user_favorites') || '[]'); } catch { userFavorites = []; }
+}
+function saveUserFavorites() { localStorage.setItem('user_favorites', JSON.stringify(userFavorites)); }
+
+function addFavorite(name) {
+  if (!name) return;
+  if (!userFavorites.find(f => f.novelName === name)) {
+    userFavorites.push({ novelName: name, timestamp: Date.now() });
+    saveUserFavorites();
+  }
+}
+
+function removeFavorite(name) {
+  userFavorites = userFavorites.filter(f => f.novelName !== name);
+  saveUserFavorites();
+}
+
+function renderFavorites() {
+  const el = document.getElementById('settings-favorites');
+  loadUserFavorites();
+  if (userFavorites.length === 0) {
+    el.innerHTML = '<span style="color:var(--text-dim);font-size:12px">暂无收藏</span>';
+    return;
+  }
+  el.innerHTML = userFavorites.map(f =>
+    `<div class="fav-item">
+      <span class="fav-load" data-novel="${f.novelName.replace(/"/g,'&quot;')}">📖 ${f.novelName}</span>
+      <button class="fav-remove" data-novel="${f.novelName.replace(/"/g,'&quot;')}">✕</button>
+    </div>`
+  ).join('');
+  el.querySelectorAll('.fav-load').forEach(span => {
+    span.addEventListener('click', function() {
+      const name = this.dataset.novel;
+      if (novelDataMap[name]) { switchToNovel(name); } else { generateNovel(name); }
+      settingsPanel.classList.remove('show');
+    });
+  });
+  el.querySelectorAll('.fav-remove').forEach(btn => {
+    btn.addEventListener('click', function() { removeFavorite(this.dataset.novel); renderFavorites(); });
+  });
+}
+
+function exportAllData() {
+  const backup = {
+    profile: userProfile,
+    favorites: userFavorites,
+    layouts: {},
+    customEdges: {},
+    searchHistory: getSearchHistory ? getSearchHistory() : [],
+    exportedAt: new Date().toISOString(),
+  };
+  // Collect all saved layouts and custom edges from localStorage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('layout_')) { backup.layouts[key] = JSON.parse(localStorage.getItem(key)); }
+    if (key && key.startsWith('custom_edges_')) { backup.customEdges[key] = JSON.parse(localStorage.getItem(key)); }
+  }
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = 'story-graph-backup.json';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  showError('✅ 数据已导出');
+}
+
+function importAllData(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (backup.profile) { userProfile = backup.profile; saveUserProfile(); }
+      if (backup.favorites) { userFavorites = backup.favorites; saveUserFavorites(); }
+      if (backup.searchHistory) { localStorage.setItem('search_history', JSON.stringify(backup.searchHistory)); }
+      if (backup.layouts) {
+        Object.entries(backup.layouts).forEach(([k, v]) => { localStorage.setItem(k, JSON.stringify(v)); });
+      }
+      if (backup.customEdges) {
+        Object.entries(backup.customEdges).forEach(([k, v]) => { localStorage.setItem(k, JSON.stringify(v)); });
+      }
+      renderFavorites();
+      showError('✅ 数据已导入，刷新页面生效');
+    } catch (err) {
+      showError('导入失败：文件格式错误');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Settings panel
+const settingsToggle = document.getElementById('settings-toggle');
+const settingsPanel = document.getElementById('settings-panel');
+const settingsClose = document.getElementById('settings-close');
+const settingsNickname = document.getElementById('settings-nickname');
+const settingsStarNovel = document.getElementById('settings-star-novel');
+
+settingsToggle.addEventListener('click', function() {
+  loadUserProfile();
+  settingsNickname.value = userProfile.name || '';
+  renderFavorites();
+  settingsPanel.classList.toggle('show');
+});
+settingsClose.addEventListener('click', () => settingsPanel.classList.remove('show'));
+
+settingsNickname.addEventListener('input', function() {
+  userProfile.name = this.value.trim();
+  saveUserProfile();
+});
+
+settingsStarNovel.addEventListener('click', function() {
+  const name = currentData ? currentData.novelName : '';
+  if (!name) { showError('暂无小说'); return; }
+  addFavorite(name);
+  renderFavorites();
+  showError('⭐ 已收藏「' + name + '」');
+});
+
+document.getElementById('settings-export').addEventListener('click', exportAllData);
+document.getElementById('settings-import').addEventListener('click', function() {
+  document.getElementById('settings-import-file').click();
+});
+document.getElementById('settings-import-file').addEventListener('change', function() {
+  if (this.files[0]) importAllData(this.files[0]);
+});
+
+document.getElementById('settings-theme-btn').addEventListener('click', function() {
+  const isLight = document.documentElement.classList.contains('light');
+  setTheme(isLight ? 'dark' : 'light');
+});
+document.getElementById('settings-lang-btn').addEventListener('click', cycleLanguage);
+
+// Language toggle
+document.getElementById('lang-toggle').addEventListener('click', cycleLanguage);
+
+// Init user data
+loadUserProfile();
+loadUserFavorites();
+
+// Init language
+document.getElementById('lang-label').textContent = LANG_LABELS[currentLang];
+applyLanguage();
+
+// ===================== TTS =====================
+function speakExplanation(text, btn) {
+  if (!window.speechSynthesis) return;
+  if (btn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'zh-CN';
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.onend = () => {
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+  };
+  utterance.onerror = () => {
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊';
+  };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  btn.classList.add('speaking');
+  btn.textContent = '🔇';
+}
+
+// ===================== INIT =====================
+// Pre-populate novel map with demo data
+novelDataMap[DEMO_DATA.novelName] = { data: DEMO_DATA };
+novelTabOrder.push(DEMO_DATA.novelName);
+
+// Check URL params for sharing
+const urlParams = new URLSearchParams(window.location.search);
+const shareNovel = urlParams.get('q');
+if (shareNovel && shareNovel.trim().length >= 2 && shareNovel.trim() !== DEMO_DATA.novelName) {
+  setTimeout(() => generateNovel(shareNovel.trim()), 300);
+} else {
+  loadNovelData(DEMO_DATA);
+}
+
+console.log('📚 小说人物关系图谱已就绪');
+console.log('  当前示例：《三国演义》');
+console.log('  点击右上角"✨ 更换小说"输入任意书名');
+console.log('  需要先启动后端：node server.js');
+console.log('  操作：点击节点 / 搜索人物 / 语音检索 / 时间轴');
+</script>
+</body>
+</html>

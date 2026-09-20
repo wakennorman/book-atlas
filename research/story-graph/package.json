@@ -1,0 +1,14 @@
+{
+  "name": "story-character-graph",
+  "version": "1.0.0",
+  "description": "小说人物关系图谱 - 输入书名，AI 自动生成人物关系思维导图",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0"
+  }
+}

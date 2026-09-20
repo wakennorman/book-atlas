@@ -1,0 +1,13 @@
+{
+  "name": "书脉 BookAtlas · 人物关系与事件图谱",
+  "short_name": "书脉",
+  "description": "把一本书的人物关系、关系小事件与标志性事件放在一张图上",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#1b2233",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

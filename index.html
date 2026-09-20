@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>书脉 BookAtlas · 人物关系与事件图谱</title>
+  <meta name="description" content="把一本书的人物关系、定义关系的小事件与标志性事件放在一张图上，支持两人关系查询。">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#1b2233">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img class="logo" src="assets/icon.svg" alt="书脉">
+    <div class="brand-text">
+      <h1>书脉 <span>BookAtlas</span></h1>
+      <p id="book-meta" class="meta">加载中…</p>
+    </div>
+  </div>
+  <div class="tools">
+    <label class="select-wrap">
+      <span class="sr-only">选择书目</span>
+      <select id="book-select" title="选择书目"></select>
+    </label>
+    <button id="theme-btn" class="icon-btn" type="button" title="切换深浅色">🌙 夜间</button>
+  </div>
+</header>
+
+<main>
+  <section class="pane graph-pane">
+    <div class="pane-head">
+      <div class="search-wrap">
+        <input id="search-input" list="char-list" type="search" placeholder="搜人物：上校 / 阿尔卡蒂奥 / 乌尔苏拉…" autocomplete="off">
+        <datalist id="char-list"></datalist>
+        <button id="search-clear" class="ghost" type="button">清空</button>
+      </div>
+      <div class="legend-row">
+        <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
+        <button id="label-btn" class="ghost" type="button" title="显示全部名字会重叠，默认只显示主要人物">标签：主要</button>
+      </div>
+    </div>
+
+    <div id="graph" aria-label="人物关系网络图"></div>
+
+    <div class="pathbar">
+      <span class="pathbar-label">两人关系</span>
+      <select id="path-a" aria-label="人物 A"></select>
+      <span class="arrow">→</span>
+      <select id="path-b" aria-label="人物 B"></select>
+      <button id="path-go" class="primary" type="button">查询</button>
+      <button id="path-clear" class="ghost" type="button">清除</button>
+      <span id="path-hint" class="hint"></span>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div id="panel" class="panel">
+      <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 拖拽可移动节点</p>
+    </div>
+    <div class="panel timeline-panel">
+      <div class="pane-head">
+        <h2>事件轴</h2>
+        <span class="hint">按阶段 · 点事件看详情</span>
+      </div>
+      <div id="timeline" class="timeline"></div>
+    </div>
+  </aside>
+</main>
+
+<footer class="footer">
+  <span id="footer-note">数据：精读整理 + 公开资料核对 · 阅读辅助用途</span>
+</footer>
+
+<script src="vendor/echarts.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
