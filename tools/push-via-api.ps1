@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.14：取消《罪与罚》的假代际（全员第 1 代 + meta.groupMode=faction）；视图按需切换为「分组·横/纵」并显示阵营名；主应用资源也加版本号"
+  [string]$Message = "书脉 BookAtlas v0.15：《罪与罚》补 6 条小事件（罗佳与拉祖米欣/斯维德利盖洛夫/波尔菲利、索尼娅与波丽娜等）；两本书 0 错 0 警告"
 )
 
 $ErrorActionPreference = "Stop"
