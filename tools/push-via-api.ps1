@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.12：编辑器支持多格式上传（txt/md/html/epub，内置 fflate 解 epub；PDF 给转换引导）+ 上传后自动分章 + 编辑器资源加缓存版本号"
+  [string]$Message = "书脉 BookAtlas v0.13：编辑器撤销/重做（快照式 + Ctrl+Z/Y）+ README 重写（含三张手绘示意图）+ 补 LICENSE（MIT）"
 )
 
 $ErrorActionPreference = "Stop"

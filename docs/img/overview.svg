@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+  <rect width="960" height="560" fill="#f4f1ea"/>
+  <!-- 顶栏 -->
+  <rect x="16" y="14" width="928" height="52" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+  <rect x="30" y="26" width="28" height="28" rx="7" fill="#1b2233"/>
+  <circle cx="47" cy="37" r="4.5" fill="#d4a343"/>
+  <circle cx="38" cy="46" r="3" fill="#6f9bd1"/>
+  <text x="68" y="45" font-size="16" font-weight="700" fill="#232a35">书脉 BookAtlas</text>
+  <text x="182" y="45" font-size="11" fill="#6c7482">《百年孤独》· 39 人 / 96 段关系 / 31 个事件</text>
+  <rect x="690" y="24" width="88" height="30" rx="15" fill="#faf8f3" stroke="#e5dfd3"/>
+  <text x="712" y="44" font-size="12" fill="#232a35">百年孤独 ▾</text>
+  <rect x="786" y="24" width="66" height="30" rx="15" fill="#faf8f3" stroke="#e5dfd3"/>
+  <text x="806" y="44" font-size="12" fill="#232a35">🌙 夜间</text>
+  <rect x="858" y="24" width="80" height="30" rx="15" fill="#faf8f3" stroke="#e5dfd3"/>
+  <text x="870" y="44" font-size="11" fill="#232a35">🔒 剧透保护</text>
+  <!-- 图例区 -->
+  <rect x="16" y="76" width="928" height="40" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+  <g font-size="11.5" fill="#232a35">
+    <circle cx="40" cy="96" r="5" fill="#c99a3f"/><text x="52" y="100">布恩迪亚家族</text>
+    <circle cx="150" cy="96" r="5" fill="#4a7fd4"/><text x="162" y="100">自由党／起义军</text>
+    <circle cx="266" cy="96" r="5" fill="#c0504d"/><text x="278" y="100">保守党／政府军</text>
+    <circle cx="382" cy="96" r="5" fill="#9a6fb0"/><text x="394" y="100">外姓与外来者</text>
+    <circle cx="492" cy="96" r="5" fill="#3fa79b"/><text x="504" y="100">吉普赛与神秘</text>
+    <circle cx="606" cy="96" r="5" fill="#5a9e5a"/><text x="618" y="100">香蕉公司</text>
+    <circle cx="700" cy="96" r="5" fill="#6c7482"/><text x="712" y="100">男</text>
+    <rect x="740" y="91" width="10" height="10" rx="3" fill="#6c7482"/><text x="756" y="100">女</text>
+  </g>
+  <text x="790" y="100" font-size="11" fill="#6c7482">标签：主要</text>
+  <!-- 左侧图谱 -->
+  <rect x="16" y="126" width="628" height="386" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="32" y="150" font-size="12" fill="#6c7482">布局：自由 ｜ 代际·横 ｜ 代际·纵 ｜ 重置 ｜ 复位视图 ｜ 拖动节点</text>
+  <!-- 连线 -->
+  <g stroke="#c99a3f" stroke-width="1.4" opacity="0.55">
+    <line x1="150" y1="300" x2="260" y2="240"/><line x1="260" y1="240" x2="380" y2="280"/>
+    <line x1="150" y1="300" x2="240" y2="380"/><line x1="240" y1="380" x2="380" y2="280"/>
+    <line x1="380" y1="280" x2="500" y2="230"/><line x1="380" y1="280" x2="480" y2="380"/>
+    <line x1="240" y1="380" x2="480" y2="380"/><line x1="500" y1="230" x2="560" y2="330"/>
+  </g>
+  <g stroke="#4a7fd4" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.6">
+    <line x1="260" y1="240" x2="360" y2="180"/><line x1="360" y1="180" x2="380" y2="280"/>
+  </g>
+  <g stroke="#9a6fb0" stroke-width="1.2" stroke-dasharray="1.5 3" opacity="0.6">
+    <line x1="480" y1="380" x2="560" y2="330"/><line x1="150" y1="300" x2="120" y2="410"/>
+  </g>
+  <!-- 节点 -->
+  <circle cx="150" cy="300" r="24" fill="#c99a3f"/>
+  <text x="118" y="340" font-size="11" fill="#232a35">乌尔苏拉·伊瓜兰</text>
+  <circle cx="260" cy="240" r="16" fill="#c99a3f"/><text x="232" y="218" font-size="11" fill="#232a35">阿玛兰妲</text>
+  <circle cx="380" cy="280" r="18" fill="#4a7fd4"/><text x="330" y="264" font-size="11" fill="#232a35">奥雷里亚诺上校</text>
+  <circle cx="240" cy="380" r="14" fill="#c99a3f"/><text x="200" y="410" font-size="11" fill="#232a35">阿尔卡蒂奥</text>
+  <rect x="480" y="366" width="28" height="28" rx="8" fill="#c99a3f"/><text x="458" y="414" font-size="11" fill="#232a35">乌尔苏拉（女=圆角方）</text>
+  <circle cx="500" cy="230" r="15" fill="#9a6fb0"/><text x="470" y="208" font-size="11" fill="#232a35">费尔南达</text>
+  <circle cx="360" cy="180" r="12" fill="#3fa79b"/><text x="330" y="162" font-size="11" fill="#232a35">梅尔基亚德斯</text>
+  <circle cx="560" cy="330" r="13" fill="#5a9e5a"/><text x="524" y="360" font-size="11" fill="#232a35">布朗先生</text>
+  <circle cx="120" cy="410" r="11" fill="#9a6fb0"/><text x="86" y="440" font-size="11" fill="#232a35">皮拉尔·特内拉</text>
+  <!-- 底部两人关系条 -->
+  <rect x="16" y="522" width="628" height="26" rx="10" fill="#faf8f3" stroke="#e5dfd3"/>
+  <text x="30" y="540" font-size="11.5" fill="#6c7482">两人关系：</text>
+  <rect x="96" y="526" width="120" height="18" rx="9" fill="#ffffff" stroke="#e5dfd3"/><text x="104" y="539" font-size="11" fill="#232a35">皮拉尔·特内拉 ▾</text>
+  <text x="224" y="540" font-size="12" fill="#6c7482">→</text>
+  <rect x="238" y="526" width="150" height="18" rx="9" fill="#ffffff" stroke="#e5dfd3"/><text x="246" y="539" font-size="11" fill="#232a35">奥雷里亚诺上校 ▾</text>
+  <rect x="398" y="526" width="52" height="18" rx="9" fill="#1b2233"/><text x="412" y="539" font-size="11" fill="#ffffff">查询</text>
+  <text x="460" y="540" font-size="11" fill="#6c7482">最短 1 跳</text>
+  <!-- 右侧面板 -->
+  <rect x="656" y="126" width="288" height="180" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="672" y="150" font-size="13" font-weight="700" fill="#232a35">人物档案</text>
+  <text x="672" y="172" font-size="11" fill="#6c7482">第 2 代 · 自由党起义军总司令</text>
+  <rect x="672" y="182" width="72" height="18" rx="9" fill="#4a7fd4"/><text x="682" y="195" font-size="10.5" fill="#ffffff">自由党</text>
+  <rect x="750" y="182" width="42" height="18" rx="9" fill="#efeae0"/><text x="760" y="195" font-size="10.5" fill="#6c7482">♂ 男</text>
+  <rect x="800" y="182" width="86" height="18" rx="9" fill="#efeae0"/><text x="810" y="195" font-size="10.5" fill="#6c7482">关系 15 条</text>
+  <rect x="672" y="212" width="256" height="26" rx="8" fill="#fff7e6" stroke="#eed9a6"/>
+  <text x="682" y="229" font-size="10.5" fill="#8a6d1f">⚠️ 书里叫奥雷里亚诺的有二十多个，认准「上校」</text>
+  <text x="672" y="258" font-size="11.5" fill="#232a35">· 何塞·阿尔卡蒂奥（巨人） — 兄弟 — 行刑场救弟</text>
+  <text x="672" y="278" font-size="11.5" fill="#232a35">· 蒙卡达将军 — 亦敌亦友 — 共进午餐、处决</text>
+  <text x="672" y="298" font-size="11" fill="#6c7482">定位这条线 · 🔒 还有 N 条事件在你读到的进度之后</text>
+  <rect x="656" y="318" width="288" height="194" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="672" y="342" font-size="13" font-weight="700" fill="#232a35">重大事件轴</text>
+  <g font-size="11" fill="#232a35">
+    <rect x="672" y="352" width="256" height="26" rx="8" fill="#faf8f3" stroke="#e5dfd3"/>
+    <text x="682" y="369">内战二十年 · 上校被判死刑</text>
+    <rect x="672" y="384" width="256" height="26" rx="8" fill="#faf8f3" stroke="#e5dfd3"/>
+    <text x="682" y="401">巨人救弟：何塞·阿尔卡蒂奥救上校</text>
+    <rect x="672" y="416" width="256" height="26" rx="8" fill="#faf8f3" stroke="#e5dfd3"/>
+    <text x="682" y="433">何塞·阿尔卡蒂奥（第二代）之死</text>
+    <rect x="672" y="448" width="256" height="26" rx="8" fill="#f1f1f1" stroke="#e0e0e0"/>
+    <text x="682" y="465" fill="#6c7482">🔒 第 12 章的事件（剧透保护中）</text>
+    <rect x="672" y="480" width="256" height="26" rx="8" fill="#faf8f3" stroke="#e5dfd3"/>
+    <text x="682" y="497">香蕉大屠杀 · 三千余人遇难</text>
+  </g>
+</svg>

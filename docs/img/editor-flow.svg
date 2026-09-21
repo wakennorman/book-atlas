@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+  <rect width="960" height="300" fill="#f4f1ea"/>
+  <text x="20" y="30" font-size="15" font-weight="700" fill="#232a35">生成一本书：从文件到图谱</text>
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#6c7482"/>
+    </marker>
+  </defs>
+
+  <g>
+    <rect x="20" y="58" width="150" height="76" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+    <text x="36" y="84" font-size="12.5" font-weight="700" fill="#232a35">① 上传图书文件</text>
+    <text x="36" y="104" font-size="10.5" fill="#6c7482">txt / md / html / epub</text>
+    <text x="36" y="120" font-size="10.5" fill="#6c7482">（PDF 先转 txt/epub）</text>
+
+    <rect x="200" y="58" width="150" height="76" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+    <text x="216" y="84" font-size="12.5" font-weight="700" fill="#232a35">② 自动分章</text>
+    <text x="216" y="104" font-size="10.5" fill="#6c7482">识别「第N章/回/节/卷」</text>
+    <text x="216" y="120" font-size="10.5" fill="#6c7482">列出章节，可勾选</text>
+
+    <rect x="380" y="58" width="170" height="76" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+    <text x="396" y="84" font-size="12.5" font-weight="700" fill="#232a35">③ 逐章生成（AI 草稿）</text>
+    <text x="396" y="104" font-size="10.5" fill="#6c7482">人物 id 沿用名单</text>
+    <text x="396" y="120" font-size="10.5" fill="#6c7482">→ 跨章可合并</text>
+
+    <rect x="580" y="58" width="160" height="76" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+    <text x="596" y="84" font-size="12.5" font-weight="700" fill="#232a35">④ 合并去重</text>
+    <text x="596" y="104" font-size="10.5" fill="#6c7482">人物按 id 或姓名</text>
+    <text x="596" y="120" font-size="10.5" fill="#6c7482">关系/事件按键去重</text>
+
+    <rect x="770" y="58" width="170" height="76" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+    <text x="786" y="84" font-size="12.5" font-weight="700" fill="#232a35">⑤ 人工校对</text>
+    <text x="786" y="104" font-size="10.5" fill="#6c7482">六个版块逐条改</text>
+    <text x="786" y="120" font-size="10.5" fill="#6c7482">本地校验 + Ctrl+Z</text>
+  </g>
+
+  <g stroke="#6c7482" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+    <line x1="172" y1="96" x2="196" y2="96"/>
+    <line x1="352" y1="96" x2="376" y2="96"/>
+    <line x1="552" y1="96" x2="576" y2="96"/>
+    <line x1="742" y1="96" x2="766" y2="96"/>
+  </g>
+
+  <rect x="20" y="160" width="920" height="52" rx="12" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="36" y="184" font-size="12" font-weight="700" fill="#232a35">两种用法</text>
+  <text x="36" y="202" font-size="11" fill="#6c7482">A. 导出 JSON → 放进 data/ 并在 data/books.json 登记 → 提交（就是《百年孤独》《罪与罚》的做法）　　B. 只存本机草稿 → 点「预览」直接在图谱里打开（index.html?book=slug&amp;local=1）</text>
+
+  <rect x="20" y="228" width="920" height="52" rx="12" fill="#faf8f3" stroke="#e5dfd3"/>
+  <text x="36" y="252" font-size="12" font-weight="700" fill="#232a35">不想用 AI 也行</text>
+  <text x="36" y="270" font-size="11" fill="#6c7482">「新建空白」→ 手填人物 / 关系（含小事件）/ 事件 → 导出 JSON。整本生成只是可选的加速器。</text>
+</svg>

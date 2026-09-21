@@ -19,7 +19,7 @@
     cur[keys[keys.length - 1]] = val;
   };
 
-  const ed = { book: null, section: 'meta', form: null, editing: null, sourceLocal: false, sourceFile: '', timer: null };
+  const ed = { book: null, section: 'meta', form: null, editing: null, sourceLocal: false, sourceFile: '', timer: null, history: [], hIndex: -1, histLimit: 60 };
 
   /* ---------------- 数据源 ---------------- */
   async function boot() {
@@ -71,10 +71,55 @@
   }
 
   function adopt(book, isLocal) {
+    const prevSlug = ed.book && ed.book.meta && ed.book.meta.slug;
     ed.book = normalize(book);
+    const sameBook = prevSlug && prevSlug === ed.book.meta.slug;
+    if (!sameBook) { ed.history = []; ed.hIndex = -1; }
     ed.sourceLocal = isLocal;
+    snapshotBook(`载入《${ed.book.meta.title || '未命名'}》`);
     toast(`已载入《${ed.book.meta.title || '未命名'}》：${ed.book.characters.length} 人 / ${ed.book.relations.length} 关系 / ${ed.book.events.length} 事件`);
     renderAll();
+  }
+
+  /* ---------------- 撤销 / 重做 ---------------- */
+  function snapshotBook(label) {
+    if (!ed.book) return;
+    const json = JSON.stringify(ed.book);
+    if (ed.history[ed.hIndex] && ed.history[ed.hIndex].json === json) return;
+    ed.history = ed.history.slice(0, ed.hIndex + 1);
+    ed.history.push({ label, json });
+    if (ed.history.length > ed.histLimit) ed.history.shift();
+    ed.hIndex = ed.history.length - 1;
+    syncHistButtons();
+  }
+
+  function restoreHistory(index) {
+    const h = ed.history[index];
+    if (!h) return;
+    ed.hIndex = index;
+    ed.book = normalize(JSON.parse(h.json));
+    ed.editing = null;
+    renderAll();
+    saveDraft();
+    setStatus(`↩︎ 回到：${h.label}`);
+    syncHistButtons();
+  }
+
+  function undo() {
+    if (ed.hIndex > 0) restoreHistory(ed.hIndex - 1);
+    else setStatus('已经是最早的一步了');
+  }
+
+  function redo() {
+    if (ed.hIndex < ed.history.length - 1) restoreHistory(ed.hIndex + 1);
+    else setStatus('已经是最新的一步了');
+  }
+
+  function syncHistButtons() {
+    const u = document.getElementById('ed-undo');
+    const r = document.getElementById('ed-redo');
+    if (u) u.disabled = ed.hIndex <= 0;
+    if (r) r.disabled = ed.hIndex >= ed.history.length - 1;
   }
 
   function normalize(book) {
@@ -748,6 +793,15 @@
       renderAll();
     });
     $('#ed-load').addEventListener('click', loadSource);
+    $('#ed-undo').addEventListener('click', undo);
+    $('#ed-redo').addEventListener('click', redo);
+    document.addEventListener('keydown', (ev) => {
+      const mod = ev.ctrlKey || ev.metaKey;
+      if (!mod) return;
+      const k = String(ev.key || '').toLowerCase();
+      if (k === 'z' && !ev.shiftKey) { ev.preventDefault(); undo(); }
+      else if ((k === 'z' && ev.shiftKey) || k === 'y') { ev.preventDefault(); redo(); }
+    });
     $('#ed-new').addEventListener('click', () => { if (confirm('新建空白书？当前未保存的改动会丢。')) newBlank(); });
     $('#ed-save').addEventListener('click', saveDraft);
     $('#ed-export').addEventListener('click', exportJson);
@@ -778,8 +832,13 @@
       if (act === 'add') { ed.form = templateFor(sec); ed.editing = { sec, idx: null }; renderBody(); return; }
       if (act === 'edit') { ed.form = JSON.parse(JSON.stringify(list()[idx])); ed.editing = { sec, idx: Number(idx) }; renderBody(); return; }
       if (act === 'del') {
-        if (confirm(`删除这条${({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营' })[sec]}？`)) {
-          list().splice(Number(idx), 1); saveDraft(); renderBody();
+        const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营' })[sec] || sec;
+        if (confirm(`删除这条${what}？`)) {
+          const removed = list()[Number(idx)];
+          list().splice(Number(idx), 1);
+          snapshotBook(`删除${what}${removed && removed.name ? '「' + removed.name + '」' : ''}`);
+          saveDraft();
+          renderBody();
         }
         return;
       }
@@ -861,8 +920,10 @@
       const item = buildItem(sec);
       if (!item) return;
       const idx = ed.editing.idx;
+      const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营' })[sec] || sec;
       if (idx === null) ed.book[sec].push(item); else ed.book[sec][idx] = item;
       ed.editing = null;
+      snapshotBook(`${idx === null ? '新增' : '修改'}${what}${item.name ? '「' + item.name + '」' : ''}`);
       saveDraft();
       renderBody();
     });

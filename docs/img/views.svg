@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" font-family="Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+  <rect width="960" height="380" fill="#f4f1ea"/>
+  <text x="20" y="28" font-size="15" font-weight="700" fill="#232a35">三种布局：自由 / 代际·横 / 代际·纵</text>
+  <text x="20" y="48" font-size="11" fill="#6c7482">图注（前史 / 第 1 代 …）只待在专属边距里，跟随缩放但永不压住节点</text>
+
+  <!-- 自由 -->
+  <rect x="20" y="64" width="290" height="290" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="36" y="88" font-size="12.5" font-weight="700" fill="#232a35">自由（力导向）</text>
+  <g stroke="#c99a3f" stroke-width="1.3" opacity="0.5">
+    <line x1="90" y1="180" x2="170" y2="140"/><line x1="170" y1="140" x2="250" y2="200"/>
+    <line x1="90" y1="180" x2="150" y2="260"/><line x1="150" y1="260" x2="250" y2="200"/>
+    <line x1="170" y1="140" x2="150" y2="260"/>
+  </g>
+  <circle cx="90" cy="180" r="18" fill="#c99a3f"/>
+  <circle cx="170" cy="140" r="13" fill="#4a7fd4"/>
+  <rect x="236" y="186" width="26" height="26" rx="8" fill="#9a6fb0"/>
+  <circle cx="150" cy="260" r="15" fill="#c99a3f"/>
+  <circle cx="230" cy="250" r="11" fill="#5a9e5a"/>
+  <text x="36" y="336" font-size="11" fill="#6c7482">适合看整体关系网；自动防重叠、双击空白复位</text>
+
+  <!-- 代际·横 -->
+  <rect x="330" y="64" width="290" height="290" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="346" y="88" font-size="12.5" font-weight="700" fill="#232a35">代际·横（按代分列）</text>
+  <line x1="346" y1="102" x2="604" y2="102" stroke="#efeae0"/>
+  <g font-size="10" fill="#6c7482" text-anchor="middle">
+    <text x="366" y="98">前史</text><text x="418" y="98">第1代</text><text x="470" y="98">第2代</text>
+    <text x="522" y="98">第3代</text><text x="574" y="98">第4代</text>
+  </g>
+  <g stroke="#c99a3f" stroke-width="1.2" opacity="0.45">
+    <line x1="366" y1="140" x2="418" y2="170"/><line x1="418" y1="170" x2="470" y2="150"/>
+    <line x1="470" y1="150" x2="522" y2="190"/><line x1="522" y1="190" x2="574" y2="160"/>
+    <line x1="366" y1="140" x2="470" y2="150"/><line x1="470" y1="150" x2="418" y2="230"/>
+    <line x1="522" y1="190" x2="418" y2="230"/>
+  </g>
+  <circle cx="366" cy="140" r="11" fill="#3fa79b"/>
+  <circle cx="418" cy="170" r="15" fill="#c99a3f"/>
+  <circle cx="470" cy="150" r="13" fill="#4a7fd4"/>
+  <rect x="510" y="178" width="24" height="24" rx="7" fill="#c99a3f"/>
+  <circle cx="574" cy="160" r="12" fill="#5a9e5a"/>
+  <circle cx="418" cy="230" r="12" fill="#c99a3f"/>
+  <circle cx="470" cy="230" r="11" fill="#9a6fb0"/>
+  <text x="346" y="336" font-size="11" fill="#6c7482">列＝代际；人数多的一列会自动加高，避免圆圈重叠</text>
+
+  <!-- 代际·纵 -->
+  <rect x="640" y="64" width="300" height="290" rx="14" fill="#ffffff" stroke="#e5dfd3"/>
+  <text x="656" y="88" font-size="12.5" font-weight="700" fill="#232a35">代际·纵（按代分行）</text>
+  <line x1="656" y1="120" x2="656" y2="330" stroke="#efeae0"/>
+  <g font-size="10" fill="#6c7482" text-anchor="end">
+    <text x="650" y="122">前史</text><text x="650" y="166">第1代</text><text x="650" y="210">第2代</text>
+    <text x="650" y="254">第3代</text><text x="650" y="298">第4代</text>
+  </g>
+  <g stroke="#c99a3f" stroke-width="1.2" opacity="0.45">
+    <line x1="700" y1="118" x2="780" y2="162"/><line x1="780" y1="162" x2="700" y2="206"/>
+    <line x1="700" y1="206" x2="860" y2="250"/><line x1="780" y1="162" x2="860" y2="250"/>
+    <line x1="700" y1="206" x2="780" y2="294"/>
+  </g>
+  <circle cx="700" cy="118" r="10" fill="#3fa79b"/>
+  <circle cx="700" cy="162" r="14" fill="#c99a3f"/>
+  <circle cx="780" cy="162" r="12" fill="#4a7fd4"/>
+  <rect x="690" y="194" width="22" height="22" rx="7" fill="#c99a3f"/>
+  <circle cx="780" cy="206" r="11" fill="#9a6fb0"/>
+  <circle cx="860" cy="250" r="12" fill="#5a9e5a"/>
+  <circle cx="780" cy="294" r="10" fill="#c0504d"/>
+  <text x="656" y="336" font-size="11" fill="#6c7482">最像家谱：从上到下读，一代一行</text>
+</svg>
