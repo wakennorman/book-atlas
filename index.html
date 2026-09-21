@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#1b2233">
-  <link rel="stylesheet" href="css/style.css?v=24">
+  <link rel="stylesheet" href="css/style.css?v=29">
 </head>
 <body>
 
@@ -43,6 +43,11 @@
       <div class="legend-row">
         <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
         <button id="label-btn" class="ghost" type="button" title="显示全部名字会重叠，默认只显示主要人物">标签：主要</button>
+        <select id="size-filter" title="人太多看不清时，只显示关系较多的人物（放大后名字会越来越多）">
+          <option value="all">人数：全部</option>
+          <option value="mid">人数：中等（前 200）</option>
+          <option value="main">人数：主要（前 60）</option>
+        </select>
       </div>
       <div class="view-row" role="group" aria-label="布局方式">
         <span class="view-label">布局</span>
@@ -57,6 +62,7 @@
       </div>
     </div>
 
+    <div id="focus-bar" class="focus-bar" hidden></div>
     <div id="graph" aria-label="人物关系网络图"></div>
 
     <div class="pathbar">
@@ -111,6 +117,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=24"></script>
+<script src="js/app.js?v=29"></script>
 </body>
 </html>

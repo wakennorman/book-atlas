@@ -136,11 +136,19 @@ main {
 
 .rel-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .rel { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; }
-.rel-head { font-size: 14px; }
-.rel-head b { font-weight: 700; }
+.rel-head { font-size: 14px; }.rel-head b { font-weight: 700; }
 .rel-head .type { color: var(--muted); }
 
 /* 亲属关系徽章（血缘 / 婚姻 / 姻亲 / 收养 / 抚养 / 继亲 / 结义）——见 scripts/kin.mjs 的规则 */
+/* 聚焦条（无限画布的"放大镜"提示） */
+.focus-bar {
+  position: absolute; left: 50%; transform: translateX(-50%); top: 10px; z-index: 20;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 999px; font-size: 12.5px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink);
+  backdrop-filter: blur(6px);
+}
 .kin-badge {
   display: inline-block; padding: 1px 6px; border-radius: 999px;
   font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;

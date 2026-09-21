@@ -32,6 +32,12 @@
     places: new Map(),       // placeId -> place
     placeFilter: null,       // 当前地点筛选
     showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
+    sizeFilter: 'all',       // all | mid | main（按关系数只显示主要人物；大书用）
+    focus: null,             // { id, depth } 只看某人 N 跳以内（无限画布的"放大镜"）
+    focusCache: null,        // 聚焦集合缓存
+    rank: null,              // id -> 关系数排名（sizeFilter 用）
+    zoom: 1,                 // 当前缩放（标签按缩放分级显示）
+    labelTimer: null,
   };
 
   /* ---------------- 工具 ---------------- */
@@ -180,6 +186,14 @@
     state.bandLabels = new Map();
     state.places = new Map((book.places || []).map((p) => [p.id, p]));
     state.placeFilter = null;
+    state.rank = null;
+    state.focus = null;
+    state.focusCache = null;
+    state.zoom = 1;
+    try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
+    const sizeSel0 = document.getElementById('size-filter');
+    if (sizeSel0) sizeSel0.value = state.sizeFilter;
+    renderFocusBar();
     try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
@@ -248,6 +262,52 @@
     return idx >= 0 ? idx : 0;
   }
 
+  /* —— 人数过滤（书太大时先只看主要人物） —— */
+  function degreeRanking() {
+    if (!state.rank) {
+      state.rank = new Map();
+      const sorted = [...state.byId.keys()].sort((a, b) => nodeDegree(b) - nodeDegree(a));
+      sorted.forEach((id, i) => state.rank.set(id, i + 1));
+    }
+    return state.rank;
+  }
+  function sizeLimit() {
+    return state.sizeFilter === 'main' ? 60 : state.sizeFilter === 'mid' ? 200 : Infinity;
+  }
+  function passSizeFilter(id) {
+    const lim = sizeLimit();
+    if (lim === Infinity) return true;
+    if (state.focus && state.focus.id === id) return true;              // 聚焦的人永远显示
+    return (degreeRanking().get(id) || 9999) <= lim;
+  }
+
+  /* —— 聚焦：只看某人 N 跳以内 —— */
+  function focusSet() {
+    if (!state.focus) return null;
+    const key = `${state.focus.id}|${state.focus.depth}`;
+    if (state.focusCache && state.focusCache.key === key) return state.focusCache.set;
+    const set = new Set([state.focus.id]);
+    let frontier = [state.focus.id];
+    for (let d = 0; d < state.focus.depth; d++) {
+      const next = [];
+      for (const id of frontier) {
+        for (const { to, rel } of state.adj.get(id) || []) {
+          if (relLocked(rel)) continue;
+          if (set.has(to)) continue;
+          set.add(to);
+          next.push(to);
+        }
+      }
+      frontier = next;
+    }
+    state.focusCache = { key, set };
+    return set;
+  }
+  const passFocus = (id) => {
+    const set = focusSet();
+    return !set || set.has(id);
+  };
+
   function buildOption() {
     const b = state.book;
     const ink = cssVar('--ink') || '#232a35';
@@ -256,7 +316,7 @@
     const line = cssVar('--line') || '#e5dfd3';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
 
-    const data = b.characters.filter((c) => !isCharHidden(c)).map((c) => {
+    const data = b.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
       const dim = anyDim && !state.hlNodes.has(c.id);
       const locked = charLocked(c);
       const mentioned = isMentioned(c);
@@ -286,8 +346,8 @@
     });
 
     // 代际视图：把「前史 / 第1代 …」做成图里的虚拟节点，跟随缩放与平移；
-    // 位置固定在节点包围盒之外（横向在顶部 gutter、纵向在左侧 gutter）
-    if (state.view !== 'force' && state.bands.size) {
+    // 位置固定在节点包围盒之外（横向在顶部 gutter、纵向在左侧 gutter）——聚焦模式下不画
+    if (state.view !== 'force' && state.bands.size && !state.focus) {
       const isH = state.view === 'gen-h';
       let bb = state.bbox;
       if (!bb && state.pos.size) {   // 兜底：没有包围盒时，就用当前节点坐标现算一个
@@ -326,6 +386,7 @@
     const links = b.relations
       .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
       .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
+      .filter((r) => passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to))
       .map((r) => {
         const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
         const key = edgeKey(r.from, r.to);
@@ -372,7 +433,7 @@
       },
       series: [{
         type: 'graph',
-        layout: state.frozen ? 'none' : 'force',
+        layout: (state.frozen && !state.focus) ? 'none' : 'force',
         roam: true, draggable: state.nodeDrag,
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], layoutAnimation: true, friction: 0.6, initLayout: 'circular' },
@@ -384,7 +445,7 @@
         },
         labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
-        scaleLimit: { min: 0.5, max: 2.5 },
+        scaleLimit: { min: 0.02, max: 40 },   // 无限画布：从"看全貌"一路放大到"看清单个人"
         emphasis: {
           focus: 'adjacency',
           label: { show: true, fontWeight: 'bold' },
@@ -435,7 +496,8 @@
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     }
     const w = Math.max(maxX - minX, 1), h = Math.max(maxY - minY, 1);
-    const s = Math.max(0.3, Math.min((W - 2 * padX) / w, (H - 2 * padY) / h, 1.4));
+    // 无限画布：允许缩到很小（先看全貌），也允许放得很大（看清单个人）
+    const s = Math.max(0.02, Math.min((W - 2 * padX) / w, (H - 2 * padY) / h, 1.4));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     const prev = state.fit || { s: 1, cx: 0, cy: 0 };
     state.fit = {
@@ -454,18 +516,21 @@
     }
   }
 
-  function computeLabels() {
+  function computeLabels(zoom = state.zoom || 1) {
     if (state.allLabels || !state.pos.size) { state.labels = null; return; }
-    const rect = document.getElementById('graph').getBoundingClientRect();
-    const cx = (rect.width || 800) / 2, cy = (rect.height || 500) / 2;
+    // 放大后能看清更多名字：屏幕上的节点越大，越多标签有资格显示（像地图分级）
+    const minScreenSize = 15;
     const cands = state.book.characters
-      .filter((c) => state.pos.has(c.id))
+      .filter((c) => state.pos.has(c.id) && passSizeFilter(c.id) && passFocus(c.id))
+      .filter((c) => isMentioned(c) ? state.hlNodes.has(c.id) : symbolSize(c.id) * zoom >= minScreenSize)
       .map((c) => {
-        const size = symbolSize(c.id);
-        const w = c.name.length * 11.5 + size + 6, h = Math.max(size, 18);
+        const size = symbolSize(c.id) * zoom;
+        // 标签框只按"文字宽度 + 节点半个身子"算——节点直径不能整个算进去，否则放大后盒子巨大、互相压掉
+        const chip = Math.min(size, 64);
+        const w = c.name.length * 11.5 + chip + 6, h = Math.max(chip, 18);
         const p = state.pos.get(c.id);
-        const sx = cx + p.x + size / 2;
-        return { id: c.id, deg: nodeDegree(c.id), bx: sx - w / 2, by: cy + p.y - h / 2, w, h };
+        const sx = p.x * zoom + chip / 2;
+        return { id: c.id, deg: nodeDegree(c.id), bx: sx - w / 2, by: p.y * zoom - h / 2, w, h };
       })
       .sort((a, b) => b.deg - a.deg);
     const placed = [];
@@ -477,8 +542,7 @@
     state.labels = keep;
   }
 
-  function freezeNow() {
-    if (state.frozen || !state.chart) return;
+  function freezeNow() {    if (state.frozen || !state.chart) return;
     const d = state.chart.getModel().getSeriesByIndex(0).getData();
     for (let i = 0; i < d.count(); i++) {
       const id = d.getId(i);
@@ -532,8 +596,15 @@
     state.bands = new Map();
     state.bandLabels = new Map();
     const mainPad = 110, crossPad = 78;
-    const mainLen = (view === 'gen-h' ? W : H) - mainPad * 2;
-    const crossLen = (view === 'gen-h' ? H : W) - crossPad * 2;
+    // 世界坐标不跟着视口走：一行（组）里有多少人，就铺多长——放大后自然不重叠（无限画布）
+    const maxCount = Math.max(1, ...groups.map((g) => byGen.get(g).length));
+    const maxSymbol = Math.min(40, 15 + Math.max(...[...state.byId.keys()].map(nodeDegree)) * 2.2);
+    const stepCross = Math.max(34, maxSymbol + 10);
+    const stepMain = Math.max(200, 240);
+    const viewMain = (view === 'gen-h' ? W : H) - mainPad * 2;
+    const viewCross = (view === 'gen-h' ? H : W) - crossPad * 2;
+    const mainLen = Math.max(viewMain, (groups.length - 1) * stepMain);
+    const crossLen = Math.max(viewCross, (maxCount - 1) * stepCross);
     groups.forEach((g, gi) => {
       const center = groups.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (groups.length - 1);
       state.bands.set(g, center);
@@ -559,6 +630,7 @@
 
   function setView(view) {
     state.view = view;
+    state.zoom = 1;
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
@@ -566,13 +638,16 @@
     clearTimeout(state.freezeTimer);
     if (view === 'force') {
       state.frozen = false;
-      state.pos = new Map();
+      // 人特别多时，保留当前布局坐标当力导向的起点（否则从圆形随机起步，几百个节点要算很久）
+      const many = state.byId.size > 400;
+      if (!many) state.pos = new Map();
       state.bands = new Map();
       state.fit = { s: 1, cx: 0, cy: 0 };
       state.labels = null;
+      state.zoom = 1;
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
-      state.freezeTimer = setTimeout(() => freezeNow(), 6000);
+      state.freezeTimer = setTimeout(() => freezeNow(), many ? 12000 : 6000);
     } else {
       state.frozen = true;
       buildGenerationPositions(view);
@@ -589,6 +664,58 @@
     // clear + setOption 会把缩放/平移复位，但保留当前布局坐标
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });
+    state.zoom = 1;
+  }
+
+  /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
+  function renderFocusBar() {
+    const bar = document.getElementById('focus-bar');
+    if (!bar) return;
+    if (!state.focus) { bar.hidden = true; return; }
+    const c = state.byId.get(state.focus.id) || { name: state.focus.id };
+    const n = (focusSet() || new Set()).size;
+    bar.hidden = false;
+    bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} 人
+      <button class="ghost tiny" type="button" data-focus-nav="dec">− 跳</button>
+      <button class="ghost tiny" type="button" data-focus-nav="inc">＋ 跳</button>
+      <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
+  }
+
+  function applyFocus(id, depth) {
+    state.focus = id ? { id, depth: Math.max(1, Math.min(3, depth || 1)) } : null;
+    state.focusCache = null;
+    clearHighlight(false);
+    state.frozen = false;                       // 聚焦时用 force 布局（子图小，排得开）
+    state.fit = { s: 1, cx: 0, cy: 0 };
+    if (state.chart) {
+      clearTimeout(state.freezeTimer);
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+      state.zoom = 1;
+      if (state.focus) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
+    }
+    renderFocusBar();
+    if (state.focus) {
+      const c = state.byId.get(state.focus.id);
+      if (c) renderCharacterPanel(c);
+    }
+  }
+
+  function applySizeFilter(v) {
+    state.sizeFilter = v || 'all';
+    try { localStorage.setItem('ba-size-filter', state.sizeFilter); } catch (e) { /* 忽略 */ }
+    const sel = document.getElementById('size-filter');
+    if (sel && sel.value !== state.sizeFilter) sel.value = state.sizeFilter;
+    if (state.chart) {
+      if (state.frozen && !state.focus) {
+        buildGenerationPositions(state.view);
+        relaxPositions(80);
+        fitPositions();
+        computeLabels(state.zoom);
+      }
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+    }
   }
 
   function initChart() {
@@ -623,6 +750,18 @@
         const l = d.getItemLayout(i);
         if (l) state.pos.set(id, { x: l[0] ?? l.x, y: l[1] ?? l.y });
       }
+    });
+
+    // 缩放联动标签：放大后露出更多名字（节流 200ms）
+    state.chart.on('graphroam', (p) => {
+      if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
+      clearTimeout(state.labelTimer);
+      state.labelTimer = setTimeout(() => {
+        if (state.allLabels || !state.chart) return;
+        const before = state.labels ? state.labels.size : -1;
+        computeLabels(state.zoom);
+        if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption());
+      }, 200);
     });
 
     const onResize = () => {
@@ -803,8 +942,7 @@
   }
 
   function renderCharacterPanel(c) {
-    const faction = state.book.factions.find((f) => f.key === c.faction);
-    const allRels = state.book.relations.filter((r) => r.from === c.id || r.to === c.id);
+    const faction = state.book.factions.find((f) => f.key === c.faction);    const allRels = state.book.relations.filter((r) => r.from === c.id || r.to === c.id);
     const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - rels.length;
     const relHtml = rels.map((r) => {
@@ -834,6 +972,11 @@
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
       <p class="card-fate"><b>结局：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
+      <p class="hint" style="margin-top:8px">人太多看不清？只看这个人的关系网：
+        <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
+        <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
+        ${state.focus ? '<button class="ghost tiny" type="button" data-focus-exit="1">退出聚焦</button>' : ''}
+      </p>
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
       ${state.placeFilter ? `<p class="hint">📍 正在按地点「${esc(placeName(state.placeFilter))}」筛选：图上只高亮该范围内的人与关系。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
@@ -1010,6 +1153,22 @@
     const placeSel = document.getElementById('place-filter');
     if (placeSel) placeSel.addEventListener('change', () => applyPlaceFilter(placeSel.value || null));
 
+    // 人数过滤（大书：只看主要人物）
+    const sizeSel = document.getElementById('size-filter');
+    if (sizeSel) {
+      sizeSel.value = state.sizeFilter;
+      sizeSel.addEventListener('change', () => applySizeFilter(sizeSel.value));
+    }
+
+    // 聚焦条 / 聚焦按钮（事件委托，面板和聚焦条都能点）
+    document.addEventListener('click', (ev) => {
+      const go = ev.target.closest('[data-focus-node]');
+      if (go) { applyFocus(go.dataset.focusNode, Number(go.dataset.focusDepth || 1)); return; }
+      const nav = ev.target.closest('[data-focus-nav]');
+      if (nav && state.focus) { applyFocus(state.focus.id, state.focus.depth + (nav.dataset.focusNav === 'inc' ? 1 : -1)); return; }
+      if (ev.target.closest('[data-focus-exit]')) applyFocus(null, 1);
+    });
+
     const mentionBtn = document.getElementById('mentioned-btn');
     const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏'; };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
@@ -1070,6 +1229,17 @@
   /* ---------------- 启动 ---------------- */
   bindUI();
   boot();
+
+  // 调试/自动化用的只读入口（控制台里可以查状态、也能脚本化聚焦与过滤）
+  window.__ba = {
+    state,
+    chart: () => state.chart,
+    applyFocus: (id, depth) => applyFocus(id, depth),
+    applySizeFilter: (v) => applySizeFilter(v),
+    computeLabels: (z) => computeLabels(z),
+    nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
+    labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
+  };
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
