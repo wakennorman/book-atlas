@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.15：《罪与罚》补 6 条小事件（罗佳与拉祖米欣/斯维德利盖洛夫/波尔菲利、索尼娅与波丽娜等）；两本书 0 错 0 警告"
+  [string]$Message = "书脉 BookAtlas v0.16：把「代际/阵营」分组标准固化成规则——validate 打印判定并查矛盾、编辑器加分组诊断、README 写明三条判据与字段约定"
 )
 
 $ErrorActionPreference = "Stop"

@@ -221,10 +221,21 @@
   /* —— 基本信息 —— */
   function formMeta() {
     const m = ed.book.meta;
+    const gens = new Set(ed.book.characters.map((c) => Number(c.generation)));
+    const facs = new Set(ed.book.characters.map((c) => c.faction).filter(Boolean));
+    const declared = m.groupMode || '';
+    const mode = declared || (gens.size > 1 ? 'generation' : 'faction');
+    const warnTxt = (declared === 'generation' && gens.size < 2)
+      ? '<br>⚠️ 声明按代际，但只有 1 种代际——没有代际差异就不要按代际分组（补全 generation，或改为 faction）'
+      : (declared === 'faction' && gens.size > 1 ? '<br>ℹ️ 声明按阵营，但数据里有多种代际（想按代际就把「分组方式」改成 generation）' : '');
     return `${head('基本信息', '书名、作者、总章数（剧透保护要用）等', `
       <button class="primary" type="button" data-act="meta-save">保存</button>
       <button class="ghost" type="button" data-tool="validate">本地校验</button>
       <button class="ghost" type="button" data-tool="cmd">复制校验命令</button>`)}
+      <div class="note" style="background:var(--panel-2);border-color:var(--line);color:var(--muted)">
+        <b>分组诊断</b>：代际 ${gens.size} 种 · 阵营 ${facs.size} 个 · 当前：${mode === 'generation' ? '按代际' : '按阵营'}（${declared ? '显式声明' : '自动判定'}）${warnTxt}<br>
+        判定口径：① 有跨代血缘主线？② 有明确的「上一代 → 下一代」跳跃？③ 主要人物是否跨越几代人的阶段出场？——任一为「是」→ 按代际；都为「否」→ 按阵营。
+      </div>
       <form data-form="meta" class="ed-form" style="border-top:none;padding-top:0">
         <div class="ed-grid">
           <label>书名<input data-field="title" value="${esc(m.title)}"></label>

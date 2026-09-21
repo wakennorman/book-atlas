@@ -59,6 +59,21 @@ function validate(file) {
   }
   for (const [name, list] of names) if (list.length > 1) warn(`角色名重复：${name}（${list.join(', ')}）——记得用 note 写清消歧提示`);
 
+  // ---------- 分组标准（代际轴 / 阵营轴） ----------
+  const genSet = new Set(chars.map((c) => Number(c.generation)));
+  const facSet = new Set(chars.map((c) => c.faction).filter(Boolean));
+  const declared = book.meta && book.meta.groupMode;
+  const inferred = genSet.size > 1 ? 'generation' : 'faction';
+  if (declared && !['generation', 'faction'].includes(declared)) {
+    err(`meta.groupMode「${declared}」不合法（应为 generation | faction，或留空自动判定）`);
+  } else if (declared === 'generation' && genSet.size < 2) {
+    warn('meta.groupMode=generation，但数据里只有 1 种代际——没有代际差异就不要按代际分组（补全 generation，或改为 faction）');
+  } else if (declared === 'faction' && genSet.size > 1) {
+    console.log(`  ℹ 声明按阵营分组；数据里有 ${genSet.size} 种代际（想按代际就把 meta.groupMode 改成 generation）`);
+  }
+  const groupModeNow = declared || inferred;
+  console.log(`  ℹ 分组：${groupModeNow === 'generation' ? `按代际（${genSet.size} 组）` : `按阵营（${facSet.size} 组）`}${declared ? '（显式声明）' : '（自动判定）'}`);
+
   const rels = book.relations || [];
   if (!rels.length) err('relations 为空');
   for (const r of rels) {
