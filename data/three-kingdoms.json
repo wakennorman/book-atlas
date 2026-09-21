@@ -13616,20 +13616,6 @@
     },
     {
       "from": "liu-bian",
-      "to": "he-taihou",
-      "type": "母子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "母子同困永安宫，相抱而哭作别",
-          "chapter": "第4章",
-          "place": "yongan-gong"
-        }
-      ]
-    },
-    {
-      "from": "liu-bian",
       "to": "tang-fei",
       "type": "夫妻",
       "kin": "marriage",
@@ -14695,20 +14681,6 @@
       "events": [
         {
           "text": "操会合鲍信击贼寿阳，鲍信战死",
-          "chapter": "第10章",
-          "place": ""
-        }
-      ]
-    },
-    {
-      "from": "cao-cao",
-      "to": "cao-song",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "曹操遣应劭往瑯琊取父曹嵩",
           "chapter": "第10章",
           "place": ""
         }
@@ -22124,20 +22096,6 @@
     },
     {
       "from": "gongsun-kang",
-      "to": "gongsun-du",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "公孙康为公孙度之子，襄平人",
-          "chapter": "第33章",
-          "place": "xiang-ping"
-        }
-      ]
-    },
-    {
-      "from": "gongsun-kang",
       "to": "gongsun-gong",
       "type": "兄弟",
       "kin": "blood",
@@ -28159,20 +28117,6 @@
       ]
     },
     {
-      "from": "liu-feng",
-      "to": "liu-bei",
-      "type": "养父子",
-      "kin": "adoptive",
-      "style": "solid",
-      "events": [
-        {
-          "text": "刘封应声而出，帐后擒下二将",
-          "chapter": "第62章",
-          "place": "fushui-guan"
-        }
-      ]
-    },
-    {
       "from": "guan-ping",
       "to": "liu-bei",
       "type": "部属",
@@ -29048,20 +28992,6 @@
       "events": [
         {
           "text": "操围伏完私宅，尽诛伏氏三族",
-          "chapter": "第66章",
-          "place": "xudu"
-        }
-      ]
-    },
-    {
-      "from": "fu-houhou",
-      "to": "fu-wan",
-      "type": "父女",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "伏后修密书与父，令图曹操",
           "chapter": "第66章",
           "place": "xudu"
         }
@@ -34001,20 +33931,6 @@
       ]
     },
     {
-      "from": "guan-xing",
-      "to": "guan-yu",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关公显圣退羌兵，指路救关兴",
-          "chapter": "第94章",
-          "place": ""
-        }
-      ]
-    },
-    {
       "from": "zhang-bao-zhangfei",
       "to": "guan-yu",
       "type": "义伯父",
@@ -35727,20 +35643,6 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "wu-tai-furen",
-      "type": "母子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孙权谥母吴氏为武烈皇后",
-          "chapter": "第98章",
-          "place": ""
-        }
-      ]
-    },
-    {
       "from": "zhuge-ke",
       "to": "zhang-zhao",
       "type": "同僚",
@@ -36040,20 +35942,6 @@
       "events": [
         {
           "text": "费祎密奏杨仪怨言，仪遂被贬",
-          "chapter": "第105章",
-          "place": "chengdu"
-        }
-      ]
-    },
-    {
-      "from": "zhuge-zhan",
-      "to": "zhuge-liang",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "诸葛瞻为父守孝居丧于丞相府",
           "chapter": "第105章",
           "place": "chengdu"
         }
@@ -44592,6 +44480,1322 @@
           "text": "孙皓令诸葛靓随张悌出兵牛渚。",
           "chapter": "第120章",
           "place": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-ang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹昂」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-pi",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹丕」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-zhi",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹植」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-guiren",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父女→ 曹贵人」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-zhang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹彰」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-xiong",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹熊」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-jie",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父女→ 曹节」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "qinghe-gongzhu",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父女→ 清河公主」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "dian-man",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —养父子→ 典满」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-song",
+      "to": "cao-rui",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹丕」、「曹丕 —父子→ 曹睿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-cao",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-ang",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹昂」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-pi",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹丕」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-zhi",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹植」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-guiren",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父女→ 曹贵人」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-zhang",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹彰」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-xiong",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹熊」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "cao-jie",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父女→ 曹节」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "qinghe-gongzhu",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父女→ 清河公主」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-teng",
+      "to": "dian-man",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —养父子→ 典满」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-shan",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-feng",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —养父子→ 刘封」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-yong",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘永」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-li",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘理」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-chen",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘谌」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-hong",
+      "to": "liu-xuan",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xun-gun",
+      "to": "xun-yun",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「荀绲 —父子→ 荀彧」、「荀彧 —父子→ 荀恽」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-deng",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-he",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-liang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙亮」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-shao",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-huan",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-hao",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "cao-rui",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹操 —父子→ 曹丕」、「曹丕 —父子→ 曹睿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "cao-fang",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹操 —父子→ 曹丕」、「曹丕 —父子→ 曹睿」、「曹睿 —养父子→ 曹芳」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "bian-furen",
+      "to": "cao-rui",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「卞氏 —母子→ 曹丕」、「曹丕 —父子→ 曹睿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "bian-furen",
+      "to": "cao-fang",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「卞氏 —母子→ 曹丕」、「曹丕 —父子→ 曹睿」、「曹睿 —养父子→ 曹芳」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-bei",
+      "to": "liu-xuan",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gan-furen",
+      "to": "liu-chen",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「甘夫人 —母子→ 刘禅」、「刘禅 —父子→ 刘谌」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gan-furen",
+      "to": "liu-xuan",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「甘夫人 —母子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "si-ma-yi",
+      "to": "si-ma-jun",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「司马懿 —父子→ 司马防」、「司马防 —父子→ 司马隽」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-pi",
+      "to": "cao-fang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「曹丕 —父子→ 曹睿」、「曹睿 —养父子→ 曹芳」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "zhen-shi",
+      "to": "cao-fang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「甄氏 —母子→ 曹睿」、「曹睿 —养父子→ 曹芳」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-mao",
+      "to": "xiahou-ba",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯霸」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-mao",
+      "to": "xiahou-wei",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-mao",
+      "to": "xiahou-hui",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯惠」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-mao",
+      "to": "xiahou-he",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯和」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-yuan",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-huang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙晃」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-xiu",
+      "type": "曾祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-kang",
+      "to": "gongsun-xiu",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-quan",
+      "to": "sun-hao",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "zhuge-liang",
+      "to": "zhuge-shang",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「诸葛亮 —父子→ 诸葛瞻」、「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "quan-ji",
+      "to": "quan-hou",
+      "type": "祖孙（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由 「全纪 —父子→ 全尚」、「全尚 —父女→ 全后」 推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-ang",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹昂 与 曹丕 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-zhi",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹丕 与 曹植 同为 卞氏 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-guiren",
+      "to": "cao-rui",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹贵人 与 曹丕 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-zhang",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹丕 与 曹彰 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-xiong",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹丕 与 曹熊 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "cao-jie",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹节 与 曹丕 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "qinghe-gongzhu",
+      "to": "cao-rui",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹丕 与 清河公主 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "dian-man",
+      "to": "cao-rui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「曹丕 与 典满 同为 曹操 的子女」＋「曹丕 有子女 曹睿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "sun-deng",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙策 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙登」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "sun-liang",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙策 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙亮」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-furen",
+      "to": "sun-deng",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙夫人 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙登」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-furen",
+      "to": "sun-jian",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙夫人 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙坚」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-furen",
+      "to": "sun-he",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙夫人 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙河」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-furen",
+      "to": "sun-liang",
+      "type": "姑侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙夫人 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙亮」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-feng",
+      "to": "liu-chen",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘封 与 刘禅 同为 刘备 的子女」＋「刘禅 有子女 刘谌」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-feng",
+      "to": "liu-xuan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘封 与 刘禅 同为 刘备 的子女」＋「刘禅 有子女 刘璿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-yong",
+      "to": "liu-chen",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘禅 与 刘永 同为 刘备 的子女」＋「刘禅 有子女 刘谌」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-yong",
+      "to": "liu-xuan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘禅 与 刘永 同为 刘备 的子女」＋「刘禅 有子女 刘璿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-li",
+      "to": "liu-chen",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘理 与 刘禅 同为 刘备 的子女」＋「刘禅 有子女 刘谌」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "liu-li",
+      "to": "liu-xuan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「刘理 与 刘禅 同为 刘备 的子女」＋「刘禅 有子女 刘璿」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "zhuge-gui",
+      "to": "zhuge-shang",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「诸葛珪 与 诸葛瞻 同为 诸葛亮 的子女」＋「诸葛瞻 有子女 诸葛尚」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "si-ma-shi",
+      "to": "si-ma-jun",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「司马防 与 司马师 同为 司马懿 的子女」＋「司马防 有子女 司马隽」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "si-ma-zhao",
+      "to": "si-ma-jun",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「司马防 与 司马昭 同为 司马懿 的子女」＋「司马防 有子女 司马隽」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-dun",
+      "to": "xiahou-ba",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「夏侯惇 与 夏侯渊 同为 夏侯楙 的子女」＋「夏侯渊 有子女 夏侯霸」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-dun",
+      "to": "xiahou-wei",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「夏侯惇 与 夏侯渊 同为 夏侯楙 的子女」＋「夏侯渊 有子女 夏侯威」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-dun",
+      "to": "xiahou-hui",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「夏侯惇 与 夏侯渊 同为 夏侯楙 的子女」＋「夏侯渊 有子女 夏侯惠」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "xiahou-dun",
+      "to": "xiahou-he",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「夏侯惇 与 夏侯渊 同为 夏侯楙 的子女」＋「夏侯渊 有子女 夏侯和」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-deng",
+      "to": "sun-ce",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙登 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-deng",
+      "to": "sun-shao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙登 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙韶」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-deng",
+      "to": "sun-huan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙登 与 孙河 同为 孙权 的子女」＋「孙河 有子女 孙桓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-deng",
+      "to": "sun-hao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙登 与 孙河 同为 孙权 的子女」＋「孙河 有子女 孙皓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-jian",
+      "to": "sun-huan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙河 与 孙坚 同为 孙权 的子女」＋「孙河 有子女 孙桓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-jian",
+      "to": "sun-hao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙河 与 孙坚 同为 孙权 的子女」＋「孙河 有子女 孙皓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-he",
+      "to": "sun-shao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙河 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙韶」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-liang",
+      "to": "sun-ce",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙坚 与 孙亮 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-liang",
+      "to": "sun-shao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙坚 与 孙亮 同为 孙权 的子女」＋「孙坚 有子女 孙韶」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-liang",
+      "to": "sun-huan",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙河 与 孙亮 同为 孙权 的子女」＋「孙河 有子女 孙桓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "sun-liang",
+      "to": "sun-hao",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「孙河 与 孙亮 同为 孙权 的子女」＋「孙河 有子女 孙皓」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-gong",
+      "to": "gongsun-huang",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「公孙恭 与 公孙康 同为 公孙度 的子女」＋「公孙康 有子女 公孙晃」推导（原文没有直接互动）",
+          "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "gongsun-huang",
+      "to": "gongsun-xiu",
+      "type": "伯叔侄（推导）",
+      "kin": "blood",
+      "style": "dotted",
+      "derived": true,
+      "events": [
+        {
+          "text": "由「公孙晃 与 公孙渊 同为 公孙康 的子女」＋「公孙渊 有子女 公孙修」推导（原文没有直接互动）",
+          "chapter": ""
         }
       ]
     }

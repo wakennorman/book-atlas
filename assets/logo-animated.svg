@@ -1,10 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-76 157 1024 1024" width="1024" height="1024" role="img" aria-label="书脉 BookAtlas">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-76 157 1024 1024" width="1024" height="1024" role="img" aria-label="书脉 BookAtlas 吉祥物">
+  <style>
+    @keyframes buddy-rise {
+      from { transform: translateY(56px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    @keyframes buddy-breathe {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-9px); }
+    }
+    @keyframes buddy-blink {
+      0%, 91%, 100% { transform: scaleY(1); }
+      94%, 96%      { transform: scaleY(0.07); }
+    }
+    @keyframes buddy-paw {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-7px); }
+    }
+    .buddy {
+      animation:
+        buddy-rise 0.9s cubic-bezier(.22,1,.36,1) both,
+        buddy-breathe 5.6s ease-in-out 1.1s infinite;
+    }
+    .paw {
+      animation: buddy-paw 5.6s ease-in-out 1.1s infinite;
+    }
+    .eye {
+      animation: buddy-blink 4.6s ease-in-out infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .buddy, .eye, .paw { animation: none; }
+    }
+  </style>
+
   <!-- 背景深蓝（取景框对准图形主体中心，让整体居中） -->
   <rect x="-76" y="157" width="1024" height="1024" fill="#1d2a53"/>
 
-  <!-- 角色：从书后探出 -->
-  <g>
-    <!-- 脸 + 两只圆耳（下缘藏进书页后） -->
+  <!-- 角色（脸从书后探出，会轻轻呼吸 + 眨眼） -->
+  <g class="buddy">
     <path fill="#f9bf54" d="
       M 135,800
       C 124,668 120,560 140,482
@@ -20,17 +54,21 @@
     <!-- 右眉 -->
     <path fill="none" stroke="#d5756f" stroke-width="26" stroke-linecap="round" d="M 424,474 Q 468,450 506,498"/>
     <!-- 左眼 -->
-    <ellipse cx="311" cy="597" rx="37" ry="23" fill="#242d52"/>
-    <circle cx="292" cy="590" r="9.5" fill="#62d1d2"/>
+    <g class="eye">
+      <ellipse cx="311" cy="597" rx="37" ry="23" fill="#242d52"/>
+      <circle cx="292" cy="590" r="9.5" fill="#62d1d2"/>
+    </g>
     <!-- 右眼 -->
-    <ellipse cx="477" cy="606" rx="40" ry="25" fill="#242d52"/>
-    <circle cx="493" cy="598" r="10" fill="#62d1d2"/>
+    <g class="eye">
+      <ellipse cx="477" cy="606" rx="40" ry="25" fill="#242d52"/>
+      <circle cx="493" cy="598" r="10" fill="#62d1d2"/>
+    </g>
     <!-- 嘴 -->
     <ellipse cx="394" cy="641" rx="8.5" ry="15" fill="#d5756f"/>
   </g>
 
-  <!-- 两只小手：从书后伸出，扒住书的左右边缘（内侧被书页压住） -->
-  <g fill="#f9bf54" stroke="#0e1528" stroke-width="16">
+  <!-- 两只小手：扒住书的左右边缘，跟着呼吸一起轻轻起伏 -->
+  <g class="paw" fill="#f9bf54" stroke="#0e1528" stroke-width="16">
     <ellipse cx="62" cy="618" rx="58" ry="50"/>
     <ellipse cx="810" cy="692" rx="58" ry="50"/>
   </g>
@@ -40,7 +78,7 @@
     <path d="M 86,600 C 90,586 100,576 114,572 C 180,590 280,640 340,676 C 360,694 376,704 390,712 C 420,690 480,666 548,652 C 640,636 716,630 728,634 C 752,633 768,626 780,617 C 790,624 794,638 794,656"/>
   </g>
 
-  <!-- 书本：完整一页连体（两页在底部书脊处相接），四周一圈连续深描边 -->
+  <!-- 书本（静止，连体一页 + 连续深描边 + 书脊折痕） -->
   <path fill="#f9bf54" stroke="#0e1528" stroke-width="20" stroke-linejoin="round" d="
     M 86,600
     C 90,586 100,576 114,572
@@ -58,6 +96,5 @@
     L 114,956
     C 100,956 88,948 86,934
     Z"/>
-  <!-- 书脊折痕（细线，不是裂缝） -->
   <path fill="none" stroke="#0e1528" stroke-width="14" stroke-linecap="round" d="M 390,716 L 391,938"/>
 </svg>

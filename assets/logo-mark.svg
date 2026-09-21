@@ -1,10 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-76 157 1024 1024" width="1024" height="1024" role="img" aria-label="书脉 BookAtlas">
-  <!-- 背景深蓝（取景框对准图形主体中心，让整体居中） -->
-  <rect x="-76" y="157" width="1024" height="1024" fill="#1d2a53"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 219 900 900" width="900" height="900" role="img" aria-label="书脉 BookAtlas">
+  <!-- 与 assets/icon.svg 同一套图形，只是把画布裁到角色周围（顶栏 34px 小尺寸下更清晰） -->
+  <rect x="-14" y="219" width="900" height="900" fill="#1d2a53"/>
 
-  <!-- 角色：从书后探出 -->
   <g>
-    <!-- 脸 + 两只圆耳（下缘藏进书页后） -->
     <path fill="#f9bf54" d="
       M 135,800
       C 124,668 120,560 140,482
@@ -15,32 +13,25 @@
       C 602,384 636,432 639,496
       C 641,572 632,660 626,800
       Z"/>
-    <!-- 左眉 -->
     <path fill="none" stroke="#d5756f" stroke-width="26" stroke-linecap="round" d="M 280,500 Q 324,456 368,476"/>
-    <!-- 右眉 -->
     <path fill="none" stroke="#d5756f" stroke-width="26" stroke-linecap="round" d="M 424,474 Q 468,450 506,498"/>
-    <!-- 左眼 -->
     <ellipse cx="311" cy="597" rx="37" ry="23" fill="#242d52"/>
     <circle cx="292" cy="590" r="9.5" fill="#62d1d2"/>
-    <!-- 右眼 -->
     <ellipse cx="477" cy="606" rx="40" ry="25" fill="#242d52"/>
     <circle cx="493" cy="598" r="10" fill="#62d1d2"/>
-    <!-- 嘴 -->
     <ellipse cx="394" cy="641" rx="8.5" ry="15" fill="#d5756f"/>
   </g>
 
-  <!-- 两只小手：从书后伸出，扒住书的左右边缘（内侧被书页压住） -->
+  <!-- 两只小手 -->
   <g fill="#f9bf54" stroke="#0e1528" stroke-width="16">
     <ellipse cx="62" cy="618" rx="58" ry="50"/>
     <ellipse cx="810" cy="692" rx="58" ry="50"/>
   </g>
 
-  <!-- 缝隙线（背景色描边，让脸和书之间留出空隙） -->
   <g fill="none" stroke="#1d2a53" stroke-width="26" stroke-linecap="round">
     <path d="M 86,600 C 90,586 100,576 114,572 C 180,590 280,640 340,676 C 360,694 376,704 390,712 C 420,690 480,666 548,652 C 640,636 716,630 728,634 C 752,633 768,626 780,617 C 790,624 794,638 794,656"/>
   </g>
 
-  <!-- 书本：完整一页连体（两页在底部书脊处相接），四周一圈连续深描边 -->
   <path fill="#f9bf54" stroke="#0e1528" stroke-width="20" stroke-linejoin="round" d="
     M 86,600
     C 90,586 100,576 114,572
@@ -58,6 +49,5 @@
     L 114,956
     C 100,956 88,948 86,934
     Z"/>
-  <!-- 书脊折痕（细线，不是裂缝） -->
   <path fill="none" stroke="#0e1528" stroke-width="14" stroke-linecap="round" d="M 390,716 L 391,938"/>
 </svg>

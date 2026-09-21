@@ -21,6 +21,7 @@ const err = (m) => { errors++; console.error('  ✗ ' + m); };
 const warn = (m) => { warns++; console.warn('  ⚠ ' + m); };
 
 function validate(file) {
+  errors = 0; warns = 0;                 // 每个文件单独计数（--all 时不要累加）
   console.log(`\n▶ ${file}`);
   let book;
   try {
@@ -186,7 +187,7 @@ function validate(file) {
 const args = process.argv.slice(2);
 if (!args.length || args[0] === '--all') {
   const dir = path.join(process.cwd(), 'data');
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'books.json').map((f) => path.join(dir, f));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(dir, f));
   files.forEach(validate);
 } else {
   args.filter((a) => !a.startsWith('--')).forEach((a) => validate(a));

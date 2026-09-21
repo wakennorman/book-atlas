@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v32';
+const CACHE = 'bookatlas-v34';
 const SHELL = [
   './',
   './index.html',
@@ -14,18 +14,23 @@ const SHELL = [
   './data/crime-and-punishment.json',
   './manifest.webmanifest',
   './assets/icon.svg',
+  './assets/logo-mark.svg',
+  './assets/icon-512.png',
+  './assets/apple-touch-icon.png',
+  './assets/favicon.ico',
+  './assets/favicon-32x32.png',
   './editor.html',
   './css/editor.css',
   './js/editor.js',
-  './editor.html?v=32',
-  './css/editor.css?v=32',
-  './js/editor.js?v=32',
-  './css/style.css?v=32',
-  './js/app.js?v=32',
-  './css/style.css?v=32',
-  './vendor/fflate.min.js?v=32',
-  './vendor/pdf.min.js?v=32',
-  './vendor/pdf.worker.min.js?v=32'
+  './editor.html?v=34',
+  './css/editor.css?v=34',
+  './js/editor.js?v=34',
+  './css/style.css?v=34',
+  './js/app.js?v=34',
+  './css/style.css?v=34',
+  './vendor/fflate.min.js?v=34',
+  './vendor/pdf.min.js?v=34',
+  './vendor/pdf.worker.min.js?v=34'
 ];
 
 self.addEventListener('install', (e) => {

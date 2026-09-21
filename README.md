@@ -164,6 +164,24 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 **工具**：`node scripts/annotate-kin.mjs [--write]` 会按关系名**猜** kin 并报告猜不出的（人工复核后再写回）；图上面板与关系链会显示「血缘/收养/继亲/姻亲/结义」徽章。
 
+### 族谱补全（`derived: true` 的推导关系）—— 祖辈不许断线
+
+**为什么**：一本书里通常只记录了"父母—子女"的直接互动，祖父母和孙辈往往没有对手戏 ⇒ 图上出现「老何塞连不到孙辈」这种断线（《百年孤独》实测）。
+
+**做法**：`node scripts/derive-kin.mjs data/xx.json --write` 从亲子边推导出：
+
+| 推导 | 条件 | 例（百年孤独） |
+|---|---|---|
+| `祖孙（推导）` | 2 代链（A→B→C） | 老何塞 → 阿尔卡蒂奥 |
+| `曾祖孙（推导）` | 3 代链 | 老何塞 → 何塞·阿尔卡蒂奥第二 |
+| `伯叔侄/姑侄/舅甥/姨甥（推导）` | 父母的手足（**同一对父母的两个孩子**） | 阿玛兰妲 → 奥雷里亚诺第二 |
+
+- 每条推导边的"依据事件"里写着**推导链**（例：由「老何塞 —父子→ 巨人」「巨人 —父子→ 阿尔卡蒂奥」推导），不是编造
+- 图上画成**虚线 + 淡色**，面板/提示里带「推导」徽章；工具栏「族谱补全：显示/隐藏」可整层关掉
+- 同名不同人（两个马忠、两个何塞·阿尔卡蒂奥）和自环一律不推导
+
+**方向必须先修对**（`node scripts/fix-parent-cycles.mjs --all [--write]`）：AI 生成的数据里亲子方向会写反（互反双写 / 单向写反两种），脚本按人工核对表修正 + 亲子环检测；**别用统计判据**（"孩子多的人像父母"会把曹操当成曹嵩的爹，"父母先出场"会把伏完和女儿判反）。
+
 ### 剧透保护（书里带这三个字段就能用）
 
 - `meta.chapters`（总章数）、`characters[].firstCh`（首次出场章）、`events[].ch`（发生章）
@@ -188,6 +206,8 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 |---|---|
 | `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）检查。`node scripts/validate.mjs --all` 一把过 |
 | `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
+| `scripts/fix-parent-cycles.mjs` | 修亲子关系方向（人工核对表）+ 报告可疑方向 + 亲子环检测：`node scripts/fix-parent-cycles.mjs --all [--write]` |
+| `scripts/derive-kin.mjs` | 族谱补全：从亲子边推导祖孙/曾祖孙/叔侄等（`derived: true`，图上虚线+「推导」标）：`node scripts/derive-kin.mjs --all [--write]` |
 | `scripts/assign-phases.mjs` | 按 `phases[].from/to` 的章区间把事件归到阶段（逐章生成只有第 1 章输出 phase）：`node scripts/assign-phases.mjs data/xx.json [--write]` |
 | `scripts/wholebook.mjs` | **整本生成（命令行版）**：逐章抽取 → 合并去重 → 写出数据；可 `--jobs` 并发、可断点续跑 |
 | `scripts/dedupe-chars.mjs` | 同名/别名人物合并（整本生成后必跑一遍）：`node scripts/dedupe-chars.mjs data/xx.json [--write]` |

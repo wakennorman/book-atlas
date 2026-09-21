@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>书脉 logo · C1 定稿（静态 + 动画）</title>
+<style>
+  :root { --ink:#1b2233; --paper:#f7f5f0; --line:#e0dcd2; --gold:#d4a343; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:40px 32px 64px; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif; }
+  header { max-width:1040px; margin:0 auto 28px; }
+  h1 { font-size:26px; margin:0 0 8px; }
+  .sub { font-size:14px; color:#6b7280; line-height:1.7; }
+  .duo { max-width:1040px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:820px){ .duo { grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .card h2 { font-size:15px; margin:4px 4px 12px; }
+  .card h2 .badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+    border-radius:999px; background:var(--ink); color:#fff; margin-right:6px; vertical-align:2px; }
+  .thumb { width:100%; aspect-ratio:1/1; display:block; border-radius:10px; background:#1d2a53; }
+  .note { max-width:1040px; margin:28px auto 0; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:20px 24px; }
+  .note h3 { margin:0 0 10px; font-size:15px; }
+  .note table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .note td { padding:8px 6px; border-top:1px solid var(--line); line-height:1.6; vertical-align:top; }
+  .note td:first-child { width:220px; font-weight:600; white-space:nowrap; }
+  .ok { color:#15803d; font-weight:600; }
+  .no { color:#b91c1c; font-weight:600; }
+  .files { max-width:1040px; margin:16px auto 0; font-size:13px; color:#6b7280; line-height:1.9; }
+  code { background:#eee9dd; padding:1px 6px; border-radius:5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>书脉 BookAtlas · logo 定稿（C1）</h1>
+  <div class="sub">左：去水印后的静态图（PNG 位图）；右：矢量重绘的动画版（SVG，无限缩放，会呼吸 + 眨眼）。</div>
+</header>
+
+<div class="duo">
+  <div class="card">
+    <h2><span class="badge">静态</span>C1-clean.png（已去水印）</h2>
+    <img class="thumb" src="C1-clean.png" alt="静态定稿">
+  </div>
+  <div class="card">
+    <h2><span class="badge">动画</span>logo-animated.svg（矢量重绘）</h2>
+    <img class="thumb" src="../logo-animated.svg" alt="动画版">
+  </div>
+</div>
+
+<div class="note">
+  <h3>动画版能当 logo 用吗？—— 能，但看场合</h3>
+  <table>
+    <tr><td>网站顶栏 / 内页装饰 / 加载动画</td><td><span class="ok">✔ 完美</span> SVG 无限缩放，动画照常播放，几 KB 大小</td></tr>
+    <tr><td>README / GitHub 页</td><td><span class="ok">✔ 可以</span> 用 <code>&lt;img src&gt;</code> 引用 SVG，GitHub 会原样渲染（动画保留）</td></tr>
+    <tr><td>favicon（浏览器标签页）</td><td><span class="no">✘ 不动</span> 标签页图标只渲染静态帧 —— 用静态版</td></tr>
+    <tr><td>PWA 安装图标 / 手机主屏 / 应用商店</td><td><span class="no">✘ 不动</span> manifest 图标一律按静态处理 —— 用静态版</td></tr>
+  </table>
+  <p style="font-size:13.5px;color:#6b7280;margin:12px 0 0;line-height:1.7">
+    所以推荐组合：<strong>静态版当正 logo</strong>（favicon / PWA / 社交头像），<strong>动画版当开场彩蛋</strong>（打开图谱页时播一次，或放在「关于」弹窗里循环）。动起来的是同一个角色，识别度不打折。
+  </p>
+</div>
+
+<div class="files">
+  产出文件：<code>assets/logo-candidates/C1-clean.png</code>（1024×1024 去水印）·
+  <code>assets/logo-animated.svg</code>（动画版，约 3KB）·
+  动效：入场升起 0.9s → 呼吸浮动 5.6s 循环 → 每 4.6s 眨眼；系统开启「减少动态效果」时自动静止。
+</div>
+</body>
+</html>

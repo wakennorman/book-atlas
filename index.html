@@ -6,15 +6,17 @@
   <title>书脉 BookAtlas · 人物关系与事件图谱</title>
   <meta name="description" content="把一本书的人物关系、定义关系的小事件与标志性事件放在一张图上，支持两人关系查询。">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/favicon.ico" sizes="48x48">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <meta name="theme-color" content="#1b2233">
-  <link rel="stylesheet" href="css/style.css?v=32">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#1d2a53">
+  <link rel="stylesheet" href="css/style.css?v=34">
 </head>
 <body>
 
 <header class="topbar">
   <div class="brand">
-    <img class="logo" src="assets/icon.svg" alt="书脉">
+    <img class="logo" src="assets/logo-mark.svg" alt="书脉">
     <div class="brand-text">
       <h1>书脉 <span>BookAtlas</span></h1>
       <p id="book-meta" class="meta">加载中…</p>
@@ -60,6 +62,7 @@
         <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
         <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
         <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
+        <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）">族谱补全：显示</button>
         <span id="count-hint" class="hint"></span>
         <span class="view-label shape-legend" title="形状区分：圆＝男，圆角方＝女（大小表示关系多少）"><i class="sh sh-m"></i>男 <i class="sh sh-f"></i>女</span>
       </div>
@@ -120,6 +123,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=32"></script>
+<script src="js/app.js?v=34"></script>
 </body>
 </html>

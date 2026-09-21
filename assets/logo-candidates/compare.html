@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>书脉 IP 候选 · 6 张对比</title>
+<style>
+  :root { --ink:#1b2233; --paper:#f7f5f0; --line:#e0dcd2; --gold:#d4a343; --blue:#6f9bd1; --rose:#c96b9d; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:40px 32px 64px; background:var(--paper); color:var(--ink);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif; }
+  header { max-width:1120px; margin:0 auto 32px; }
+  h1 { font-size:26px; margin:0 0 8px; letter-spacing:.5px; }
+  .sub { font-size:14px; color:#6b7280; line-height:1.7; }
+  .grid { max-width:1120px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:900px){ .grid { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){ .grid { grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .thumb { width:100%; aspect-ratio:1/1; border-radius:10px; display:block; background:#1b2233; }
+  .meta { margin-top:12px; }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:var(--ink); color:#fff; margin-right:6px; }
+  .corner { background:var(--gold); color:var(--ink); }
+  .name { font-size:14px; font-weight:600; margin:8px 0 4px; }
+  .desc { font-size:12.5px; color:#6b7280; line-height:1.6; }
+  .swatches { display:flex; gap:5px; margin-top:8px; }
+  .sw { width:16px; height:16px; border-radius:5px; border:1px solid rgba(0,0,0,.12); }
+  footer { max-width:1120px; margin:36px auto 0; font-size:13px; color:#6b7280; line-height:1.8;
+    border-top:1px solid var(--line); padding-top:18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>书脉 BookAtlas · IP 候选 6 张</h1>
+  <div class="sub">
+    用 <strong>ip-as-logo</strong> skill 生成（A/B/C 三方向 × 左下/右下各一张，1024×1024）。<br>
+    背景统一沿用现有 logo 的深蓝 <code>#1b2233</code>；每张只用「两个 IP 色 + 一个背景色」，IP 色取自现有 logo 的
+    金 <code>#d4a343</code> / 蓝 <code>#6f9bd1</code> / 粉紫 <code>#c96b9d</code>。
+  </div>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <img class="thumb" src="A1-openbook-wings-lowerleft-gold-blue.png" alt="A1">
+    <div class="meta">
+      <span class="tag">A1</span><span class="tag corner">左下</span>
+      <div class="name">翻开的书 · 书页作翅膀</div>
+      <div class="desc">书页之间浮起三颗节点并连线，最直白对应「关系网」。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#d4a343"></span><span class="sw" style="background:#6f9bd1"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="thumb" src="A2-openbook-wings-lowerright-gold-rose.png" alt="A2">
+    <div class="meta">
+      <span class="tag">A2</span><span class="tag corner">右下</span>
+      <div class="name">翻开的书 · 书页作翅膀</div>
+      <div class="desc">同 A 方向，换粉紫节点，姿态偏「张开欢迎」。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#d4a343"></span><span class="sw" style="background:#c96b9d"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="thumb" src="B1-upright-book-roots-lowerleft-blue-gold.png" alt="B1">
+    <div class="meta">
+      <span class="tag">B1</span><span class="tag corner">左下</span>
+      <div class="name">立着的书 · 书页化根须</div>
+      <div class="desc">封面当脸，底部书页往下扎成粗根须——扣「脉 / 家族树」。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#6f9bd1"></span><span class="sw" style="background:#d4a343"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="thumb" src="B2-upright-book-roots-lowerright-rose-blue.png" alt="B2">
+    <div class="meta">
+      <span class="tag">B2</span><span class="tag corner">右下</span>
+      <div class="name">立着的书 · 书页化根须</div>
+      <div class="desc">同 B 方向，粉紫封面 + 蓝色根须。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#c96b9d"></span><span class="sw" style="background:#6f9bd1"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="thumb" src="C1-openbook-panel-lowerleft-gold-rose.png" alt="C1">
+    <div class="meta">
+      <span class="tag">C1</span><span class="tag corner">左下</span>
+      <div class="name">书页作天空 · 节点升起</div>
+      <div class="desc">摊开的书像一块夜空板，节点从书页里升起并连线。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#d4a343"></span><span class="sw" style="background:#c96b9d"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="thumb" src="C2-openbook-panel-lowerright-blue-gold.png" alt="C2">
+    <div class="meta">
+      <span class="tag">C2</span><span class="tag corner">右下</span>
+      <div class="name">书页作天空 · 节点升起</div>
+      <div class="desc">同 C 方向，蓝色书身 + 金色节点。</div>
+      <div class="swatches"><span class="sw" style="background:#1b2233"></span><span class="sw" style="background:#6f9bd1"></span><span class="sw" style="background:#d4a343"></span></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  选好一张后告诉我编号，我再做：① 去背景 / 出圆角方形 PNG；② 更新 <code>assets/icon.svg</code> 与 <code>manifest.webmanifest</code>；③ 按需出 favicon 与 512×512。<br>
+  生成是一次性创作抽样，skill 不对结果做合规筛选或重抽——要换风格/重抽直接说。
+</footer>
+</body>
+</html>

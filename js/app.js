@@ -33,6 +33,7 @@
     placeFilter: null,       // 当前地点筛选
     showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
     showMinor: false,        // 是否显示 tier=minor 的次要人物（大书默认折叠）
+    showDerived: true,       // 是否显示"族谱补全"推导出来的祖孙/叔侄等关系（默认显示）
     sizeFilter: 'all',       // all | mid | main（按关系数只显示主要人物；大书用）
     focus: null,             // { id, depth } 只看某人 N 跳以内（无限画布的"放大镜"）
     focusCache: null,        // 聚焦集合缓存
@@ -66,6 +67,8 @@
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
   const isMentioned = (c) => c && c.tier === 'mentioned';
   const isMinor = (c) => c && c.tier === 'minor';
+  const isDerived = (r) => !!(r && r.derived);                 // 由亲子关系推导出来的族谱边（原文没有直接互动）
+  const relVisible = (r) => !isDerived(r) || state.showDerived;
   // 折叠：mentioned（没出场）/ minor（只跟一两个人有关系，大书里默认收起）——被高亮/搜索命中时照样显示
   const isCharHidden = (c) => {
     if (!c) return false;
@@ -205,6 +208,7 @@
     renderFocusBar();
     try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
     try { state.showMinor = localStorage.getItem('ba-minor') === '1'; } catch (e) { state.showMinor = false; }
+    try { state.showDerived = localStorage.getItem('ba-derived') !== '0'; } catch (e) { state.showDerived = true; }
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
@@ -397,16 +401,18 @@
       .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
       .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
       .filter((r) => passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to))
+      .filter(relVisible)
       .map((r) => {
         const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
+        const derived = isDerived(r);
         const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
           width: state.hlEdges.has(key) && anyDim ? 3 : 1.2,
-          opacity: dim ? 0.07 : (hiddenTier ? 0.3 : 0.5),
-          type: hiddenTier ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
+          opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
+          type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: 0.08,
         },
       };
@@ -427,7 +433,7 @@
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
             const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}<br>${evs}` +
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}<br>${evs}` +
               (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条事件在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
@@ -868,6 +874,9 @@
     const nodes = new Set([id]);
     const edges = new Set();
     for (const e of state.adj.get(id)) { nodes.add(e.to); edges.add(edgeKey(id, e.to)); }
+    state.panelKind = 'char';
+    state.panelId = id;
+    state.activeRel = null;
     setHighlight(nodes, edges, id, null);
     renderCharacterPanel(c);
   }
@@ -875,8 +884,16 @@
   function selectRelation(rel) {
     const nodes = new Set([rel.from, rel.to]);
     const edges = new Set([edgeKey(rel.from, rel.to)]);
+    state.panelKind = 'rel';
+    state.activeRel = rel;
     setHighlight(nodes, edges, null, null);
     renderRelationPanel(rel);
+  }
+
+  // 折叠/过滤开关变了以后，右侧面板要跟着重画（否则内容还是旧的）
+  function refreshPanel() {
+    if (state.panelKind === 'rel' && state.activeRel) { renderRelationPanel(state.activeRel); return; }
+    if (state.panelKind === 'char' && state.panelId) { const c = state.byId.get(state.panelId); if (c) renderCharacterPanel(c); }
   }
 
   function selectEvent(id) {
@@ -958,7 +975,7 @@
   }
 
   function renderCharacterPanel(c) {
-    const faction = state.book.factions.find((f) => f.key === c.faction);    const allRels = state.book.relations.filter((r) => r.from === c.id || r.to === c.id);
+    const faction = state.book.factions.find((f) => f.key === c.faction);    const allRels = state.book.relations.filter((r) => (r.from === c.id || r.to === c.id) && relVisible(r));
     const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - rels.length;
     const relHtml = rels.map((r) => {
@@ -968,7 +985,7 @@
       const evs = vis.map((e) =>
         `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
         </div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
@@ -1006,8 +1023,8 @@
     const evs = (r.events || []).map((e) =>
       `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
     panel().innerHTML = `
-      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)} ${charLink(second)}</div>
-      <p class="card-sub">定义这段关系的事件${r.kin ? `（这是${KIN_LABEL[r.kin]}关系：${KIN_HINT[r.kin] || ''}）` : ''}</p>
+      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
+      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : '定义这段关系的事件'}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
       ${evs || '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
     bindGoto(panel());
@@ -1035,6 +1052,7 @@
       const cur = queue.shift();
       if (cur === toId) break;
       for (const e of state.adj.get(cur) || []) {
+        if (!relVisible(e.rel)) continue;
         if (!prev.has(e.to)) { prev.set(e.to, { from: cur, rel: e.rel }); queue.push(e.to); }
       }
     }
@@ -1223,9 +1241,23 @@
       renderDatalist();
       renderPathSelects();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      refreshPanel();
       updateCountHint();
     });
     syncMinorBtn();
+
+    // 族谱补全（推导出来的祖孙/叔侄连线）
+    const derivedBtn = document.getElementById('derived-btn');
+    const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'; };
+    if (derivedBtn) derivedBtn.addEventListener('click', () => {
+      state.showDerived = !state.showDerived;
+      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      syncDerivedBtn();
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      refreshPanel();
+      updateCountHint();
+    });
+    syncDerivedBtn();
 
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
