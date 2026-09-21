@@ -625,6 +625,26 @@
     try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch (e) { return ''; }
   };
 
+  // 汉字数字 → 阿拉伯数字（一百二十 → 120）
+  function hanToNum(s) {
+    const str = String(s || '').trim();
+    if (/^\d+$/.test(str)) return Number(str);
+    const D = { 零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+    const U = { 十: 10, 百: 100, 千: 1000 };
+    let section = 0, num = 0;
+    for (const ch of str) {
+      if (ch in D) num = D[ch];
+      else if (ch in U) { section += (num || 1) * U[ch]; num = 0; }
+      else return 0;
+    }
+    return section + num;
+  }
+  const HEAD_LINE = /^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[回章节卷]/;
+  const headingNo = (line) => {
+    const m = String(line || '').match(/^[ \t　]*第[ \t　]*([一二三四五六七八九十百千零〇两\d]+)[ \t　]*[回章节卷]/);
+    return m ? hanToNum(m[1]) : 0;
+  };
+
   function extractEpub(arrayBuffer) {
     if (typeof fflate === 'undefined') throw new Error('缺少 zip 库：vendor/fflate.min.js 没有加载');
     const files = fflate.unzipSync(new Uint8Array(arrayBuffer));
@@ -638,32 +658,42 @@
     for (const m of opf.matchAll(/<item\b[^>]*>/gi)) {
       const id = m[0].match(/\bid="([^"]+)"/i)?.[1];
       const href = m[0].match(/\bhref="([^"]+)"/i)?.[1];
-      if (id && href) manifest.set(id, decodeURIComponent(href));
+      if (id && href) manifest.set(id, { href: decodeURIComponent(href), nav: /properties="[^"]*\bnav\b/i.test(m[0]) });
     }
     const spine = [...opf.matchAll(/<itemref\b[^>]*idref="([^"]+)"/gi)].map((m) => m[1]);
     const parts = [];
+    const docs = [];
     for (const id of spine) {
-      const href = manifest.get(id);
-      if (!href) continue;
-      const raw = files[base + href] || files[href];
+      const item = manifest.get(id);
+      if (!item) continue;
+      const raw = files[base + item.href] || files[item.href];
       if (!raw) continue;
       const text = cleanHtml(decodeBytes(raw));
-      if (text) parts.push(`\n==== [${String(parts.length + 1).padStart(3, '0')}] ${href} ====\n\n${text}`);
+      if (!text) continue;
+      parts.push(`\n==== [${String(parts.length + 1).padStart(3, '0')}] ${item.href} ====\n\n${text}`);
+      // 目录页（nav / 满是章节标题的文档）不当正文
+      const headCount = (text.match(/^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[回章节卷][^\n]{0,40}$/gm) || []).length;
+      const firstLine = (text.split('\n').map((s) => s.trim()).find(Boolean) || '').slice(0, 40);
+      docs.push({ href: item.href, nav: item.nav, headCount, title: HEAD_LINE.test(firstLine) ? firstLine : '', text });
     }
     if (!parts.length) throw new Error('EPUB 里没有可读的正文');
-    return parts.join('\n');
+    // 优先用 EPUB 自带目录分章（一回 = 一个文档，比正则切分可靠），失败再退回整本正则分章
+    const chapters = docs
+      .filter((d) => !d.nav && d.headCount < 4 && headingNo(d.title))
+      .map((d) => ({ no: headingNo(d.title), title: d.title, text: d.text }));
+    return { text: parts.join('\n'), chapters: chapters.length >= 3 ? chapters : [] };
   }
 
   async function readBookFile(file, onProgress) {
     const name = String(file.name || '').toLowerCase();
-    if (name.endsWith('.epub')) return { text: extractEpub(await file.arrayBuffer()), kind: 'EPUB' };
+    if (name.endsWith('.epub')) { const r = extractEpub(await file.arrayBuffer()); return { text: r.text, chapters: r.chapters, kind: 'EPUB' }; }
     if (name.endsWith('.pdf')) return { text: await extractPdf(await file.arrayBuffer(), onProgress), kind: 'PDF' };
     if (name.endsWith('.html') || name.endsWith('.htm')) return { text: cleanHtml(await file.text()), kind: 'HTML' };
     return { text: await file.text(), kind: name.endsWith('.md') ? 'Markdown' : '纯文本' };
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=20';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=21';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -740,12 +770,12 @@
     const t = String(text || '').replace(/\r\n?/g, '\n');
     const re = /^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[章回节卷][^\n]{0,40}$/gm;
     const marks = [...t.matchAll(re)].map((m) => ({ idx: m.index, title: m[0].trim() }));
-    if (marks.length < 2) return t.trim() ? [{ title: '全文（未识别到章节，按一整段处理）', text: t.trim() }] : [];
+    if (marks.length < 2) return t.trim() ? [{ no: 0, title: '全文（未识别到章节，按一整段处理）', text: t.trim() }] : [];
     const out = [];
     for (let i = 0; i < marks.length; i++) {
       const start = marks[i].idx;
       const end = i + 1 < marks.length ? marks[i + 1].idx : t.length;
-      out.push({ title: marks[i].title.slice(0, 40), text: t.slice(start, end).trim() });
+      out.push({ no: headingNo(marks[i].title), title: marks[i].title.slice(0, 40), text: t.slice(start, end).trim() });
     }
     return out;
   }
@@ -756,6 +786,7 @@
     const cfgModel = localStorage.getItem('ba-ai-model') || 'deepseek-chat';
     const chapters = ed.chapters || [];
     const results = ed.genResults || [];
+    const saved = savedBatch();
     const list = chapters.map((c, i) => {
       const r = results[i];
       const flag = r ? (r.error ? ' ✗' : ` ✓ ${(r.characters || []).length}人/${(r.relations || []).length}关系${(r.places || []).length ? `/${r.places.length}地点` : ''}`) : '';
@@ -784,14 +815,45 @@
         <div class="ed-sub-head">已分章 ${chapters.length} 章
           <button class="ghost tiny" type="button" data-tool="batch-all">全选</button>
           <button class="ghost tiny" type="button" data-tool="batch-none">全不选</button>
+          ${saved && !results.some(Boolean) ? `<button class="ghost tiny" type="button" data-tool="batch-restore">↺ 接回上次的 ${saved.results.filter(Boolean).length} 条结果</button>` : ''}
         </div>
         <div class="ed-chars" id="batch-list">${list}</div>
       </div>` : ''}
       <div id="batch-out" class="ed-msg"></div>`;
   }
 
-  function batchLog(text, cls) {
-    const out = document.getElementById('batch-out');
+  /* 整本生成的结果存本地（长跑可中断恢复；只存草稿结果，不存正文） */
+  function batchKey() { return 'ba-batch-' + (ed.book?.meta?.slug || 'draft'); }
+
+  function saveBatchResults() {
+    if (!ed.book) return;
+    try {
+      localStorage.setItem(batchKey(), JSON.stringify({
+        count: (ed.chapters || []).length,
+        at: Date.now(),
+        results: ed.genResults || []
+      }));
+    } catch (e) { /* 超配额就算了 */ }
+  }
+
+  function savedBatch() {
+    try {
+      const d = JSON.parse(localStorage.getItem(batchKey()) || 'null');
+      return d && Array.isArray(d.results) && d.results.some(Boolean) ? d : null;
+    } catch (e) { return null; }
+  }
+
+  // 分章完成后：如果本地存的批次章数对得上，自动把上次的结果接回来
+  function autoRestoreBatch() {
+    const saved = savedBatch();
+    if (!saved) return 0;
+    const have = (ed.genResults || []).some(Boolean);
+    if (have || saved.count !== (ed.chapters || []).length) return 0;
+    ed.genResults = saved.results;
+    return saved.results.filter(Boolean).length;
+  }
+
+  function batchLog(text, cls) {    const out = document.getElementById('batch-out');
     if (!out) return;
     out.className = 'ed-msg ' + (cls || '');
     out.innerHTML = `<div>${text}</div>` + (out.innerHTML || '');
@@ -802,9 +864,10 @@
     ed.batchText = box ? box.value : (ed.batchText || '');
     ed.chapters = splitChapters(ed.batchText);
     ed.genResults = [];
+    const restored = autoRestoreBatch();
     renderBody();
     batchLog(ed.chapters.length
-      ? `已分章：${ed.chapters.length} 章。勾选要生成的部分，然后点「② 逐章生成」。`
+      ? `已分章：${ed.chapters.length} 章${restored ? `（并接回上次的 ${restored} 条生成结果）` : ''}。勾选要生成的部分，然后点「② 逐章生成」。`
       : '没有内容可分章，请先粘贴或上传 txt。', ed.chapters.length ? 'ok' : 'bad');
   }
 
@@ -844,9 +907,11 @@
         const draft = await callLLM(batchSystem(), batchUser(ch, idx));
         ed.genResults[idx] = draft;
         ok++;
+        saveBatchResults();
         batchLog(`✓ ${n + 1}/${picks.length} ${esc(ch.title)}：${(draft.characters || []).length} 人 / ${(draft.relations || []).length} 关系 / ${(draft.events || []).length} 事件`, 'ok');
       } catch (e) {
         ed.genResults[idx] = { error: String(e.message) };
+        saveBatchResults();
         batchLog(`✗ ${esc(ch.title)}：${esc(String(e.message))}`, 'bad');
       }
     }
@@ -864,11 +929,12 @@
   }
 
   function batchUser(ch, idx) {
-    const n = idx + 1;
+    const n = ch.no || idx + 1;
     const body = ch.text.length > 40000 ? ch.text.slice(0, 40000) + '\n…（本章过长，已截断）' : ch.text;
     const roster = batchRoster();
     const placeRoster = batchPlaceRoster();
-    return `书名《${ed.book.meta.title || '未命名'}》，共 ${(ed.chapters || []).length} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
+    const total = Number(ed.book.meta.chapters) || (ed.chapters || []).length;
+    return `书名《${ed.book.meta.title || '未命名'}》，共 ${total} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
       (roster ? `已有名单（同一个人必须沿用这些 id）：\n${roster}\n\n` : '') +
       (placeRoster ? `已有地点名单（同一个地点必须沿用这些 id；events[].place / relations[].events[].place 只能引用这里的 id，或本章新出现的地点）：\n${placeRoster}\n\n` : '') +
       `JSON schema：\n${AI_SCHEMA}\n\n` +
@@ -1069,16 +1135,21 @@
       const file = ev.target.files[0];
       if (!file) return;
       try {
-        const { text, kind } = await readBookFile(file, (n, total) => {
+        const { text, chapters, kind } = await readBookFile(file, (n, total) => {
           const out = document.getElementById('batch-out');
           if (out) { out.className = 'ed-msg'; out.textContent = `⏳ 正在解析 PDF 第 ${n} / ${total} 页…`; }
         });
         ed.batchText = text;
-        ed.chapters = [];
+        ed.chapters = Array.isArray(chapters) && chapters.length ? chapters : [];
         ed.genResults = [];
+        const restored = ed.chapters.length ? autoRestoreBatch() : 0;
         renderBody();
-        batchSplit();   // 上传后自动分章
-        batchLog(`已读入 ${esc(file.name)}（${kind} · ${text.length} 字）`, 'ok');
+        if (ed.chapters.length) {
+          batchLog(`已读入 ${esc(file.name)}（${kind} · ${text.length} 字）—— 用 EPUB 自带目录分好了 ${ed.chapters.length} 章${restored ? `，并接回上次的 ${restored} 条生成结果` : ''}`, 'ok');
+        } else {
+          batchSplit();   // 没有自带目录时自动按标题分章
+          batchLog(`已读入 ${esc(file.name)}（${kind} · ${text.length} 字）`, 'ok');
+        }
       } catch (e) {
         renderBody();
         batchLog('读取失败：' + esc(String(e.message)), 'bad');
@@ -1194,6 +1265,13 @@
       if (btn.dataset.tool === 'batch-stop') { ed.generating = false; batchLog('已请求停止：当前这一章跑完就停。', ''); }
       if (btn.dataset.tool === 'batch-merge') batchMerge();
       if (btn.dataset.tool === 'batch-clear') { ed.batchText = ''; ed.chapters = []; ed.genResults = []; renderBody(); }
+      if (btn.dataset.tool === 'batch-restore') {
+        const saved = savedBatch();
+        if (!saved) { batchLog('没有可接回的本地结果', 'bad'); return; }
+        ed.genResults = saved.results;
+        renderBody();
+        batchLog(`已接回 ${saved.results.filter(Boolean).length} 条生成结果（章数 ${saved.count}，本机保存于 ${new Date(saved.at).toLocaleString()}）。点「③ 合并去重」把它们并进当前书。`, 'ok');
+      }
       if (btn.dataset.tool === 'batch-all') document.querySelectorAll('#batch-list input[data-ch]').forEach((c) => { c.checked = true; });
       if (btn.dataset.tool === 'batch-none') document.querySelectorAll('#batch-list input[data-ch]').forEach((c) => { c.checked = false; });
       if (btn.dataset.tool === 'batch-view') {
