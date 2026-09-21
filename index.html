@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#1b2233">
-  <link rel="stylesheet" href="css/style.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=32">
 </head>
 <body>
 
@@ -56,8 +56,11 @@
         <button class="seg" type="button" data-view="gen-v" title="按代际分行，从上到下">代际·纵</button>
         <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移">重置</button>
         <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局">复位视图</button>
+        <button id="zoom-one-btn" class="ghost" type="button" title="跳到 1:1 缩放：节点回到原始大小，名字看得最清（大书推荐）">看清（1:1）</button>
         <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
         <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
+        <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
+        <span id="count-hint" class="hint"></span>
         <span class="view-label shape-legend" title="形状区分：圆＝男，圆角方＝女（大小表示关系多少）"><i class="sh sh-m"></i>男 <i class="sh sh-f"></i>女</span>
       </div>
     </div>
@@ -117,6 +120,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=29"></script>
+<script src="js/app.js?v=32"></script>
 </body>
 </html>

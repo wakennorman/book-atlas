@@ -32,6 +32,7 @@
     places: new Map(),       // placeId -> place
     placeFilter: null,       // 当前地点筛选
     showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
+    showMinor: false,        // 是否显示 tier=minor 的次要人物（大书默认折叠）
     sizeFilter: 'all',       // all | mid | main（按关系数只显示主要人物；大书用）
     focus: null,             // { id, depth } 只看某人 N 跳以内（无限画布的"放大镜"）
     focusCache: null,        // 聚焦集合缓存
@@ -64,7 +65,15 @@
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
   const isMentioned = (c) => c && c.tier === 'mentioned';
-  const isCharHidden = (c) => isMentioned(c) && !state.showMentioned;
+  const isMinor = (c) => c && c.tier === 'minor';
+  // 折叠：mentioned（没出场）/ minor（只跟一两个人有关系，大书里默认收起）——被高亮/搜索命中时照样显示
+  const isCharHidden = (c) => {
+    if (!c) return false;
+    if (state.hlNodes.has(c.id)) return false;
+    if (isMentioned(c)) return !state.showMentioned;
+    if (isMinor(c)) return !state.showMinor;
+    return false;
+  };
   const placeOf = (id) => state.places.get(id) || null;
   const placeName = (id) => (placeOf(id) || {}).name || '';
   // 地点范围：该地点的事件涉及的人物 + 该地点发生的关系事件的两端
@@ -195,6 +204,7 @@
     if (sizeSel0) sizeSel0.value = state.sizeFilter;
     renderFocusBar();
     try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
+    try { state.showMinor = localStorage.getItem('ba-minor') === '1'; } catch (e) { state.showMinor = false; }
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
@@ -499,6 +509,7 @@
     // 无限画布：允许缩到很小（先看全貌），也允许放得很大（看清单个人）
     const s = Math.max(0.02, Math.min((W - 2 * padX) / w, (H - 2 * padY) / h, 1.4));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    state.fitLast = s;                       // 最近一次的缩放（"看清 1:1" 按钮要用它换算）
     const prev = state.fit || { s: 1, cx: 0, cy: 0 };
     state.fit = {
       s: prev.s * s,
@@ -559,18 +570,13 @@
   function applyViewHeight() {
     const el = document.getElementById('graph');
     if (!el || !state.book) return;
+    // 现在布局是世界坐标 + 自动适配缩放，容器只要给一个舒服的高度就够了：
+    // 千万不能再按人数把容器撑到上万像素（那样画布中心会被推到屏幕外，看起来就是"点了没反应"）
     const counts = new Map();
     for (const c of state.book.characters) counts.set(groupKeyOf(c), (counts.get(groupKeyOf(c)) || 0) + 1);
     const groupCount = counts.size || 1;
-    const maxCount = Math.max(1, ...counts.values());
-    if (state.view === 'gen-v') {
-      el.style.height = Math.max(720, groupCount * 96) + 'px';
-    } else if (state.view === 'gen-h') {
-      // 节点区（人数×60）+ 上下边距（顶部给图注 110、底部留白）
-      el.style.height = Math.max(620, maxCount * 60 + 260) + 'px';
-    } else {
-      el.style.height = '';
-    }
+    const base = state.view === 'gen-v' ? (groupCount <= 6 ? 640 : 720) : 700;
+    el.style.height = base + 'px';
   }
 
   function buildGenerationPositions(view) {
@@ -634,6 +640,7 @@
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
+    updateCountHint();
     if (!state.chart) return;
     clearTimeout(state.freezeTimer);
     if (view === 'force') {
@@ -668,6 +675,13 @@
   }
 
   /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
+  function updateCountHint() {
+    const el = document.getElementById('count-hint');
+    if (!el || !state.book) return;
+    const total = state.book.characters.length;
+    const shown = state.book.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
+    el.textContent = shown >= total ? `${total} 人` : `显示 ${shown} / ${total} 人`;
+  }
   function renderFocusBar() {
     const bar = document.getElementById('focus-bar');
     if (!bar) return;
@@ -695,6 +709,7 @@
       if (state.focus) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
     }
     renderFocusBar();
+    updateCountHint();
     if (state.focus) {
       const c = state.byId.get(state.focus.id);
       if (c) renderCharacterPanel(c);
@@ -716,6 +731,7 @@
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
     }
+    updateCountHint();
   }
 
   function initChart() {
@@ -1135,8 +1151,23 @@
       const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
       const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
       if (c) { selectCharacter(c.id); return; }
-      const lockedHit = state.book.characters.find((x) => (charLocked(x) || isCharHidden(x)) && match(x));
-      $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（或未出场）` : `没找到「${q}」`;
+      const hiddenHit = state.book.characters.find((x) => isCharHidden(x) && match(x));
+      if (hiddenHit) {                                  // 被折叠的人：自动展开层级再定位（搜索永远找得到）
+        if (isMinor(hiddenHit)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch (e) { /* 忽略 */ } }
+        if (isMentioned(hiddenHit)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch (e) { /* 忽略 */ } }
+        const minorBtn2 = document.getElementById('minor-btn');
+        if (minorBtn2) minorBtn2.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏';
+        const mentionBtn2 = document.getElementById('mentioned-btn');
+        if (mentionBtn2) mentionBtn2.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏';
+        renderDatalist();
+        renderPathSelects();
+        updateCountHint();
+        if (state.chart) state.chart.setOption(buildOption());
+        selectCharacter(hiddenHit.id);
+        return;
+      }
+      const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
+      $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（剧透保护中）` : `没找到「${q}」`;
     };
     search.addEventListener('change', doSearch);
     search.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
@@ -1178,14 +1209,40 @@
       renderDatalist();
       renderPathSelects();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      updateCountHint();
     });
     syncMentionBtn();
+
+    // 次要人物折叠（大书默认收起）
+    const minorBtn = document.getElementById('minor-btn');
+    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏'; };
+    if (minorBtn) minorBtn.addEventListener('click', () => {
+      state.showMinor = !state.showMinor;
+      try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      syncMinorBtn();
+      renderDatalist();
+      renderPathSelects();
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      updateCountHint();
+    });
+    syncMinorBtn();
 
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     $('#reset-btn').addEventListener('click', () => setView(state.view));
     $('#view-reset-btn').addEventListener('click', resetRoam);
+    const zoomOne = document.getElementById('zoom-one-btn');
+    if (zoomOne) zoomOne.addEventListener('click', () => {
+      // 世界坐标是 1:1 的：最近一次 fit 的缩放是 state.fitLast，跳到 1/它 就是"节点原始大小"
+      if (!state.chart) return;
+      const target = Math.min(40, 1 / (Math.abs(state.fitLast) || 1));
+      const rel = target / (state.zoom || 1);
+      state.chart.dispatchAction({ type: 'graphRoam', zoom: target });   // graphRoam 的 zoom 是"目标绝对倍率"
+      state.zoom = target;
+      clearTimeout(state.labelTimer);
+      state.labelTimer = setTimeout(() => { computeLabels(state.zoom); if (state.chart) state.chart.setOption(buildOption()); }, 250);
+    });
     const dragBtn = $('#drag-btn');
     dragBtn.addEventListener('click', () => {
       state.nodeDrag = !state.nodeDrag;
