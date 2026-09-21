@@ -31,7 +31,7 @@ export const KIN_KEYS = Object.keys(KIN);
 export const kinLabel = (k) => KIN[k] || '';
 
 // 明确「不是家人」的词，先挡掉，避免"保姆"撞上"母"、"房东"撞上"父"
-const NOT_KIN = /保姆|帮佣|佣人|房东|房客|租客|雇主|信使|使者|囚徒|囚犯|同学|朋友|挚友|战友|同乡|医生|病人|酒鬼|神父|牧师|校长|老师|学生|上司|下属|对手|政敌|情敌|仇敌|熟人|忘年交|邻居|日常|试探|陷害|决斗|亡灵|幽灵|交情|相遇|意外|犯罪|罪人|同事/;
+const NOT_KIN = /保姆|帮佣|佣人|房东|房客|租客|雇主|信使|使者|囚徒|囚犯|同学|同窗|同舍|同门|同砚|同僚|座师|门生|朋友|挚友|战友|同乡|医生|病人|酒鬼|神父|牧师|校长|老师|学生|上司|下属|对手|政敌|情敌|仇敌|熟人|忘年交|邻居|日常|试探|陷害|决斗|亡灵|幽灵|交情|相遇|意外|犯罪|罪人|同事/;
 const SWORN = /义[兄弟姐弟父母]|干[亲爹娘兄弟姐弟儿女]|结义|结拜|拜把|把兄弟|教[父母]|教子|教女|盟兄弟/;
 const ADOPTIVE = /收养|抱养|过继|养亲|养[父母子女儿]|养[兄姐弟妹]/;
 const FOSTER = /抚养|带大|养大|养育|寄养|乳母|奶妈/;
@@ -70,7 +70,8 @@ const BLOOD_TERM = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|�
 export function checkKin(rel) {
   const out = [];
   const type = String(rel?.type || '');
-  const kin = String(rel?.kin || '');
+  const kinRaw = String(rel?.kin ?? '').trim();
+  const kin = /^(空|无|none|null|-|否)$/i.test(kinRaw) ? '' : kinRaw;
   const guessed = guessKin(type);
   if (kin && !KIN_KEYS.includes(kin)) {
     out.push({ level: 'error', msg: `kin「${kin}」不合法（应为 ${KIN_KEYS.join(' | ')}，或留空）` });

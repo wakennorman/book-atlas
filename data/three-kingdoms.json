@@ -1,0 +1,1651 @@
+{
+  "meta": {
+    "slug": "three-kingdoms",
+    "title": "三国演义",
+    "author": "罗贯中",
+    "translator": "",
+    "chapters": 120,
+    "prophecy": "临江仙·滚滚长江东逝水",
+    "note": "阵营轴（魏/蜀/吴/汉室/群雄/司马·晋）；剧透尺度＝顺序回目（120 回）；前 5 回为试跑样本",
+    "license": "CC BY-SA 4.0",
+    "updated": "2026-09-21",
+    "sources": [],
+    "groupMode": "faction"
+  },
+  "factions": [
+    {
+      "key": "wei",
+      "name": "曹魏",
+      "color": "#4a7ec7"
+    },
+    {
+      "key": "shu",
+      "name": "蜀汉",
+      "color": "#4c9f70"
+    },
+    {
+      "key": "wu",
+      "name": "东吴",
+      "color": "#c9564c"
+    },
+    {
+      "key": "han",
+      "name": "汉室",
+      "color": "#c99a3f"
+    },
+    {
+      "key": "qunxiong",
+      "name": "群雄",
+      "color": "#9a6fb0"
+    },
+    {
+      "key": "jin",
+      "name": "司马·晋",
+      "color": "#3aa6a6"
+    },
+    {
+      "key": "other",
+      "name": "其他",
+      "color": "#8b94a7"
+    }
+  ],
+  "characters": [
+    {
+      "id": "liu-bei",
+      "name": "刘备",
+      "aliases": [
+        "玄德"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "shu",
+      "title": "汉室宗亲",
+      "desc": "涿县人，中山靖王之后，贩屦织席为业，素有大志。",
+      "fate": "与关张结义，破黄巾立功。",
+      "note": ""
+    },
+    {
+      "id": "guan-yu",
+      "name": "关羽",
+      "aliases": [
+        "云长",
+        "长生",
+        "关公"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "shu",
+      "title": "义士",
+      "desc": "河东解良人，因杀人逃难江湖，相貌堂堂，威风凛凛。",
+      "fate": "与刘张结义，斩程远志。",
+      "note": ""
+    },
+    {
+      "id": "zhang-fei",
+      "name": "张飞",
+      "aliases": [
+        "翼德"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "shu",
+      "title": "义士",
+      "desc": "涿郡人，颇有庄田，卖酒屠猪，好结交豪杰。",
+      "fate": "与刘关结义，刺死邓茂。",
+      "note": ""
+    },
+    {
+      "id": "cao-cao",
+      "name": "曹操",
+      "aliases": [
+        "孟德",
+        "阿瞒",
+        "吉利",
+        "骁骑校尉"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "wei",
+      "title": "骑都尉",
+      "desc": "沛国谯郡人，曹嵩之子，有权谋多机变。",
+      "fate": "颍川助战，大杀黄巾。",
+      "note": ""
+    },
+    {
+      "id": "cao-song",
+      "name": "曹嵩",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "wei",
+      "title": "中常侍曹腾养子",
+      "desc": "本姓夏侯，为曹腾养子，故冒姓曹，曹操之父。",
+      "fate": "在徐州被陶谦部下张闿所杀（第 10 回）",
+      "note": ""
+    },
+    {
+      "id": "dong-zhuo",
+      "name": "董卓",
+      "aliases": [
+        "仲颖",
+        "相国",
+        "董贼"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "qunxiong",
+      "title": "中郎将",
+      "desc": "代卢植领兵，被张角杀败，为刘关张所救。",
+      "fate": "轻视刘备白身，不为礼。",
+      "note": ""
+    },
+    {
+      "id": "lu-zhi",
+      "name": "卢植",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "han",
+      "title": "中郎将",
+      "desc": "刘备之师，围张角于广宗，被诬陷押解回京。",
+      "fate": "被左丰挟恨诬奏，槛车回京问罪。",
+      "note": ""
+    },
+    {
+      "id": "liu-yan",
+      "name": "刘焉",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "han",
+      "title": "幽州太守",
+      "desc": "江夏竟陵人，汉鲁恭王之后，出榜招募义兵。",
+      "fate": "认刘备为侄。",
+      "note": ""
+    },
+    {
+      "id": "zou-jing",
+      "name": "邹靖",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "han",
+      "title": "校尉",
+      "desc": "刘焉部下，建议招军应敌，引刘备见刘焉。",
+      "fate": "引军随刘备破黄巾。",
+      "note": ""
+    },
+    {
+      "id": "zhang-jiao",
+      "name": "张角",
+      "aliases": [
+        "太平道人",
+        "大贤良师",
+        "天公将军"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "other",
+      "title": "黄巾首领",
+      "desc": "巨鹿人，得《太平要术》，能呼风唤雨，率众反汉。",
+      "fate": "败走五十馀里。",
+      "note": ""
+    },
+    {
+      "id": "zhang-liang",
+      "name": "张梁",
+      "aliases": [
+        "人公将军"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "other",
+      "title": "黄巾首领",
+      "desc": "张角之弟，与张宝在颍川对垒皇甫嵩、朱儁。",
+      "fate": "被曹操截杀，死战得脱。",
+      "note": ""
+    },
+    {
+      "id": "zhang-bao",
+      "name": "张宝",
+      "aliases": [
+        "地公将军"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "other",
+      "title": "黄巾首领",
+      "desc": "张角之弟，与张梁在颍川对垒皇甫嵩、朱儁。",
+      "fate": "被曹操截杀，死战得脱。",
+      "note": ""
+    },
+    {
+      "id": "yuan-shao",
+      "name": "袁绍",
+      "aliases": [
+        "本初"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "qunxiong",
+      "title": "司隶校尉",
+      "desc": "袁逢之子，袁隗之侄，助何进立新君。",
+      "fate": "力劝何进尽诛宦官。",
+      "note": ""
+    },
+    {
+      "id": "he-taihou",
+      "name": "何太后",
+      "aliases": [],
+      "generation": 1,
+      "gender": "f",
+      "firstCh": 2,
+      "faction": "han",
+      "title": "太后",
+      "desc": "何进之妹，生子辩立为帝，鸩杀王美人。",
+      "fate": "阻何进诛宦官，后与董太后争权。",
+      "note": ""
+    },
+    {
+      "id": "han-shaodi",
+      "name": "汉少帝（刘辩）",
+      "aliases": [
+        "刘辩",
+        "弘农王"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "han",
+      "title": "皇帝",
+      "desc": "何后所生，灵帝崩后即位。",
+      "fate": "被扶立为帝。",
+      "note": ""
+    },
+    {
+      "id": "han-xiandi",
+      "name": "汉献帝（刘协）",
+      "aliases": [
+        "刘协",
+        "陈留王",
+        "伯和"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "han",
+      "title": "陈留王",
+      "desc": "王美人所生，养于董太后宫。",
+      "fate": "封陈留王。",
+      "note": ""
+    },
+    {
+      "id": "sun-jian",
+      "name": "孙坚",
+      "aliases": [
+        "文台"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "wu",
+      "title": "乌程侯",
+      "desc": "吴郡富春人，孙武之后，勇猛破贼。",
+      "fate": "平区星，封乌程侯。",
+      "note": ""
+    },
+    {
+      "id": "zhu-jun",
+      "name": "朱儁",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "han",
+      "title": "车骑将军",
+      "desc": "讨黄巾主将，用兵有方。",
+      "fate": "平南阳，封车骑将军、河南尹。",
+      "note": ""
+    },
+    {
+      "id": "lvbu",
+      "name": "吕布",
+      "aliases": [
+        "奉先",
+        "温侯"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 3,
+      "faction": "qunxiong",
+      "title": "丁原义儿",
+      "desc": "器宇轩昂，手执方天画戟，勇而无谋。",
+      "fate": "杀丁原投董卓，拜卓为义父。",
+      "note": ""
+    },
+    {
+      "id": "ding-guan",
+      "name": "丁原",
+      "aliases": [
+        "建阳"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 3,
+      "faction": "qunxiong",
+      "title": "荆州刺史",
+      "desc": "仗义斥董卓废立之议。",
+      "fate": "被义儿吕布所杀。",
+      "note": "名单id为ding-guan，实为丁原"
+    },
+    {
+      "id": "li-ru",
+      "name": "李儒",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 3,
+      "faction": "qunxiong",
+      "title": "董卓谋士",
+      "desc": "卓婿，劝卓早定废立之计。",
+      "fate": "助董卓专权。",
+      "note": ""
+    },
+    {
+      "id": "wang-yun",
+      "name": "王允",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 3,
+      "faction": "han",
+      "title": "司徒",
+      "desc": "迎车驾还京，缓议废立之事。",
+      "fate": "暂容董卓。",
+      "note": ""
+    },
+    {
+      "id": "li-su",
+      "name": "李肃",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 3,
+      "faction": "qunxiong",
+      "title": "虎贲中郎将",
+      "desc": "与吕布同乡，以赤兔金珠说降吕布。",
+      "fate": "引吕布见董卓。",
+      "note": ""
+    },
+    {
+      "id": "tang-fei",
+      "name": "唐妃",
+      "aliases": [
+        "帝妃唐氏"
+      ],
+      "generation": 1,
+      "gender": "f",
+      "firstCh": 4,
+      "faction": "han",
+      "title": "少帝妃",
+      "desc": "少帝之妃，随少帝幽禁永安宫。",
+      "fate": "被武士绞死。",
+      "note": ""
+    },
+    {
+      "id": "wu-fu",
+      "name": "伍孚",
+      "aliases": [
+        "德瑜"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 4,
+      "faction": "han",
+      "title": "越骑校尉",
+      "desc": "藏刀刺董卓，被擒。",
+      "fate": "被剖剐，骂不绝口而死。",
+      "note": ""
+    },
+    {
+      "id": "chen-gong",
+      "name": "陈宫",
+      "aliases": [
+        "公台"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 4,
+      "faction": "other",
+      "title": "中牟县令",
+      "desc": "识破曹操，感其忠义弃官相随。",
+      "fate": "见曹操杀吕伯奢，欲拔剑杀操。",
+      "note": ""
+    },
+    {
+      "id": "lv-boshe",
+      "name": "吕伯奢",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 4,
+      "faction": "other",
+      "title": "曹操父结义弟兄",
+      "desc": "曹操父结义弟兄，留宿曹操陈宫。",
+      "fate": "被曹操挥剑砍死。",
+      "note": ""
+    },
+    {
+      "id": "gongsun-zan",
+      "name": "公孙瓒",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 5,
+      "faction": "qunxiong",
+      "title": "北平太守",
+      "desc": "引兵会盟，荐刘备，亲战吕布而败走。",
+      "fate": "退守本寨。",
+      "note": ""
+    },
+    {
+      "id": "hua-xiong",
+      "name": "华雄",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 5,
+      "faction": "qunxiong",
+      "title": "骁骑校尉",
+      "desc": "董卓部将，斩鲍忠、祖茂、俞涉、潘凤，终被关羽所斩。",
+      "fate": "死于关羽刀下。",
+      "note": ""
+    },
+    {
+      "id": "zu-mao",
+      "name": "祖茂",
+      "aliases": [
+        "大荣"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 5,
+      "faction": "wu",
+      "title": "孙坚部将",
+      "desc": "换赤帻救孙坚，被华雄所杀。",
+      "fate": "战死。",
+      "note": ""
+    }
+  ],
+  "relations": [
+    {
+      "from": "liu-bei",
+      "to": "guan-yu",
+      "type": "结义兄弟",
+      "kin": "sworn",
+      "style": "solid",
+      "events": [
+        {
+          "text": "桃园中焚香结拜，誓同生死。",
+          "chapter": "第1章"
+        },
+        {
+          "text": "桃园结义，食则同桌寝则同床。",
+          "chapter": "第2章"
+        },
+        {
+          "text": "刘备称关羽为结义兄弟。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "liu-bei",
+      "to": "zhang-fei",
+      "type": "结义兄弟",
+      "kin": "sworn",
+      "style": "solid",
+      "events": [
+        {
+          "text": "桃园结义，拜玄德为兄，张飞为弟。",
+          "chapter": "第1章"
+        },
+        {
+          "text": "张飞鞭督邮，刘备喝止。",
+          "chapter": "第2章"
+        },
+        {
+          "text": "刘备称张飞为结义兄弟。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "guan-yu",
+      "to": "zhang-fei",
+      "type": "结义兄弟",
+      "kin": "sworn",
+      "style": "solid",
+      "events": [
+        {
+          "text": "三人桃园结为兄弟，协力同心。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "cao-song",
+      "type": "父子",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "曹操诈中风诬叔父，曹嵩信其言。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "liu-bei",
+      "to": "lu-zhi",
+      "type": "师生",
+      "style": "solid",
+      "events": [
+        {
+          "text": "刘备昔曾师事卢植，欲往助之。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "liu-yan",
+      "to": "liu-bei",
+      "type": "叔侄（认亲）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "刘备说起宗派，刘焉大喜，认玄德为侄。",
+          "chapter": "第1章"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "lu-zhi",
+      "type": "代职",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "朝廷遣董卓代领卢植之兵，取植回京。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "zhang-jiao",
+      "to": "zhang-liang",
+      "type": "兄弟",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "张角与二弟商议乘势取天下。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "zhang-jiao",
+      "to": "zhang-bao",
+      "type": "兄弟",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "张角与二弟商议举事，张宝称地公将军。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "zhang-fei",
+      "to": "dong-zhuo",
+      "type": "救而被轻",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "张飞怒董卓无礼，欲提刀入帐杀之。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "zhang-liang",
+      "type": "交战",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "曹操拦住张梁败军，大杀一阵。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "zou-jing",
+      "to": "liu-bei",
+      "type": "引荐",
+      "style": "solid",
+      "events": [
+        {
+          "text": "邹靖引刘备等三人见太守刘焉。",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "he-taihou",
+      "to": "han-xiandi",
+      "type": "养母子（非亲生）",
+      "kin": "adoptive",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "何后鸩杀王美人，皇子协养于董太后宫。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "sun-jian",
+      "to": "zhu-jun",
+      "type": "援军",
+      "style": "solid",
+      "events": [
+        {
+          "text": "孙坚引淮泗精兵接应朱儁。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "zhang-bao",
+      "to": "liu-bei",
+      "type": "交战",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "刘备射中张宝左臂，张宝逃入阳城。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "liu-bei",
+      "type": "怠慢",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "董卓怠慢玄德，张飞欲杀之。",
+          "chapter": "第2章"
+        }
+      ]
+    },
+    {
+      "from": "lvbu",
+      "to": "ding-guan",
+      "type": "义父子（丁原收吕布为义子）",
+      "kin": "sworn",
+      "style": "solid",
+      "events": [
+        {
+          "text": "吕布为丁原义儿，随其出阵战董卓。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "lvbu",
+      "to": "dong-zhuo",
+      "type": "义父子（董卓收吕布为义子）",
+      "kin": "sworn",
+      "style": "solid",
+      "events": [
+        {
+          "text": "吕布杀丁原后拜董卓为义父。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "li-su",
+      "to": "lvbu",
+      "type": "同乡故交",
+      "style": "solid",
+      "events": [
+        {
+          "text": "李肃以赤兔马金珠说吕布来降。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "li-su",
+      "to": "dong-zhuo",
+      "type": "君臣",
+      "style": "solid",
+      "events": [
+        {
+          "text": "李肃请命说降吕布，卓与之金珠赤兔。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "li-ru",
+      "to": "dong-zhuo",
+      "type": "君臣谋士",
+      "kin": "inlaw",
+      "style": "solid",
+      "events": [
+        {
+          "text": "李儒劝董卓于温明园议废立。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "ding-guan",
+      "type": "政敌",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "丁原斥董卓废立，卓拔剑欲斩之。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "yuan-shao",
+      "type": "政敌",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "袁绍拔剑与董卓筵上对敌。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "lu-zhi",
+      "type": "政敌",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卢植谏废立，董卓拔剑欲杀之。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "he-taihou",
+      "to": "han-shaodi",
+      "type": "母子",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "太后与少帝被张让劫走，后得救。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "han-shaodi",
+      "to": "han-xiandi",
+      "type": "兄弟",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "兄弟相抱而哭，随萤火寻路。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "yuan-shao",
+      "to": "cao-cao",
+      "type": "同僚",
+      "style": "solid",
+      "events": [
+        {
+          "text": "二人各选精兵护送何进入宫。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "wang-yun",
+      "to": "han-shaodi",
+      "type": "君臣",
+      "style": "solid",
+      "events": [
+        {
+          "text": "王允等迎车驾还京。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "han-shaodi",
+      "type": "废帝",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "董卓命李儒读策废少帝为弘农王。",
+          "chapter": "第4章",
+          "place": "jiade-dian"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "han-xiandi",
+      "type": "拥立",
+      "style": "solid",
+      "events": [
+        {
+          "text": "董卓请陈留王登殿立为献帝。",
+          "chapter": "第4章",
+          "place": "jiade-dian"
+        }
+      ]
+    },
+    {
+      "from": "li-ru",
+      "to": "han-shaodi",
+      "type": "弑君",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "李儒带武士入永安宫以鸩酒灌杀少帝。",
+          "chapter": "第4章",
+          "place": "yongan-gong"
+        }
+      ]
+    },
+    {
+      "from": "li-ru",
+      "to": "he-taihou",
+      "type": "逼杀",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "李儒扯住何太后撺下楼摔死。",
+          "chapter": "第4章",
+          "place": "yongan-gong"
+        }
+      ]
+    },
+    {
+      "from": "li-ru",
+      "to": "tang-fei",
+      "type": "逼杀",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "李儒叱武士绞死唐妃。",
+          "chapter": "第4章",
+          "place": "yongan-gong"
+        }
+      ]
+    },
+    {
+      "from": "wu-fu",
+      "to": "dong-zhuo",
+      "type": "行刺",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "伍孚朝服内披铠藏刀，迎卓拔刀直刺。",
+          "chapter": "第4章",
+          "place": "xiangfu"
+        }
+      ]
+    },
+    {
+      "from": "lvbu",
+      "to": "wu-fu",
+      "type": "擒拿",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "吕布入内揪倒行刺的伍孚。",
+          "chapter": "第4章",
+          "place": "xiangfu"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "dong-zhuo",
+      "type": "行刺未遂",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "曹操借七宝刀入相府欲刺董卓，被镜中照见，推为献刀。",
+          "chapter": "第4章",
+          "place": "xiangfu"
+        }
+      ]
+    },
+    {
+      "from": "wang-yun",
+      "to": "cao-cao",
+      "type": "借刀",
+      "style": "solid",
+      "events": [
+        {
+          "text": "王允取七宝刀与曹操，操沥酒设誓。",
+          "chapter": "第4章",
+          "place": "wang-yun-fu"
+        }
+      ]
+    },
+    {
+      "from": "yuan-shao",
+      "to": "wang-yun",
+      "type": "密书",
+      "style": "solid",
+      "events": [
+        {
+          "text": "袁绍差人赍密书见王允，约图董卓。",
+          "chapter": "第4章",
+          "place": "bohai"
+        }
+      ]
+    },
+    {
+      "from": "chen-gong",
+      "to": "cao-cao",
+      "type": "释放追随",
+      "style": "solid",
+      "events": [
+        {
+          "text": "陈宫中牟释曹操，弃官从操而逃。",
+          "chapter": "第4章",
+          "place": "zhongmou-xian"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "lv-boshe",
+      "type": "结义叔侄",
+      "kin": "sworn",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "曹操疑吕伯奢家人磨刀，杀其八口，又挥剑砍死伯奢。",
+          "chapter": "第4章",
+          "place": "chenggao"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "chen-gong",
+      "type": "旧部决裂",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "陈宫疑曹操不仁，弃之投东郡。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "yuan-shao",
+      "type": "同盟",
+      "style": "solid",
+      "events": [
+        {
+          "text": "曹操发矫诏，袁绍引兵来会盟。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "lvbu",
+      "type": "养父子",
+      "kin": "adoptive",
+      "style": "solid",
+      "events": [
+        {
+          "text": "吕布称董卓为父，愿提兵斩诸侯。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "hua-xiong",
+      "to": "lvbu",
+      "type": "同僚",
+      "style": "solid",
+      "events": [
+        {
+          "text": "华雄请代吕布出战，董卓加为骁骑校尉。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "hua-xiong",
+      "to": "zu-mao",
+      "type": "敌杀",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "华雄追斩祖茂于马下。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "guan-yu",
+      "to": "hua-xiong",
+      "type": "斩敌",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "关羽温酒斩华雄，提头掷于帐前。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "liu-bei",
+      "to": "gongsun-zan",
+      "type": "同窗（同舍）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "公孙瓒荐刘备入盟，称自幼同舍兄弟。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "zhang-fei",
+      "to": "lvbu",
+      "type": "交战",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "张飞骂吕布三姓家奴，酣战五十合。",
+          "chapter": "第5章"
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "id": "zhuo-xian",
+      "name": "涿县",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 1,
+      "desc": "刘备、张飞故乡，榜文招军处。"
+    },
+    {
+      "id": "tao-yuan",
+      "name": "桃园",
+      "aliases": [],
+      "type": "园林",
+      "firstCh": 1,
+      "desc": "张飞庄后桃园，三人结义处。"
+    },
+    {
+      "id": "da-xing-shan",
+      "name": "大兴山",
+      "aliases": [],
+      "type": "山",
+      "firstCh": 1,
+      "desc": "刘备等与黄巾程远志交战处。"
+    },
+    {
+      "id": "qingzhou",
+      "name": "青州",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 1,
+      "desc": "被黄巾围困，刘备往救解围。"
+    },
+    {
+      "id": "guangzong",
+      "name": "广宗",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 1,
+      "desc": "卢植与张角相拒之地。"
+    },
+    {
+      "id": "yingchuan",
+      "name": "颍川",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 1,
+      "desc": "皇甫嵩、朱儁与张梁张宝对垒处。"
+    },
+    {
+      "id": "changshe",
+      "name": "长社",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 1,
+      "desc": "黄巾依草结营，被火攻处。"
+    },
+    {
+      "id": "anxi-xian",
+      "name": "安喜县",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 2,
+      "desc": "刘备任县尉之地。"
+    },
+    {
+      "id": "wancheng",
+      "name": "宛城",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 2,
+      "desc": "黄巾余党据守，朱儁攻破。"
+    },
+    {
+      "id": "daizhou",
+      "name": "代州",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 2,
+      "desc": "刘恢居地，刘备投奔处。"
+    },
+    {
+      "id": "hejian",
+      "name": "河间",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 2,
+      "desc": "董太后被迁安置并鸩杀处。"
+    },
+    {
+      "id": "yuyang",
+      "name": "渔阳",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 2,
+      "desc": "张举、张纯反叛之地。"
+    },
+    {
+      "id": "wenming-yuan",
+      "name": "温明园",
+      "aliases": [],
+      "type": "园林",
+      "firstCh": 3,
+      "desc": "董卓设宴议废立之处。"
+    },
+    {
+      "id": "beimang-shan",
+      "name": "北邙山",
+      "aliases": [],
+      "type": "山",
+      "firstCh": 3,
+      "desc": "少帝与陈留王逃难藏身之地。"
+    },
+    {
+      "id": "jiade-dian",
+      "name": "嘉德殿",
+      "aliases": [],
+      "type": "宫殿",
+      "firstCh": 1,
+      "desc": "何进被张让伏兵所杀之处。"
+    },
+    {
+      "id": "changlegong",
+      "name": "长乐宫",
+      "aliases": [],
+      "type": "宫殿",
+      "firstCh": 3,
+      "desc": "何进入宫遇害之地。"
+    },
+    {
+      "id": "yongan-gong",
+      "name": "永安宫",
+      "aliases": [],
+      "type": "宫殿",
+      "firstCh": 4,
+      "desc": "少帝、何太后、唐妃幽禁及被弑之处。"
+    },
+    {
+      "id": "xiangfu",
+      "name": "相府",
+      "aliases": [],
+      "type": "宅邸",
+      "firstCh": 4,
+      "desc": "董卓相府，曹操献刀、伍孚行刺之地。"
+    },
+    {
+      "id": "wang-yun-fu",
+      "name": "王允府",
+      "aliases": [],
+      "type": "宅邸",
+      "firstCh": 3,
+      "desc": "王允设寿宴聚公卿谋董卓之处。"
+    },
+    {
+      "id": "zhongmou-xian",
+      "name": "中牟县",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 4,
+      "desc": "曹操被擒，陈宫释之之处。"
+    },
+    {
+      "id": "chenggao",
+      "name": "成皋",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 4,
+      "desc": "吕伯奢庄所在，曹操杀吕伯奢之处。"
+    },
+    {
+      "id": "bohai",
+      "name": "渤海",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 4,
+      "desc": "袁绍任渤海太守，练兵图董卓。"
+    },
+    {
+      "id": "chenliu",
+      "name": "陈留",
+      "aliases": [],
+      "type": "城镇",
+      "firstCh": 5,
+      "desc": "曹操散家资募义兵之地。"
+    },
+    {
+      "id": "sishui-guan",
+      "name": "汜水关",
+      "aliases": [],
+      "type": "关隘",
+      "firstCh": 5,
+      "desc": "诸侯先锋孙坚攻关，华雄镇守。"
+    },
+    {
+      "id": "hulao-guan",
+      "name": "虎牢关",
+      "aliases": [],
+      "type": "关隘",
+      "firstCh": 5,
+      "desc": "离洛阳五十里，三英战吕布处。"
+    },
+    {
+      "id": "liangdong",
+      "name": "梁东",
+      "aliases": [],
+      "type": "营地",
+      "firstCh": 5,
+      "desc": "孙坚败后屯兵处。"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p1",
+      "name": "群雄并起（1–14 回）",
+      "order": 1,
+      "from": 1,
+      "to": 14
+    },
+    {
+      "id": "p2",
+      "name": "曹操崛起·官渡（15–33 回）",
+      "order": 2,
+      "from": 15,
+      "to": 33
+    },
+    {
+      "id": "p3",
+      "name": "赤壁鏖兵（34–50 回）",
+      "order": 3,
+      "from": 34,
+      "to": 50
+    },
+    {
+      "id": "p4",
+      "name": "三分鼎立（51–85 回）",
+      "order": 4,
+      "from": 51,
+      "to": 85
+    },
+    {
+      "id": "p5",
+      "name": "蜀汉衰亡（86–104 回）",
+      "order": 5,
+      "from": 86,
+      "to": 104
+    },
+    {
+      "id": "p6",
+      "name": "三分归晋（105–120 回）",
+      "order": 6,
+      "from": 105,
+      "to": 120
+    }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "phase": "p1",
+      "order": 1,
+      "ch": 1,
+      "name": "桃园三结义",
+      "chars": [
+        "liu-bei",
+        "guan-yu",
+        "zhang-fei"
+      ],
+      "place": "tao-yuan",
+      "summary": "刘关张桃园焚香结拜，誓同生死，聚乡勇三百馀人。",
+      "impact": "蜀汉基业之始。",
+      "quote": "不求同年同月同日生，只愿同年同月同日死。"
+    },
+    {
+      "id": "e2",
+      "phase": "p1",
+      "order": 2,
+      "ch": 1,
+      "name": "斩黄巾初立功",
+      "chars": [
+        "liu-bei",
+        "guan-yu",
+        "zhang-fei",
+        "zou-jing"
+      ],
+      "place": "da-xing-shan",
+      "summary": "张飞刺死邓茂，关羽斩程远志，大破黄巾。",
+      "impact": "三人初露锋芒，威名始著。",
+      "quote": "英雄露颖在今朝，一试矛兮一试刀。"
+    },
+    {
+      "id": "e3",
+      "phase": "p1",
+      "order": 3,
+      "ch": 1,
+      "name": "曹操颍川破贼",
+      "chars": [
+        "cao-cao",
+        "zhang-liang",
+        "zhang-bao"
+      ],
+      "place": "yingchuan",
+      "summary": "曹操引兵截杀张梁张宝，斩首万馀级。",
+      "impact": "曹操崭露头角。",
+      "quote": "子治世之能臣，乱世之奸雄也。"
+    },
+    {
+      "id": "e4",
+      "phase": "p1",
+      "order": 4,
+      "ch": 1,
+      "name": "董卓无礼于刘备",
+      "chars": [
+        "dong-zhuo",
+        "liu-bei",
+        "zhang-fei",
+        "guan-yu"
+      ],
+      "place": "guangzong",
+      "summary": "三人救董卓，卓问职轻之，张飞怒欲杀卓。",
+      "impact": "埋下刘董嫌隙。",
+      "quote": "人情势利古犹今，谁识英雄是白身？"
+    },
+    {
+      "id": "e-1wy8z",
+      "phase": "p1",
+      "order": 1,
+      "ch": 2,
+      "name": "张飞怒鞭督邮",
+      "chars": [
+        "zhang-fei",
+        "liu-bei",
+        "guan-yu"
+      ],
+      "place": "anxi-xian",
+      "summary": "督邮逼害刘备，张飞怒鞭之，刘备缴还印绶弃官。",
+      "impact": "刘关张弃官投代州刘恢。",
+      "quote": "此等害民贼，不打死等甚！"
+    },
+    {
+      "id": "e-mpnda",
+      "phase": "p1",
+      "order": 2,
+      "ch": 2,
+      "name": "朱儁平黄巾余党",
+      "chars": [
+        "zhu-jun",
+        "liu-bei",
+        "guan-yu",
+        "zhang-fei",
+        "sun-jian"
+      ],
+      "place": "wancheng",
+      "summary": "朱儁合孙坚、刘备破宛城，斩韩忠、赵弘、孙仲，南阳平。",
+      "impact": "南阳十数郡皆平，孙坚封乌程侯。",
+      "quote": ""
+    },
+    {
+      "id": "e-det6v",
+      "phase": "p1",
+      "order": 3,
+      "ch": 2,
+      "name": "何进谋诛宦官",
+      "chars": [
+        "yuan-shao",
+        "cao-cao",
+        "he-taihou"
+      ],
+      "summary": "灵帝崩，何进立少帝，欲诛宦官，太后不允，袁绍劝召外兵。",
+      "impact": "何进召外兵入京，为董卓乱政埋下祸根。",
+      "quote": "可召四方英雄之士，勒兵来京，尽诛阉竖。"
+    },
+    {
+      "id": "e-ica6e",
+      "phase": "p1",
+      "order": 1,
+      "ch": 3,
+      "name": "董卓入京与废立之议",
+      "chars": [
+        "dong-zhuo",
+        "li-ru",
+        "ding-guan",
+        "lu-zhi",
+        "lvbu",
+        "han-xiandi"
+      ],
+      "place": "wenming-yuan",
+      "summary": "董卓召百官议废帝立陈留王，丁原、卢植力谏，卓怒欲杀之。",
+      "impact": "董卓专权之势渐成，废立之谋未止。",
+      "quote": "顺我者生，逆我者死！"
+    },
+    {
+      "id": "e-8ali8",
+      "phase": "p1",
+      "order": 2,
+      "ch": 3,
+      "name": "李肃说降吕布",
+      "chars": [
+        "li-su",
+        "lvbu",
+        "dong-zhuo",
+        "ding-guan"
+      ],
+      "summary": "李肃以赤兔马金珠说吕布，布遂杀丁原，投董卓拜为义父。",
+      "impact": "董卓得吕布，威势愈大。",
+      "quote": "良禽择木而栖，贤臣择主而事。"
+    },
+    {
+      "id": "e-ssurv",
+      "phase": "p1",
+      "order": 3,
+      "ch": 3,
+      "name": "袁绍拔剑抗董卓",
+      "chars": [
+        "yuan-shao",
+        "dong-zhuo"
+      ],
+      "summary": "董卓省中设宴定废立，袁绍挺身反对，二人拔剑对敌。",
+      "impact": "袁绍与董卓决裂，性命未卜。",
+      "quote": "汝剑利，吾剑未尝不利！"
+    },
+    {
+      "id": "e-h6xqe",
+      "phase": "p1",
+      "order": 1,
+      "ch": 4,
+      "name": "董卓废少帝立献帝",
+      "chars": [
+        "dong-zhuo",
+        "li-ru",
+        "han-shaodi",
+        "han-xiandi",
+        "he-taihou"
+      ],
+      "place": "jiade-dian",
+      "summary": "董卓命李儒读策废少帝为弘农王，立陈留王协为献帝。",
+      "impact": "汉室权威尽失，董卓专权。",
+      "quote": "天子暗弱，不足以君天下。"
+    },
+    {
+      "id": "e-uaqdi",
+      "phase": "p1",
+      "order": 2,
+      "ch": 4,
+      "name": "李儒弑少帝杀太后",
+      "chars": [
+        "li-ru",
+        "han-shaodi",
+        "he-taihou",
+        "tang-fei"
+      ],
+      "place": "yongan-gong",
+      "summary": "李儒入永安宫逼饮鸩酒，摔死何太后，绞死唐妃，灌杀少帝。",
+      "impact": "少帝一系被斩尽，天下震动。",
+      "quote": "汝不饮耶？"
+    },
+    {
+      "id": "e-lstff",
+      "phase": "p1",
+      "order": 3,
+      "ch": 4,
+      "name": "曹操献刀刺董卓",
+      "chars": [
+        "cao-cao",
+        "dong-zhuo",
+        "lvbu",
+        "wang-yun"
+      ],
+      "place": "xiangfu",
+      "summary": "曹操借王允七宝刀入相府刺董卓，被镜中照见，推为献刀脱身。",
+      "impact": "曹操逃亡，董卓通缉，天下讨董之势将起。",
+      "quote": "宁教我负天下人，休教天下人负我。"
+    },
+    {
+      "id": "e-qe2kj",
+      "phase": "p1",
+      "order": 4,
+      "ch": 4,
+      "name": "陈宫释曹操杀吕伯奢",
+      "chars": [
+        "cao-cao",
+        "chen-gong",
+        "lv-boshe"
+      ],
+      "place": "chenggao",
+      "summary": "陈宫中牟释曹操相随，成皋曹操疑杀吕伯奢全家，陈宫欲杀操。",
+      "impact": "曹操显露狠毒，陈宫离心。",
+      "quote": "知而故杀，大不义也！"
+    },
+    {
+      "id": "e-8wkjd",
+      "phase": "p1",
+      "order": 1,
+      "ch": 5,
+      "name": "曹操发矫诏会盟",
+      "chars": [
+        "cao-cao",
+        "yuan-shao"
+      ],
+      "place": "chenliu",
+      "summary": "曹操发矫诏聚义兵，袁绍等十八镇诸侯响应，共推袁绍为盟主歃血。",
+      "impact": "讨董联盟成立。",
+      "quote": "操等谨以大义布告天下。"
+    },
+    {
+      "id": "e-xt4xx",
+      "phase": "p1",
+      "order": 2,
+      "ch": 5,
+      "name": "关羽温酒斩华雄",
+      "chars": [
+        "guan-yu",
+        "hua-xiong",
+        "cao-cao"
+      ],
+      "place": "sishui-guan",
+      "summary": "华雄连斩数将，关羽请战，提华雄头回帐，其酒尚温。",
+      "impact": "关羽威名初震。",
+      "quote": "酒且斟下，某去便来。"
+    },
+    {
+      "id": "e-ufny7",
+      "phase": "p1",
+      "order": 3,
+      "ch": 5,
+      "name": "三英战吕布",
+      "chars": [
+        "liu-bei",
+        "guan-yu",
+        "zhang-fei",
+        "lvbu",
+        "gongsun-zan"
+      ],
+      "place": "hulao-guan",
+      "summary": "吕布连败诸侯，张飞、关羽、刘备轮番夹攻，吕布力穷退上关。",
+      "impact": "刘关张名动诸侯。",
+      "quote": "三姓家奴休走！燕人张飞在此！"
+    }
+  ]
+}

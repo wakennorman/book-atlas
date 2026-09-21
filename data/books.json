@@ -11,6 +11,12 @@
       "title": "罪与罚",
       "author": "陀思妥耶夫斯基",
       "file": "data/crime-and-punishment.json"
+    },
+    {
+      "slug": "three-kingdoms",
+      "title": "三国演义",
+      "author": "罗贯中",
+      "file": "data/three-kingdoms.json"
     }
   ]
 }

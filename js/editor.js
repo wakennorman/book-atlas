@@ -165,9 +165,15 @@
     ed.timer = setTimeout(saveDraft, 800);
   }
 
-  function exportJson() {
+  async function exportJson() {
     const slug = ed.book.meta.slug || slugify(ed.book.meta.title);
-    const blob = new Blob([JSON.stringify(ed.book, null, 2)], { type: 'application/json;charset=utf-8' });
+    const json = JSON.stringify(ed.book, null, 2);
+    // 起了 tools/local-sink.mjs 的话，直接写进 data/（无头浏览器里下载会落到别处）
+    try {
+      const res = await fetch(`http://localhost:8766/save?name=${encodeURIComponent(slug)}.json`, { method: 'POST', body: json });
+      if (res.ok) { toast(`✓ 已写入 data/${slug}.json（本地接收器）——接着在 data/books.json 里登记一行即可`); return; }
+    } catch (e) { /* 没起接收器就走下载 */ }
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `${slug}.json`;
@@ -509,7 +515,7 @@
   "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|adoptive|step|inlaw|sworn|foster|空", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
+  "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（只有亲属才填，不是亲属就省略这个字段）", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
   "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
   "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "place": "地点 id 或空", "summary": "", "impact": "", "quote": "" }]
@@ -580,7 +586,7 @@
     } else {
       const st = mergeDraft(ed.aiDraft);
       adopt(ed.book, true);
-      toast(`已合并：+${st.cAdd} 人 / +${st.rAdd} 关系 / +${st.eAdd} 事件 / +${st.evAdd} 条小事件${st.pAdd ? ` / +${st.pAdd} 地点` : ''}`);
+      toast(`已合并：+${st.cAdd} 人 / +${st.rAdd} 关系 / +${st.eAdd} 事件 / +${st.evAdd} 条小事件${st.pAdd ? ` / +${st.pAdd} 地点` : ''}${st.dropped ? `（丢弃 ${st.dropped} 处悬空引用）` : ''}`);
     }
     saveDraft();
     toast('已应用 AI 草稿（记得逐条校对）');
@@ -760,7 +766,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=24';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=25';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -996,8 +1002,8 @@
       '**严格控制篇幅（输出必须一次说完，宁少勿长）**：本章只抽 6–12 个关键人物、6–12 条关键关系（每条 1 个小事件）、2–4 个事件；desc/fate/note 各 ≤ 40 字，事件 summary ≤ 50 字，小事件文案 ≤ 40 字；' +
       '人物 id 必须沿用「已有名单」里对应的 id，若是名单外的新人物才新起 id（拼音 kebab-case）；' +
       '带血缘/姻亲/收养关系的人物，relation 的 type 要写清是哪一种（血缘=父子/母子/兄弟…，收养=养父/养女…，姻亲=继母/岳父…，只写得出含糊说法就标 dashed 并在 events 里说清），并同时给出 kin 字段（blood 血缘 / adoptive 收养 / step 继亲 / inlaw 姻亲 / sworn 结义 / foster 抚养 / 空）；' +
-      'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」，place 写这条小事件发生的地点 id（有把握才写）；' +
-      'events 的 ch 写这一章的章号，place 写地点 id，phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
+      'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」，place 写这条小事件发生的地点 id（有把握才写）；**关系的两端、事件的 chars 都必须出现在本次 characters 里**（没抽出来的人物不要写进关系）；' +
+      'events 的 ch 写这一章的章号，place 写地点 id，**id 用「e-章号-序号」**（例：第 3 章的第二个事件写 e-3-2），phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
       'places：沿用「已有地点名单」的 id，本章新出现的地点可以新增（id 拼音 kebab），没把握就不写 place；' +
       'faction 必须沿用「已有阵营」里的 key（确实不属于任何已有阵营才新起 key）；' +
       'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；' +
@@ -1022,7 +1028,7 @@
 
   function mergeDraft(draft) {
     const b = ed.book;
-    const st = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0 };
+    const st = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0, dropped: 0 };
     const byId = new Map(b.characters.map((c) => [c.id, c]));
     const byName = new Map(b.characters.map((c) => [c.name, c]));
     const mergeInto = (t, c) => {
@@ -1069,6 +1075,8 @@
     const relKey = (r) => `${r.from}|${r.to}|${(r.type || '').trim()}`;
     const relMap = new Map(b.relations.map((r) => [relKey(r), r]));
     for (const r of draft.relations || []) {
+      // 两端必须都存在——AI 常把没抽出来的人物写进关系里（悬空引用，宁可丢）
+      if (!byId.has(r.from) || !byId.has(r.to)) { st.dropped++; continue; }
       const k = relKey(r);
       if (relMap.has(k)) {
         const t = relMap.get(k);
@@ -1083,35 +1091,48 @@
       }
     }
     const evIds = new Set(b.events.map((e) => e.id));
+    const evSig = (e) => `${e.ch ?? 0}|${e.name || ''}|${String(e.summary || '').slice(0, 24)}`;
+    const evSigs = new Set(b.events.map(evSig));
     for (const e of draft.events || []) {
       const ev = { ...e, id: e.id || uid('e'), ch: e.ch ?? 0 };
       if (!b.phases.some((p) => p.id === ev.phase)) ev.phase = fallbackPhase;
-      if (evIds.has(ev.id)) continue;
+      // 同一章、同名、同摘要＝真重复，丢掉；只是 id 撞车（每章都从 e1 起）就换个 id 留下
+      if (evSigs.has(evSig(ev))) continue;
+      if (evIds.has(ev.id)) ev.id = uid('e');
+      if (Array.isArray(ev.chars)) ev.chars = ev.chars.filter((cid) => byId.has(cid));   // 丢掉没抽出来的人物
       b.events.push(ev);
       evIds.add(ev.id);
+      evSigs.add(evSig(ev));
       st.eAdd++;
     }
-    // 容错：AI 偶尔把「地点名」当 id 用 —— 名字能对上就改回 id（避免留下悬空引用）
+    // 容错：AI 偶尔把「地点名」当 id 用 —— 名字能对上就改回 id；对不上的直接清掉（真空引用）
     const placeNames = new Map(b.places.map((p) => [p.name, p.id]));
     const fixPlace = (o) => {
-      if (o && o.place && !placeById.has(o.place) && placeNames.has(o.place)) o.place = placeNames.get(o.place);
+      if (!o || !o.place) return;
+      if (placeById.has(o.place)) return;
+      if (placeNames.has(o.place)) { o.place = placeNames.get(o.place); return; }
+      o.place = '';
+      st.dropped++;
     };
     for (const e of b.events) fixPlace(e);
     for (const r of b.relations) for (const ev of r.events || []) fixPlace(ev);
+    // kin 容错：AI 会把「空」/none/无 当值写出来，等同于没填
+    const cleanKin = (o) => { if (o && (o.kin === '' || /^(空|无|none|null|-|否)$/i.test(String(o.kin)))) delete o.kin; };
+    for (const r of b.relations) cleanKin(r);
     return st;
   }
 
   function batchMerge() {
     const results = (ed.genResults || []).filter((r) => r && !r.error);
     if (!results.length) { batchLog('还没有可合并的结果，先跑「② 逐章生成」', 'bad'); return; }
-    const total = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0 };
+    const total = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0, dropped: 0 };
     for (const d of results) {
       const st = mergeDraft(d);
-      total.cAdd += st.cAdd; total.rAdd += st.rAdd; total.eAdd += st.eAdd; total.evAdd += st.evAdd; total.pAdd += st.pAdd;
+      total.cAdd += st.cAdd; total.rAdd += st.rAdd; total.eAdd += st.eAdd; total.evAdd += st.evAdd; total.pAdd += st.pAdd; total.dropped += st.dropped;
     }
     adopt(ed.book, true);
     saveDraft();
-    batchLog(`✓ 合并完成：+${total.cAdd} 人 / +${total.pAdd} 地点 / +${total.rAdd} 关系 / +${total.eAdd} 事件 / +${total.evAdd} 条小事件（并按 id 或姓名合并了重复人物）。记得逐条校对。`, 'ok');
+    batchLog(`✓ 合并完成：+${total.cAdd} 人 / +${total.pAdd} 地点 / +${total.rAdd} 关系 / +${total.eAdd} 事件 / +${total.evAdd} 条小事件（并按 id 或姓名合并了重复人物）${total.dropped ? `；丢弃 ${total.dropped} 处悬空引用（关系两端/地点没抽到）` : ''}。记得逐条校对。`, 'ok');
   }
 
   /* ---------------- 交互 ---------------- */
