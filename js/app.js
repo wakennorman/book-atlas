@@ -50,6 +50,15 @@
   const isCharHidden = (c) => isMentioned(c) && !state.showMentioned;
   const placeOf = (id) => state.places.get(id) || null;
   const placeName = (id) => (placeOf(id) || {}).name || '';
+  // 地点范围：该地点的事件涉及的人物 + 该地点发生的关系事件的两端
+  const placeNodeScope = () => {
+    if (!state.placeFilter) return null;
+    const nodes = new Set();
+    for (const e of state.book.events) if (e.place === state.placeFilter && !eventLocked(e)) for (const cid of e.chars || []) if (state.byId.has(cid)) nodes.add(cid);
+    for (const r of state.book.relations) for (const ev of r.events || []) if (ev.place === state.placeFilter) { nodes.add(r.from); nodes.add(r.to); }
+    return nodes;
+  };
+  const placeRelSet = (r) => (r.events || []).some((ev) => ev.place === state.placeFilter);
 
   /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
   const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
@@ -670,6 +679,26 @@
     const c = state.byId.get(id);
     if (!c) return;
     if (charLocked(c)) { renderLockedPanel('character', c); return; }
+    // 地点筛选开启时：只在该地点范围内展开关系；点到范围外的人则自动取消筛选
+    if (state.placeFilter) {
+      const scope = placeNodeScope() || new Set();
+      if (!scope.has(id)) {
+        applyPlaceFilter(null);
+      } else {
+        const nodes = new Set([id]);
+        const edges = new Set();
+        for (const r of state.book.relations) {
+          if (!placeRelSet(r)) continue;
+          const other = r.from === id ? r.to : (r.to === id ? r.from : null);
+          if (!other || !scope.has(other)) continue;
+          nodes.add(other);
+          edges.add(edgeKey(id, other));
+        }
+        setHighlight(nodes, edges, id, null);
+        renderCharacterPanel(c);
+        return;
+      }
+    }
     const nodes = new Set([id]);
     const edges = new Set();
     for (const e of state.adj.get(id)) { nodes.add(e.to); edges.add(edgeKey(id, e.to)); }
@@ -752,13 +781,14 @@
     if (sel) sel.value = state.placeFilter || '';
     renderTimeline();
     if (!state.placeFilter) { clearHighlight(); return; }
-    const evs = state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e));
-    const nodes = new Set();
+    const nodes = placeNodeScope() || new Set();
     const edges = new Set();
-    for (const e of evs) for (const cid of e.chars || []) if (state.byId.has(cid)) nodes.add(cid);
-    for (const r of state.book.relations) if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
+    for (const r of state.book.relations) {
+      if (!placeRelSet(r)) continue;
+      if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
+    }
     setHighlight(nodes, edges, null, null);
-    renderPlacePanel(state.placeFilter, evs);
+    renderPlacePanel(state.placeFilter, state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e)));
   }
 
   function renderCharacterPanel(c) {
@@ -771,7 +801,7 @@
       const vis = visibleRelEvents(r);
       const hidden = (r.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
@@ -794,6 +824,8 @@
       <p class="card-desc">${esc(c.desc)}</p>
       <p class="card-fate"><b>结局：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
+      ${state.placeFilter ? `<p class="hint">📍 正在按地点「${esc(placeName(state.placeFilter))}」筛选：图上只高亮该范围内的人与关系。
+        <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
       ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
       <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>`;
     bindGoto(panel());
@@ -858,7 +890,7 @@
       const vis = visibleRelEvents(s.rel);
       const hidden = (s.rel.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span> ${charLink(s.to)}</div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}

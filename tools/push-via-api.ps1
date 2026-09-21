@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.17：新增「仅被提及」人物层（默认折叠可开关，含祖父/猪尾巴表兄等 4 人）+ 地点维度（places[] + 事件挂地点 + 地点筛选/地点面板，两本书各 10 个地点）+ 校验器查 tier/place"
+  [string]$Message = "书脉 BookAtlas v0.18：修地点筛选漏洞（点人物不再绕过筛选）+ 关系小事件补地点（27 条）+ 关系小事件显示📍地点标签"
 )
 
 $ErrorActionPreference = "Stop"
