@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.13：编辑器撤销/重做（快照式 + Ctrl+Z/Y）+ README 重写（含三张手绘示意图）+ 补 LICENSE（MIT）"
+  [string]$Message = "书脉 BookAtlas v0.14：取消《罪与罚》的假代际（全员第 1 代 + meta.groupMode=faction）；视图按需切换为「分组·横/纵」并显示阵营名；主应用资源也加版本号"
 )
 
 $ErrorActionPreference = "Stop"

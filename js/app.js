@@ -27,6 +27,8 @@
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
+    groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
+    bandLabels: new Map(),   // 分组键 -> 图注文字（第 N 代 / 阵营名）
   };
 
   /* ---------------- 工具 ---------------- */
@@ -35,6 +37,12 @@
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
   const charName = (id) => state.byId.get(id)?.name || id;
+
+  /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
+  const factionNameOf = (c) => (state.book?.factions.find((f) => f.key === c.faction) || {}).name || '其他';
+  const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${c.faction || 'other'}`);
+  const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
+  const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
 
   /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
   const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
@@ -140,6 +148,9 @@
     const savedView = localStorage.getItem('ba-view');
     state.view = ['force', 'gen-h', 'gen-v'].includes(savedView) ? savedView : 'gen-v';
     state.bands = new Map();
+    const gens = new Set(book.characters.map((c) => c.generation));
+    state.groupMode = (book.meta && book.meta.groupMode) || (gens.size > 1 ? 'generation' : 'faction');
+    state.bandLabels = new Map();
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
@@ -260,7 +271,7 @@
       for (const [g, band] of state.bands) {
         data.push({
           id: `__gen_${g}`,
-          name: genText(g),
+          name: state.bandLabels.get(g) || String(g),
           symbol: 'circle',
           symbolSize: 3,
           x: isH ? band : bb.minX - 30,
@@ -318,7 +329,7 @@
             return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个人物在第 ${charCh(c)} 章才出场；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
-            `<span style="color:${muted}">${esc(genText(c.generation))} · ${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
+            `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
             `<span style="color:${muted}">结局：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>`;
         },
       },
@@ -447,13 +458,13 @@
   function applyViewHeight() {
     const el = document.getElementById('graph');
     if (!el || !state.book) return;
+    const counts = new Map();
+    for (const c of state.book.characters) counts.set(groupKeyOf(c), (counts.get(groupKeyOf(c)) || 0) + 1);
+    const groupCount = counts.size || 1;
+    const maxCount = Math.max(1, ...counts.values());
     if (state.view === 'gen-v') {
-      const bands = new Set(state.book.characters.map((c) => c.generation)).size || 8;
-      el.style.height = Math.max(720, bands * 96) + 'px';
+      el.style.height = Math.max(720, groupCount * 96) + 'px';
     } else if (state.view === 'gen-h') {
-      const counts = new Map();
-      for (const c of state.book.characters) counts.set(c.generation, (counts.get(c.generation) || 0) + 1);
-      const maxCount = Math.max(1, ...counts.values());
       // 节点区（人数×60）+ 上下边距（顶部给图注 110、底部留白）
       el.style.height = Math.max(620, maxCount * 60 + 260) + 'px';
     } else {
@@ -464,24 +475,33 @@
   function buildGenerationPositions(view) {
     const rect = document.getElementById('graph').getBoundingClientRect();
     const W = rect.width || 900, H = rect.height || 600;
-    const gens = [...new Set(state.book.characters.map((c) => c.generation))].sort((a, b) => a - b);
     const factionOrder = new Map(state.book.factions.map((f, i) => [f.key, i]));
-    const byGen = new Map(gens.map((g) => [g, []]));
-    for (const c of state.book.characters) byGen.get(c.generation).push(c);
+    const groups = [...new Set(state.book.characters.map(groupKeyOf))];
+    groups.sort((a, b) => {
+      if (state.groupMode === 'generation') return Number(a.slice(1)) - Number(b.slice(1));
+      return (factionOrder.get(a.slice(1)) ?? 99) - (factionOrder.get(b.slice(1)) ?? 99);
+    });
+    const byGen = new Map(groups.map((g) => [g, []]));
+    for (const c of state.book.characters) byGen.get(groupKeyOf(c)).push(c);
     for (const list of byGen.values()) {
-      list.sort((a, b) =>
-        (factionOrder.get(a.faction) - factionOrder.get(b.faction)) ||
-        (nodeDegree(b.id) - nodeDegree(a.id)) ||
-        a.name.localeCompare(b.name));
+      list.sort((a, b) => (
+        (state.groupMode === 'generation'
+          ? (factionOrder.get(a.faction) ?? 99) - (factionOrder.get(b.faction) ?? 99)
+          : a.generation - b.generation)
+        || (nodeDegree(b.id) - nodeDegree(a.id))
+        || a.name.localeCompare(b.name)));
     }
     state.pos = new Map();
     state.bands = new Map();
+    state.bandLabels = new Map();
     const mainPad = 110, crossPad = 78;
     const mainLen = (view === 'gen-h' ? W : H) - mainPad * 2;
     const crossLen = (view === 'gen-h' ? H : W) - crossPad * 2;
-    gens.forEach((g, gi) => {
-      const center = gens.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (gens.length - 1);
+    groups.forEach((g, gi) => {
+      const center = groups.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (groups.length - 1);
       state.bands.set(g, center);
+      const sample = byGen.get(g)[0];
+      state.bandLabels.set(g, sample ? groupLabelOf(sample) : String(g));
       const list = byGen.get(g);
       const step = list.length > 1 ? crossLen / (list.length - 1) : 0;
       list.forEach((c, ci) => {
@@ -492,6 +512,11 @@
   }
 
   function syncViewButtons() {
+    const isGen = state.groupMode === 'generation';
+    const bh = document.querySelector('.seg[data-view="gen-h"]');
+    const bv = document.querySelector('.seg[data-view="gen-v"]');
+    if (bh) { bh.textContent = isGen ? '代际·横' : '分组·横'; bh.title = isGen ? '按代际分列，从左到右' : '按阵营分组分列，从左到右'; }
+    if (bv) { bv.textContent = isGen ? '代际·纵' : '分组·纵'; bv.title = isGen ? '按代际分行，从上到下' : '按阵营分组分行，从上到下'; }
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
@@ -696,7 +721,7 @@
 
     panel().innerHTML = `
       <div class="card-title">${esc(c.name)}</div>
-      <div class="card-sub">${esc(genText(c.generation))} · ${esc(c.title)}</div>
+      <div class="card-sub">${genPrefix(c)}${esc(c.title)}</div>
       ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}

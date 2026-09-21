@@ -232,6 +232,11 @@
           <label>作者<input data-field="author" value="${esc(m.author)}"></label>
           <label>译本/译者<input data-field="translator" value="${esc(m.translator)}"></label>
           <label>总章数<input type="number" min="0" data-field="chapters" value="${esc(m.chapters ?? 0)}"></label>
+          <label>分组方式（对应「代际/分组」视图）<select data-field="groupMode">
+            <option value="" ${!m.groupMode ? 'selected' : ''}>自动（有多代就用代际）</option>
+            <option value="generation" ${m.groupMode === 'generation' ? 'selected' : ''}>按代际</option>
+            <option value="faction" ${m.groupMode === 'faction' ? 'selected' : ''}>按阵营</option>
+          </select></label>
           <label>license<input data-field="license" value="${esc(m.license)}"></label>
           <label class="wide">题记/预言<input data-field="prophecy" value="${esc(m.prophecy)}"></label>
           <label class="wide">说明<textarea data-field="note">${esc(m.note)}</textarea></label>
@@ -287,7 +292,7 @@
       <div class="ed-grid">
         <label>名称<input data-field="name" value="${esc(c.name)}"></label>
         <label>id（拼音；留空自动生成）<input data-field="id" value="${esc(c.id || '')}"></label>
-        <label>代际<input type="number" data-field="generation" value="${esc(c.generation ?? 1)}"></label>
+        <label>代际／分组（没有代际差异就一律填 1）<input type="number" data-field="generation" value="${esc(c.generation ?? 1)}"></label>
         <label>性别<select data-field="gender"><option value="m" ${c.gender !== 'f' ? 'selected' : ''}>男</option><option value="f" ${c.gender === 'f' ? 'selected' : ''}>女</option></select></label>
         <label>首次出场章<input type="number" min="0" data-field="firstCh" value="${esc(c.firstCh ?? 1)}"></label>
         <label>阵营<select data-field="faction"><option value="">（无）</option>${facs}</select></label>

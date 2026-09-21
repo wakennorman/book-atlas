@@ -6,7 +6,7 @@
     "author": "费奥多尔·米哈伊洛维奇·陀思妥耶夫斯基",
     "translator": "汝龙 译（人物译名依汝龙译本）",
     "chapters": 41,
-    "note": "章节号按「6 部 + 尾声」顺排：第一部 1–7 章＝1–7；第二部＝8–14；第三部＝15–20；第四部＝21–26；第五部＝27–31；第六部＝32–39；尾声＝40–41。本数据是阅读辅助整理，不是原著全文。",
+    "note": "章节号按「6 部 + 尾声」顺排：第一部 1–7 章＝1–7；第二部＝8–14；第三部＝15–20；第四部＝21–26；第五部＝27–31；第六部＝32–39；尾声＝40–41。**本书没有代际差异**：所有人物同属一代（generation 一律为 1），「分组视图」按阵营（主角与其家人／玛尔美拉朵夫一家／警察与司法／斯维德利盖洛夫与卢仁／底层与市井）排列。本数据是阅读辅助整理，不是原著全文。",
     "license": "本数据：CC BY-SA 4.0；原著版权归权利人所有",
     "updated": "2026-09-21",
     "style": "与前一本同规范：① 先写全名，外号/称呼写进括号；② 一句一个主语，不用「他／她」跨句指代不同人；③ 亲属称谓必须与具体人名连用；④ 事件文案脱离上下文也能读懂。",
@@ -17,7 +17,8 @@
       {
         "name": "俄语原题：Преступление и наказание（1866）"
       }
-    ]
+    ],
+    "groupMode": "faction"
   },
   "factions": [
     {
@@ -121,7 +122,7 @@
         "玛尔美拉朵夫",
         "玛尔美拉多夫"
       ],
-      "generation": 2,
+      "generation": 1,
       "gender": "m",
       "firstCh": 2,
       "faction": "marmeladov",
@@ -136,7 +137,7 @@
         "卡捷琳娜",
         "卡捷莉娜"
       ],
-      "generation": 2,
+      "generation": 1,
       "gender": "f",
       "firstCh": 14,
       "faction": "marmeladov",
@@ -152,7 +153,7 @@
         "索涅奇卡",
         "索尼娅"
       ],
-      "generation": 2,
+      "generation": 1,
       "gender": "f",
       "firstCh": 14,
       "faction": "marmeladov",
@@ -167,7 +168,7 @@
         "波莉卡",
         "波连卡"
       ],
-      "generation": 2,
+      "generation": 1,
       "gender": "f",
       "firstCh": 14,
       "faction": "marmeladov",
@@ -182,7 +183,7 @@
         "放高利贷的老太婆",
         "阿辽娜"
       ],
-      "generation": 5,
+      "generation": 1,
       "gender": "f",
       "firstCh": 1,
       "faction": "commoner",
@@ -196,7 +197,7 @@
       "aliases": [
         "丽扎维达"
       ],
-      "generation": 5,
+      "generation": 1,
       "gender": "f",
       "firstCh": 1,
       "faction": "commoner",
@@ -211,7 +212,7 @@
         "斯维里加洛夫",
         "斯维德利盖洛夫"
       ],
-      "generation": 4,
+      "generation": 1,
       "gender": "m",
       "firstCh": 20,
       "faction": "predator",
@@ -222,7 +223,7 @@
     {
       "id": "marfa",
       "name": "玛尔法·彼得罗芙娜·斯维德利盖洛娃",
-      "generation": 4,
+      "generation": 1,
       "gender": "f",
       "firstCh": 20,
       "faction": "predator",
@@ -240,7 +241,7 @@
         "卢仁律师",
         "卢仁"
       ],
-      "generation": 4,
+      "generation": 1,
       "gender": "m",
       "firstCh": 21,
       "faction": "predator",
@@ -251,7 +252,7 @@
     {
       "id": "lebezyatnikov",
       "name": "安德烈·谢敏诺维奇·列别齐亚特尼科夫",
-      "generation": 4,
+      "generation": 1,
       "gender": "m",
       "firstCh": 27,
       "faction": "predator",
@@ -269,7 +270,7 @@
         "巴宪卡",
         "普拉斯科维雅"
       ],
-      "generation": 5,
+      "generation": 1,
       "gender": "f",
       "firstCh": 1,
       "faction": "commoner",
@@ -280,7 +281,7 @@
     {
       "id": "nastasya",
       "name": "娜斯达霞",
-      "generation": 5,
+      "generation": 1,
       "gender": "f",
       "firstCh": 1,
       "faction": "commoner",
@@ -294,7 +295,7 @@
     {
       "id": "amalia",
       "name": "阿玛丽雅·伊凡诺芙娜·里普威赫节尔",
-      "generation": 5,
+      "generation": 1,
       "gender": "f",
       "firstCh": 14,
       "faction": "commoner",
@@ -312,7 +313,7 @@
         "医生",
         "左西莫夫"
       ],
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 9,
       "faction": "police",
@@ -323,7 +324,7 @@
     {
       "id": "zametov",
       "name": "扎麦托夫",
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 9,
       "faction": "police",
@@ -337,7 +338,7 @@
     {
       "id": "nikodim",
       "name": "尼科丁·佛米奇",
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 9,
       "faction": "police",
@@ -356,7 +357,7 @@
         "火药桶",
         "伊里亚"
       ],
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 9,
       "faction": "police",
@@ -371,7 +372,7 @@
         "侦查科长",
         "波尔菲利"
       ],
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 19,
       "faction": "police",
@@ -387,7 +388,7 @@
         "尼古拉什卡",
         "尼古拉"
       ],
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 25,
       "faction": "police",
@@ -402,7 +403,7 @@
         "米季卡",
         "米特莱"
       ],
-      "generation": 3,
+      "generation": 1,
       "gender": "m",
       "firstCh": 25,
       "faction": "police",
