@@ -4,6 +4,20 @@
   display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 14px;
   padding: 14px; align-items: start;
 }
+/* 内嵌实时预览：开关在顶栏「预览」；打开后右列是图谱 iframe */
+body.ed-preview-on .ed-main { grid-template-columns: 190px minmax(0, 1fr) minmax(340px, 44%); }
+.ed-preview { display: none; }
+body.ed-preview-on .ed-preview {
+  display: flex; flex-direction: column; gap: 8px;
+  position: sticky; top: 76px; height: calc(100vh - 96px);
+}
+.ed-preview-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.ed-preview-head b { color: var(--ink); font-size: 13px; }
+.ed-preview iframe { flex: 1 1 auto; width: 100%; min-height: 320px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+@media (max-width: 1200px) {
+  body.ed-preview-on .ed-main { grid-template-columns: 190px minmax(0, 1fr); }
+  body.ed-preview-on .ed-preview { grid-column: 1 / -1; position: static; height: 70vh; }
+}
 .ed-nav { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 76px; }
 .ed-nav .seg { text-align: left; }
 .ed-body { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; min-height: 60vh; }

@@ -22,6 +22,33 @@
 
   const ed = { book: null, section: 'meta', form: null, editing: null, sourceLocal: false, sourceFile: '', timer: null, history: [], hIndex: -1, histLimit: 60 };
 
+  /* ---------------- 内嵌实时预览 ---------------- */
+  const previewOn = () => document.body.classList.contains('ed-preview-on');
+  let previewTimer = null;
+
+  function previewUrl() {
+    const slug = (ed.book && ed.book.meta && ed.book.meta.slug) || slugify((ed.book && ed.book.meta && ed.book.meta.title) || '');
+    return `index.html?book=${encodeURIComponent(slug)}&local=1`;
+  }
+
+  function refreshPreview(delay = 350) {
+    if (!previewOn()) return;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => {
+      const fr = document.getElementById('ed-preview-frame');
+      if (fr) fr.src = `${previewUrl()}&t=${Date.now()}`;
+    }, delay);
+  }
+
+  function togglePreview(force) {
+    const on = typeof force === 'boolean' ? force : !previewOn();
+    document.body.classList.toggle('ed-preview-on', on);
+    const btn = document.getElementById('ed-preview');
+    if (btn) { btn.classList.toggle('primary', on); btn.textContent = on ? '预览：开' : '预览'; }
+    try { localStorage.setItem('ba-ed-preview', on ? '1' : '0'); } catch (e) { /* 忽略 */ }
+    if (on) refreshPreview(0);
+  }
+
   /* ---------------- 数据源 ---------------- */
   async function boot() {
     const sel = $('#ed-source');
@@ -42,6 +69,7 @@
       ? books.map((b) => `<option value="${esc(b.slug)}" data-local="${b.local ? 1 : 0}" data-file="${esc(b.file || '')}">${esc(b.title)}</option>`).join('')
       : '<option value="">（没有可载入的书）</option>';
     bind();
+    if (localStorage.getItem('ba-ed-preview') === '1') togglePreview(true);
     if (books.length) await loadSource();
     else newBlank();
   }
@@ -102,6 +130,7 @@
     ed.editing = null;
     renderAll();
     saveDraft();
+    refreshPreview();
     setStatus(`↩︎ 回到：${h.label}`);
     syncHistButtons();
   }
@@ -552,7 +581,7 @@
     } catch (e) { /* 忽略 */ }
     out.className = 'ed-msg';
     out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
-    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
+    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个（主要出场人物尽量都收）；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
     const user = `请为《${ed.book.meta.title || '未命名'}》生成数据草稿。\n\nJSON schema（必须完全遵循）：\n${AI_SCHEMA}\n` +
       (text ? `\n以下是原文节选，请优先从中抽取：\n<<<原文开始>>>\n${text.slice(0, 100000)}\n<<<原文结束>>>\n`
             : '\n注意：没有提供原文，请仅依据广泛公认的公开资料；不确定的细节宁可省略或写进 note。\n');
@@ -766,7 +795,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=25';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=27';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -958,6 +987,23 @@
     return [...names.entries()].slice(0, 100).map(([id, name]) => `${id}: ${name}`).join('；');
   }
 
+  /* 第二轮：只抽本章事件（第一轮的长输出常被网关截断，events 整段丢掉） */
+  async function callLLMEvents(ch) {
+    const n = ch.no || 1;
+    const body = ch.text.length > 30000 ? ch.text.slice(0, 30000) : ch.text;
+    const roster = batchRoster();
+    const total = Number(ed.book.meta.chapters) || (ed.chapters || []).length;
+    const sys = '你是文学作品的资料整理员。只做一件事：从给定章节里抽出**重大事件**（推动剧情、改变人物关系的节点），输出 JSON。' +
+      '硬性要求：严格输出 {"events": [...]}（不要 markdown 围栏、不要解释）；**3–6 个**事件；每个事件：' +
+      'id 用「e-章号-序号」（例 e-3-1）、ch 写本章章号、name ≤ 14 字、summary ≤ 45 字（谁·对谁·做了什么·后果）、' +
+      'impact ≤ 30 字、chars 必须从「人物名单」里选 id、place 用「已有地点名单」里的 id（没把握就省略 place）、quote 可省略；phase 省略（我会按章号自动归入阶段）；全部中文。';
+    const user = `书名《${ed.book.meta.title || '未命名'}》，共 ${total} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
+      (roster ? `人物名单（chars 只能从这里选 id）：\n${roster}\n\n` : '') +
+      `只输出 JSON：{"events":[{"id":"e-${n}-1","ch":${n},"name":"","summary":"","impact":"","chars":["id"],"place":""}]}\n\n` +
+      `<<<本章原文开始>>>\n${body}\n<<<本章原文结束>>>`;
+    return callLLM(sys, user);
+  }
+
   async function batchRun() {
     const chapters = ed.chapters || [];
     if (!chapters.length) { batchLog('请先点「① 分章」', 'bad'); return; }
@@ -978,6 +1024,13 @@
       batchLog(`⏳ ${n + 1}/${picks.length} 正在生成：${esc(ch.title)}…`, '');
       try {
         const draft = await callLLM(batchSystem(), batchUser(ch, idx));
+        // 事件单独跑一轮：长输出里 events 常被截断丢掉
+        try {
+          const ev = await callLLMEvents(ch);
+          draft.events = ev.events || [];
+        } catch (e) {
+          batchLog(`⚠ ${esc(ch.title)} 事件抽取失败（人物/关系照常保留）：${esc(String(e.message))}`, 'bad');
+        }
         ed.genResults[idx] = draft;
         ok++;
         saveBatchResults();
@@ -999,7 +1052,7 @@
   function batchSystem() {
     return '你是文学作品的资料整理员，正在**逐章**整理一本书，供「人物关系 + 事件时间轴」应用使用。硬性要求：' +
       '严格输出 JSON（不要 markdown 围栏、不要解释）；**只从给定章节抽取**，不要引入本章没出现的内容；' +
-      '**严格控制篇幅（输出必须一次说完，宁少勿长）**：本章只抽 6–12 个关键人物、6–12 条关键关系（每条 1 个小事件）、2–4 个事件；desc/fate/note 各 ≤ 40 字，事件 summary ≤ 50 字，小事件文案 ≤ 40 字；' +
+      '**篇幅控制靠"写短"，不靠漏人**：本章出现的人物尽量都收（有名有姓、有行动或对话的都算，不设人数上限）；用短字段省长度——desc/fate/note/title 各 ≤ 30 字，事件 summary ≤ 45 字，每条关系小事件文案 ≤ 35 字、只写 1 条；' +
       '人物 id 必须沿用「已有名单」里对应的 id，若是名单外的新人物才新起 id（拼音 kebab-case）；' +
       '带血缘/姻亲/收养关系的人物，relation 的 type 要写清是哪一种（血缘=父子/母子/兄弟…，收养=养父/养女…，姻亲=继母/岳父…，只写得出含糊说法就标 dashed 并在 events 里说清），并同时给出 kin 字段（blood 血缘 / adoptive 收养 / step 继亲 / inlaw 姻亲 / sworn 结义 / foster 抚养 / 空）；' +
       'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」，place 写这条小事件发生的地点 id（有把握才写）；**关系的两端、事件的 chars 都必须出现在本次 characters 里**（没抽出来的人物不要写进关系）；' +
@@ -1155,13 +1208,14 @@
       else if ((k === 'z' && ev.shiftKey) || k === 'y') { ev.preventDefault(); redo(); }
     });
     $('#ed-new').addEventListener('click', () => { if (confirm('新建空白书？当前未保存的改动会丢。')) newBlank(); });
-    $('#ed-save').addEventListener('click', saveDraft);
+    $('#ed-save').addEventListener('click', () => { saveDraft(); refreshPreview(); });
     $('#ed-export').addEventListener('click', exportJson);
-    $('#ed-preview').addEventListener('click', () => {
+    $('#ed-preview').addEventListener('click', () => togglePreview());
+    $('#ed-preview-tab').addEventListener('click', () => {
       saveDraft();
-      const slug = ed.book.meta.slug || slugify(ed.book.meta.title);
-      window.open(`index.html?book=${encodeURIComponent(slug)}&local=1`, '_blank');
+      window.open(previewUrl(), '_blank');
     });
+    $('#ed-preview-refresh').addEventListener('click', () => refreshPreview(0));
     $('#ed-import').addEventListener('change', (ev) => {
       const file = ev.target.files[0];
       if (!file) return;
@@ -1190,6 +1244,7 @@
           list().splice(Number(idx), 1);
           snapshotBook(`删除${what}${removed && removed.name ? '「' + removed.name + '」' : ''}`);
           saveDraft();
+          refreshPreview();
           renderBody();
         }
         return;
@@ -1275,7 +1330,7 @@
       const sec = form.dataset.form;
       if (sec === 'meta') {
         ed.book.meta = { ...ed.book.meta, ...ed.form };
-        saveDraft(); renderBody(); return;
+        saveDraft(); refreshPreview(); renderBody(); return;
       }
       const item = buildItem(sec);
       if (!item) return;
@@ -1285,6 +1340,7 @@
       ed.editing = null;
       snapshotBook(`${idx === null ? '新增' : '修改'}${what}${item.name ? '「' + item.name + '」' : ''}`);
       saveDraft();
+      refreshPreview();
       renderBody();
     });
   }

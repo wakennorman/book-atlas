@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>书脉 · 本地编辑器</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css?v=25">
-  <link rel="stylesheet" href="css/editor.css?v=25">
+  <link rel="stylesheet" href="css/style.css?v=27">
+  <link rel="stylesheet" href="css/editor.css?v=27">
 </head>
 <body>
 
@@ -25,7 +25,8 @@
     <label class="icon-btn" title="导入本地 JSON">导入 JSON<input type="file" id="ed-import" accept=".json,application/json" hidden></label>
     <button id="ed-save" class="icon-btn" type="button">保存到本地</button>
     <button id="ed-export" class="icon-btn" type="button">导出 JSON</button>
-    <button id="ed-preview" class="icon-btn" type="button">预览</button>
+    <button id="ed-preview" class="icon-btn" type="button" title="在编辑器右边直接看图谱（改完保存就会刷新）">预览</button>
+    <button id="ed-preview-tab" class="icon-btn" type="button" title="在新标签打开图谱">↗</button>
     <button id="ed-undo" class="icon-btn" type="button" title="撤销 (Ctrl+Z)">↶ 撤销</button>
     <button id="ed-redo" class="icon-btn" type="button" title="重做 (Ctrl+Y / Ctrl+Shift+Z)">↷ 重做</button>
     <a class="icon-btn" href="index.html" title="回到图谱">← 图谱</a>
@@ -45,10 +46,18 @@
     <button class="seg" type="button" data-sec="batch">整本生成</button>
   </nav>
   <section id="ed-body" class="ed-body"></section>
+  <aside class="ed-preview" id="ed-preview-pane">
+    <div class="ed-preview-head">
+      <b>实时预览</b>
+      <button class="ghost tiny" type="button" id="ed-preview-refresh">刷新</button>
+      <span class="hint">改完点「保存到本地」就会刷新</span>
+    </div>
+    <iframe id="ed-preview-frame" title="图谱预览" loading="lazy"></iframe>
+  </aside>
 </main>
 
-<script src="vendor/fflate.min.js?v=25"></script>
-<script src="vendor/pdf.min.js?v=25"></script>
-<script src="js/editor.js?v=25"></script>
+<script src="vendor/fflate.min.js?v=27"></script>
+<script src="vendor/pdf.min.js?v=27"></script>
+<script src="js/editor.js?v=27"></script>
 </body>
 </html>

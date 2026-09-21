@@ -47,9 +47,14 @@ function validate(file) {
   const names = new Map();
   for (const c of chars) {
     const where = `角色 ${c.id || '(无 id)'}`;
-    req(c, 'id', where); req(c, 'name', where); req(c, 'faction', where);
-    req(c, 'title', where); req(c, 'desc', where); req(c, 'fate', where);
+    req(c, 'id', where); req(c, 'name', where);
     if (typeof c.generation !== 'number') err(`${where} generation 必须是数字`);
+    for (const k of ['faction', 'title', 'desc', 'fate']) {
+      const v = c?.[k];
+      if (v === undefined || v === null || v === '') {
+        warn(`${where} 缺少 ${k}${k === 'faction' ? '（图上不会有阵营色）' : '（档案里会空着，建议补一句）'}`);
+      }
+    }
     if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`);
     if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`);
     if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`);
@@ -99,8 +104,7 @@ function validate(file) {
   const evIds = new Set();
   for (const e of events) {
     const where = `事件 ${e.id || '(无 id)'}`;
-    req(e, 'id', where); req(e, 'name', where); req(e, 'summary', where); req(e, 'impact', where);
-    if (evIds.has(e.id)) err(`事件 id 重复：${e.id}`);
+    req(e, 'id', where); req(e, 'name', where); req(e, 'summary', where); req(e, 'impact', where);    if (evIds.has(e.id)) err(`事件 id 重复：${e.id}`);
     evIds.add(e.id);
     if (e.phase && !phases.has(e.phase)) err(`${where} 的 phase「${e.phase}」未定义`);
     if (typeof e.order !== 'number') err(`${where} order 必须是数字`);

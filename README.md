@@ -19,8 +19,8 @@
 | **三种布局** | 自由 / 代际·横（按代分列）/ 代际·纵（按代分行）；图注有专属边距，跟随缩放但不压节点 |
 | **剧透保护** | 按**章节进度**锁定：未读人物=灰色 🔒 且不画关系；未读事件=「🔒 第 N 章的事件」；关系里的小事件、人物结局也按章过滤 |
 | **杂项** | 搜索（支持别名，如"上校""索尼娅"）、「定位这条线」、复位视图（双击空白）、深浅色、PWA 离线 |
-| **本地编辑器** | 新建/导入、七个版块增删改（含**地点**）、撤销重做（Ctrl+Z / Ctrl+Y）、本地校验、导出 JSON |
-| **整本生成** | 上传整本书（**txt / md / html / epub / pdf**）→ 自动分章 → 逐章 AI 草稿（人物 id 沿用名单）→ 一键合并去重 |
+| **本地编辑器** | 新建/导入、七个版块增删改（含**地点**）、撤销重做（Ctrl+Z / Ctrl+Y）、本地校验、**内嵌实时预览**（左编辑右看图，保存即刷新）、导出 JSON |
+| **整本生成** | 上传整本书（**txt / md / html / epub / pdf**）→ 自动分章 → 逐章 AI 草稿（人物 id 沿用名单）→ 一键合并去重；**命令行版** `scripts/wholebook.mjs` 可断点续跑，适合长篇 |
 
 **已收录**
 
@@ -47,6 +47,7 @@
 
 ### 打开编辑器
 图谱右上角「✏️ 编辑」，或直接访问 `/editor.html`。
+编辑器顶栏的「**预览**」会在右边开一块图谱实时预览（改完点「保存到本地」就会刷新）；「↗」是新标签打开。
 
 ---
 
@@ -63,6 +64,22 @@
 7. 「导出 JSON」→ 放进 `data/`，在 `data/books.json` 登记一行 → 提交（也可以只用「预览」在本机看效果）
 
 > 不用 AI 也完全可以：「新建空白」手填人物 / 关系 / 事件，跟做思维导图一样。
+
+### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
+
+浏览器里跑 120 回要一直开着标签页；命令行版把每章结果即时写进 `data/.gen-<slug>.json`，**断了能接着跑**：
+
+```bash
+# 先抽 epub 正文，再逐回生成（每回两轮：人物/关系 + 事件，避免输出被截断丢掉事件）
+LLM_BASE_URL=https://api.deepseek.com/v1 LLM_API_KEY=sk-xxx LLM_MODEL=deepseek-chat \
+  node scripts/wholebook.mjs --epub 三国演义.epub --title 三国演义 --slug three-kingdoms --jobs 3
+# 只跑一部分 / 续跑：
+node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jobs 3
+```
+
+- `--jobs N` 并发章数（默认 3）；`--only 1-30,35` 指定回/章号；`--max-tokens` 默认 16000
+- 输出前会自动合并去重、丢弃悬空引用（AI 写到没抽出来的人物/地点时）、按 `phases[].from/to` 分阶段
+- 跑完记得 `node scripts/validate.mjs data/<slug>.json` 再人工校对
 
 ---
 
@@ -169,9 +186,13 @@
 |---|---|
 | `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）检查。`node scripts/validate.mjs --all` 一把过 |
 | `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
-| `scripts/draft.mjs` | 命令行版 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
+| `scripts/assign-phases.mjs` | 按 `phases[].from/to` 的章区间把事件归到阶段（逐章生成只有第 1 章输出 phase）：`node scripts/assign-phases.mjs data/xx.json [--write]` |
+| `scripts/wholebook.mjs` | **整本生成（命令行版）**：逐章抽取 → 合并去重 → 写出数据；可 `--jobs` 并发、可断点续跑 |
+| `scripts/dedupe-chars.mjs` | 同名/别名人物合并（整本生成后必跑一遍）：`node scripts/dedupe-chars.mjs data/xx.json [--write]` |
+| `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
-| `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），同时开/查 Pages |
+| `tools/local-sink.mjs` | 本地小接收器：编辑器「导出 JSON」直接写进 `data/`（无头浏览器里下载会落到别处）：`node tools/local-sink.mjs` |
+| `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），自动遵守 `.gitignore`，同时开/查 Pages |
 
 ---
 
@@ -180,12 +201,13 @@
 ```
 book-atlas/
 ├── index.html / css/style.css / js/app.js      # 图谱应用（ECharts）
-├── editor.html / css/editor.css / js/editor.js  # 本地编辑器
+├── editor.html / css/editor.css / js/editor.js  # 本地编辑器（含内嵌实时预览）
 ├── data/books.json                              # 书目清单
 ├── data/<slug>.json                             # 每本书的数据
 ├── vendor/                                      # echarts、fflate、pdf.js（离线可用）
-├── scripts/                                     # validate / draft / extract-epub
+├── scripts/                                     # validate / kin / annotate-kin / assign-phases / wholebook / draft / extract-epub
 ├── tools/push-via-api.ps1                       # 发布脚本
+├── tools/local-sink.mjs                         # 本地接收器（把编辑器导出写进 data/）
 ├── docs/                                        # 方案评估、示意图、预览页
 └── sw.js / manifest.webmanifest                 # PWA 离线
 ```
