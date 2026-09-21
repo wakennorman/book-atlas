@@ -29,6 +29,9 @@
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
     bandLabels: new Map(),   // 分组键 -> 图注文字（第 N 代 / 阵营名）
+    places: new Map(),       // placeId -> place
+    placeFilter: null,       // 当前地点筛选
+    showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
   };
 
   /* ---------------- 工具 ---------------- */
@@ -43,6 +46,10 @@
   const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${c.faction || 'other'}`);
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
+  const isMentioned = (c) => c && c.tier === 'mentioned';
+  const isCharHidden = (c) => isMentioned(c) && !state.showMentioned;
+  const placeOf = (id) => state.places.get(id) || null;
+  const placeName = (id) => (placeOf(id) || {}).name || '';
 
   /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
   const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
@@ -151,6 +158,9 @@
     const gens = new Set(book.characters.map((c) => c.generation));
     state.groupMode = (book.meta && book.meta.groupMode) || (gens.size > 1 ? 'generation' : 'faction');
     state.bandLabels = new Map();
+    state.places = new Map((book.places || []).map((p) => [p.id, p]));
+    state.placeFilter = null;
+    try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
@@ -163,6 +173,7 @@
     renderDatalist();
     renderPathSelects();
     renderTimeline();
+    renderPlaceSelect();
     renderPanelWelcome();
     initChart();
     syncSpoilerButton();
@@ -196,12 +207,12 @@
 
   function renderDatalist() {
     $('#char-list').innerHTML = state.book.characters
-      .filter((c) => !charLocked(c))
+      .filter((c) => !charLocked(c) && !isCharHidden(c))
       .map((c) => `<option value="${esc(c.name)}">${esc(c.title)}</option>`).join('');
   }
 
   function renderPathSelects() {
-    const opts = state.book.characters.filter((c) => !charLocked(c))
+    const opts = state.book.characters.filter((c) => !charLocked(c) && !isCharHidden(c))
       .map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
     const a = $('#path-a'), b = $('#path-b');
     a.innerHTML = `<option value="">人物 A</option>${opts}`;
@@ -225,28 +236,31 @@
     const line = cssVar('--line') || '#e5dfd3';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
 
-    const data = b.characters.map((c) => {
+    const data = b.characters.filter((c) => !isCharHidden(c)).map((c) => {
       const dim = anyDim && !state.hlNodes.has(c.id);
       const locked = charLocked(c);
+      const mentioned = isMentioned(c);
       const pos = state.pos.get(c.id);
       return {
         id: c.id, name: locked ? '🔒' : c.name, value: c.title,
         category: categoryOf(c),
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
-        symbolSize: symbolSize(c.id) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1),
+        symbolSize: (mentioned ? 12 : symbolSize(c.id)) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1),
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
-        itemStyle: {
-          opacity: dim ? 0.16 : (locked ? 0.4 : 1),
-          color: locked ? '#9aa3b0' : ((b.factions.find((f) => f.key === c.faction) || {}).color || '#8b94a7'),
-          borderColor: panel,
-          borderWidth: 1,
-        },
+        itemStyle: mentioned
+          ? { color: 'transparent', borderColor: '#8b94a7', borderWidth: 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
+          : {
+              opacity: dim ? 0.16 : (locked ? 0.4 : 1),
+              color: locked ? '#9aa3b0' : ((b.factions.find((f) => f.key === c.faction) || {}).color || '#8b94a7'),
+              borderColor: panel,
+              borderWidth: 1,
+            },
         label: {
-          color: dim ? muted : ink,
+          color: mentioned ? muted : (dim ? muted : ink),
           opacity: dim ? 0.35 : 1,
           textBorderColor: panel,
           textBorderWidth: 3,
-          show: locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4)),
+          show: mentioned ? !anyDim || state.hlNodes.has(c.id) : (locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4))),
         },
       };
     });
@@ -291,15 +305,17 @@
 
     const links = b.relations
       .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
+      .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
       .map((r) => {
-      const key = edgeKey(r.from, r.to);
+        const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
+        const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
           width: state.hlEdges.has(key) && anyDim ? 3 : 1.2,
-          opacity: dim ? 0.07 : 0.5,
-          type: r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid',
+          opacity: dim ? 0.07 : (hiddenTier ? 0.3 : 0.5),
+          type: hiddenTier ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: 0.08,
         },
       };
@@ -330,7 +346,8 @@
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
             `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
-            `<span style="color:${muted}">结局：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>`;
+            `<span style="color:${muted}">结局：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>` +
+            (isMentioned(c) ? `<br><span style="color:${muted}">（仅被提及 · 未出场；第 ${charCh(c)} 章）</span>` : '');
         },
       },
       series: [{
@@ -692,12 +709,56 @@
   function bindGoto(root) {
     root.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => selectCharacter(el.dataset.goto)));
     root.querySelectorAll('[data-event]').forEach((el) => el.addEventListener('click', () => selectEvent(el.dataset.event)));
+    root.querySelectorAll('[data-place-filter]').forEach((el) => el.addEventListener('click', () => applyPlaceFilter(el.dataset.placeFilter || null)));
     root.querySelectorAll('[data-focus-rel]').forEach((el) => el.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const [a, b] = String(el.dataset.focusRel).split('|');
       const rel = findRel(a, b);
       if (rel) selectRelation(rel);
     }));
+  }
+
+  /* ---------------- 地点筛选 ---------------- */
+  function renderPlaceSelect() {
+    const sel = document.getElementById('place-filter');
+    if (!sel) return;
+    const places = [...(state.book.places || [])].sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0));
+    sel.innerHTML = '<option value="">📍 全部地点</option>' + places
+      .filter((p) => state.progress === null || (p.firstCh ?? 0) <= state.progress)
+      .map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    if (state.placeFilter && ![...sel.options].some((o) => o.value === state.placeFilter)) state.placeFilter = null;
+    sel.value = state.placeFilter || '';
+  }
+
+  function renderPlacePanel(id, evs) {
+    const p = placeOf(id);
+    if (!p) return;
+    panel().innerHTML = `
+      <div class="card-title">📍 ${esc(p.name)}</div>
+      <div class="card-sub">${esc(p.type || '地点')} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
+      <p class="card-desc">${esc(p.desc || '')}</p>
+      <h3 style="margin-top:12px;font-size:14px">在这里发生的事（${evs.length}）</h3>
+      <ul class="rel-list">${evs.length ? evs.map((e) => `<li class="rel">
+        <div class="rel-head">${esc(e.name)} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
+        <div class="rel-event">· ${esc(e.summary)}</div>
+      </li>`).join('') : '<li class="hint">暂无（或都在你读到的进度之后）</li>'}</ul>
+      <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">显示全部地点</button></p>`;
+    bindGoto(panel());
+  }
+
+  function applyPlaceFilter(id) {
+    state.placeFilter = id || null;
+    const sel = document.getElementById('place-filter');
+    if (sel) sel.value = state.placeFilter || '';
+    renderTimeline();
+    if (!state.placeFilter) { clearHighlight(); return; }
+    const evs = state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e));
+    const nodes = new Set();
+    const edges = new Set();
+    for (const e of evs) for (const cid of e.chars || []) if (state.byId.has(cid)) nodes.add(cid);
+    for (const r of state.book.relations) if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
+    setHighlight(nodes, edges, null, null);
+    renderPlacePanel(state.placeFilter, evs);
   }
 
   function renderCharacterPanel(c) {
@@ -726,6 +787,7 @@
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
         <span class="badge">${c.gender === 'f' ? '♀ 女' : '♂ 男'}</span>
+        ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
         <span class="badge">关系 ${allRels.length} 条</span>
       </div>
@@ -757,7 +819,8 @@
       <p class="card-desc">${esc(ev.summary)}</p>
       <p class="card-fate"><b>影响：</b>${esc(ev.impact)}</p>
       ${ev.quote ? `<div class="quote">「${esc(ev.quote)}」</div>` : ''}
-      <p style="margin-top:10px"><b>涉及：</b>${chain}</p>`;
+      <p style="margin-top:10px">${ev.place ? `<button class="ghost tiny" type="button" data-place-filter="${esc(ev.place)}">📍 ${esc(placeName(ev.place))}</button>` : ''}
+      <b>涉及：</b>${chain}</p>`;
     bindGoto(panel());
   }
 
@@ -813,7 +876,10 @@
     const el = $('#timeline');
     const phases = [...state.book.phases].sort((a, b) => a.order - b.order);
     el.innerHTML = phases.map((p) => {
-      const evs = state.book.events.filter((e) => e.phase === p.id).sort((a, b) => a.order - b.order);
+      const evs = state.book.events
+        .filter((e) => e.phase === p.id)
+        .filter((e) => !state.placeFilter || e.place === state.placeFilter)
+        .sort((a, b) => a.order - b.order);
       if (!evs.length) return '';
       return `<div class="phase">
         <div class="phase-title">${esc(p.name)}</div>
@@ -823,7 +889,7 @@
                <span class="ev-sum">剧透保护中 · 读到再解锁</span>
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
-               <span class="ev-name">${esc(e.name)}</span>
+               <span class="ev-name">${esc(e.name)}${e.place ? ` <span class="chapter">📍${esc(placeName(e.place))}</span>` : ''}</span>
                <span class="ev-sum">${esc(e.summary)}</span>
              </button>`).join('')}
       </div>`;
@@ -865,6 +931,7 @@
       renderDatalist();
       renderPathSelects();
       renderTimeline();
+      renderPlaceSelect();
       renderPanelWelcome();
       initChart();
     } catch (e) {
@@ -880,10 +947,10 @@
       const q = search.value.trim();
       if (!q) return;
       const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
-      const c = state.book.characters.find((x) => !charLocked(x) && match(x));
+      const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
       if (c) { selectCharacter(c.id); return; }
-      const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
-      $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（剧透保护）` : `没找到「${q}」`;
+      const lockedHit = state.book.characters.find((x) => (charLocked(x) || isCharHidden(x)) && match(x));
+      $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（或未出场）` : `没找到「${q}」`;
     };
     search.addEventListener('change', doSearch);
     search.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
@@ -896,6 +963,21 @@
       if (!state.allLabels) computeLabels();
       if (state.chart) state.chart.setOption(buildOption());
     });
+
+    const placeSel = document.getElementById('place-filter');
+    if (placeSel) placeSel.addEventListener('change', () => applyPlaceFilter(placeSel.value || null));
+
+    const mentionBtn = document.getElementById('mentioned-btn');
+    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏'; };
+    if (mentionBtn) mentionBtn.addEventListener('click', () => {
+      state.showMentioned = !state.showMentioned;
+      try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      syncMentionBtn();
+      renderDatalist();
+      renderPathSelects();
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+    });
+    syncMentionBtn();
 
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));

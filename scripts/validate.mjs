@@ -51,6 +51,7 @@ function validate(file) {
     if (typeof c.generation !== 'number') err(`${where} generation 必须是数字`);
     if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`);
     if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`);
+    if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`);
     if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
     if (ids.has(c.id)) err(`角色 id 重复：${c.id}`);
     ids.add(c.id);
@@ -104,6 +105,26 @@ function validate(file) {
     if (typeof e.ch !== 'number') warn(`${where} 缺少 ch（发生章）——剧透保护要用`);
     for (const cid of e.chars || []) if (!ids.has(cid)) err(`${where} 引用了不存在的角色 ${cid}`);
   }
+
+  // ---------- 「仅被提及」人物与地点 ----------
+  const mentioned = chars.filter((c) => c.tier === 'mentioned');
+  const orphanMentioned = mentioned.filter((c) => !(book.relations || []).some((r) => r.from === c.id || r.to === c.id));
+  for (const c of orphanMentioned) warn(`「仅被提及」人物「${c.name}」没有任何关系——纯背景名字建议不建节点，写进 note 即可`);
+  if (mentioned.length) console.log(`  ℹ 人物层级：仅被提及 ${mentioned.length} 人（默认折叠，可在图上开关）`);
+
+  const places = book.places || [];
+  const placeIds = new Set();
+  for (const p of places) {
+    const where = `地点 ${p.id || '(无 id)'}`;
+    req(p, 'id', where); req(p, 'name', where);
+    if (typeof p.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出现章）——剧透保护与地点筛选要用`);
+    if (placeIds.has(p.id)) warn(`地点 id 重复：${p.id}`);
+    placeIds.add(p.id);
+  }
+  const checkPlace = (ev, where) => { if (ev.place && !placeIds.has(ev.place)) err(`${where} 的 place「${ev.place}」不在 places[] 里`); };
+  for (const e of events) checkPlace(e, `事件 ${e.id}`);
+  for (const r of rels) for (const ev of r.events || []) checkPlace(ev, `关系 ${r.from}→${r.to}`);
+  if (places.length) console.log(`  ℹ 地点 ${places.length} 个，已挂到 ${events.filter((e) => e.place).length} 个事件`);
 
   // ---------- 文案规范检查（v0.3 起：防「主语跳来跳去 / 称谓不明 / 提到的人不在 chars 里」） ----------
   const KIN = /(哥哥|弟弟|姐姐|妹妹|父亲|母亲|儿子|女儿|丈夫|妻子|叔叔|姑姑|侄子|侄女|祖父|祖母|外公|外婆|曾祖|孙子|孙女)/;

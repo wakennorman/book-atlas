@@ -6,7 +6,7 @@ param(
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.16：把「代际/阵营」分组标准固化成规则——validate 打印判定并查矛盾、编辑器加分组诊断、README 写明三条判据与字段约定"
+  [string]$Message = "书脉 BookAtlas v0.17：新增「仅被提及」人物层（默认折叠可开关，含祖父/猪尾巴表兄等 4 人）+ 地点维度（places[] + 事件挂地点 + 地点筛选/地点面板，两本书各 10 个地点）+ 校验器查 tier/place"
 )
 
 $ErrorActionPreference = "Stop"

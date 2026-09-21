@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#1b2233">
-  <link rel="stylesheet" href="css/style.css?v=14">
+  <link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
 
@@ -38,6 +38,7 @@
         <input id="search-input" list="char-list" type="search" placeholder="搜人物：上校 / 阿尔卡蒂奥 / 乌尔苏拉…" autocomplete="off">
         <datalist id="char-list"></datalist>
         <button id="search-clear" class="ghost" type="button">清空</button>
+        <select id="place-filter" title="按地点筛选事件与人物"></select>
       </div>
       <div class="legend-row">
         <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
@@ -51,6 +52,7 @@
         <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移">重置</button>
         <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局">复位视图</button>
         <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
+        <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
         <span class="view-label shape-legend" title="形状区分：圆＝男，圆角方＝女（大小表示关系多少）"><i class="sh sh-m"></i>男 <i class="sh sh-f"></i>女</span>
       </div>
     </div>
@@ -109,6 +111,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=14"></script>
+<script src="js/app.js?v=17"></script>
 </body>
 </html>
