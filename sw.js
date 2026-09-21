@@ -1,18 +1,25 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v11';
+const CACHE = 'bookatlas-v12';
 const SHELL = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
   './vendor/echarts.min.js',
+  './vendor/fflate.min.js',
   './data/books.json',
   './data/one-hundred-years-of-solitude.json',
+  './data/crime-and-punishment.json',
   './manifest.webmanifest',
   './assets/icon.svg',
   './editor.html',
   './css/editor.css',
-  './js/editor.js'
+  './js/editor.js',
+  './editor.html?v=12',
+  './css/editor.css?v=12',
+  './js/editor.js?v=12',
+  './css/style.css?v=12',
+  './vendor/fflate.min.js?v=12'
 ];
 
 self.addEventListener('install', (e) => {

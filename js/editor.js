@@ -477,6 +477,68 @@
     return JSON.parse(m[0]);
   }
 
+  /* —— 多格式读取：txt / md / html / epub（PDF 提示转换） —— */
+  function cleanHtml(html) {
+    const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ldquo: '“', rdquo: '”', mdash: '—', hellip: '…' };
+    return String(html)
+      .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+      .replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, g) => {
+        if (g[0] === '#') {
+          const code = (g[1] === 'x' || g[1] === 'X') ? parseInt(g.slice(2), 16) : parseInt(g.slice(1), 10);
+          return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+        }
+        return ENT[g] !== undefined ? ENT[g] : m;
+      })
+      .replace(/\r\n?/g, '\n')
+      .replace(/[ \t\u00a0]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  const decodeBytes = (bytes) => {
+    try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch (e) { return ''; }
+  };
+
+  function extractEpub(arrayBuffer) {
+    if (typeof fflate === 'undefined') throw new Error('缺少 zip 库：vendor/fflate.min.js 没有加载');
+    const files = fflate.unzipSync(new Uint8Array(arrayBuffer));
+    const container = files['META-INF/container.xml'];
+    if (!container) throw new Error('不是有效的 EPUB（缺少 META-INF/container.xml）');
+    const opfPath = decodeBytes(container).match(/full-path="([^"]+)"/i)?.[1];
+    if (!opfPath) throw new Error('EPUB 里找不到 OPF 路径');
+    const opf = decodeBytes(files[opfPath] || new Uint8Array());
+    const base = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
+    const manifest = new Map();
+    for (const m of opf.matchAll(/<item\b[^>]*>/gi)) {
+      const id = m[0].match(/\bid="([^"]+)"/i)?.[1];
+      const href = m[0].match(/\bhref="([^"]+)"/i)?.[1];
+      if (id && href) manifest.set(id, decodeURIComponent(href));
+    }
+    const spine = [...opf.matchAll(/<itemref\b[^>]*idref="([^"]+)"/gi)].map((m) => m[1]);
+    const parts = [];
+    for (const id of spine) {
+      const href = manifest.get(id);
+      if (!href) continue;
+      const raw = files[base + href] || files[href];
+      if (!raw) continue;
+      const text = cleanHtml(decodeBytes(raw));
+      if (text) parts.push(`\n==== [${String(parts.length + 1).padStart(3, '0')}] ${href} ====\n\n${text}`);
+    }
+    if (!parts.length) throw new Error('EPUB 里没有可读的正文');
+    return parts.join('\n');
+  }
+
+  async function readBookFile(file) {
+    const name = String(file.name || '').toLowerCase();
+    if (name.endsWith('.epub')) return { text: extractEpub(await file.arrayBuffer()), kind: 'EPUB' };
+    if (name.endsWith('.html') || name.endsWith('.htm')) return { text: cleanHtml(await file.text()), kind: 'HTML' };
+    if (name.endsWith('.pdf')) throw new Error('PDF 还没法在浏览器里直接抽正文——请先用 Calibre 或在线转换器转成 txt / epub 再上传');
+    return { text: await file.text(), kind: name.endsWith('.md') ? 'Markdown' : '纯文本' };
+  }
+
   function splitChapters(text) {
     const t = String(text || '').replace(/\r\n?/g, '\n');
     const re = /^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[章回节卷][^\n]{0,40}$/gm;
@@ -515,8 +577,9 @@
       </div>
       <div class="ed-sub">
         <div class="ed-sub-head">整本原文
-          <label class="ghost tiny" style="cursor:pointer">上传 txt<input type="file" id="batch-file" accept=".txt,text/plain" hidden></label>
+          <label class="ghost tiny" style="cursor:pointer">上传图书文件<input type="file" id="batch-file" accept=".txt,.md,.html,.htm,.epub,.pdf,text/plain,text/markdown,text/html,application/epub+zip,application/pdf" hidden></label>
           <button class="ghost tiny" type="button" data-tool="batch-clear">清空</button>
+          <span class="hint">支持 txt / md / html / epub；PDF 请先用 Calibre 等转成 txt 或 epub</span>
         </div>
         <textarea id="batch-text" style="min-height:150px" placeholder="把整本 txt 粘贴到这里（或上传 .txt 文件）…">${ed.batchText ? esc(ed.batchText) : ''}</textarea>
       </div>
@@ -755,20 +818,23 @@
       }
     });
 
-    // 整本 txt 上传
-    document.addEventListener('change', (ev) => {
+    // 整本图书上传（txt / md / html / epub）
+    document.addEventListener('change', async (ev) => {
       if (ev.target.id !== 'batch-file') return;
       const file = ev.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        ed.batchText = String(reader.result || '');
+      try {
+        const { text, kind } = await readBookFile(file);
+        ed.batchText = text;
         ed.chapters = [];
         ed.genResults = [];
         renderBody();
-        batchLog(`已读入 ${esc(file.name)}（${ed.batchText.length} 字），点「① 分章」`, 'ok');
-      };
-      reader.readAsText(file, 'utf-8');
+        batchSplit();   // 上传后自动分章
+        batchLog(`已读入 ${esc(file.name)}（${kind} · ${text.length} 字）`, 'ok');
+      } catch (e) {
+        renderBody();
+        batchLog('读取失败：' + esc(String(e.message)), 'bad');
+      }
     });
 
     body.addEventListener('change', (ev) => {
