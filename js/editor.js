@@ -177,6 +177,22 @@
   }
 
   /* ---------------- 校验 ---------------- */
+  const KIN_LABEL = { blood: '血缘', marriage: '婚姻', inlaw: '姻亲', adoptive: '收养', foster: '抚养', step: '继亲', sworn: '结义' };
+  // 与 scripts/kin.mjs 同口径：从关系名猜亲属类型（猜不出就留空）
+  function guessKin(type) {
+    const t = String(type || '');
+    if (!t) return '';
+    if (/义[兄弟姐弟父母]|干[亲爹娘兄弟姐弟儿女]|结义|结拜|拜把|把兄弟|教[父母]|教子|教女/.test(t)) return 'sworn';
+    if (/收养|抱养|过继|养亲|养[父母子女儿]|养[兄姐弟妹]/.test(t)) return 'adoptive';
+    if (/继[父母子女儿]|后妈|后爹|晚娘|填房/.test(t)) return 'step';
+    if (/岳[父母]|公公|婆婆|婆媳|孙媳|儿媳|女婿|姑爷|嫂|姐夫|妹夫|弟媳|妯娌|连襟|亲家/.test(t)) return 'inlaw';
+    if (/抚养|带大|养大|养育|寄养|乳母|奶妈/.test(t)) return 'foster';
+    if (!/未婚/.test(t) && /夫妻|配偶|丈夫|妻子|妾|姨太太/.test(t)) return 'marriage';
+    if (/保姆|帮佣|佣人|房东|房客|租客|雇主|信使|使者|囚徒|同学|朋友|挚友|战友|同乡|医生|病人|神父|牧师|校长|老师|学生|上司|下属|对手|政敌|情敌|仇敌|熟人|邻居|日常|试探|陷害|决斗|亡灵|交情|相遇|意外|罪人|同事/.test(t)) return '';
+    if (/[父母]亲|父|母|儿子|女儿|子|女|兄|弟|姐|妹|孙|外公|外婆|祖父|祖母|叔|伯|姑|姨|舅|甥|侄|堂兄弟|表兄弟|孪生|家人|本家|长辈|后辈|血脉/.test(t)) return 'blood';
+    return '';
+  }
+
   function validate() {
     const b = ed.book, issues = [];
     const ids = new Set();
@@ -215,6 +231,12 @@
         if (ev.chapter && !/(\d+)/.test(ev.chapter)) issues.push(`关系 ${r.from}→${r.to} 的章节「${ev.chapter}」没有数字`);
         if (ev.place && !placeIds.has(ev.place)) issues.push(`关系 ${r.from}→${r.to} 的小事件地点「${ev.place}」没有在 places 里定义`);
       }
+      const guessed = guessKin(r.type);
+      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姑侄)/.test(r.type || '');
+      if (r.kin && !KIN_LABEL[r.kin]) issues.push(`关系 ${r.from}→${r.to} 的亲属类型「${r.kin}」不合法（应为 blood/marriage/inlaw/adoptive/foster/step/sworn 之一）`);
+      else if (r.kin && ['adoptive', 'foster', 'step', 'sworn'].includes(r.kin) && bloodTerm) issues.push(`关系 ${r.from}→${r.to}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」——收养/继亲/结义/抚养要说清是哪一种`);
+      else if (!r.kin && guessed) issues.push(`关系 ${r.from}→${r.to}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`);
+      else if (r.kin && guessed && guessed !== r.kin) issues.push(`关系 ${r.from}→${r.to}：关系名「${r.type}」看着像${KIN_LABEL[guessed]}，但亲属类型标的是${KIN_LABEL[r.kin]}——对一下哪个对`);
     }
     return issues;
   }
@@ -378,15 +400,16 @@
   function listRelations() {
     const rows = ed.book.relations.map((r, i) => {
       const withPlace = (r.events || []).filter((e) => e.place).length;
+      const kin = r.kin && KIN_LABEL[r.kin] ? ` <span class="kin-badge k-${esc(r.kin)}">${KIN_LABEL[r.kin]}</span>` : (guessKin(r.type) ? ` <span class="hint">（像是${KIN_LABEL[guessKin(r.type)]}，待补）</span>` : '');
       return `<tr>
-        <td>${esc(relName(r.from))} —<b>${esc(r.type)}</b>— ${esc(relName(r.to))}</td>
+        <td>${esc(relName(r.from))} —<b>${esc(r.type)}</b>— ${esc(relName(r.to))}${kin}</td>
         <td>${esc(r.style || '')}</td>
         <td>${(r.events || []).length}${withPlace ? `（${withPlace} 条标了 📍）` : ''}</td>
         <td class="ops"><button class="ghost tiny" data-act="edit" data-sec="relations" data-idx="${i}">编辑</button>
         <button class="ghost tiny" data-act="del" data-sec="relations" data-idx="${i}">删除</button></td>
       </tr>`;
     }).join('');
-    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护，地点供地点筛选（只标有把握的）', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
+    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护，地点供地点筛选（只标有把握的）；是亲属的还要标清 血缘/收养/继亲/姻亲/结义', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
       <table class="ed-table"><thead><tr><th>关系</th><th>线型</th><th>小事件</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="hint">还没有关系</td></tr>'}</tbody></table>
       ${ed.editing && ed.editing.sec === 'relations' ? formRelation() : ''}`;
   }
@@ -407,6 +430,10 @@
         <label>人物 A<select data-field="from">${charOptions(r.from)}</select></label>
         <label>人物 B<select data-field="to">${charOptions(r.to)}</select></label>
         <label>关系名<input data-field="type" value="${esc(r.type)}" placeholder="兄弟 / 情人 / 仇敌…"></label>
+        <label>亲属类型<select data-field="kin">
+          <option value="">（不是亲属 / 未判定）</option>
+          ${Object.entries(KIN_LABEL).map(([k, v]) => `<option value="${k}" ${r.kin === k ? 'selected' : ''}>${v}${k === 'blood' ? '（亲生）' : k === 'adoptive' ? '（正式收养）' : k === 'foster' ? '（带大/寄养）' : k === 'step' ? '（继父母/继子女）' : k === 'inlaw' ? '（配偶方亲属）' : k === 'sworn' ? '（结义/干亲）' : ''}</option>`).join('')}
+        </select></label>
         <label>线型<select data-field="style">
           <option value="solid" ${r.style === 'solid' ? 'selected' : ''}>实线（亲缘/同盟）</option>
           <option value="dashed" ${r.style === 'dashed' ? 'selected' : ''}>虚线（对立/伤害）</option>
@@ -482,7 +509,7 @@
   "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations": [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
+  "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|adoptive|step|inlaw|sworn|foster|空", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
   "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
   "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "place": "地点 id 或空", "summary": "", "impact": "", "quote": "" }]
@@ -519,7 +546,7 @@
     } catch (e) { /* 忽略 */ }
     out.className = 'ed-msg';
     out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
-    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
+    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
     const user = `请为《${ed.book.meta.title || '未命名'}》生成数据草稿。\n\nJSON schema（必须完全遵循）：\n${AI_SCHEMA}\n` +
       (text ? `\n以下是原文节选，请优先从中抽取：\n<<<原文开始>>>\n${text.slice(0, 100000)}\n<<<原文结束>>>\n`
             : '\n注意：没有提供原文，请仅依据广泛公认的公开资料；不确定的细节宁可省略或写进 note。\n');
@@ -532,9 +559,7 @@
       if (!res.ok) throw new Error(`API ${res.status}：${(await res.text().catch(() => '')).slice(0, 200)}`);
       const json = await res.json();
       const raw = json.choices?.[0]?.message?.content || '';
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error('返回里没有找到 JSON：' + raw.slice(0, 120));
-      ed.aiDraft = JSON.parse(m[0]);
+      ed.aiDraft = parseLooseJson(raw);
       const n = { c: (ed.aiDraft.characters || []).length, r: (ed.aiDraft.relations || []).length, e: (ed.aiDraft.events || []).length, p: (ed.aiDraft.places || []).length };
       out.className = 'ed-msg ok';
       out.innerHTML = `✓ 生成完成：${n.c} 人 / ${n.r} 关系 / ${n.e} 事件 / ${n.p} 地点
@@ -583,21 +608,63 @@
     } catch (e) { /* 忽略 */ }
   }
 
+  // AI 返回的 JSON 偶发被 max_tokens 截断：从后往前退到最近的完整元素，自动补齐括号
+  function parseLooseJson(raw) {
+    const text = String(raw || '');
+    const start = text.indexOf('{');
+    if (start < 0) throw new Error('返回里没有找到 JSON：' + text.slice(0, 120));
+    const body = text.slice(start);
+    try { return JSON.parse(body.slice(0, body.lastIndexOf('}') + 1 || undefined)); } catch (e) { /* 继续修复 */ }
+    const marks = [];
+    const stack = [];
+    let inStr = false, esc = false;
+    for (let i = 0; i < body.length; i++) {
+      const ch = body[i];
+      if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') { inStr = true; continue; }
+      if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+      else if (ch === '}' || ch === ']') { stack.pop(); marks.push(i); }
+    }
+    for (let k = marks.length - 1; k >= 0; k--) {
+      const cand = body.slice(0, marks[k] + 1);
+      const s = [];
+      let inS = false, es = false;
+      for (const ch of cand) {
+        if (inS) { if (es) es = false; else if (ch === '\\') es = true; else if (ch === '"') inS = false; continue; }
+        if (ch === '"') { inS = true; continue; }
+        if (ch === '{' || ch === '[') s.push(ch === '{' ? '}' : ']');
+        else if (ch === '}' || ch === ']') s.pop();
+      }
+      if (inS) continue;
+      try { return JSON.parse(cand + s.reverse().join('')); } catch (e) { /* 再往前退一格 */ }
+    }
+    throw new Error('返回的 JSON 无法解析（多半是这一章内容太长、输出被截断）。可以先跳过这章，或把这一章拆成两半再跑');
+  }
+
   async function callLLM(system, user) {
     const cfg = aiConfig();
     if (!cfg.key) throw new Error('请先填 API Key（只存在本机浏览器）');
     saveAiConfig(cfg);
-    const res = await fetch(`${cfg.base}/chat/completions`, {
+    const messages = [{ role: 'system', content: system }, { role: 'user', content: user }];
+    const payload = (jsonMode) => JSON.stringify(jsonMode
+      ? { model: cfg.model, temperature: 0.4, max_tokens: 8192, response_format: { type: 'json_object' }, messages }
+      : { model: cfg.model, temperature: 0.4, max_tokens: 8192, messages });
+    const call = (jsonMode) => fetch(`${cfg.base}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
-      body: JSON.stringify({ model: cfg.model, temperature: 0.4, max_tokens: 8192, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+      body: payload(jsonMode),
     });
+    let res = await call(true);
+    if (res.status === 400) {
+      const t = await res.text().catch(() => '');
+      // 有些兼容端点不认 response_format，就退回普通模式再来一次
+      if (/response_format/i.test(t)) res = await call(false);
+      else throw new Error(`API 400：${t.slice(0, 200)}`);
+    }
     if (!res.ok) throw new Error(`API ${res.status}：${(await res.text().catch(() => '')).slice(0, 200)}`);
     const json = await res.json();
     const raw = json.choices?.[0]?.message?.content || '';
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('返回里没有找到 JSON：' + raw.slice(0, 120));
-    return JSON.parse(m[0]);
+    return parseLooseJson(raw);
   }
 
   /* —— 多格式读取：txt / md / html / epub / pdf —— */
@@ -693,7 +760,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=21';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=24';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -919,13 +986,22 @@
     batchLog(`本轮结束：成功 ${ok} / ${picks.length} 章。点「③ 合并去重」把它们并进当前书。`, ok ? 'ok' : 'bad');
   }
 
+  function batchFactionRoster() {
+    return (ed.book.factions || []).map((f) => `${f.key}: ${f.name}`).join('；');
+  }
+
   function batchSystem() {
     return '你是文学作品的资料整理员，正在**逐章**整理一本书，供「人物关系 + 事件时间轴」应用使用。硬性要求：' +
       '严格输出 JSON（不要 markdown 围栏、不要解释）；**只从给定章节抽取**，不要引入本章没出现的内容；' +
+      '**严格控制篇幅（输出必须一次说完，宁少勿长）**：本章只抽 6–12 个关键人物、6–12 条关键关系（每条 1 个小事件）、2–4 个事件；desc/fate/note 各 ≤ 40 字，事件 summary ≤ 50 字，小事件文案 ≤ 40 字；' +
       '人物 id 必须沿用「已有名单」里对应的 id，若是名单外的新人物才新起 id（拼音 kebab-case）；' +
+      '带血缘/姻亲/收养关系的人物，relation 的 type 要写清是哪一种（血缘=父子/母子/兄弟…，收养=养父/养女…，姻亲=继母/岳父…，只写得出含糊说法就标 dashed 并在 events 里说清），并同时给出 kin 字段（blood 血缘 / adoptive 收养 / step 继亲 / inlaw 姻亲 / sworn 结义 / foster 抚养 / 空）；' +
       'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」，place 写这条小事件发生的地点 id（有把握才写）；' +
-      'events 的 ch 写这一章的章号，place 写地点 id，phase 可省略（我会自动补）；phases 与 places 只在第 1 章输出（places 6–15 个，也用「已有名单」沿用 id）；' +
-      'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文。';
+      'events 的 ch 写这一章的章号，place 写地点 id，phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
+      'places：沿用「已有地点名单」的 id，本章新出现的地点可以新增（id 拼音 kebab），没把握就不写 place；' +
+      'faction 必须沿用「已有阵营」里的 key（确实不属于任何已有阵营才新起 key）；' +
+      'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；' +
+      '多个人物共用一个名字或绰号时，必须在 name 里带世代/身份（如「何塞·阿尔卡蒂奥（第二代，绰号「巨人」）」）；全部字段中文。';
   }
 
   function batchUser(ch, idx) {
@@ -933,10 +1009,12 @@
     const body = ch.text.length > 40000 ? ch.text.slice(0, 40000) + '\n…（本章过长，已截断）' : ch.text;
     const roster = batchRoster();
     const placeRoster = batchPlaceRoster();
+    const factionRoster = batchFactionRoster();
     const total = Number(ed.book.meta.chapters) || (ed.chapters || []).length;
     return `书名《${ed.book.meta.title || '未命名'}》，共 ${total} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
       (roster ? `已有名单（同一个人必须沿用这些 id）：\n${roster}\n\n` : '') +
-      (placeRoster ? `已有地点名单（同一个地点必须沿用这些 id；events[].place / relations[].events[].place 只能引用这里的 id，或本章新出现的地点）：\n${placeRoster}\n\n` : '') +
+      (placeRoster ? `已有地点名单（同一个地点必须沿用这些 id）：\n${placeRoster}\n\n` : '') +
+      (factionRoster ? `已有阵营（faction 用这些 key）：\n${factionRoster}\n\n` : '') +
       `JSON schema：\n${AI_SCHEMA}\n\n` +
       `请只从本章抽取，输出 JSON。events[].ch = ${n}；relations[].events[].chapter 写「第${n}章」。\n\n` +
       `<<<本章原文开始>>>\n${body}\n<<<本章原文结束>>>`;
@@ -994,6 +1072,7 @@
       const k = relKey(r);
       if (relMap.has(k)) {
         const t = relMap.get(k);
+        if (!t.kin && r.kin) t.kin = r.kin;
         const seen = new Set((t.events || []).map((e) => e.text));
         for (const e of r.events || []) if (e.text && !seen.has(e.text)) { t.events.push(e); st.evAdd++; }
       } else {
@@ -1218,7 +1297,8 @@
       if (!f.from || !f.to) { alert('请选择两个人物'); return null; }
       if (!f.type) { alert('关系名不能为空'); return null; }
       if (!events.length) { alert('至少写一条小事件'); return null; }
-      return { from: f.from, to: f.to, type: f.type, style: f.style || 'solid', events };
+      const kin = f.kin || guessKin(f.type);      // 没选亲属类型时，按关系名自动判一个（可以在表单里改）
+      return { from: f.from, to: f.to, type: f.type, ...(kin ? { kin } : {}), style: f.style || 'solid', events };
     }
     if (sec === 'events') {
       if (!f.name) { alert('事件名不能为空'); return null; }

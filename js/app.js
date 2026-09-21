@@ -37,6 +37,17 @@
   /* ---------------- 工具 ---------------- */
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+  // 亲属关系（kin）徽章：血缘 / 婚姻 / 姻亲 / 收养 / 抚养 / 继亲 / 结义
+  const KIN_LABEL = { blood: '血缘', marriage: '婚姻', inlaw: '姻亲', adoptive: '收养', foster: '抚养', step: '继亲', sworn: '结义' };
+  const KIN_HINT = {
+    blood: '亲生血缘', marriage: '夫妻（婚姻）', inlaw: '姻亲（配偶方亲属）',
+    adoptive: '正式收养', foster: '非正式（被谁带大、寄养）', step: '继亲（继父母/继子女）', sworn: '结义／干亲／教父'
+  };
+  const kinBadge = (rel) => {
+    const k = rel && rel.kin;
+    return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${KIN_LABEL[k]}：${KIN_HINT[k] || ''}">${KIN_LABEL[k]}</span>` : '';
+  };
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
   const charName = (id) => state.byId.get(id)?.name || id;
@@ -345,7 +356,7 @@
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
             const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b><br>${evs}` +
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}<br>${evs}` +
               (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条事件在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
@@ -803,7 +814,7 @@
       const evs = vis.map((e) =>
         `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
         </div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
@@ -836,8 +847,8 @@
     const evs = (r.events || []).map((e) =>
       `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
     panel().innerHTML = `
-      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span> ${charLink(second)}</div>
-      <p class="card-sub">定义这段关系的事件</p>
+      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)} ${charLink(second)}</div>
+      <p class="card-sub">定义这段关系的事件${r.kin ? `（这是${KIN_LABEL[r.kin]}关系：${KIN_HINT[r.kin] || ''}）` : ''}</p>
       ${evs || '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
     bindGoto(panel());
@@ -892,7 +903,7 @@
       const evs = vis.map((e) =>
         `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span> ${charLink(s.to)}</div>
+        <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
       </li>`;
     }).join('');

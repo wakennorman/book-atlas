@@ -48,8 +48,7 @@
 .ed-chk { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
 .ed-chk input { width: auto; }
 
-.ed-msg { font-size: 13px; margin-top: 10px; }
-.ed-msg.ok { color: #2e7d43; }
+.ed-msg { font-size: 13px; margin-top: 10px; }.ed-msg.ok { color: #2e7d43; }
 .ed-msg.bad { color: #b3453f; }
 [data-theme="dark"] .ed-msg.ok { color: #7fd39a; }
 [data-theme="dark"] .ed-msg.bad { color: #f08b84; }

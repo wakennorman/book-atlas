@@ -13,6 +13,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { checkKin, KIN, KIN_KEYS } from './kin.mjs';
 
 const STYLES = new Set(['solid', 'dashed', 'dotted']);
 let errors = 0, warns = 0;
@@ -83,6 +84,7 @@ function validate(file) {
     if (!ids.has(r.to)) err(`${where} 的 to 不存在`);
     req(r, 'type', where);
     if (!STYLES.has(r.style)) err(`${where} 的 style「${r.style}」不合法（solid|dashed|dotted）`);
+    for (const k of checkKin(r)) (k.level === 'error' ? err : warn)(`${where} ${k.msg}`);
     if (!Array.isArray(r.events) || !r.events.length) warn(`${where} 没有「定义关系的小事件」`);
     for (const e of r.events || []) {
       if (!e.text) err(`${where} 的事件缺少 text`);
@@ -126,8 +128,14 @@ function validate(file) {
   for (const r of rels) for (const ev of r.events || []) checkPlace(ev, `关系 ${r.from}→${r.to}`);
   if (places.length) console.log(`  ℹ 地点 ${places.length} 个，已挂到 ${events.filter((e) => e.place).length} 个事件`);
 
+  const kinRels = rels.filter((r) => r.kin);
+  if (kinRels.length) {
+    const detail = KIN_KEYS.filter((k) => kinRels.some((r) => r.kin === k)).map((k) => `${KIN[k]} ${kinRels.filter((r) => r.kin === k).length}`).join(' · ');
+    console.log(`  ℹ 亲属关系 ${kinRels.length} 条：${detail}`);
+  }
+
   // ---------- 文案规范检查（v0.3 起：防「主语跳来跳去 / 称谓不明 / 提到的人不在 chars 里」） ----------
-  const KIN = /(哥哥|弟弟|姐姐|妹妹|父亲|母亲|儿子|女儿|丈夫|妻子|叔叔|姑姑|侄子|侄女|祖父|祖母|外公|外婆|曾祖|孙子|孙女)/;
+  const KIN_WORD = /(哥哥|弟弟|姐姐|妹妹|父亲|母亲|儿子|女儿|丈夫|妻子|叔叔|姑姑|侄子|侄女|祖父|祖母|外公|外婆|曾祖|孙子|孙女)/;
   const nameIndex = chars.map((c) => ({ id: c.id, n: [c.name, ...(c.aliases || [])].filter(Boolean) }));
   const hasName = (text) => nameIndex.some((x) => x.n.some((nn) => text.includes(nn)));
   const sentences = (s) => String(s || '').split(/[。；！？]/).map((x) => x.trim()).filter(Boolean);
@@ -156,14 +164,14 @@ function validate(file) {
       warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`);
     }
     for (const s of sentences(text)) {
-      if (KIN.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+      if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
     }
   }
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     for (const ev of r.events || []) {
       for (const s of sentences(ev.text)) {
-        if (KIN.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+        if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
       }
     }
   }

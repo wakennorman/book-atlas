@@ -139,6 +139,27 @@ main {
 .rel-head { font-size: 14px; }
 .rel-head b { font-weight: 700; }
 .rel-head .type { color: var(--muted); }
+
+/* 亲属关系徽章（血缘 / 婚姻 / 姻亲 / 收养 / 抚养 / 继亲 / 结义）——见 scripts/kin.mjs 的规则 */
+.kin-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;
+  background: var(--soft); color: var(--muted); border: 1px solid var(--line);
+}
+.kin-badge.k-blood { background: rgba(201, 86, 76, .14); color: #b3453f; border-color: rgba(201, 86, 76, .35); }
+.kin-badge.k-marriage { background: rgba(154, 111, 176, .16); color: #8a5fa0; border-color: rgba(154, 111, 176, .35); }
+.kin-badge.k-inlaw { background: rgba(74, 126, 199, .14); color: #3d6aa8; border-color: rgba(74, 126, 199, .32); }
+.kin-badge.k-adoptive { background: rgba(76, 159, 112, .15); color: #3d8a5f; border-color: rgba(76, 159, 112, .34); }
+.kin-badge.k-foster { background: rgba(58, 166, 166, .15); color: #2f8b8b; border-color: rgba(58, 166, 166, .34); }
+.kin-badge.k-step { background: rgba(201, 138, 63, .17); color: #a1731f; border-color: rgba(201, 138, 63, .38); }
+.kin-badge.k-sworn { background: rgba(201, 154, 63, .17); color: #96702a; border-color: rgba(201, 154, 63, .4); }
+[data-theme="dark"] .kin-badge.k-blood { color: #f0908a; }
+[data-theme="dark"] .kin-badge.k-marriage { color: #cba6e0; }
+[data-theme="dark"] .kin-badge.k-inlaw { color: #93b8ea; }
+[data-theme="dark"] .kin-badge.k-adoptive { color: #84d3a6; }
+[data-theme="dark"] .kin-badge.k-foster { color: #7fd3d3; }
+[data-theme="dark"] .kin-badge.k-step { color: #e8bd7c; }
+[data-theme="dark"] .kin-badge.k-sworn { color: #e6cf8a; }
 .rel-event { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .rel-event .chapter { font-size: 11.5px; background: var(--soft); border-radius: 6px; padding: 1px 6px; margin-left: 4px; white-space: nowrap; }
 .linkbtn { background: none; border: none; padding: 0; color: inherit; font-weight: 700; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }

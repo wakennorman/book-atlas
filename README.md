@@ -74,7 +74,7 @@
   "factions":   [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "pinyin-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f",
                    "firstCh": 1, "faction": "", "tier": "main|minor|mentioned", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations":  [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted",
+  "relations":  [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（亲属才填）", "style": "solid|dashed|dotted",
                    "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章", "place": "地点 id（可空）" }] }],
   "places":     [{ "id": "pinyin-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases":     [{ "id": "p1", "name": "", "order": 1 }],
@@ -120,6 +120,31 @@
 4. 关系文案出现的人必须与 `relations[].from/to` 一致；事件文案提到的人必须出现在 `events[].chars`
 5. 事件文案要能**脱离上下文读懂**（谁 · 对谁 · 做了什么 · 后果）
 
+### 亲属关系规范（`relations[].kin`）——「是不是亲生的」必须一眼看出
+
+**为什么**：同一张图里既有亲生的母子，也有收养的母女、继母女、被谁带大的孩子、姻亲……
+如果全都写成「母子」「姐妹」，读者没法判断这条线是不是血缘（《百年孤独》里乌尔苏拉↔「巨人」是**亲母子**，乌尔苏拉↔丽贝卡是**收养**，阿尔卡蒂奥是**祖孙但由乌尔苏拉带大**）。
+
+**值（七类，缺一不可混）**
+
+| kin | 含义 | 例 |
+|---|---|---|
+| `blood` | 血缘（亲生；含祖孙、叔侄、堂表、孪生） | 乌尔苏拉↔「巨人」亲母子；乌尔苏拉↔阿尔卡蒂奥祖孙 |
+| `marriage` | 婚姻（夫妻、妾室） | 老何塞↔乌尔苏拉（表兄妹成婚） |
+| `inlaw` | 姻亲（配偶方亲属：岳父、公婆、儿媳、女婿、嫂、姐夫、妯娌、亲家） | 费尔南达↔乌尔苏拉：婆媳 |
+| `adoptive` | **正式收养**（养父母/养子女） | 乌尔苏拉↔丽贝卡：养母女 |
+| `foster` | **非正式**：被谁带大、寄养、乳母养大（不改变血缘事实） | 乌尔苏拉把孙子阿尔卡蒂奥带大 |
+| `step` | 继亲（继父母/继子女） | 《罪与罚》卡捷琳娜↔索尼雅：继母女 |
+| `sworn` | 结义干亲（结拜兄弟、干爹干娘、教父教子） | 刘关张桃园结义 |
+
+**三条硬规则（`validate.mjs` 会查）**
+
+1. **是家人就得标 `kin`**；不是家人（朋友、仇敌、君臣、情人）**不要**标
+2. **关系名（`type`）的措辞必须与 `kin` 一致**：收养的写「养母女」，绝不写「母女」；继亲写「继母女」；结义写「结义兄弟」；拿不准的关系宁可写「收养的家人（辈分乱）」这种含糊说法，也不要冒充血缘
+3. 血缘称谓（父子/母女/兄弟/祖孙…）只能配 `blood`；写了血缘称谓又标 `adoptive/foster/step/sworn` ⇒ **报错**
+
+**工具**：`node scripts/annotate-kin.mjs [--write]` 会按关系名**猜** kin 并报告猜不出的（人工复核后再写回）；图上面板与关系链会显示「血缘/收养/继亲/姻亲/结义」徽章。
+
 ### 剧透保护（书里带这三个字段就能用）
 
 - `meta.chapters`（总章数）、`characters[].firstCh`（首次出场章）、`events[].ch`（发生章）
@@ -142,7 +167,8 @@
 
 | 脚本 | 用途 |
 |---|---|
-| `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` 检查。`node scripts/validate.mjs --all` 一把过 |
+| `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）检查。`node scripts/validate.mjs --all` 一把过 |
+| `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
 | `scripts/draft.mjs` | 命令行版 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
 | `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），同时开/查 Pages |
