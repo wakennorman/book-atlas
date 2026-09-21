@@ -7,3 +7,8 @@ tmp/
 *.bak
 # 整本生成的进度文件（跑完就删；别把过程数据发上去）
 data/.gen-*.json
+# 其它工具的本地目录（WorkBuddy / Claude / Codex 等）
+.workbuddy/
+.claude/
+.codex/
+.hermes/
