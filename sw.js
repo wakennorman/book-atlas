@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v18';
+const CACHE = 'bookatlas-v20';
 const SHELL = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const SHELL = [
   './js/app.js',
   './vendor/echarts.min.js',
   './vendor/fflate.min.js',
+  './vendor/pdf.min.js',
+  './vendor/pdf.worker.min.js',
   './data/books.json',
   './data/one-hundred-years-of-solitude.json',
   './data/crime-and-punishment.json',
@@ -15,12 +17,15 @@ const SHELL = [
   './editor.html',
   './css/editor.css',
   './js/editor.js',
-  './editor.html?v=16',
-  './css/editor.css?v=16',
-  './js/editor.js?v=16',
+  './editor.html?v=20',
+  './css/editor.css?v=20',
+  './js/editor.js?v=20',
   './css/style.css?v=18',
   './js/app.js?v=18',
-  './vendor/fflate.min.js?v=16'
+  './css/style.css?v=20',
+  './vendor/fflate.min.js?v=20',
+  './vendor/pdf.min.js?v=20',
+  './vendor/pdf.worker.min.js?v=20'
 ];
 
 self.addEventListener('install', (e) => {

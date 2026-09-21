@@ -47,10 +47,11 @@ const model = process.env.LLM_MODEL || 'deepseek-chat';
 const SCHEMA = `{
   "meta": { "slug": "", "title": "", "author": "", "translator": "", "prophecy": "", "note": "", "license": "CC BY-SA 4.0", "updated": "YYYY-MM-DD", "sources": [{ "name": "" }] },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
-  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations": [{ "from": "id", "to": "id", "type": "关系名", "style": "solid|dashed|dotted", "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章" }] }],
+  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
+  "relations": [{ "from": "id", "to": "id", "type": "关系名", "style": "solid|dashed|dotted", "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章", "place": "地点 id 或空" }] }],
+  "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "阶段名", "order": 1 }],
-  "events": [{ "id": "e01", "phase": "p1", "order": 1, "name": "", "chars": ["id"], "summary": "", "impact": "", "quote": "" }]
+  "events": [{ "id": "e01", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "place": "地点 id 或空", "summary": "", "impact": "", "quote": "" }]
 }`;
 
 const SYSTEM = `你是文学作品的资料整理员，为一个「人物关系 + 事件时间轴」应用生成数据草稿。
@@ -59,6 +60,8 @@ const SYSTEM = `你是文学作品的资料整理员，为一个「人物关系 
 - 人物 25–45 个（覆盖所有主要出场人物，含反派、次要但推动情节的人）；
 - 关系 40–75 条，每条关系必须有 1–2 个「定义这段关系的小事件」（小事件=看着不起眼但能解释两人关系的事），并尽量给出章节；
 - 事件 18–30 个，按 5–8 个阶段（phases）分组；**如果作品没有明确年份，禁止编造年份**，用 phase+order 排序；
+- 地点（places）6–15 个：只收能当筛选维度的地点（城镇 / 宅邸 / 酒馆 / 机构…），不要每个房间都建；
+  events[].place 与 relations[].events[].place 必须引用 places 里已有的 id，没把握就留空；
 - 关系 style 约定：solid=亲缘/同盟；dashed=对立/伤害；dotted=情人/过去/间接；
 - 对容易混淆的同名人物，在 note 字段写一句消歧提示；
 - 全部字段用中文（id 用拼音 kebab-case）。`;
@@ -115,5 +118,5 @@ data.meta.updated = new Date().toISOString().slice(0, 10);
 
 fs.mkdirSync(path.dirname(outFile), { recursive: true });
 fs.writeFileSync(outFile, JSON.stringify(data, null, 2), 'utf8');
-console.log(`✅ 草稿已写入 ${outFile}（${(data.characters || []).length} 角色 / ${(data.relations || []).length} 关系 / ${(data.events || []).length} 事件）`);
+console.log(`✅ 草稿已写入 ${outFile}（${(data.characters || []).length} 角色 / ${(data.places || []).length} 地点 / ${(data.relations || []).length} 关系 / ${(data.events || []).length} 事件）`);
 console.log('📌 下一步：人工校对 → node scripts/validate.mjs ' + path.relative(process.cwd(), outFile));

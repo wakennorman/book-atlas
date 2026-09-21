@@ -19,8 +19,8 @@
 | **三种布局** | 自由 / 代际·横（按代分列）/ 代际·纵（按代分行）；图注有专属边距，跟随缩放但不压节点 |
 | **剧透保护** | 按**章节进度**锁定：未读人物=灰色 🔒 且不画关系；未读事件=「🔒 第 N 章的事件」；关系里的小事件、人物结局也按章过滤 |
 | **杂项** | 搜索（支持别名，如"上校""索尼娅"）、「定位这条线」、复位视图（双击空白）、深浅色、PWA 离线 |
-| **本地编辑器** | 新建/导入、六个版块增删改、撤销重做（Ctrl+Z / Ctrl+Y）、本地校验、导出 JSON |
-| **整本生成** | 上传整本书 → 自动分章 → 逐章 AI 草稿（人物 id 沿用名单）→ 一键合并去重 |
+| **本地编辑器** | 新建/导入、七个版块增删改（含**地点**）、撤销重做（Ctrl+Z / Ctrl+Y）、本地校验、导出 JSON |
+| **整本生成** | 上传整本书（**txt / md / html / epub / pdf**）→ 自动分章 → 逐章 AI 草稿（人物 id 沿用名单）→ 一键合并去重 |
 
 **已收录**
 
@@ -56,7 +56,7 @@
 
 1. 「新建空白」或「载入」一本现有书（也可以在现有书上改）
 2. 进「**整本生成**」，填 API 地址 / Key / 模型（**Key 只存本机浏览器**，不会上传别处）
-3. 上传图书文件：支持 **txt / md / html / epub**（epub 在浏览器内解压解析，不需要联网；**PDF 请先转成 txt/epub**，Calibre 最省事）——传完会**自动分章**
+3. 上传图书文件：支持 **txt / md / html / epub / pdf**（epub 在浏览器内解压解析，PDF 用内置 pdf.js 抽文字层——**都不需要联网、不上传到任何服务器**）——传完会**自动分章**
 4. 勾选章节 →「② 逐章生成」（一章约 1–2 分钟，可随时停止）
 5. 「③ 合并去重」：人物按 **id 或姓名**合并、关系按 `from|to|类型` 合并并去重小事件、事件按 id 去重
 6. 到各版块**逐条校对**（重点：同名人物、关系方向、事件章节），「本地校验」查一遍
@@ -70,15 +70,16 @@
 
 ```jsonc
 {
-  "meta":       { "slug": "", "title": "", "author": "", "chapters": 20, "note": "", "license": "CC BY-SA 4.0", "sources": [] },
+  "meta":       { "slug": "", "title": "", "author": "", "chapters": 20, "groupMode": "", "note": "", "license": "CC BY-SA 4.0", "sources": [] },
   "factions":   [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "pinyin-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f",
-                   "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
+                   "firstCh": 1, "faction": "", "tier": "main|minor|mentioned", "title": "", "desc": "", "fate": "", "note": "" }],
   "relations":  [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted",
-                   "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章" }] }],
+                   "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章", "place": "地点 id（可空）" }] }],
+  "places":     [{ "id": "pinyin-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases":     [{ "id": "p1", "name": "", "order": 1 }],
   "events":     [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"],
-                   "summary": "", "impact": "", "quote": "" }]
+                   "place": "地点 id（可空）", "summary": "", "impact": "", "quote": "" }]
 }
 ```
 
@@ -86,6 +87,7 @@
 - `style`：`solid`＝亲缘/同盟；`dashed`＝对立/伤害；`dotted`＝情人/过去/间接
 - **没有明确年份的书不要编年份**，用 `phase + order` 排序
 - `relations[].events` 优先收录"看着不起眼、却定义了两人关系"的小事件
+- **地点是"筛选器"，不是图上的节点**：`places[]` 是地点清单，`events[].place` / `relations[].events[].place` 把事件挂到地点上。别把地点画进关系图（会变成异构图、边语义混乱）；只有当地点**本身参与推理**（密室、列车时刻、地图动线）时才值得另做「地点页 / 地图视图」
 - 不是家族史的书：见下面的「分组标准」
 
 ### 分组标准（决定用「代际」还是「阵营」）
@@ -124,6 +126,13 @@
 - 关系/小事件的解锁章号 = 该关系 `events[].chapter` 里的**最小章号**；人物「结局」按**最后出场章**（出场章 + 相关事件章的最大值）判断
 - 首发进入会**强制二选一**：不介意剧透（全部解锁）/ 我在读（选读到第几章）；右上角随时可改，进度按书存在本机
 
+### 地点维度（第三维度，`editor.html` 里能直接编）
+
+- 地点**不吃关系图的节点**，只做三件事：📍**地点筛选**（时间轴只剩该地点的事件、图上只亮相关人物）、**地点面板**（这是哪类地方 + 发生过什么）、事件卡上的 📍 小标可点
+- 地点也吃**剧透保护**：`places[].firstCh` 没到就不出现在下拉里
+- **筛选必须全局生效**：一旦按地点筛选，点人物也只在「该地点范围内」展开（范围＝该地点事件涉及的人 ∪ 该地点关系事件的两端）；点到范围外的人会**自动取消筛选**，而不是偷偷把全部关系放出来
+- 因此**关系里的小事件也要标 `place`**（`relations[].events[].place`）——只标有把握的，宁缺勿错；没标的不会出现在任何地点筛选结果里
+
 ---
 
 ## 脚本
@@ -148,7 +157,7 @@ book-atlas/
 ├── editor.html / css/editor.css / js/editor.js  # 本地编辑器
 ├── data/books.json                              # 书目清单
 ├── data/<slug>.json                             # 每本书的数据
-├── vendor/                                      # echarts、fflate（离线可用）
+├── vendor/                                      # echarts、fflate、pdf.js（离线可用）
 ├── scripts/                                     # validate / draft / extract-epub
 ├── tools/push-via-api.ps1                       # 发布脚本
 ├── docs/                                        # 方案评估、示意图、预览页
@@ -169,7 +178,7 @@ book-atlas/
 
 **双击 `index.html` 空白/报错？** 数据是 `fetch` 读的，需要本地服务：用 `本地预览.bat` 或 `python -m http.server`。
 
-**PDF 上传没反应？** 浏览器端没做 PDF 正文抽取（太重），请先用 Calibre 等转成 txt/epub。
+**PDF 上传没反应 / 提示"没有文字层"？** 浏览器端用内置 pdf.js 抽**文字层**；如果这本 PDF 是**扫描件（图片版）**，谁都抽不出字来——先用 OCR（如 ABBYY、微信读书/稻壳等）或 Calibre 转成带文字层的 epub/txt。另外超大 PDF（几百页）解析要等几秒，页面会显示进度。
 
 **AI 报 CORS / 失败？** 浏览器直连需要端点允许跨域（DeepSeek 官方可以）；不行就用命令行 `draft.mjs`。Key 只存本机，永远不会上传到本项目。
 
@@ -183,5 +192,5 @@ book-atlas/
 
 - 原著文本与书名版权归各自权利人所有；本仓库只收录**阅读辅助数据**（人物、关系、事件的结构化整理），不收录原文正文
 - 《百年孤独》家族树参考：Wikimedia Commons（作者 Michel Bakni，CC BY-SA 4.0）
-- 图表库 [Apache ECharts](https://echarts.apache.org/)（Apache-2.0）、EPUB 解压 [fflate](https://github.com/101arrowz/fflate)（MIT）
+- 图表库 [Apache ECharts](https://echarts.apache.org/)（Apache-2.0）、EPUB 解压 [fflate](https://github.com/101arrowz/fflate)（MIT）、PDF 抽取 [pdf.js](https://mozilla.github.io/pdf.js/)（Apache-2.0）
 - 思路参考 [story-graph](https://github.com/Drwei3155/story-graph)（MIT）——本项目数据不依赖 AI 生成，AI 只当草稿工具

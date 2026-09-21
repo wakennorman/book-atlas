@@ -55,10 +55,26 @@ function Api {
 $me = Api GET "$api/user"
 "user: $($me.login)"
 
-# 2) 收集文件（跳过 .git）
+# 2) 收集文件（跳过 .git，以及 .gitignore 里列出的本地文件——比如会话记录导出）
 $rootLen = $RepoRoot.TrimEnd('\').Length + 1
-$files = Get-ChildItem -Path $RepoRoot -Recurse -File -Force | Where-Object { $_.FullName -notmatch '\\\.git\\' }
-"files: $($files.Count)"
+$ignore = @()
+$ignoreFile = Join-Path $RepoRoot ".gitignore"
+if (Test-Path $ignoreFile) {
+  $ignore = @(Get-Content -LiteralPath $ignoreFile -Encoding UTF8 | Where-Object { $_ -and $_ -notmatch '^\s*#' } | ForEach-Object { $_.Trim() })
+}
+function Test-Ignored {
+  param([string]$Rel)
+  foreach ($pat in $ignore) {
+    if ($pat.EndsWith('/')) { if ($Rel.StartsWith($pat)) { return $true }; continue }
+    if ($pat -match '[*?\[]') { if ($Rel -like $pat -or (Split-Path $Rel -Leaf) -like $pat) { return $true }; continue }
+    if ($Rel -eq $pat -or (Split-Path $Rel -Leaf) -eq $pat -or $Rel.StartsWith("$pat/")) { return $true }
+  }
+  return $false
+}
+$files = Get-ChildItem -Path $RepoRoot -Recurse -File -Force |
+  Where-Object { $_.FullName -notmatch '\\\.git\\' } |
+  Where-Object { -not (Test-Ignored ($_.FullName.Substring($rootLen).Replace('\','/'))) }
+"files: $($files.Count)（.gitignore 里排除了 $((Get-ChildItem -Path $RepoRoot -Recurse -File -Force | Where-Object { $_.FullName -notmatch '\\\.git\\' }).Count - $files.Count) 个本地文件）"
 
 # 2.5) 空仓库需要先有第一个提交（blobs API 在空仓库会 409）
 $initFile = Join-Path $RepoRoot ".nojekyll"

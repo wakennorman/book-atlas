@@ -8,6 +8,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const uid = (p) => `${p}-${Math.random().toString(36).slice(2, 7)}`;
   const slugify = (s) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '') || 'book';
+  const toList = (v) => (typeof v === 'string' ? v.split(/[，,、]/).map((s) => s.trim()).filter(Boolean) : (Array.isArray(v) ? v.filter(Boolean) : []));
   const setPath = (obj, path, val) => {
     const keys = path.split('.');
     let cur = obj;
@@ -77,7 +78,7 @@
     if (!sameBook) { ed.history = []; ed.hIndex = -1; }
     ed.sourceLocal = isLocal;
     snapshotBook(`载入《${ed.book.meta.title || '未命名'}》`);
-    toast(`已载入《${ed.book.meta.title || '未命名'}》：${ed.book.characters.length} 人 / ${ed.book.relations.length} 关系 / ${ed.book.events.length} 事件`);
+    toast(`已载入《${ed.book.meta.title || '未命名'}》：${ed.book.characters.length} 人 / ${ed.book.relations.length} 关系 / ${ed.book.events.length} 事件${ed.book.places.length ? ` / ${ed.book.places.length} 地点` : ''}`);
     renderAll();
   }
 
@@ -128,6 +129,7 @@
     b.factions = Array.isArray(b.factions) ? b.factions : [];
     b.characters = Array.isArray(b.characters) ? b.characters : [];
     b.relations = Array.isArray(b.relations) ? b.relations : [];
+    b.places = Array.isArray(b.places) ? b.places : [];
     b.phases = Array.isArray(b.phases) ? b.phases : [];
     b.events = Array.isArray(b.events) ? b.events : [];
     return b;
@@ -154,7 +156,7 @@
     try {
       localStorage.setItem('ba-draft-' + slug, JSON.stringify(ed.book, null, 2));
       ed.sourceLocal = true;
-      setStatus(`已保存到本地：ba-draft-${slug}（共 ${ed.book.characters.length} 人 / ${ed.book.relations.length} 关系 / ${ed.book.events.length} 事件）`);
+      setStatus(`已保存到本地：ba-draft-${slug}（共 ${ed.book.characters.length} 人 / ${ed.book.relations.length} 关系 / ${ed.book.events.length} 事件${ed.book.places.length ? ` / ${ed.book.places.length} 地点` : ''}）`);
     } catch (e) { setStatus('保存失败：' + e.message); }
   }
 
@@ -190,15 +192,29 @@
     const factionKeys = new Set(b.factions.map((f) => f.key));
     for (const c of b.characters) if (c.faction && !factionKeys.has(c.faction)) issues.push(`人物「${c.name}」的阵营「${c.faction}」未定义`);
     const phaseIds = new Set(b.phases.map((p) => p.id));
+    const placeIds = new Set();
+    const dupPlaces = new Set();
+    for (const p of b.places) {
+      if (!p.id) issues.push(`地点「${p.name || '?'}」缺少 id`);
+      else if (placeIds.has(p.id)) dupPlaces.add(p.id);
+      placeIds.add(p.id);
+      if (!p.name) issues.push(`地点 ${p.id} 缺少名称`);
+      if (typeof p.firstCh !== 'number') issues.push(`地点「${p.name}」缺少首次出现章 firstCh（地点筛选要用）`);
+    }
+    for (const id of dupPlaces) issues.push(`地点 id 重复：${id}`);
     for (const e of b.events) {
       if (typeof e.ch !== 'number') issues.push(`事件「${e.name}」缺少发生章 ch`);
       if (e.phase && !phaseIds.has(e.phase)) issues.push(`事件「${e.name}」的阶段「${e.phase}」未定义`);
+      if (e.place && !placeIds.has(e.place)) issues.push(`事件「${e.name}」的地点「${e.place}」没有在 places 里定义`);
       for (const cid of e.chars || []) if (!ids.has(cid)) issues.push(`事件「${e.name}」引用了不存在的人物 ${cid}`);
     }
     for (const r of b.relations) {
       if (!ids.has(r.from) || !ids.has(r.to)) issues.push(`关系 ${r.from}→${r.to} 里有人物不存在`);
       if (!Array.isArray(r.events) || !r.events.length) issues.push(`关系 ${r.from}→${r.to} 没有小事件`);
-      for (const ev of r.events || []) if (ev.chapter && !/(\d+)/.test(ev.chapter)) issues.push(`关系 ${r.from}→${r.to} 的章节「${ev.chapter}」没有数字`);
+      for (const ev of r.events || []) {
+        if (ev.chapter && !/(\d+)/.test(ev.chapter)) issues.push(`关系 ${r.from}→${r.to} 的章节「${ev.chapter}」没有数字`);
+        if (ev.place && !placeIds.has(ev.place)) issues.push(`关系 ${r.from}→${r.to} 的小事件地点「${ev.place}」没有在 places 里定义`);
+      }
     }
     return issues;
   }
@@ -210,7 +226,7 @@
   }
 
   function renderBody() {
-    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi, batch: formBatch };
+    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, places: listPlaces, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi, batch: formBatch };
     $('#ed-body').innerHTML = (f[ed.section] || formMeta)();
   }
 
@@ -317,18 +333,60 @@
     </form>`;
   }
 
+  /* —— 地点 —— */
+  function placeUseCount(id) {
+    let n = 0;
+    for (const e of ed.book.events) if (e.place === id) n++;
+    for (const r of ed.book.relations) for (const ev of r.events || []) if (ev.place === id) n++;
+    return n;
+  }
+  function placeOptions(sel) {
+    const places = [...(ed.book.places || [])].sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0));
+    return '<option value="">（无地点）</option>' + places
+      .map((p) => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  }
+  function listPlaces() {
+    const rows = ed.book.places.map((p, i) => `
+      <tr>
+        <td>${esc(p.name)}</td><td>${esc(p.id)}</td><td>${esc(p.type || '')}</td>
+        <td class="num">${p.firstCh ?? ''}</td><td class="num">${placeUseCount(p.id) || '<span class="hint">0</span>'}</td>
+        <td class="ops"><button class="ghost tiny" data-act="edit" data-sec="places" data-idx="${i}">编辑</button>
+        <button class="ghost tiny" data-act="del" data-sec="places" data-idx="${i}">删除</button></td>
+      </tr>`).join('');
+    return `${head('地点', '地点不做关系图节点，而是「筛选器 + 面板」：在事件、以及关系里的小事件上选地点；firstCh 管剧透', '<button class="primary" type="button" data-act="add" data-sec="places">＋ 新增地点</button>')}
+      <table class="ed-table"><thead><tr><th>名称</th><th>id</th><th>类型</th><th>出现章</th><th>被引用</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="hint">还没有地点（不是每本书都需要：地点本身参与推理时才值得细标）</td></tr>'}</tbody></table>
+      ${ed.editing && ed.editing.sec === 'places' ? formPlace() : ''}`;
+  }
+  function formPlace() {
+    const p = ed.form, isNew = ed.editing.idx === null;
+    return `<form data-form="places" class="ed-form">
+      <div class="ed-grid">
+        <label>名称<input data-field="name" value="${esc(p.name)}"></label>
+        <label>id（拼音；留空自动生成）<input data-field="id" value="${esc(p.id || '')}"></label>
+        <label>类型（城镇 / 宅邸 / 酒馆…）<input data-field="type" value="${esc(p.type || '')}"></label>
+        <label>首次出现章<input type="number" min="0" data-field="firstCh" value="${esc(p.firstCh ?? 1)}"></label>
+        <label class="wide">别名（逗号分隔）<input data-field="aliases" value="${esc((p.aliases || []).join('，'))}"></label>
+        <label class="wide">这里是什么地方<textarea data-field="desc">${esc(p.desc || '')}</textarea></label>
+      </div>
+      <div class="ed-form-actions"><button class="primary" type="submit">${isNew ? '添加' : '保存'}</button><button class="ghost" type="button" data-act="cancel">取消</button></div>
+    </form>`;
+  }
+
   /* —— 关系 —— */
   function relName(id) { return (ed.book.characters.find((c) => c.id === id) || {}).name || id; }
   function listRelations() {
-    const rows = ed.book.relations.map((r, i) => `
-      <tr>
+    const rows = ed.book.relations.map((r, i) => {
+      const withPlace = (r.events || []).filter((e) => e.place).length;
+      return `<tr>
         <td>${esc(relName(r.from))} —<b>${esc(r.type)}</b>— ${esc(relName(r.to))}</td>
         <td>${esc(r.style || '')}</td>
-        <td>${(r.events || []).length}</td>
+        <td>${(r.events || []).length}${withPlace ? `（${withPlace} 条标了 📍）` : ''}</td>
         <td class="ops"><button class="ghost tiny" data-act="edit" data-sec="relations" data-idx="${i}">编辑</button>
         <button class="ghost tiny" data-act="del" data-sec="relations" data-idx="${i}">删除</button></td>
-      </tr>`).join('');
-    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
+      </tr>`;
+    }).join('');
+    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护，地点供地点筛选（只标有把握的）', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
       <table class="ed-table"><thead><tr><th>关系</th><th>线型</th><th>小事件</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="hint">还没有关系</td></tr>'}</tbody></table>
       ${ed.editing && ed.editing.sec === 'relations' ? formRelation() : ''}`;
   }
@@ -341,6 +399,7 @@
       <div class="ed-sub-row">
         <input data-field="events.${i}.text" value="${esc(ev.text || '')}" placeholder="看着不起眼、却定义这段关系的小事件">
         <input class="ch" data-field="events.${i}.chapter" value="${esc(ev.chapter || '')}" placeholder="第X章">
+        <select class="pl" data-field="events.${i}.place" title="这条小事件发生在哪">${placeOptions(ev.place)}</select>
         <button type="button" class="ghost tiny" data-act="rel-del-event" data-idx="${i}">删</button>
       </div>`).join('');
     return `<form data-form="relations" class="ed-form">
@@ -388,13 +447,14 @@
   function listEvents() {
     const rows = ed.book.events.map((e, i) => {
       const ph = (ed.book.phases.find((p) => p.id === e.phase) || {}).name || '';
+      const pl = (ed.book.places.find((p) => p.id === e.place) || {}).name || '';
       return `<tr>
-        <td>${esc(ph)} · ${e.order}</td><td>${esc(e.name)}</td><td>${e.ch ?? ''}</td><td>${(e.chars || []).length}</td>
+        <td>${esc(ph)} · ${e.order}</td><td>${esc(e.name)}</td><td>${e.ch ?? ''}</td><td>${esc(pl)}</td><td>${(e.chars || []).length}</td>
         <td class="ops"><button class="ghost tiny" data-act="edit" data-sec="events" data-idx="${i}">编辑</button>
         <button class="ghost tiny" data-act="del" data-sec="events" data-idx="${i}">删除</button></td></tr>`;
     }).join('');
-    return `${head('事件', '重大事件轴上的卡片；ch＝发生章（剧透保护），chars＝涉及人物', '<button class="primary" type="button" data-act="add" data-sec="events">＋ 新增事件</button>')}
-      <table class="ed-table"><thead><tr><th>阶段·顺序</th><th>名称</th><th>章</th><th>涉及</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="hint">还没有事件</td></tr>'}</tbody></table>
+    return `${head('事件', '重大事件轴上的卡片；ch＝发生章（剧透保护），chars＝涉及人物，place＝发生地点（可空）', '<button class="primary" type="button" data-act="add" data-sec="events">＋ 新增事件</button>')}
+      <table class="ed-table"><thead><tr><th>阶段·顺序</th><th>名称</th><th>章</th><th>地点</th><th>涉及</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="hint">还没有事件</td></tr>'}</tbody></table>
       ${ed.editing && ed.editing.sec === 'events' ? formEvent() : ''}`;
   }
   function formEvent() {
@@ -407,6 +467,7 @@
         <label>阶段<select data-field="phase">${phases}</select></label>
         <label>顺序<input type="number" data-field="order" value="${esc(e.order ?? 1)}"></label>
         <label>发生章 ch<input type="number" min="0" data-field="ch" value="${esc(e.ch ?? 1)}"></label>
+        <label>地点<select data-field="place">${placeOptions(e.place)}</select></label>
         <label class="wide">概述 summary<textarea data-field="summary">${esc(e.summary || '')}</textarea></label>
         <label class="wide">影响 impact<textarea data-field="impact">${esc(e.impact || '')}</textarea></label>
         <label class="wide">引文 quote（可空）<input data-field="quote" value="${esc(e.quote || '')}"></label>
@@ -421,9 +482,10 @@
   "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations": [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章" }] }],
+  "relations": [{ "from": "id", "to": "id", "type": "", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
+  "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
-  "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "summary": "", "impact": "", "quote": "" }]
+  "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "place": "地点 id 或空", "summary": "", "impact": "", "quote": "" }]
 }`;
 
   function formAi() {
@@ -457,7 +519,7 @@
     } catch (e) { /* 忽略 */ }
     out.className = 'ed-msg';
     out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
-    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
+    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
     const user = `请为《${ed.book.meta.title || '未命名'}》生成数据草稿。\n\nJSON schema（必须完全遵循）：\n${AI_SCHEMA}\n` +
       (text ? `\n以下是原文节选，请优先从中抽取：\n<<<原文开始>>>\n${text.slice(0, 100000)}\n<<<原文结束>>>\n`
             : '\n注意：没有提供原文，请仅依据广泛公认的公开资料；不确定的细节宁可省略或写进 note。\n');
@@ -473,9 +535,9 @@
       const m = raw.match(/\{[\s\S]*\}/);
       if (!m) throw new Error('返回里没有找到 JSON：' + raw.slice(0, 120));
       ed.aiDraft = JSON.parse(m[0]);
-      const n = { c: (ed.aiDraft.characters || []).length, r: (ed.aiDraft.relations || []).length, e: (ed.aiDraft.events || []).length };
+      const n = { c: (ed.aiDraft.characters || []).length, r: (ed.aiDraft.relations || []).length, e: (ed.aiDraft.events || []).length, p: (ed.aiDraft.places || []).length };
       out.className = 'ed-msg ok';
-      out.innerHTML = `✓ 生成完成：${n.c} 人 / ${n.r} 关系 / ${n.e} 事件
+      out.innerHTML = `✓ 生成完成：${n.c} 人 / ${n.r} 关系 / ${n.e} 事件 / ${n.p} 地点
         <div style="margin-top:8px"><button class="primary" type="button" data-tool="ai-apply">覆盖当前书</button>
         <button class="ghost" type="button" data-tool="ai-merge">合并进来（去重）</button>
         <button class="ghost" type="button" data-tool="ai-view">查看 JSON</button></div>
@@ -493,7 +555,7 @@
     } else {
       const st = mergeDraft(ed.aiDraft);
       adopt(ed.book, true);
-      toast(`已合并：+${st.cAdd} 人 / +${st.rAdd} 关系 / +${st.eAdd} 事件 / +${st.evAdd} 条小事件`);
+      toast(`已合并：+${st.cAdd} 人 / +${st.rAdd} 关系 / +${st.eAdd} 事件 / +${st.evAdd} 条小事件${st.pAdd ? ` / +${st.pAdd} 地点` : ''}`);
     }
     saveDraft();
     toast('已应用 AI 草稿（记得逐条校对）');
@@ -538,7 +600,7 @@
     return JSON.parse(m[0]);
   }
 
-  /* —— 多格式读取：txt / md / html / epub（PDF 提示转换） —— */
+  /* —— 多格式读取：txt / md / html / epub / pdf —— */
   function cleanHtml(html) {
     const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ldquo: '“', rdquo: '”', mdash: '—', hellip: '…' };
     return String(html)
@@ -592,12 +654,86 @@
     return parts.join('\n');
   }
 
-  async function readBookFile(file) {
+  async function readBookFile(file, onProgress) {
     const name = String(file.name || '').toLowerCase();
     if (name.endsWith('.epub')) return { text: extractEpub(await file.arrayBuffer()), kind: 'EPUB' };
+    if (name.endsWith('.pdf')) return { text: await extractPdf(await file.arrayBuffer(), onProgress), kind: 'PDF' };
     if (name.endsWith('.html') || name.endsWith('.htm')) return { text: cleanHtml(await file.text()), kind: 'HTML' };
-    if (name.endsWith('.pdf')) throw new Error('PDF 还没法在浏览器里直接抽正文——请先用 Calibre 或在线转换器转成 txt / epub 再上传');
     return { text: await file.text(), kind: name.endsWith('.md') ? 'Markdown' : '纯文本' };
+  }
+
+  /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=20';
+
+  // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
+  function pageToLines(items) {
+    const lines = [];
+    let line = null;
+    for (const it of items) {
+      const str = it.str !== undefined ? it.str : (it.text || '');
+      if (!str) continue;
+      const tr = it.transform || [1, 0, 0, 1, 0, 0];
+      const y = tr[5], x = tr[4];
+      const h = Math.abs(tr[3]) || Math.abs(tr[0]) || 10;
+      if (!line || Math.abs(line.y - y) > Math.max(2.5, h * 0.4)) {
+        line = { y, x: x + (it.width || 0), text: str, h };
+        lines.push(line);
+      } else {
+        const gap = x - line.x;
+        const needSpace = gap > Math.max(2, h * 0.25) && !/[\u4e00-\u9fff]$/.test(line.text) && !/^[\u4e00-\u9fff]/.test(str);
+        line.text += (needSpace ? ' ' : '') + str;
+        line.x = x + (it.width || 0);
+      }
+    }
+    // 行距突变（>1.6 倍中位行距）＝段落断开
+    const gaps = [];
+    for (let i = 1; i < lines.length; i++) gaps.push(Math.abs(lines[i].y - lines[i - 1].y));
+    const sorted = gaps.filter((g) => g > 0.5).sort((a, b) => a - b);
+    const med = sorted.length ? sorted[Math.floor(sorted.length / 2)] : 0;
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (i && med && Math.abs(lines[i].y - lines[i - 1].y) > med * 1.6) out.push('');
+      out.push(lines[i].text.trim());
+    }
+    // 页眉页脚里的纯页码（只在本页首/尾行才算）——丢掉，别混进正文
+    const clean = out.filter((t, i) => !(t && /^[\s\-—·.第页]*\d{1,4}[\s\-—·.页]*$/.test(t) && (i < 2 || i > out.length - 3)));
+    // 合并 PDF 的硬换行（保守）：上一行是满行且不以句末标点结尾、本行也不是新章节标题 → 接上
+    const w = clean.filter(Boolean).map((t) => t.length).sort((a, b) => a - b);
+    const full = w.length ? w[Math.floor(w.length * 0.9)] : 0;
+    const HEAD = /^[ \t　]*第[ \t　]*[一二三四五六七八九十百千零〇两\d]+[ \t　]*[章回节卷]/;
+    const joined = [];
+    for (const t of clean) {
+      const prev = joined.length ? joined[joined.length - 1] : '';
+      const glue = t && prev && !HEAD.test(t) && full && prev.length >= full * 0.85 && !/[。！？；：…—」』”"’）)]$/.test(prev);
+      if (glue) joined[joined.length - 1] = prev + t;
+      else joined.push(t);
+    }
+    return joined.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function extractPdf(arrayBuffer, onProgress) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('缺少 PDF 库：vendor/pdf.min.js 没有加载');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER;
+    const doc = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer), isEvalSupported: false }).promise;
+    try {
+      const parts = [];
+      let chars = 0;
+      for (let n = 1; n <= doc.numPages; n++) {
+        if (onProgress) onProgress(n, doc.numPages);
+        const page = await doc.getPage(n);
+        const tc = await page.getTextContent();
+        const text = pageToLines(tc.items || []);
+        chars += text.length;
+        parts.push(text ? `==== [${String(n).padStart(3, '0')}] 第 ${n} 页 ====\n\n${text}` : '');
+        page.cleanup();
+      }
+      if (chars / doc.numPages < 20 && doc.numPages >= 3) {
+        throw new Error(`只抽到 ${chars} 个字（共 ${doc.numPages} 页）——这个 PDF 大概没有文字层（扫描件 / 图片版），需要先 OCR，或用 Calibre 转成带文字层的 epub / txt`);
+      }
+      return parts.filter(Boolean).join('\n\n');
+    } finally {
+      await doc.destroy().catch(() => {});
+    }
   }
 
   function splitChapters(text) {
@@ -622,7 +758,7 @@
     const results = ed.genResults || [];
     const list = chapters.map((c, i) => {
       const r = results[i];
-      const flag = r ? (r.error ? ' ✗' : ` ✓ ${(r.characters || []).length}人/${(r.relations || []).length}关系`) : '';
+      const flag = r ? (r.error ? ' ✗' : ` ✓ ${(r.characters || []).length}人/${(r.relations || []).length}关系${(r.places || []).length ? `/${r.places.length}地点` : ''}`) : '';
       return `<label class="ed-chk"><input type="checkbox" data-ch="${i}" ${ed.genSkip && ed.genSkip.has(i) ? '' : 'checked'}> ${esc(c.title)} <span class="hint">(${c.text.length} 字${flag})</span></label>`;
     }).join('');
     return `${head('整本生成', '上传/粘贴整本 → ① 分章 → ② 逐章生成（人物 id 沿用名单，保证能合并）→ ③ 合并去重 → 人工校对',
@@ -640,7 +776,7 @@
         <div class="ed-sub-head">整本原文
           <label class="ghost tiny" style="cursor:pointer">上传图书文件<input type="file" id="batch-file" accept=".txt,.md,.html,.htm,.epub,.pdf,text/plain,text/markdown,text/html,application/epub+zip,application/pdf" hidden></label>
           <button class="ghost tiny" type="button" data-tool="batch-clear">清空</button>
-          <span class="hint">支持 txt / md / html / epub；PDF 请先用 Calibre 等转成 txt 或 epub</span>
+          <span class="hint">支持 txt / md / html / epub / pdf；PDF 用内置 pdf.js 抽文字层（扫描件要先 OCR）</span>
         </div>
         <textarea id="batch-text" style="min-height:150px" placeholder="把整本 txt 粘贴到这里（或上传 .txt 文件）…">${ed.batchText ? esc(ed.batchText) : ''}</textarea>
       </div>
@@ -679,6 +815,13 @@
     return [...names.entries()].slice(0, 300).map(([id, name]) => `${id}: ${name}`).join('；');
   }
 
+  function batchPlaceRoster() {
+    const names = new Map();
+    for (const p of ed.book.places || []) names.set(p.id, p.name);
+    for (const r of ed.genResults || []) for (const p of (r && r.places) || []) if (!names.has(p.id)) names.set(p.id, p.name);
+    return [...names.entries()].slice(0, 100).map(([id, name]) => `${id}: ${name}`).join('；');
+  }
+
   async function batchRun() {
     const chapters = ed.chapters || [];
     if (!chapters.length) { batchLog('请先点「① 分章」', 'bad'); return; }
@@ -715,8 +858,8 @@
     return '你是文学作品的资料整理员，正在**逐章**整理一本书，供「人物关系 + 事件时间轴」应用使用。硬性要求：' +
       '严格输出 JSON（不要 markdown 围栏、不要解释）；**只从给定章节抽取**，不要引入本章没出现的内容；' +
       '人物 id 必须沿用「已有名单」里对应的 id，若是名单外的新人物才新起 id（拼音 kebab-case）；' +
-      'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」；' +
-      'events 的 ch 写这一章的章号，phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
+      'relations 每条至少 1 个「定义关系的小事件」，chapter 写「第N章」，place 写这条小事件发生的地点 id（有把握才写）；' +
+      'events 的 ch 写这一章的章号，place 写地点 id，phase 可省略（我会自动补）；phases 与 places 只在第 1 章输出（places 6–15 个，也用「已有名单」沿用 id）；' +
       'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文。';
   }
 
@@ -724,8 +867,10 @@
     const n = idx + 1;
     const body = ch.text.length > 40000 ? ch.text.slice(0, 40000) + '\n…（本章过长，已截断）' : ch.text;
     const roster = batchRoster();
+    const placeRoster = batchPlaceRoster();
     return `书名《${ed.book.meta.title || '未命名'}》，共 ${(ed.chapters || []).length} 章。现在是第 ${n} 章：${ch.title}。\n\n` +
       (roster ? `已有名单（同一个人必须沿用这些 id）：\n${roster}\n\n` : '') +
+      (placeRoster ? `已有地点名单（同一个地点必须沿用这些 id；events[].place / relations[].events[].place 只能引用这里的 id，或本章新出现的地点）：\n${placeRoster}\n\n` : '') +
       `JSON schema：\n${AI_SCHEMA}\n\n` +
       `请只从本章抽取，输出 JSON。events[].ch = ${n}；relations[].events[].chapter 写「第${n}章」。\n\n` +
       `<<<本章原文开始>>>\n${body}\n<<<本章原文结束>>>`;
@@ -733,7 +878,7 @@
 
   function mergeDraft(draft) {
     const b = ed.book;
-    const st = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0 };
+    const st = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0 };
     const byId = new Map(b.characters.map((c) => [c.id, c]));
     const byName = new Map(b.characters.map((c) => [c.name, c]));
     const mergeInto = (t, c) => {
@@ -757,6 +902,24 @@
       st.cAdd++;
     }
     for (const f of draft.factions || []) if (f.key && !b.factions.some((x) => x.key === f.key)) { b.factions.push(f); }
+    const placeById = new Map(b.places.map((p) => [p.id, p]));
+    const placeByName = new Map(b.places.map((p) => [p.name, p]));
+    const mergePlaceInto = (t, p) => {
+      t.aliases = [...new Set([...(t.aliases || []), ...(p.aliases || [])])];
+      if (!t.type && p.type) t.type = p.type;
+      if (!t.desc && p.desc) t.desc = p.desc;
+      if (!t.firstCh && p.firstCh) t.firstCh = p.firstCh;
+    };
+    for (const p of draft.places || []) {
+      const id = String(p.id || '').trim();
+      if (id && placeById.has(id)) { mergePlaceInto(placeById.get(id), p); continue; }
+      if (p.name && placeByName.has(p.name)) { mergePlaceInto(placeByName.get(p.name), p); continue; }
+      const item = { ...p, id: id || uid('pl'), firstCh: p.firstCh ?? 0 };
+      b.places.push(item);
+      placeById.set(item.id, item);
+      if (item.name) placeByName.set(item.name, item);
+      st.pAdd++;
+    }
     for (const p of draft.phases || []) if (p.id && !b.phases.some((x) => x.id === p.id)) b.phases.push(p);
     const fallbackPhase = (b.phases[0] || { id: 'p1' }).id;
     const relKey = (r) => `${r.from}|${r.to}|${(r.type || '').trim()}`;
@@ -783,20 +946,27 @@
       evIds.add(ev.id);
       st.eAdd++;
     }
+    // 容错：AI 偶尔把「地点名」当 id 用 —— 名字能对上就改回 id（避免留下悬空引用）
+    const placeNames = new Map(b.places.map((p) => [p.name, p.id]));
+    const fixPlace = (o) => {
+      if (o && o.place && !placeById.has(o.place) && placeNames.has(o.place)) o.place = placeNames.get(o.place);
+    };
+    for (const e of b.events) fixPlace(e);
+    for (const r of b.relations) for (const ev of r.events || []) fixPlace(ev);
     return st;
   }
 
   function batchMerge() {
     const results = (ed.genResults || []).filter((r) => r && !r.error);
     if (!results.length) { batchLog('还没有可合并的结果，先跑「② 逐章生成」', 'bad'); return; }
-    const total = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0 };
+    const total = { cAdd: 0, rAdd: 0, eAdd: 0, evAdd: 0, pAdd: 0 };
     for (const d of results) {
       const st = mergeDraft(d);
-      total.cAdd += st.cAdd; total.rAdd += st.rAdd; total.eAdd += st.eAdd; total.evAdd += st.evAdd;
+      total.cAdd += st.cAdd; total.rAdd += st.rAdd; total.eAdd += st.eAdd; total.evAdd += st.evAdd; total.pAdd += st.pAdd;
     }
     adopt(ed.book, true);
     saveDraft();
-    batchLog(`✓ 合并完成：+${total.cAdd} 人 / +${total.rAdd} 关系 / +${total.eAdd} 事件 / +${total.evAdd} 条小事件（并按 id 或姓名合并了重复人物）。记得逐条校对。`, 'ok');
+    batchLog(`✓ 合并完成：+${total.cAdd} 人 / +${total.pAdd} 地点 / +${total.rAdd} 关系 / +${total.eAdd} 事件 / +${total.evAdd} 条小事件（并按 id 或姓名合并了重复人物）。记得逐条校对。`, 'ok');
   }
 
   /* ---------------- 交互 ---------------- */
@@ -848,7 +1018,7 @@
       if (act === 'add') { ed.form = templateFor(sec); ed.editing = { sec, idx: null }; renderBody(); return; }
       if (act === 'edit') { ed.form = JSON.parse(JSON.stringify(list()[idx])); ed.editing = { sec, idx: Number(idx) }; renderBody(); return; }
       if (act === 'del') {
-        const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营' })[sec] || sec;
+        const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营', places: '地点' })[sec] || sec;
         if (confirm(`删除这条${what}？`)) {
           const removed = list()[Number(idx)];
           list().splice(Number(idx), 1);
@@ -862,7 +1032,7 @@
       if (act === 'meta-save') { saveDraft(); renderBody(); return; }
       if (act === 'rel-add-event') {
         ed.form.events = ed.form.events || [];
-        ed.form.events.push({ text: '', chapter: '' });
+        ed.form.events.push({ text: '', chapter: '', place: '' });
         renderBody();
         return;
       }
@@ -899,7 +1069,10 @@
       const file = ev.target.files[0];
       if (!file) return;
       try {
-        const { text, kind } = await readBookFile(file);
+        const { text, kind } = await readBookFile(file, (n, total) => {
+          const out = document.getElementById('batch-out');
+          if (out) { out.className = 'ed-msg'; out.textContent = `⏳ 正在解析 PDF 第 ${n} / ${total} 页…`; }
+        });
         ed.batchText = text;
         ed.chapters = [];
         ed.genResults = [];
@@ -936,7 +1109,7 @@
       const item = buildItem(sec);
       if (!item) return;
       const idx = ed.editing.idx;
-      const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营' })[sec] || sec;
+      const what = ({ characters: '人物', relations: '关系', events: '事件', phases: '阶段', factions: '阵营', places: '地点' })[sec] || sec;
       if (idx === null) ed.book[sec].push(item); else ed.book[sec][idx] = item;
       ed.editing = null;
       snapshotBook(`${idx === null ? '新增' : '修改'}${what}${item.name ? '「' + item.name + '」' : ''}`);
@@ -947,10 +1120,11 @@
 
   function templateFor(sec) {
     if (sec === 'characters') return { id: '', name: '', aliases: [], generation: 1, gender: 'm', firstCh: 1, faction: (ed.book.factions[0] || {}).key || '', title: '', desc: '', fate: '', note: '' };
-    if (sec === 'relations') return { from: (ed.book.characters[0] || {}).id || '', to: (ed.book.characters[1] || ed.book.characters[0] || {}).id || '', type: '', style: 'solid', events: [{ text: '', chapter: '' }] };
+    if (sec === 'relations') return { from: (ed.book.characters[0] || {}).id || '', to: (ed.book.characters[1] || ed.book.characters[0] || {}).id || '', type: '', style: 'solid', events: [{ text: '', chapter: '', place: '' }] };
     if (sec === 'events') return { id: uid('e'), name: '', phase: (ed.book.phases[0] || {}).id || '', order: (ed.book.events.length + 1), ch: 1, chars: [], summary: '', impact: '', quote: '' };
     if (sec === 'phases') return { id: uid('p'), name: '', order: ed.book.phases.length + 1 };
     if (sec === 'factions') return { key: '', name: '', color: '#8b94a7' };
+    if (sec === 'places') return { id: '', name: '', aliases: [], type: '', firstCh: 1, desc: '' };
     return {};
   }
 
@@ -960,7 +1134,7 @@
       const item = {
         ...f,
         id: (f.id || '').trim() || uid('c'),
-        aliases: typeof f.aliases === 'string' ? f.aliases.split(/[，,、]/).map((s) => s.trim()).filter(Boolean) : (f.aliases || []),
+        aliases: toList(f.aliases),
         generation: Number(f.generation) || 0,
         firstCh: Number(f.firstCh) || 0,
         gender: f.gender === 'f' ? 'f' : 'm'
@@ -986,6 +1160,10 @@
     if (sec === 'factions') {
       if (!f.key || !f.name) { alert('key 和名称都要填'); return null; }
       return { key: f.key, name: f.name, color: f.color || '#8b94a7' };
+    }
+    if (sec === 'places') {
+      if (!(f.name || '').trim()) { alert('地点名不能为空'); return null; }
+      return { ...f, id: (f.id || '').trim() || uid('pl'), name: f.name.trim(), type: (f.type || '').trim(), aliases: toList(f.aliases), firstCh: Number(f.firstCh) || 0, desc: f.desc || '' };
     }
     return null;
   }
