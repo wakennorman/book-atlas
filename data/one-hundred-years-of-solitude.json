@@ -58,7 +58,9 @@
       "id": "jose-arcadio-buendia",
       "name": "何塞·阿尔卡蒂奥·布恩迪亚",
       "aliases": [
-        "老何塞"
+        "老何塞",
+        "霍塞·阿卡迪奥·布恩迪亚",
+        "霍塞·阿卡迪奥"
       ],
       "generation": 1,
       "faction": "buendia",
@@ -73,7 +75,9 @@
       "id": "ursula",
       "name": "乌尔苏拉·伊瓜兰",
       "aliases": [
-        "乌尔苏拉"
+        "乌尔苏拉",
+        "乌苏拉",
+        "乌苏拉·伊瓜兰"
       ],
       "generation": 1,
       "faction": "buendia",
@@ -98,7 +102,9 @@
     {
       "id": "visitacion",
       "name": "维希塔香",
-      "aliases": [],
+      "aliases": [
+        "比西塔西翁"
+      ],
       "generation": 1,
       "faction": "outsider",
       "title": "瓜希拉来的印第安女人",
@@ -110,7 +116,9 @@
     {
       "id": "melquiades",
       "name": "梅尔基亚德斯",
-      "aliases": [],
+      "aliases": [
+        "墨尔基阿德斯"
+      ],
       "generation": 0,
       "faction": "gypsy",
       "title": "吉普赛智者",
@@ -123,7 +131,9 @@
       "id": "jose-arcadio-2",
       "name": "何塞·阿尔卡蒂奥（第二代）",
       "aliases": [
-        "巨人"
+        "巨人",
+        "霍塞·阿卡迪奥（第二代）",
+        "霍塞·阿卡迪奥第二"
       ],
       "generation": 2,
       "faction": "buendia",
@@ -138,7 +148,9 @@
       "id": "aureliano-colonel",
       "name": "奥雷里亚诺·布恩迪亚上校",
       "aliases": [
-        "上校"
+        "上校",
+        "奥雷良诺·布恩迪亚上校",
+        "奥雷良诺上校"
       ],
       "generation": 2,
       "faction": "war",
@@ -152,7 +164,9 @@
     {
       "id": "amaranta",
       "name": "阿玛兰妲",
-      "aliases": [],
+      "aliases": [
+        "阿玛兰塔"
+      ],
       "generation": 2,
       "faction": "buendia",
       "title": "老何塞之女",
@@ -164,7 +178,9 @@
     {
       "id": "rebeca",
       "name": "丽贝卡",
-      "aliases": [],
+      "aliases": [
+        "雷贝卡"
+      ],
       "generation": 2,
       "faction": "buendia",
       "title": "养女",
@@ -176,7 +192,9 @@
     {
       "id": "pilar-ternera",
       "name": "皮拉尔·特内拉",
-      "aliases": [],
+      "aliases": [
+        "皮拉·苔列娜"
+      ],
       "generation": 2,
       "faction": "outsider",
       "title": "纸牌占卜女",
@@ -188,7 +206,10 @@
     {
       "id": "remedios-moscote",
       "name": "蕾梅黛丝·莫科特",
-      "aliases": [],
+      "aliases": [
+        "雷梅苔丝·莫科特",
+        "雷梅黛丝·莫科特"
+      ],
       "generation": 2,
       "faction": "outsider",
       "title": "镇长之女，上校之妻",
@@ -304,7 +325,8 @@
       "id": "arcadio",
       "name": "阿尔卡蒂奥",
       "aliases": [
-        "何塞·阿尔卡蒂奥（第三代）"
+        "何塞·阿尔卡蒂奥（第三代）",
+        "阿卡迪奥"
       ],
       "generation": 3,
       "faction": "buendia",
@@ -318,7 +340,9 @@
     {
       "id": "santa-sofia",
       "name": "桑塔索菲亚·德拉·彼达",
-      "aliases": [],
+      "aliases": [
+        "圣索菲亚·德·拉·彼达"
+      ],
       "generation": 3,
       "faction": "buendia",
       "title": "阿尔卡蒂奥的伴侣",
@@ -330,7 +354,9 @@
     {
       "id": "aureliano-jose",
       "name": "奥雷里亚诺·何塞",
-      "aliases": [],
+      "aliases": [
+        "奥雷良诺·霍塞"
+      ],
       "generation": 3,
       "faction": "buendia",
       "title": "上校之子",
@@ -356,7 +382,10 @@
     {
       "id": "remedios-beauty",
       "name": "美人儿蕾梅黛丝",
-      "aliases": [],
+      "aliases": [
+        "美人儿雷梅苔丝",
+        "俏姑娘雷梅苔丝"
+      ],
       "generation": 4,
       "faction": "buendia",
       "title": "阿尔卡蒂奥之女",
@@ -369,7 +398,9 @@
     {
       "id": "aureliano-segundo",
       "name": "奥雷里亚诺第二",
-      "aliases": [],
+      "aliases": [
+        "奥雷良诺第二"
+      ],
       "generation": 4,
       "faction": "buendia",
       "title": "双胞胎之一",
@@ -381,7 +412,9 @@
     {
       "id": "jose-arcadio-segundo",
       "name": "何塞·阿尔卡蒂奥第二",
-      "aliases": [],
+      "aliases": [
+        "霍塞·阿卡迪奥第二"
+      ],
       "generation": 4,
       "faction": "buendia",
       "title": "双胞胎之二",
@@ -405,7 +438,9 @@
     {
       "id": "fernanda",
       "name": "费尔南达·德尔·卡皮奥",
-      "aliases": [],
+      "aliases": [
+        "菲南达"
+      ],
       "generation": 4,
       "faction": "outsider",
       "title": "没落贵族出身的妻子",
@@ -417,7 +452,9 @@
     {
       "id": "mr-brown",
       "name": "布朗先生",
-      "aliases": [],
+      "aliases": [
+        "杰克·布朗"
+      ],
       "generation": 4,
       "faction": "company",
       "title": "香蕉公司老板",
@@ -456,7 +493,9 @@
     {
       "id": "mauricio",
       "name": "马乌里肖·巴比伦",
-      "aliases": [],
+      "aliases": [
+        "马乌里肖"
+      ],
       "generation": 5,
       "faction": "outsider",
       "title": "香蕉公司汽修学徒",
@@ -505,7 +544,9 @@
       "id": "aureliano-babilonia",
       "name": "奥雷里亚诺·巴比伦（第六代）",
       "aliases": [
-        "小奥雷里亚诺"
+        "小奥雷里亚诺",
+        "奥雷良诺·巴比伦尼亚",
+        "奥雷良诺·布恩迪亚（第六代）"
       ],
       "generation": 6,
       "faction": "buendia",
@@ -617,6 +658,85 @@
       "desc": "乌尔苏拉的姑妈嫁给老何塞的叔父所生；一辈子穿肥大裤子，拖着一条拔塞器形状的软骨尾巴。",
       "fate": "守了四十二年童贞后，请屠夫朋友用肉斧砍掉尾巴，失血而死。",
       "note": "整个家族的「猪尾巴」诅咒就从这里开始（第 1 章）；也是全书结局的伏笔。"
+    },
+    {
+      "id": "cataure",
+      "name": "卡塔乌雷",
+      "aliases": [
+        "卡塔乌雷王子"
+      ],
+      "generation": 1,
+      "faction": "outsider",
+      "title": "瓜希拉王国的王子 · 比西塔西翁之兄",
+      "desc": "比西塔西翁的哥哥，兄妹俩为躲避家乡的失眠症逃到马孔多；他比谁都先认出失眠症又来了。",
+      "fate": "失眠症重新出现时，他连夜逃走，从此再没回来。",
+      "gender": "m",
+      "firstCh": 2
+    },
+    {
+      "id": "catalan-sage",
+      "name": "加泰罗尼亚智者",
+      "aliases": [
+        "加泰罗尼亚人",
+        "书店老板"
+      ],
+      "generation": 1,
+      "faction": "outsider",
+      "title": "书店老板 · 加泰罗尼亚人",
+      "desc": "在马孔多开了间书店，由着奥雷里亚诺·巴比伦白看书，还给他讲欧洲的风物；几个加泰罗尼亚人每天在他店里争论。",
+      "fate": "卖掉书店回了故乡，后来又写信说想念马孔多、还想回来。",
+      "gender": "m",
+      "firstCh": 11
+    },
+    {
+      "id": "alvaro",
+      "name": "阿尔瓦罗",
+      "aliases": [],
+      "generation": 1,
+      "faction": "outsider",
+      "title": "加泰罗尼亚人 · 书店常客",
+      "desc": "书店那一伙加泰罗尼亚人里最健谈的一个，下午聚在书店后间争论不休。",
+      "fate": "在马孔多耗着，始终没动身回故乡。",
+      "gender": "m",
+      "firstCh": 12
+    },
+    {
+      "id": "herman",
+      "name": "赫尔曼",
+      "aliases": [],
+      "generation": 1,
+      "faction": "outsider",
+      "title": "加泰罗尼亚人 · 书店常客",
+      "desc": "和阿尔瓦罗一起在书店里争论、听留声机，也拉着奥雷里亚诺·巴比伦用纸牌算命。",
+      "fate": "和同乡们一样，把回乡的日子一拖再拖。",
+      "gender": "m",
+      "firstCh": 12
+    },
+    {
+      "id": "alfonso",
+      "name": "阿方索",
+      "aliases": [],
+      "generation": 1,
+      "faction": "outsider",
+      "title": "加泰罗尼亚人 · 书店常客",
+      "desc": "书店那几个加泰罗尼亚人中最年轻的一个，跟着他们一泡就是一下午。",
+      "fate": "最后一批离开马孔多的人里，就有他。",
+      "gender": "m",
+      "firstCh": 12
+    },
+    {
+      "id": "achilles-ricardo",
+      "name": "阿基莱斯·里卡多上校",
+      "aliases": [
+        "阿基莱斯·里卡多"
+      ],
+      "generation": 1,
+      "faction": "gov",
+      "title": "政府军上校",
+      "desc": "保守党／政府军一方的军官，率部攻下被自由党人占据的马孔多。",
+      "fate": "攻下马孔多后，据守的阿尔卡蒂奥被擒处决。",
+      "gender": "m",
+      "firstCh": 7
     }
   ],
   "relations": [
@@ -2813,6 +2933,111 @@
           "chapter": ""
         }
       ]
+    },
+    {
+      "from": "cataure",
+      "to": "visitacion",
+      "type": "兄妹",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "卡塔乌雷与妹妹比西塔西翁（维希塔香）一起从瓜希拉王国逃到马孔多，躲的就是家乡那场失眠症。",
+          "chapter": "第2章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "cataure",
+      "to": "ursula",
+      "type": "寄居／辞别",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "卡塔乌雷和妹妹寄住在布恩迪亚家；他一认出失眠症又回来了，就连夜逃走，乌尔苏拉再也没见过他。",
+          "chapter": "第2章",
+          "place": "casa"
+        }
+      ]
+    },
+    {
+      "from": "catalan-sage",
+      "to": "aureliano-babilonia",
+      "type": "忘年交／启蒙",
+      "style": "solid",
+      "events": [
+        {
+          "text": "小奥雷里亚诺几乎每个下午都泡在加泰罗尼亚人的书店里看那些没人买的书，店主由着他看，还给他讲欧洲的事。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "catalan-sage",
+      "to": "alvaro",
+      "type": "同乡／旧友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "几个加泰罗尼亚人每天下午在书店后间争论，生意冷清，谁也没真打算回故乡。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "alvaro",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿尔瓦罗和赫尔曼、阿方索把奥雷里亚诺·巴比伦拉进他们的下午：争论、听留声机、用纸牌算命。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "herman",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "赫尔曼用纸牌给奥雷里亚诺·巴比伦算命，说他哪儿也去不了——这话后来应验了。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "alfonso",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿方索是那伙人里最年轻的；他们一起在马孔多耗掉一个个下午，直到最后一个一个离开。",
+          "chapter": "第13章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "achilles-ricardo",
+      "to": "arcadio",
+      "type": "对阵／处决",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "阿基莱斯·里卡多上校率政府军攻下马孔多；据守的阿尔卡蒂奥被擒，随后被枪决。",
+          "chapter": "第7章",
+          "place": "escuela"
+        }
+      ]
     }
   ],
   "phases": [
@@ -2889,7 +3114,8 @@
         "ursula",
         "rebeca",
         "melquiades",
-        "visitacion"
+        "visitacion",
+        "cataure"
       ],
       "summary": "失眠症先在布恩迪亚家传开，继而全村失眠、遗忘；人们给每样东西贴上名字，梅尔基亚德斯带回药水才治好了这场时疫。",
       "impact": "「记住」成为全书主题之一。",
