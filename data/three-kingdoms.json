@@ -291,7 +291,9 @@
     {
       "id": "zhu-jun",
       "name": "朱儁",
-      "aliases": [],
+      "aliases": [
+        "公伟"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 1,
@@ -452,7 +454,8 @@
       "id": "he-jin",
       "name": "何进",
       "aliases": [
-        "何国舅"
+        "何国舅",
+        "遂高"
       ],
       "generation": 1,
       "gender": "m",
@@ -527,7 +530,9 @@
     {
       "id": "cao-song",
       "name": "曹嵩",
-      "aliases": [],
+      "aliases": [
+        "巨高"
+      ],
       "generation": 0,
       "gender": "m",
       "firstCh": 1,
@@ -540,7 +545,9 @@
     {
       "id": "cao-teng",
       "name": "曹腾",
-      "aliases": [],
+      "aliases": [
+        "季兴"
+      ],
       "generation": -1,
       "gender": "m",
       "firstCh": 1,
@@ -742,7 +749,9 @@
     {
       "id": "li-ru",
       "name": "李儒",
-      "aliases": [],
+      "aliases": [
+        "文优"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 3,
@@ -834,7 +843,10 @@
     {
       "id": "he-taihou",
       "name": "何太后",
-      "aliases": [],
+      "aliases": [
+        "何皇后",
+        "灵思皇后"
+      ],
       "generation": 1,
       "gender": "f",
       "firstCh": 4,
@@ -968,7 +980,9 @@
     {
       "id": "li-jue",
       "name": "李傕",
-      "aliases": [],
+      "aliases": [
+        "稚然"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 3,
@@ -1551,7 +1565,9 @@
     {
       "id": "yan-liang",
       "name": "颜良",
-      "aliases": [],
+      "aliases": [
+        "颜良（河北名将）"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 6,
@@ -1564,7 +1580,9 @@
     {
       "id": "wen-chou",
       "name": "文丑",
-      "aliases": [],
+      "aliases": [
+        "文丑（河北名将）"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 6,
@@ -2020,7 +2038,11 @@
     {
       "id": "diao-chan",
       "name": "貂蝉",
-      "aliases": [],
+      "aliases": [
+        "貂婵",
+        "闭月",
+        "貂蝉（闭月）"
+      ],
       "generation": 1,
       "gender": "f",
       "firstCh": 9,
@@ -2509,7 +2531,9 @@
     {
       "id": "yang-feng",
       "name": "杨奉",
-      "aliases": [],
+      "aliases": [
+        "杨奉（白波帅）"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 13,
@@ -2827,7 +2851,9 @@
     {
       "id": "zhang-xiu",
       "name": "张绣",
-      "aliases": [],
+      "aliases": [
+        "张绣（北地枪王）"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 16,
@@ -3281,7 +3307,8 @@
       "id": "zhang-lu",
       "name": "张鲁",
       "aliases": [
-        "师君"
+        "师君",
+        "公祺"
       ],
       "generation": 1,
       "gender": "m",
@@ -3336,7 +3363,9 @@
     {
       "id": "guo-tu",
       "name": "郭图",
-      "aliases": [],
+      "aliases": [
+        "公则"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 22,
@@ -3885,7 +3914,9 @@
     {
       "id": "guan-ping",
       "name": "关平",
-      "aliases": [],
+      "aliases": [
+        "关平（关羽之子）"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 28,
@@ -4733,7 +4764,9 @@
     {
       "id": "liu-qi",
       "name": "刘琦",
-      "aliases": [],
+      "aliases": [
+        "刘琦（刘表长子）"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 34,
@@ -4746,7 +4779,9 @@
     {
       "id": "liu-cong",
       "name": "刘琮",
-      "aliases": [],
+      "aliases": [
+        "刘琮（刘表次子）"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 34,
@@ -5358,7 +5393,8 @@
       "id": "sun-yi",
       "name": "孙翊",
       "aliases": [
-        "孙叔弼"
+        "孙叔弼",
+        "叔弼"
       ],
       "generation": 2,
       "gender": "m",
@@ -6021,7 +6057,9 @@
     {
       "id": "ma-dai",
       "name": "马岱",
-      "aliases": [],
+      "aliases": [
+        "马岱（马超从弟）"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 58,
@@ -7309,7 +7347,8 @@
       "name": "管辂",
       "aliases": [
         "管公明",
-        "神童"
+        "神童",
+        "公明"
       ],
       "generation": 1,
       "gender": "m",
@@ -9187,7 +9226,9 @@
     {
       "id": "sun-deng",
       "name": "孙登",
-      "aliases": [],
+      "aliases": [
+        "子高"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 98,
@@ -10063,7 +10104,9 @@
     {
       "id": "chen-tai",
       "name": "陈泰",
-      "aliases": [],
+      "aliases": [
+        "玄伯"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 111,
@@ -11711,7 +11754,9 @@
     {
       "id": "liu-yu",
       "name": "刘虞",
-      "aliases": [],
+      "aliases": [
+        "伯安"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 2,

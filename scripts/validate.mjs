@@ -58,8 +58,7 @@ function validate(file) {
     }
     if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`);
     if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`);
-    if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`);
-    if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
+    if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`);    if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
     if (ids.has(c.id)) err(`角色 id 重复：${c.id}`);
     ids.add(c.id);
     const n = names.get(c.name) || [];
@@ -96,6 +95,39 @@ function validate(file) {
       if (!e.text) err(`${where} 的事件缺少 text`);
       else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`);
     }
+  }
+
+  // ---------- 别名覆盖（搜索命中率）----------
+  // 读者习惯用「字/号/俗称/自己那版译名」搜——没有别名就等于搜不到。
+  // 只对"有关系、关系不少、却一个别名都没有"的人物提示（次要人物不苛求）。
+  const relCount = new Map();
+  for (const r of rels) { relCount.set(r.from, (relCount.get(r.from) || 0) + 1); relCount.set(r.to, (relCount.get(r.to) || 0) + 1); }
+  const noAlias = chars.filter((c) => !(c.aliases || []).length && (relCount.get(c.id) || 0) >= 8);
+  if (noAlias.length) {
+    const names = noAlias.slice(0, 6).map((c) => `${c.name}(${relCount.get(c.id)})`).join('、');
+    warn(`${noAlias.length} 个主要人物没有任何别名（${names}${noAlias.length > 6 ? ' …' : ''}）——建议补字号/俗称/异体译名，否则按俗称搜不到（跑 node scripts/audit-search.mjs 看全量报告）`);
+  }
+
+  // ---------- 亲子方向（成环 = 方向写反了）----------
+  {
+    const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;
+    const adj = new Map();
+    for (const r of rels) {
+      if (!PARENT_CHILD.test(String(r.type || '').replace(/[（(].*$/, '').trim())) continue;
+      if (!adj.has(r.from)) adj.set(r.from, []);
+      adj.get(r.from).push(r.to);
+    }
+    const color = new Map(); const cycles = [];
+    const dfs = (u, stack) => {
+      color.set(u, 1); stack.push(u);
+      for (const v of adj.get(u) || []) {
+        if (color.get(v) === 1) { const i = stack.indexOf(v); cycles.push(stack.slice(i).concat(v).map((x) => (chars.find((c) => c.id === x) || {}).name || x).join(' → ')); }
+        else if (!color.get(v)) dfs(v, stack);
+      }
+      stack.pop(); color.set(u, 2);
+    };
+    for (const k of adj.keys()) if (!color.get(k)) dfs(k, []);
+    for (const cy of [...new Set(cycles)].slice(0, 5)) warn(`亲子关系成环（多半是方向写反了）：${cy}——跑 node scripts/fix-parent-cycles.mjs`);
   }
 
   const phases = new Set((book.phases || []).map((p) => p.id));

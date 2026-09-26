@@ -182,6 +182,24 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 **方向必须先修对**（`node scripts/fix-parent-cycles.mjs --all [--write]`）：AI 生成的数据里亲子方向会写反（互反双写 / 单向写反两种），脚本按人工核对表修正 + 亲子环检测；**别用统计判据**（"孩子多的人像父母"会把曹操当成曹嵩的爹，"父母先出场"会把伏完和女儿判反）。
 
+### 别名 · 译名 · 搜索命中率（`aliases` 的用法）
+
+**为什么**：读者不会照着数据的全名搜——他们搜「字／号／俗称／小名／自己那版的译名」。`aliases` 漏一个叫法，就等于那个人搜不到（实测：用户按「比西塔西翁」搜《百年孤独》里的维希塔香，搜不到）。
+
+**规则**
+
+1. `aliases` 收**全名以外的一切叫法**：字号（孔明/卧龙、玄德、仲谋）、俗称（美髯公、小霸王、常胜将军）、小名（阿瞒、梅梅、罗佳）、**其他译本的写法**（奥雷良诺/乌苏拉/雷贝卡/墨尔基阿德斯/拉斯科利尼科夫/马尔梅拉多夫…）
+2. **只加确定的**：拿不准的字宁可留空（`annotate` 式的猜法不适用于人名）
+3. 主要人物（关系数多、读者最可能搜的）**必须有别名**；次要人物尽力而为
+4. 每本书整理完**必跑** `node scripts/audit-search.mjs --all`，四条检查：
+   - ① 有关系的"主要人物"却没别名 → 补字号/俗称/译名
+   - ② 译名变体缺失（内置音译差异表，`--write` 可自动补：奥雷里亚诺↔奥雷良诺、普鲁邓希奥↔普鲁登西奥…）
+   - ③ 全书文案里"姓氏+名"的候选但书里没这个人 → **疑似漏人**，人工确认后补人物
+   - ④ 去掉括号后同名 → 可能是同一人被拆成两条，也可能是真重名（两个马忠）
+5. `validate.mjs` 会替你把关：**有关系却没别名**的人物会告警（≥8 条关系阈值），亲子成环也会告警
+
+> 译名对照（已做进数据）：范晔版 ↔ 黄锦炎/高长荣版（维希塔香/比西塔西翁、乌尔苏拉/乌苏拉、梅尔基亚德斯/墨尔基阿德斯、阿玛兰妲/阿玛兰塔、费尔南达/菲南达、皮拉尔·特内拉/皮拉·苔列娜…）；汝龙版 ↔ 朱海观/王汶版（拉斯柯尔尼科夫/拉斯科利尼科夫、索尼雅/索尼娅、杜尼雅/杜尼娅、玛尔美拉朵夫/马尔梅拉多夫…）；《三国演义》按**字**（孔明、云长、翼德、孟德、仲谋、公瑾、士载、伯约…）。
+
 ### 剧透保护（书里带这三个字段就能用）
 
 - `meta.chapters`（总章数）、`characters[].firstCh`（首次出场章）、`events[].ch`（发生章）
@@ -204,7 +222,8 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 | 脚本 | 用途 |
 |---|---|
-| `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）检查。`node scripts/validate.mjs --all` 一把过 |
+| `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）+ **别名覆盖** + **亲子成环**。`node scripts/validate.mjs --all` 一把过 |
+| `scripts/audit-search.mjs` | **搜索命中率审计**：别名覆盖 / 译名变体（`--write` 自动补）/ 疑似漏人 / 同名重复：`node scripts/audit-search.mjs --all [--write]` |
 | `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
 | `scripts/fix-parent-cycles.mjs` | 修亲子关系方向（人工核对表）+ 报告可疑方向 + 亲子环检测：`node scripts/fix-parent-cycles.mjs --all [--write]` |
 | `scripts/derive-kin.mjs` | 族谱补全：从亲子边推导祖孙/曾祖孙/叔侄等（`derived: true`，图上虚线+「推导」标）：`node scripts/derive-kin.mjs --all [--write]` |
