@@ -496,7 +496,7 @@
       series: [{
         type: 'graph',
         layout: (state.frozen && !state.focus) ? 'none' : 'force',
-        roam: true, draggable: false,   // 拖动节点由我们自己实现（见下面的 mousedown/mousemove/mouseup）
+        roam: false, draggable: false,   // 漫游/拖动都由我们自己实现（ECharts 的漫游会在拖节点时同时平移画布，看起来就是"点不动"）
         // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
         ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
@@ -930,6 +930,18 @@
       <button class="ghost tiny" type="button" data-drag-reset="1">复原布局</button>`;
   }
 
+  /** 平移/缩放用的节流重绘（自己实现漫游：拖空白＝平移，滚轮＝以光标为中心缩放） */
+  let viewRenderTimer = null;
+  function scheduleViewRender() {
+    if (viewRenderTimer) return;
+    viewRenderTimer = setTimeout(() => {
+      viewRenderTimer = null;
+      if (!state.chart) return;
+      computeLabels(state.zoom);
+      state.chart.setOption(buildOption());     // 合并渲染（含 zoom/center）
+    }, 50);
+  }
+
   /** 供"使用说明"演示：等价于用户拖了一下这个节点 */
   function simulateDrag(id, dx = 70, dy = -46) {
     const p = state.pos.get(id);
@@ -1078,6 +1090,43 @@
     };
     state.chart.getZr().on('mouseup', finishDrag);
     state.chart.getZr().on('mouseout', finishDrag);
+
+    // ── 自己实现平移（拖空白）与缩放（滚轮，以光标为中心）──
+    let panState = null;
+    const canvasCenter = () => { const r = el.getBoundingClientRect(); return [r.width / 2, r.height / 2]; };
+    state.chart.getZr().on('mousedown', (e) => {
+      if (dragState) return;                                   // 已经按在节点上
+      const [x, y] = evXY(e);
+      if (state.nodeDrag && hitNodeAt(x, y)) return;           // 命中节点 ⇒ 交给拖节点
+      panState = { x, y };
+    });
+    state.chart.getZr().on('mousemove', (e) => {
+      if (!panState || dragState) return;
+      const [x, y] = evXY(e);
+      const z = Math.max(0.02, state.zoom || 1);
+      const c = state.viewCenter || [0, 0];
+      state.viewCenter = [c[0] - (x - panState.x) / z, c[1] - (y - panState.y) / z];
+      panState = { x, y };
+      scheduleViewRender();
+    });
+    state.chart.getZr().on('mouseup', () => { panState = null; });
+    state.chart.getZr().on('mouseout', () => { panState = null; });
+    state.chart.getZr().on('mousewheel', (e) => {
+      const raw = e.event || {};
+      if (raw.preventDefault) raw.preventDefault();
+      const dir = (raw.wheelDelta !== undefined ? raw.wheelDelta : -(raw.deltaY || 0)) > 0 ? 1 : -1;
+      const z = Math.max(0.02, state.zoom || 1);
+      const z2 = Math.max(0.02, Math.min(40, z * (dir > 0 ? 1.15 : 1 / 1.15)));
+      if (z2 === z) return;
+      const [x, y] = evXY(e);
+      const [cx, cy] = canvasCenter();
+      const c = state.viewCenter || [0, 0];
+      // 让光标下的那个点保持不动（以光标为中心缩放）
+      const sc = [c[0] + (x - cx) / z, c[1] + (y - cy) / z];
+      state.zoom = z2;
+      state.viewCenter = [sc[0] - (x - cx) / z2, sc[1] - (y - cy) / z2];
+      scheduleViewRender();
+    });
 
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
     state.chart.on('graphroam', (p) => {
