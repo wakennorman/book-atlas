@@ -1196,6 +1196,73 @@
   }
 
   /* ---------------- 搜索 / 主题 / 事件绑定 ---------------- */
+  /* ---------------- 使用说明的「试一下」：直接用当前这本书在图上演示 ---------------- */
+  function runHelpAct(act) {
+    if (!state.book || !state.chart) return;
+    const ranked = (n) => (state.book.characters || []).slice().sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))[n] || null;
+    const hub = ranked(0);
+    const hubId = hub && hub.id;
+    switch (act) {
+      case 'open':
+        if (hubId) selectCharacter(hubId);
+        break;
+      case 'search': {
+        if (!hub) break;
+        const q = (hub.aliases && hub.aliases.length) ? hub.aliases[0] : hub.name;
+        const inp = document.getElementById('search-input');
+        if (inp) { inp.value = q; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); }
+        break;
+      }
+      case 'size':
+        applySizeFilter(state.sizeFilter === 'main' ? 'all' : 'main');
+        break;
+      case 'focus':
+        if (hubId) applyFocus(hubId, 1);
+        break;
+      case 'zoom': {
+        if (!hubId) break;
+        const p = state.pos.get(hubId);
+        applyZoom(Math.min(40, 1 / (Math.abs(state.fitLast) || 1)), p ? [p.x, p.y] : [0, 0]);
+        break;
+      }
+      case 'place': {
+        const used = new Map();
+        for (const e of state.book.events) if (e.place && !eventLocked(e)) used.set(e.place, (used.get(e.place) || 0) + 1);
+        for (const r of state.book.relations) for (const ev of r.events || []) if (ev.place) used.set(ev.place, (used.get(ev.place) || 0) + 1);
+        const best = [...used.entries()].sort((a, b) => b[1] - a[1])[0];
+        if (best) applyPlaceFilter(best[0]);
+        break;
+      }
+      case 'spoiler': {
+        const m = document.getElementById('spoiler-modal');
+        if (m) m.hidden = false;
+        break;
+      }
+      case 'path': {
+        if (!hubId) break;
+        const other = (state.adj.get(hubId) || []).map((e) => e.to).sort((x, y) => nodeDegree(y) - nodeDegree(x))[0];
+        const pa = document.getElementById('path-a'), pb = document.getElementById('path-b');
+        if (other && pa && pb) { pa.value = hubId; pb.value = other; runPath(); }
+        break;
+      }
+      case 'layout': {
+        const order = ['force', 'gen-h', 'gen-v'];
+        setView(order[(order.indexOf(state.view) + 1) % order.length]);
+        break;
+      }
+      case 'derived': {
+        state.showDerived = !state.showDerived;
+        try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+        const btn = document.getElementById('derived-btn');
+        if (btn) btn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏';
+        if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
+        refreshPanel();
+        updateCountHint();
+        break;
+      }
+    }
+  }
+
   function bindUI() {
     const search = $('#search-input');
     const doSearch = () => {
@@ -1320,7 +1387,22 @@
       resetRoam();
     });
 
-    // 剧透弹窗：用事件委托 + Esc，确保任何情况下都关得掉
+    // 使用说明面板（每条都能在图上真演示一遍）
+    const helpModal = document.getElementById('help-modal');
+    const closeHelp = () => { if (helpModal) helpModal.hidden = true; };
+    const helpBtn = document.getElementById('help-btn');
+    if (helpBtn && helpModal) helpBtn.addEventListener('click', () => { helpModal.hidden = false; helpModal.querySelector('.modal').scrollTop = 0; });
+    if (helpModal) {
+      helpModal.addEventListener('click', (ev) => {
+        if (ev.target === helpModal || ev.target.closest('[data-help-close]')) closeHelp();
+      });
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !helpModal.hidden) closeHelp(); });
+      helpModal.querySelectorAll('[data-help-act]').forEach((btn) => btn.addEventListener('click', () => {
+        runHelpAct(btn.dataset.helpAct);
+        closeHelp();
+      }));
+    }
+
     document.addEventListener('click', (ev) => {
       if (ev.target.closest('#spoiler-off') || ev.target.closest('#spoiler-close')) { applySpoiler(false); return; }
       if (ev.target.closest('#spoiler-on')) {

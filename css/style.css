@@ -140,7 +140,44 @@ main {
 .rel-head .type { color: var(--muted); }
 
 /* 亲属关系徽章（血缘 / 婚姻 / 姻亲 / 收养 / 抚养 / 继亲 / 结义）——见 scripts/kin.mjs 的规则 */
-/* 聚焦条（无限画布的"放大镜"提示） */
+/* ---------- 使用说明（右上「📖 怎么用」） ---------- */
+.help-modal { max-width: 780px; }
+.help-list { display: grid; gap: 12px; margin-top: 12px; }
+.help-item {
+  display: grid; grid-template-columns: 156px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-2);
+}
+.help-fig { display: flex; align-items: center; justify-content: center; }
+.help-fig svg { width: 150px; height: 84px; display: block; }
+.help-text b { display: block; font-size: 14px; margin-bottom: 4px; }
+.help-text span { display: block; font-size: 13px; color: var(--muted); line-height: 1.65; }
+.help-text .ghost, .help-text .icon-btn { margin: 8px 6px 0 0; display: inline-block; text-decoration: none; }
+@media (max-width: 700px) {
+  .help-item { grid-template-columns: 1fr; }
+  .help-fig svg { width: 100%; max-width: 200px; }
+}
+
+/* 示意动画（纯 CSS，不依赖录屏） */
+@keyframes hfCursor { 0%, 10% { transform: translate(10px, 20px); } 32%, 46% { transform: translate(44px, 38px); } 58%, 100% { transform: translate(10px, 20px); } }
+@keyframes hfAppear { 0%, 44% { opacity: 0; transform: translateX(10px); } 56%, 92% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; } }
+@keyframes hfPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes hfFade { 0%, 20% { opacity: .25; } 45%, 75% { opacity: 1; } 100% { opacity: .25; } }
+@keyframes hfTyping { 0%, 100% { opacity: .35; } 40%, 70% { opacity: 1; } }
+@keyframes hfDash { to { stroke-dashoffset: -40; } }
+@keyframes hfTrace { 0% { stroke-dashoffset: 120; opacity: 0; } 15% { opacity: 1; } 70%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+.hf-cursor { animation: hfCursor 4.8s ease-in-out infinite; }
+.hf-panel, .hf-line { animation: hfAppear 4.8s ease-in-out infinite; }
+.hf-line { animation-delay: .05s; }
+.hf-dot { transform-box: fill-box; transform-origin: center; animation: hfPulse 4.8s ease-in-out infinite; }
+.hf-slow { animation-duration: 6.4s; }
+.hf-dim { animation: hfFade 5s ease-in-out infinite; }
+.hf-type { animation: hfTyping 3.4s ease-in-out infinite; }
+.hf-hit { transform-box: fill-box; transform-origin: center; animation: hfPulse 3.4s ease-in-out infinite; }
+.hf-label { animation: hfAppear 5.2s ease-in-out infinite; }
+.hf-dashline { animation: hfDash 2.4s linear infinite; }
+.hf-trace { stroke-dasharray: 120; animation: hfTrace 5s ease-in-out infinite; }
+.hf-pulse { transform-box: fill-box; transform-origin: center; animation: hfPulse 2.6s ease-in-out infinite; }
+
 .focus-bar {
   position: absolute; left: 50%; transform: translateX(-50%); top: 10px; z-index: 20;
   display: flex; align-items: center; gap: 8px;
