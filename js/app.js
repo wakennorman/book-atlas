@@ -629,6 +629,11 @@
     if (!el || !state.book) return;
     // 现在布局是世界坐标 + 自动适配缩放，容器只要给一个舒服的高度就够了：
     // 千万不能再按人数把容器撑到上万像素（那样画布中心会被推到屏幕外，看起来就是"点了没反应"）
+    // 手机上再矮一点：一屏里能同时看到工具栏和图
+    if (window.innerWidth <= 700) {
+      el.style.height = Math.max(300, Math.round(window.innerHeight * 0.46)) + 'px';
+      return;
+    }
     const counts = new Map();
     for (const c of state.book.characters) counts.set(groupKeyOf(c), (counts.get(groupKeyOf(c)) || 0) + 1);
     const groupCount = counts.size || 1;

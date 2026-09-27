@@ -287,3 +287,44 @@ button.spoiler-opt:hover { background: var(--soft); }
   .pane-head { padding: 8px 10px; }
   .panel { padding: 12px; }
 }
+
+/* ---------- 窄屏（手机）专项：顶栏换行、工具横滑、工具栏压缩，禁止整页横向溢出 ---------- */
+@media (max-width: 700px) {
+  html, body { overflow-x: hidden; }                    /* 兜底：任何溢出都不让整页横滚 */
+  .topbar {
+    flex-wrap: wrap; padding: 8px 10px; gap: 6px;
+    position: sticky; top: 0;
+  }
+  .brand { flex: 1 1 100%; min-width: 0; }
+  .brand .logo { width: 30px; height: 30px; }
+  .brand-text h1 { font-size: 15px; }
+  .meta { max-width: 100%; white-space: normal; font-size: 12px; }
+  .tools {
+    flex: 1 1 100%; min-width: 0;
+    overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tools::-webkit-scrollbar { display: none; }
+  .tools > * { flex: none; }
+  .icon-btn { padding: 6px 10px; font-size: 13px; }
+
+  .pane-head { padding: 8px; gap: 6px; }
+  .search-wrap { min-width: 0; flex: 1 1 100%; }
+  .search-wrap input { min-width: 0; }
+  #place-filter, #size-filter { max-width: 44vw; }
+  .legend-row { flex-wrap: wrap; gap: 6px; }
+  .legend { flex: 1 1 100%; }
+  .view-row { gap: 5px; }
+  .view-row .view-label { display: none; }               /* 「布局」两个字省掉 */
+  .view-row .ghost, .view-row .seg, .view-row .icon-btn { padding: 5px 9px; font-size: 12.5px; }
+  #graph { height: 44vh; min-height: 300px; }
+
+  .focus-bar { max-width: calc(100% - 16px); flex-wrap: wrap; font-size: 12px; padding: 5px 8px; }
+  .pathbar { flex-wrap: wrap; }
+  .pathbar select { max-width: 100%; flex: 1 1 100%; }
+  .modal { padding: 14px; max-height: 86vh; }
+  .help-item { grid-template-columns: 1fr; }
+  .help-fig svg { width: 100%; max-width: 200px; }
+}
