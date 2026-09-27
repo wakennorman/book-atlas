@@ -10,7 +10,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=58">
+  <link rel="stylesheet" href="css/style.css?v=59">
 </head>
 <body>
 
@@ -30,6 +30,7 @@
     <button id="theme-btn" class="icon-btn" type="button" title="切换深浅色">🌙 夜间</button>
     <button id="spoiler-btn" class="icon-btn" type="button" title="按阅读进度锁定，防剧透">🔓 剧透保护：关</button>
     <button id="help-btn" class="icon-btn" type="button" title="使用说明（每条都能在图上试一下）">📖 怎么用</button>
+    <button id="export-btn" class="icon-btn" type="button" title="导出：单文件 HTML / 分享图 / 打印版 / 数据">⬇️ 导出</button>
     <a class="icon-btn" href="editor.html" title="打开本地编辑器：自己新建/修改一本书">✏️ 编辑</a>
   </div>
 </header>
@@ -87,6 +88,19 @@
     <div id="panel" class="panel">
       <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 拖拽可移动节点</p>
     </div>
+
+    <div class="panel chapter-panel" id="chapter-panel">
+      <div class="pane-head ch-head">
+        <h2 id="ch-title">📖 第 1 章</h2>
+        <div class="ch-nav">
+          <button id="ch-prev" class="ghost tiny" type="button" title="上一章">◀</button>
+          <select id="ch-select" aria-label="跳到某一章" title="跳到某一章"></select>
+          <button id="ch-next" class="ghost tiny" type="button" title="下一章">▶</button>
+        </div>
+      </div>
+      <div id="chapter-body" class="ch-body"></div>
+    </div>
+
     <div class="panel timeline-panel">
       <div class="pane-head">
         <h2>重大事件轴</h2>
@@ -274,9 +288,69 @@
           <a class="ghost tiny" href="editor.html">打开编辑器</a>
         </div>
       </div>
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
+            <rect x="16" y="14" width="128" height="62" rx="8" fill="var(--panel-2)" stroke="var(--line)"/>
+            <path d="M28 30h60M28 42h44M28 54h52" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+            <circle class="hf-pulse" cx="118" cy="30" r="7" fill="#c99a3f"/>
+            <circle class="hf-pulse" cx="118" cy="52" r="5" fill="#4a7fc4"/>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>⑩ 读到哪儿了：第 N 章的世界</b>
+          <span>右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。</span>
+          <button type="button" class="ghost tiny" data-help-act="chapter">试一下：翻到第 1 章看看</button>
+        </div>
+      </div>
+
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
+            <rect x="24" y="18" width="52" height="38" rx="6" fill="var(--panel-2)" stroke="var(--line)"/>
+            <path d="M82 30h34M82 44h34" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M116 22l16 8-16 8z" fill="#4c9f70"/>
+            <rect x="24" y="62" width="112" height="10" rx="5" fill="var(--soft)"/>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>⑪ 导出与分享</b>
+          <span>右上「⬇️ 导出」：① <b>单文件 HTML</b>——一本书连图带数据打包成一个文件，发给别人双击就能看；② <b>分享图 PNG</b>；③ <b>打印版 SVG</b>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span>
+          <button type="button" class="ghost tiny" data-help-act="export">试一下：打开导出面板</button>
+        </div>
+      </div>
     </div>
 
     <p class="hint" style="margin-top:12px">随时点「复位视图」或双击空白回到全貌；想再打开这份说明，点右上角「📖 怎么用」。</p>
+  </div>
+</div>
+
+<div id="export-modal" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+    <div class="modal-head">
+      <h2 id="export-title">⬇️ 导出 / 分享</h2>
+      <button type="button" class="modal-close" data-export-close="1" title="关闭">✕</button>
+    </div>
+    <p class="hint">导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。</p>
+    <div class="export-list">
+      <button class="spoiler-opt" type="button" data-export="html">
+        <b>① 单文件 HTML —— 把这本书发给别人</b>
+        <span>整本书（图谱 + 数据）打包成一个 .html：双击就能看，不用服务器、不用联网、不依赖这个站点。</span>
+      </button>
+      <button class="spoiler-opt" type="button" data-export="png">
+        <b>② 分享图 PNG</b>
+        <span>当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。</span>
+      </button>
+      <button class="spoiler-opt" type="button" data-export="svg">
+        <b>③ 打印版 SVG（A3）</b>
+        <span>矢量图，放进排版软件或直接用浏览器打印（可另存为 PDF）；墙上海报／塞进书里都清楚。</span>
+      </button>
+      <button class="spoiler-opt" type="button" data-export="json">
+        <b>④ 数据 JSON</b>
+        <span>这本书的原始数据：可以自己改，也可以拖进编辑器接着整理。</span>
+      </button>
+    </div>
+    <p class="hint" id="export-hint"></p>
   </div>
 </div>
 
@@ -303,6 +377,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=58"></script>
+<script src="js/app.js?v=59"></script>
 </body>
 </html>

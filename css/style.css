@@ -99,6 +99,7 @@ main {
 .seg.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .note { margin: 8px 0; padding: 8px 10px; background: var(--note-bg); border: 1px solid var(--note-border); border-radius: 10px; font-size: 13px; line-height: 1.55; color: var(--note-ink); }
 .ghost.tiny { padding: 2px 8px; font-size: 11.5px; }
+.primary.tiny { padding: 3px 10px; font-size: 12px; }
 .rel-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .legend { display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
 .legend-item {
@@ -237,6 +238,40 @@ main {
 
 .footer { padding: 4px 16px 18px; color: var(--muted); font-size: 12px; }
 
+/* ---------- 章节视图（第 N 章的世界） ---------- */
+/* 关键：长关系行必须能被压缩，否则会把栅格列的最小宽度撑出手机屏幕（见 ch-list 的 nowrap） */
+main > *, .side > * { min-width: 0; }
+.chapter-panel { padding-bottom: 10px; min-width: 0; }
+.ch-head { padding: 0 0 8px; }
+.ch-head h2 { font-size: 15px; }
+.ch-nav { display: flex; align-items: center; gap: 6px; }
+.ch-nav select { max-width: 132px; padding: 5px 10px; }
+.ch-body { font-size: 13.5px; }
+.ch-sec { margin-top: 10px; }
+.ch-sec h4 { margin: 0 0 5px; font-size: 12.5px; color: var(--muted); letter-spacing: .5px; font-weight: 700; }
+.ch-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.ch-chip {
+  border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px;
+  padding: 3px 10px; font-size: 12.5px; cursor: pointer;
+}
+.ch-chip:hover { background: var(--soft); }
+.ch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; min-width: 0; }
+.ch-list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ch-locked { background: var(--panel-2); border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; }
+.ch-locked p { margin: 4px 0 8px; }
+.ch-teaser {
+  margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line);
+  color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.ch-teaser b { color: var(--ink); }
+.ch-foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- 导出 / 分享 ---------- */
+.export-list { display: grid; gap: 10px; margin: 14px 0; }
+button.spoiler-opt { cursor: pointer; }
+button.spoiler-opt:hover { background: var(--soft); }
+button.spoiler-opt:disabled { opacity: .55; cursor: progress; }
+
 /* ---------- 剧透保护 ---------- */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 80; padding: 18px;
@@ -322,6 +357,10 @@ button.spoiler-opt:hover { background: var(--soft); }
   #graph { height: 44vh; min-height: 300px; }
 
   .focus-bar { max-width: calc(100% - 16px); flex-wrap: wrap; font-size: 12px; padding: 5px 8px; }
+  /* 手机上：关系行换行显示（比截断好读），章号下拉收窄 */
+  .ch-list li { white-space: normal; line-height: 1.45; }
+  .ch-nav select { max-width: 96px; padding: 4px 8px; }
+  .ch-foot { justify-content: flex-start; }
   .pathbar { flex-wrap: wrap; }
   .pathbar select { max-width: 100%; flex: 1 1 100%; }
   .modal { padding: 14px; max-height: 86vh; }

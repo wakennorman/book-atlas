@@ -26,6 +26,7 @@
     bbox: null,            // 节点包围盒（缩放后、居中于 0）——图注按它定位
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
+    chapter: 1,            // 章节视图：当前翻到第几章
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
     maxDeg: 1,             // 本书最大关系数（symbolSize 的开方刻度用）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
@@ -156,21 +157,27 @@
 
   /* ---------------- 数据加载 ---------------- */
   async function boot() {
-    try {
-      const res = await fetch('data/books.json', { cache: 'no-cache' });
-      state.books = (await res.json()).books || [];
-    } catch (e) {
-      $('#book-meta').textContent = '数据加载失败：请用本地服务器打开（见 README）';
-      return;
+    const inline = window.__BA_STANDALONE_BOOK;
+    if (inline) {
+      // 单文件版（导出给别人看的）：数据内联在 HTML 里，不读 data/、不联网
+      state.books = [{ slug: (inline.meta && inline.meta.slug) || 'inline', title: (inline.meta && inline.meta.title) || '书脉', inline: true }];
+    } else {
+      try {
+        const res = await fetch('data/books.json', { cache: 'no-cache' });
+        state.books = (await res.json()).books || [];
+      } catch (e) {
+        $('#book-meta').textContent = '数据加载失败：请用本地服务器打开（见 README）';
+        return;
+      }
+      if (!state.books.length) { $('#book-meta').textContent = '还没有书目数据'; return; }
     }
-    if (!state.books.length) { $('#book-meta').textContent = '还没有书目数据'; return; }
 
     const params = new URLSearchParams(location.search);
     const wanted0 = params.get('book');
     const wantLocal = params.get('local') === '1';
 
     // 浏览器本地草稿（编辑器保存的）也放进书目列表
-    for (let i = 0; i < localStorage.length; i++) {
+    if (!inline) for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key || !key.startsWith('ba-draft-')) continue;
       try {
@@ -199,7 +206,9 @@
   async function loadBook(slug) {
     const meta = state.books.find((b) => b.slug === slug);
     let book;
-    if (meta && meta.local) {
+    if (meta && meta.inline) {
+      book = window.__BA_STANDALONE_BOOK;
+    } else if (meta && meta.local) {
       book = JSON.parse(localStorage.getItem('ba-draft-' + slug));
     } else {
       const res = await fetch(meta.file, { cache: 'no-cache' });
@@ -240,13 +249,18 @@
     if (savedSpoiler) {
       try { const s = JSON.parse(savedSpoiler); state.progress = s.on ? s.ch : null; } catch (e) { state.progress = null; }
     }
+    // 章节视图：默认停在你读到的进度（没开保护就回到上次翻到的那一章）
+    let savedCh = 0;
+    try { savedCh = Number(localStorage.getItem('ba-chapter-' + book.meta.slug)) || 0; } catch (e) { savedCh = 0; }
+    state.chapter = Math.max(1, Math.min(maxChapter() || 1, savedCh || state.progress || 1));
     clearHighlight(false);
-    history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`);
+    try { history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`); } catch (e) { /* file:// 或沙箱里可能不允许改地址 */ }
     renderHeader();
     renderLegend();
     renderDatalist();
     renderPathSelects();
     renderTimeline();
+    renderChapter();
     renderPlaceSelect();
     renderPanelWelcome();
     initChart();
@@ -1197,6 +1211,354 @@
     el.querySelectorAll('.event-chip').forEach((btn) => btn.addEventListener('click', () => selectEvent(btn.dataset.event)));
   }
 
+  /* ---------------- 章节视图：第 N 章的世界 ---------------- */
+  /** 把"这一章发生了什么"从数据里切出来（零新数据：firstCh / relations[].events[].chapter / events[].ch / places[].firstCh） */
+  function chapterDigest(n) {
+    const b = state.book;
+    const charsNew = [], charsHere = new Set(), relsNew = [], relsHere = [], places = new Set();
+    for (const c of b.characters) if (charCh(c) === n) { charsNew.push(c); charsHere.add(c.id); }
+    for (const r of b.relations) {
+      if (isDerived(r)) continue;
+      const evs = (r.events || []).filter((e) => eventChOf(e) === n);
+      if (!evs.length) continue;
+      relsHere.push(r);
+      if (relCh(r) === n) relsNew.push(r);
+      charsHere.add(r.from); charsHere.add(r.to);
+    }
+    const events = b.events.filter((e) => e.ch === n);
+    for (const e of events) {
+      for (const id of e.chars || []) charsHere.add(id);
+      if (e.place) places.add(e.place);
+    }
+    for (const r of relsHere) for (const ev of r.events || []) if (eventChOf(ev) === n && ev.place) places.add(ev.place);
+    const knownPlaces = [...places].filter((id) => state.places.has(id));
+    return {
+      n, charsNew, relsNew, events,
+      charsHere: [...charsHere].filter((id) => state.byId.has(id)),
+      places: knownPlaces,
+      placesNew: knownPlaces.filter((id) => (placeOf(id).firstCh ?? 0) === n),
+    };
+  }
+
+  function goChapter(n) {
+    state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(n) || 1));
+    try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch (e) { /* 忽略 */ }
+    renderChapter();
+    const el = document.getElementById('chapter-panel');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  }
+
+  function renderChapter() {
+    if (!state.book) return;
+    const total = maxChapter() || 1;
+    const n = Math.max(1, Math.min(total, state.chapter || 1));
+    state.chapter = n;
+    const title = document.getElementById('ch-title');
+    if (title) title.textContent = `📖 第 ${n} 章`;
+    const sel = document.getElementById('ch-select');
+    if (sel) {
+      if (sel.options.length !== total) sel.innerHTML = Array.from({ length: total }, (_, i) => `<option value="${i + 1}">第 ${i + 1} 章</option>`).join('');
+      if (sel.value !== String(n)) sel.value = String(n);
+    }
+    const body = document.getElementById('chapter-body');
+    if (!body) return;
+    if (lockedCh(n)) {
+      body.innerHTML = `
+        <div class="ch-locked">🔒 <b>第 ${n} 章还没解锁</b>
+          <p class="hint">你现在读到第 ${state.progress} 章——这一章的出场人物、关系与事件先锁起来，读完再来。</p>
+          <button class="primary tiny" type="button" data-ch-mark="${n}">我已读到第 ${n} 章 →</button>
+        </div>`;
+    } else {
+      const d = chapterDigest(n);
+      const nd = chapterDigest(n + 1);
+      const parts = [];
+      if (nd.charsNew.length) parts.push(`${nd.charsNew.length} 个新人物`);
+      if (nd.relsNew.length) parts.push(`${nd.relsNew.length} 条新关系`);
+      if (nd.events.length) parts.push(`${nd.events.length} 个事件`);
+      const teaser = n < total
+        ? `<span><b>下一章</b>（第 ${n + 1} 章）：${parts.length ? '将解锁 ' + parts.join(' · ') : '没有新的整理内容'}</span>`
+        : '<span><b>已是最后一章</b></span>';
+      const mark = state.progress === n
+        ? `<span class="hint">✓ 剧透保护：正读到第 ${n} 章</span>`
+        : `<button class="primary tiny" type="button" data-ch-mark="${n}">${state.progress === null ? '🔒 从这一章开始防剧透' : `✓ 我读到第 ${n} 章了`}</button>`;
+      body.innerHTML = `
+        <p class="card-sub">本章 <b>${d.charsHere.length}</b> 人出场 · 新增关系 <b>${d.relsNew.length}</b> 条 · 事件 <b>${d.events.length}</b> 个 · 地点 <b>${d.places.length}</b> 处</p>
+        ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4><div class="ch-chips">${d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div></div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4><ul class="ch-list">${d.relsNew.slice(0, 12).map((r) => `<li><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`).join('')}${d.relsNew.length > 12 ? `<li class="hint">…还有 ${d.relsNew.length - 12} 条</li>` : ''}</ul></div>` : ''}
+        ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
+        ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `<button class="ch-chip" type="button" data-place-filter="${esc(id)}">${esc(placeName(id))}${d.placesNew.includes(id) ? ' ✨' : ''}</button>`).join('')}</div></div>` : ''}
+        <div class="ch-teaser">${teaser}</div>
+        <div class="ch-foot">${mark}
+          ${d.events.length ? '<button class="ghost tiny" type="button" data-ch-timeline="1">在时间轴里看本章事件</button>' : ''}
+        </div>`;
+    }
+    body.querySelectorAll('[data-ch-mark]').forEach((btn) => btn.addEventListener('click', () => applySpoiler(true, Number(btn.dataset.chMark))));
+    body.querySelectorAll('[data-ch-timeline]').forEach((btn) => btn.addEventListener('click', () => {
+      const id = (state.book.events.find((e) => e.ch === state.chapter && (!state.placeFilter || e.place === state.placeFilter)) || {}).id;
+      const chip = id ? document.querySelector(`.event-chip[data-event="${id}"]`) : null;
+      const target = chip || document.getElementById('timeline');
+      if (target && target.scrollIntoView) target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }));
+    bindGoto(body);
+  }
+
+  /* ---------------- 导出 / 分享（单文件 HTML / 分享图 PNG / 打印版 SVG / 数据 JSON） ---------------- */
+  const SITE_URL = 'wakennorman.github.io/book-atlas';
+  const jsSafe = (s) => String(s).replace(/<\/script/gi, '<\\/script');
+  const xmlEsc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch]));
+  const slugOf = () => state.book?.meta?.slug || 'book';
+  const titleOf = () => state.book?.meta?.title || '未命名';
+
+  function downloadBlob(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  function downloadText(filename, text, mime = 'text/plain') {
+    downloadBlob(filename, new Blob([text], { type: mime + ';charset=utf-8' }));
+  }
+
+  /** 当前筛选下真正画在图上的节点与连线（导出的输入；与 buildOption 的过滤条件一致） */
+  function exportSelection() {
+    const nodes = state.book.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id));
+    const idset = new Set(nodes.map((c) => c.id));
+    const links = state.book.relations.filter((r) =>
+      idset.has(r.from) && idset.has(r.to) && !relLocked(r) && relVisible(r));
+    return { nodes, links };
+  }
+
+  /** 单文件 HTML：外壳取自 index.html，把 CSS/JS/数据全部内联 ⇒ 双击即看 */
+  async function buildStandaloneHtml() {
+    const grab = (url) => fetch(url, { cache: 'no-cache' }).then((r) => {
+      if (!r.ok) throw new Error(`读取 ${url} 失败（${r.status}）`);
+      return r.text();
+    });
+    const [shell, css, echarts, app, logo] = await Promise.all([
+      grab('index.html'), grab('css/style.css'), grab('vendor/echarts.min.js'), grab('js/app.js'), grab('assets/logo-mark.svg'),
+    ]);
+    const data = jsSafe(JSON.stringify(state.book));
+    let html = shell;
+    html = html.replace(/<link rel="stylesheet" href="css\/style\.css\?v=\d+">/, () => `<style>\n${css}\n</style>`);
+    html = html.replace(/\s*<link rel="manifest"[^>]*>/, '');
+    html = html.replace(/\s*<link rel="icon"[^>]*>/g, '');
+    html = html.replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '');
+    html = html.replace(/<img class="logo"[^>]*>/, () => `<img class="logo" alt="书脉" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(logo)}">`);
+    html = html.replace(/\s*<a class="icon-btn" href="editor\.html"[\s\S]*?<\/a>/, '');
+    html = html.replace(/<a class="ghost tiny" href="editor\.html">打开编辑器<\/a>/, '<span class="hint">（单文件版不含编辑器；在线版可以自己整理一本书）</span>');
+    html = html.replace(/<script src="vendor\/echarts\.min\.js"><\/script>/, () => `<script>${jsSafe(echarts)}<\/script>`);
+    html = html.replace(/<script src="js\/app\.js\?v=\d+"><\/script>/,
+      () => `<script>window.__BA_STANDALONE = true;\nwindow.__BA_STANDALONE_BOOK = ${data};<\/script>\n<script>${jsSafe(app)}<\/script>`);
+    html = html.replace(/<span id="footer-note">[^<]*<\/span>/,
+      (m) => `${m}\n      <span>· 本文件由《书脉 BookAtlas》导出（${esc(SITE_URL)}）</span>`);
+    return html;
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /** 分享图 PNG（返回 dataURL）：矢量渲染的关系图 + 书名/统计/图例/链接 */
+  async function buildSharePng() {
+    if (!state.book) return '';
+    const W = 1600, H = 1000;
+    const bg = cssVar('--bg') || '#f4f1ea';
+    const panel = cssVar('--panel') || '#ffffff';
+    const ink = cssVar('--ink') || '#232a35';
+    const muted = cssVar('--muted') || '#6c7482';
+    const line = cssVar('--line') || '#e5dfd3';
+    // 用矢量渲染器出图（而不是截图）：不受当前缩放/高亮影响，放大也清晰
+    const svg = buildGraphSvg({ page: false });
+    if (!svg) return '';
+    const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => { resolve(im); setTimeout(() => URL.revokeObjectURL(svgUrl), 1000); };
+      im.onerror = () => { URL.revokeObjectURL(svgUrl); reject(new Error('矢量图渲染失败')); };
+      im.src = svgUrl;
+    });
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    const font = (size, weight) => `${weight ? weight + ' ' : ''}${size}px -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif`;
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = ink; ctx.font = font(44, 700);
+    ctx.fillText(`《${titleOf()}》`, 52, 80);
+    ctx.fillStyle = muted; ctx.font = font(23);
+    const prog = state.progress === null ? '剧透保护：关（全部解锁）' : `剧透保护：读到第 ${state.progress} 章`;
+    const m = state.book.meta || {};
+    ctx.fillText(`${m.author || ''} · ${state.book.characters.length} 人 / ${state.book.relations.length} 段关系 / ${state.book.events.length} 个事件 · ${prog}`, 52, 120);
+    ctx.textAlign = 'right';
+    ctx.fillText('● 圆＝男　▢ 圆角方＝女　大小＝关系条数', W - 52, 120);
+    ctx.textAlign = 'left';
+    const gx = 40, gy = 146, gw = W - 80, gh = H - 146 - 112;
+    ctx.save();
+    roundRectPath(ctx, gx, gy, gw, gh, 20);
+    ctx.fillStyle = panel; ctx.fill();
+    ctx.clip();
+    const k = Math.min(gw / img.width, gh / img.height);
+    const dw = img.width * k, dh = img.height * k;
+    ctx.drawImage(img, gx + (gw - dw) / 2, gy + (gh - dh) / 2, dw, dh);
+    ctx.restore();
+    ctx.strokeStyle = line; ctx.lineWidth = 2;
+    roundRectPath(ctx, gx, gy, gw, gh, 20);
+    ctx.stroke();
+    let lx = 52;
+    ctx.font = font(21);
+    for (const f of state.book.factions.slice(0, 9)) {
+      ctx.fillStyle = f.color;
+      ctx.beginPath(); ctx.arc(lx + 7, H - 78, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = muted; ctx.fillText(f.name, lx + 20, H - 71);
+      lx += 20 + ctx.measureText(f.name).width + 26;
+      if (lx > W - 80) break;
+    }
+    ctx.fillStyle = muted; ctx.font = font(20);
+    ctx.fillText(`书脉 BookAtlas · ${SITE_URL}`, 52, H - 30);
+    return cv.toDataURL('image/png');
+  }
+
+  /** 关系图的矢量渲染（打印页 / 分享图共用）
+   *  page=true：A3 横向打印页（标题 + 图例 + 页脚）
+   *  page=false：只出图，画布贴着图形包围盒（分享图内嵌用，不受用户当前缩放影响） */
+  function buildGraphSvg({ page = true } = {}) {
+    if (!state.book) return '';
+    if (!state.pos.size && state.chart) freezeNow();
+    const { nodes, links } = exportSelection();
+    const placed = nodes.map((c) => ({ c, p: state.pos.get(c.id) })).filter((x) => x.p);
+    if (!placed.length) return '';
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const { p } of placed) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+    // 缩放要把节点半径算进去，否则最外圈的圆会顶出纸面
+    const maxRWorld = Math.max(...placed.map(({ c }) => symbolSize(c.id) / 2), 1);
+    const pad = 12;
+    const PW = page ? 420 : Math.round(maxX - minX + 2 * maxRWorld + pad * 2);
+    const PH = page ? 297 : Math.round(maxY - minY + 2 * maxRWorld + pad * 2);
+    const M = page ? 14 : pad, HEAD = page ? 32 : pad, FOOT = page ? 16 : pad;
+    const areaW = PW - M * 2, areaH = PH - HEAD - FOOT;
+    const k = Math.min(areaW / Math.max(maxX - minX + 2 * maxRWorld, 1), areaH / Math.max(maxY - minY + 2 * maxRWorld, 1));
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const X = (p) => (p.x - cx) * k + PW / 2;
+    const Y = (p) => (p.y - cy) * k + HEAD + areaH / 2;
+    const byId = new Map(nodes.map((c) => [c.id, c]));
+    const rad = (c) => Math.max(page ? 0.9 : 3, Math.min(20, symbolSize(c.id) / 2 * k));
+    const edges = [];
+    for (const r of links) {
+      const a = state.pos.get(r.from), b = state.pos.get(r.to);
+      if (!a || !b) continue;
+      const c = byId.get(r.from);
+      const col = charLocked(c) ? '#9aa3b0' : factionColorOf(c);
+      const dashed = isDerived(r) || r.style === 'dashed';
+      const dotted = r.style === 'dotted';
+      edges.push(`<line x1="${X(a).toFixed(1)}" y1="${Y(a).toFixed(1)}" x2="${X(b).toFixed(1)}" y2="${Y(b).toFixed(1)}" stroke="${col}" stroke-width="${Math.max(page ? 0.12 : 0.6, 1.2 * k).toFixed(2)}" stroke-opacity="0.34"${dashed ? ' stroke-dasharray="1.6 1.2"' : dotted ? ' stroke-dasharray="0.5 1.1"' : ''}/>`);
+    }
+    const dots = [];
+    for (const { c, p } of placed) {
+      const x = X(p), y = Y(p), r = rad(c);
+      const locked = charLocked(c);
+      const fill = locked ? '#9aa3b0' : factionColorOf(c);
+      const op = (locked ? 0.45 : 0.92).toFixed(2);
+      dots.push(c.gender === 'f'
+        ? `<rect x="${(x - r).toFixed(1)}" y="${(y - r).toFixed(1)}" width="${(2 * r).toFixed(1)}" height="${(2 * r).toFixed(1)}" rx="${(r * 0.3).toFixed(1)}" fill="${fill}" fill-opacity="${op}" stroke="#ffffff" stroke-width="0.25"/>`
+        : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" fill-opacity="${op}" stroke="#ffffff" stroke-width="0.25"/>`);
+    }
+    const fs = page ? Math.max(1.1, Math.min(4.6, 10.5 * k)) : Math.max(6, Math.min(11, 10.5 * k));
+    const boxes = [], dotBoxes = [], labels = [];
+    for (const { c, p } of placed) {
+      const r = rad(c);
+      dotBoxes.push({ bx: X(p) - r, by: Y(p) - r, w: 2 * r, h: 2 * r });
+    }
+    const cands = [...placed].sort((a, b) => nodeDegree(b.c.id) - nodeDegree(a.c.id));
+    for (const { c, p } of cands) {
+      if (charLocked(c)) continue;
+      const x = X(p), y = Y(p), r = rad(c);
+      const w = c.name.length * fs + fs * 0.5, h = fs * 1.25;
+      // 四个候选位：右 → 左 → 上 → 下（取第一个不压节点、不压别的标签的位置）
+      const slots = [
+        { bx: x + r + 0.8, by: y - h / 2 },
+        { bx: x - r - 0.8 - w, by: y - h / 2 },
+        { bx: x - w / 2, by: y - r - 0.8 - h },
+        { bx: x - w / 2, by: y + r + 0.8 },
+      ];
+      const free = (s, withDots) => s.bx >= M && s.bx + w <= PW - M && s.by >= HEAD && s.by + h <= PH - FOOT
+        && !boxes.some((o) => !(s.bx > o.bx + o.w || s.bx + w < o.bx || s.by > o.by + o.h || s.by + h < o.by))
+        && (!withDots || !dotBoxes.some((o) => !(s.bx > o.bx + o.w || s.bx + w < o.bx || s.by > o.by + o.h || s.by + h < o.by)));
+      // 两轮：先找"不压节点"的干净位；找不到就退一步，只要不压别的标签（保证小字不至于太稀）
+      const slot = slots.find((s) => free(s, true)) || slots.find((s) => free(s, false));
+      if (!slot) continue;
+      boxes.push({ bx: slot.bx, by: slot.by, w, h });
+      labels.push(`<text x="${slot.bx.toFixed(1)}" y="${(slot.by + fs).toFixed(1)}" font-size="${fs.toFixed(2)}" fill="#3a4150">${xmlEsc(c.name)}</text>`);
+    }
+    const legend = !page ? '' : state.book.factions.map((f, i) => {
+      const x = M + (i % 6) * 66, y = 27 - Math.floor(i / 6) * 5;
+      return `<circle cx="${x}" cy="${(y - 1.3).toFixed(1)}" r="1.5" fill="${f.color}"/><text x="${(x + 3).toFixed(1)}" y="${y}" font-size="3" fill="#6c7482">${xmlEsc(f.name)}</text>`;
+    }).join('');
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const progText = state.progress === null ? '全部解锁' : `剧透保护：读到第 ${state.progress} 章（灰色＝未解锁）`;
+    const unit = page ? 'mm' : '';
+    const head = !page ? '' : `
+  <text x="${M}" y="13" font-size="7" font-weight="700" fill="#232a35">《${xmlEsc(titleOf())}》人物关系图</text>
+  <text x="${M}" y="20" font-size="3.3" fill="#6c7482">${xmlEsc(state.book.meta.author || '')} · 显示 ${nodes.length} / ${state.book.characters.length} 人 · 关系 ${links.length} 段 · 事件 ${state.book.events.length} 个 · ${progText}</text>
+  ${legend}`;
+    const foot = !page ? '' : `
+  <text x="${M}" y="${PH - 6}" font-size="3.2" fill="#6c7482">书脉 BookAtlas · ${SITE_URL} · ${date}</text>
+  <text x="${PW - M}" y="${PH - 6}" font-size="3.2" fill="#6c7482" text-anchor="end">圆＝男 / 圆角方＝女 · 大小＝关系条数 · 虚线＝推导或对立</text>`;
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${PW}${unit}" height="${PH}${unit}" viewBox="0 0 ${PW} ${PH}" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <rect x="0" y="0" width="${PW}" height="${PH}" fill="#ffffff"/>${head}
+  <g>${edges.join('')}</g>
+  <g>${dots.join('')}</g>
+  <g>${labels.join('')}</g>${foot}
+</svg>`;
+  }
+
+  function buildPrintSvg() { return buildGraphSvg({ page: true }); }
+
+  async function runExport(kind) {
+    if (!state.book) return;
+    const hint = document.getElementById('export-hint');
+    const say = (t) => { if (hint) hint.textContent = t; };
+    const btn = document.querySelector(`[data-export="${kind}"]`);
+    if (btn) btn.disabled = true;
+    try {
+      if (kind === 'json') {
+        downloadText(`${slugOf()}.json`, JSON.stringify(state.book, null, 2), 'application/json');
+        say('已导出数据 JSON。');
+      } else if (kind === 'html') {
+        say('正在打包单文件（含图表库，几个 MB，稍等）…');
+        const html = await buildStandaloneHtml();
+        downloadText(`${titleOf()}-书脉.html`, html, 'text/html');
+        say(`已导出单文件 HTML（${(html.length / 1048576).toFixed(1)} MB）—— 发给别人，双击就能看。`);
+      } else if (kind === 'png') {
+        say('正在生成分享图…');
+        const url = await buildSharePng();
+        if (!url) { say('画布还没准备好，稍等一下再试。'); return; }
+        const a = document.createElement('a');
+        a.href = url; a.download = `${titleOf()}-关系图.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        say('已导出分享图 PNG。');
+      } else if (kind === 'svg') {
+        const svg = buildPrintSvg();
+        if (!svg) { say('布局还没准备好：先在图上点一下（或等布局跑完）再试。'); return; }
+        downloadText(`${titleOf()}-关系图-A3.svg`, svg, 'image/svg+xml');
+        say('已导出打印版 SVG —— 用浏览器打开后可「打印 → 另存为 PDF」。');
+      }
+    } catch (e) {
+      say('导出失败：' + ((e && e.message) || e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   /* ---------------- 剧透保护 UI ---------------- */
   function syncSpoilerButton() {
     const btn = document.getElementById('spoiler-btn');
@@ -1231,6 +1593,7 @@
       renderDatalist();
       renderPathSelects();
       renderTimeline();
+      renderChapter();
       renderPlaceSelect();
       renderPanelWelcome();
       initChart();
@@ -1312,6 +1675,14 @@
         if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
         refreshPanel();
         updateCountHint();
+        break;
+      }
+      case 'chapter':
+        goChapter(1);
+        break;
+      case 'export': {
+        const m = document.getElementById('export-modal');
+        if (m) { m.hidden = false; const h = document.getElementById('export-hint'); if (h) h.textContent = ''; }
         break;
       }
     }
@@ -1478,6 +1849,40 @@
       clearHighlight();
     });
 
+    // 章节视图：翻章 / 跳章（左右方向键也能翻）
+    const chPrev = document.getElementById('ch-prev');
+    const chNext = document.getElementById('ch-next');
+    const chSel = document.getElementById('ch-select');
+    if (chPrev) chPrev.addEventListener('click', () => goChapter(state.chapter - 1));
+    if (chNext) chNext.addEventListener('click', () => goChapter(state.chapter + 1));
+    if (chSel) chSel.addEventListener('change', () => goChapter(Number(chSel.value)));
+    document.addEventListener('keydown', (ev) => {
+      if (ev.target && /^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) return;
+      const modalOpen = ['#export-modal', '#spoiler-modal', '#help-modal'].some((s) => {
+        const el = document.querySelector(s); return el && !el.hidden;
+      });
+      if (modalOpen) return;
+      if (ev.key === 'ArrowLeft') goChapter(state.chapter - 1);
+      if (ev.key === 'ArrowRight') goChapter(state.chapter + 1);
+    });
+
+    // 导出 / 分享
+    const exportModal = document.getElementById('export-modal');
+    const closeExport = () => { if (exportModal) exportModal.hidden = true; };
+    if (exportModal) {
+      document.addEventListener('click', (ev) => {
+        if (ev.target.closest('#export-btn')) {
+          exportModal.hidden = false;
+          const h = document.getElementById('export-hint'); if (h) h.textContent = '';
+          return;
+        }
+        if (ev.target.closest('[data-export-close]') || ev.target === exportModal) { closeExport(); return; }
+        const opt = ev.target.closest('[data-export]');
+        if (opt && !opt.disabled) runExport(opt.dataset.export);
+      });
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
+    }
+
     const themeBtn = $('#theme-btn');
     const setTheme = (dark) => {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -1490,6 +1895,10 @@
   }
 
   /* ---------------- 启动 ---------------- */
+  if (window.__BA_STANDALONE) {
+    const eb = document.getElementById('export-btn');
+    if (eb) eb.hidden = true;      // 单文件版：再导出会依赖 index.html / 资源，直接藏掉
+  }
   bindUI();
   boot();
 
@@ -1504,9 +1913,16 @@
     selectRelation: (a, b) => { const r = findRel(a, b); if (r) selectRelation(r); return !!r; },
     nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
+    goChapter: (n) => goChapter(n),
+    chapterDigest: (n) => chapterDigest(n),
+    exportSelection: () => exportSelection(),
+    buildStandaloneHtml: () => buildStandaloneHtml(),
+    buildSharePng: () => buildSharePng(),
+    buildPrintSvg: () => buildPrintSvg(),
+    runExport: (kind) => runExport(kind),
   };
 
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  if (!window.__BA_STANDALONE && 'serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 })();
