@@ -10,7 +10,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=42">
+  <link rel="stylesheet" href="css/style.css?v=43">
 </head>
 <body>
 
@@ -70,6 +70,7 @@
     </div>
 
     <div id="focus-bar" class="focus-bar" hidden></div>
+    <div id="drag-hint" class="focus-bar drag-hint" hidden></div>
     <div id="graph" aria-label="人物关系网络图"></div>
 
     <div class="pathbar">
@@ -107,7 +108,7 @@
       <h2 id="help-title">📖 怎么用 · 5 分钟上手</h2>
       <button type="button" class="modal-close" data-help-close="1" title="关闭">✕</button>
     </div>
-    <p class="hint">每条的「试一下」都是<strong>拿这本书在图上真做一遍</strong>给你看（不是视频）。</p>
+    <p class="hint">每条都可以点「试一下」，立刻在这一页的图上做给你看。</p>
 
     <div class="help-list">
       <div class="help-item">
@@ -165,6 +166,29 @@
       <div class="help-item">
         <div class="help-fig">
           <svg viewBox="0 0 160 90" aria-hidden="true">
+            <circle class="hf-ghost" cx="40" cy="45" r="10" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>
+            <circle cx="20" cy="18" r="6" fill="#4a7fc4"/>
+            <circle cx="24" cy="72" r="6" fill="#c0504d"/>
+            <circle cx="96" cy="14" r="6" fill="#4c9f70"/>
+            <circle cx="106" cy="76" r="6" fill="#9a6fb0"/>
+            <path class="hf-fan" d="M92 30 Q 58 10 20 18" stroke="#4a7fc4" fill="none" stroke-width="2"/>
+            <path class="hf-fan" d="M92 30 Q 50 60 24 72" stroke="#c0504d" fill="none" stroke-width="2"/>
+            <path class="hf-fan" d="M92 30 Q 78 8 96 14" stroke="#4c9f70" fill="none" stroke-width="2"/>
+            <path class="hf-fan" d="M92 30 Q 88 60 106 76" stroke="#9a6fb0" fill="none" stroke-width="2"/>
+            <circle class="hf-drag" cx="92" cy="30" r="11" fill="#c99a3f"/>
+            <path class="hf-hand" d="M0 0 L0 13 L4 9.5 L6.5 16 L9.5 14.5 L7 8.5 L12 8.5 Z" fill="var(--ink)" transform="translate(96,34)"/>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>④ 拖动节点：把一个人拉出来，专门看他的线</b>
+          <span>点「拖动节点：开」，然后<b>拖动某个圆点</b>（空白处拖动仍是平移画布）。松开后：① 这个位置<b>不会自动归位</b>，缩放、点别处、搜索都不动它；② 这个点身上的线会<b>自动散开</b>，不会叠成一束——线太多时这样就能单独点中某一条。<br>想恢复：点「拖动节点：关」，或点「重置」。</span>
+          <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来（开拖动 + 散线）</button>
+        </div>
+      </div>
+
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
             <circle class="hf-dot" cx="46" cy="30" r="10" fill="#c99a3f"/>
             <circle class="hf-dot hf-slow" cx="80" cy="52" r="8" fill="#4a7fc4"/>
             <circle class="hf-dot" cx="46" cy="70" r="9" fill="#c99a3f"/>
@@ -175,7 +199,7 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>④ 按地点看戏</b>
+          <b>⑤ 按地点看戏</b>
           <span>左上「📍 全部地点」选一个地点：时间轴只留那里发生的事，图上只亮相关的人；事件卡上的 📍 也能点。地点不做节点（否则关系图会变成一团异构图）。</span>
           <button type="button" class="ghost tiny" data-help-act="place">试一下：挑事件最多的地点</button>
         </div>
@@ -194,7 +218,7 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑤ 怕剧透：开「剧透保护」</b>
+          <b>⑥ 怕剧透：开「剧透保护」</b>
           <span>右上角 🔒 选你读到第几章：之后出场的人变灰 🔒、关系不画、事件藏起来。进度存在本机，随时可改。</span>
           <button type="button" class="ghost tiny" data-help-act="spoiler">试一下：打开剧透设置</button>
         </div>
@@ -214,7 +238,7 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑥ 「这两人什么关系？」——最短关系链</b>
+          <b>⑦ 「这两人什么关系？」——最短关系链</b>
           <span>底部选两个人 → 本地 BFS 算出最短链，每一跳都给出关系类型和依据事件（不联网、不靠 AI）。</span>
           <button type="button" class="ghost tiny" data-help-act="path">试一下：拿关系最多的两人跑一遍</button>
         </div>
@@ -231,7 +255,7 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑦ 虚线 + 「推导」徽章 = 族谱补全</b>
+          <b>⑧ 虚线 + 「推导」徽章 = 族谱补全</b>
           <span>祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。</span>
           <button type="button" class="ghost tiny" data-help-act="derived">试一下：显示 / 隐藏推导线</button>
         </div>
@@ -246,7 +270,7 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑧ 自己整理一本（本地编辑器）</b>
+          <b>⑨ 自己整理一本（本地编辑器）</b>
           <span>右上「✏️ 编辑」：地点/人物/关系/事件增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。</span>
           <a class="ghost tiny" href="editor.html">打开编辑器</a>
         </div>
@@ -280,6 +304,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=42"></script>
+<script src="js/app.js?v=43"></script>
 </body>
 </html>

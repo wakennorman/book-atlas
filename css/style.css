@@ -177,6 +177,12 @@ main {
 .hf-dashline { animation: hfDash 2.4s linear infinite; }
 .hf-trace { stroke-dasharray: 120; animation: hfTrace 5s ease-in-out infinite; }
 .hf-pulse { transform-box: fill-box; transform-origin: center; animation: hfPulse 2.6s ease-in-out infinite; }
+/* 拖动演示：节点被拉走 + 线散开 */
+@keyframes hfDragMove { 0%, 12% { transform: translate(-52px, 15px); } 42%, 90% { transform: translate(0, 0); } 100% { transform: translate(-52px, 15px); } }
+.hf-drag, .hf-hand { animation: hfDragMove 5.4s ease-in-out infinite; }
+.hf-fan { stroke-dasharray: 220; opacity: 0; animation: hfFan 5.4s ease-in-out infinite; }
+.hf-ghost { animation: hfFade 5.4s ease-in-out infinite; }
+@keyframes hfFan { 0%, 30% { opacity: 0; stroke-dashoffset: 90; } 48% { opacity: 1; stroke-dashoffset: 0; } 88% { opacity: 1; stroke-dashoffset: 0; } 100% { opacity: 0; stroke-dashoffset: 90; } }
 
 .focus-bar {
   position: absolute; left: 50%; transform: translateX(-50%); top: 10px; z-index: 20;
@@ -186,6 +192,7 @@ main {
   border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink);
   backdrop-filter: blur(6px);
 }
+.drag-hint { top: auto; bottom: 12px; font-size: 12px; }
 .kin-badge {
   display: inline-block; padding: 1px 6px; border-radius: 999px;
   font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;

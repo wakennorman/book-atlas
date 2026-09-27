@@ -27,6 +27,9 @@
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
+    manual: false,         // 手动摆过位置（打开拖动节点并拖过）⇒ 之后任何重绘都不许"归位"
+    fanout: null,          // { id, curv: Map<edgeKey, number> } 拖动后把该节点的线散开
+    maxDeg: 1,             // 本书最大关系数（symbolSize 的开方刻度用）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
     bandLabels: new Map(),   // 分组键 -> 图注文字（第 N 代 / 阵营名）
     places: new Map(),       // placeId -> place
@@ -205,6 +208,9 @@
     state.zoom = 1;
     state.viewCenter = [0, 0];
     state.hubId = null;
+    state.manual = false;
+    state.fanout = null;
+    state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
     if (sizeSel0) sizeSel0.value = state.sizeFilter;
@@ -273,7 +279,12 @@
 
   /* ---------------- 图表 ---------------- */
   function nodeDegree(id) { return state.adj.get(id)?.length || 0; }
-  function symbolSize(id) { return Math.min(15 + nodeDegree(id) * 2.2, 40); }
+  // 大小＝关系条数（开方压缩：曹操和只有 4 条关系的人也能看出差别，又不至于顶到天花板）
+  function symbolSize(id) {
+    const deg = nodeDegree(id);
+    const max = Math.max(1, state.maxDeg || 1);
+    return Math.max(13, Math.min(40, 13 + 27 * Math.sqrt(deg / max)));
+  }
   function categoryOf(c) {
     const idx = state.book.factions.findIndex((f) => f.key === c.faction);
     return idx >= 0 ? idx : 0;
@@ -419,13 +430,14 @@
         const derived = isDerived(r);
         const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
+      const fan = state.fanout && (r.from === state.fanout.id || r.to === state.fanout.id) ? state.fanout.curv.get(key) : null;
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
-          width: fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
-          opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
+          width: fan != null ? fxOk(1.8) : fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
+          opacity: dim ? 0.07 : (fan != null ? 0.8 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5))),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
-          curveness: 0.08,
+          curveness: fan != null ? fan : 0.08,        // 拖动过的节点：线按角度散开，方便单独点中
         },
       };
     });
@@ -581,7 +593,8 @@
     state.labels = keep;
   }
 
-  function freezeNow() {    if (state.frozen || !state.chart) return;
+  function freezeNow() {
+    if (state.frozen || !state.chart) return;
     const d = state.chart.getModel().getSeriesByIndex(0).getData();
     for (let i = 0; i < d.count(); i++) {
       const id = d.getId(i);
@@ -589,10 +602,78 @@
       if (id && layout) state.pos.set(id, { x: layout[0] ?? layout.x, y: layout[1] ?? layout.y });
     }
     state.frozen = true;
+    if (state.manual) {            // 手动摆过位置：只冻结，不再自动重排（否则就"归位"了）
+      computeLabels(state.zoom);
+      state.chart.setOption(buildOption({ keepView: true }));
+      saveLayoutCache();
+      return;
+    }
     relaxPositions();
     fitPositions();
     computeLabels();
     state.chart.setOption(buildOption({ keepView: true }));
+    saveLayoutCache();
+  }
+
+  /* —— 布局缓存：自由布局记住上次的结果，不要每次打开都换一套（手动摆过也记下来） —— */
+  function layoutCacheKey() { return `ba-pos-${(state.book?.meta?.slug || 'x')}-${state.view}`; }
+
+  function saveLayoutCache() {
+    if (!state.book || !state.pos.size) return;
+    if (state.view !== 'force' && !state.manual) return;      // 代际/分组视图本来就是算出来的，不用存
+    try {
+      localStorage.setItem(layoutCacheKey(), JSON.stringify({
+        n: state.book.characters.length,
+        manual: !!state.manual,
+        pos: [...state.pos.entries()].map(([id, p]) => [id, Math.round(p.x), Math.round(p.y)]),
+      }));
+    } catch (e) { /* 配额满了就算了 */ }
+  }
+
+  function loadLayoutCache() {
+    if (!state.book) return false;
+    try {
+      const raw = localStorage.getItem(layoutCacheKey());
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      if (!d || d.n !== state.book.characters.length || !Array.isArray(d.pos) || !d.pos.length) return false;
+      state.pos = new Map(d.pos.map(([id, x, y]) => [id, { x, y }]));
+      state.frozen = true;
+      state.manual = !!d.manual;
+      state.fit = { s: 1, cx: 0, cy: 0 };
+      state.bbox = null;
+      computeLabels(1);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function clearLayoutCache() {
+    try { localStorage.removeItem(layoutCacheKey()); } catch (e) { /* 忽略 */ }
+  }
+
+  /* —— 拖动节点后的"散线"：把该节点的所有线按角度顺序分配不同曲率，避免重叠到点不中 —— */
+  function applyFanout(id) {
+    if (!id || !state.adj.has(id)) { state.fanout = null; return; }
+    const center = state.pos.get(id);
+    if (!center) { state.fanout = null; return; }
+    const seen = new Set();
+    const neighbors = [];
+    for (const { to, rel } of state.adj.get(id) || []) {
+      const key = edgeKey(id, to);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const p = state.pos.get(to);
+      const ang = p ? Math.atan2(p.y - center.y, p.x - center.x) : 0;
+      neighbors.push({ key, ang });
+    }
+    neighbors.sort((a, b) => a.ang - b.ang);                  // 按空间角度排，曲率从小到大铺开
+    const N = neighbors.length;
+    const spread = Math.min(0.55, 0.05 * N);
+    const curv = new Map();
+    neighbors.forEach((nb, i) => {
+      curv.set(nb.key, N > 1 ? spread * ((2 * i) / (N - 1) - 1) : 0);
+    });
+    state.fanout = { id, curv, count: N };
   }
 
   function applyViewHeight() {
@@ -666,6 +747,8 @@
   function setView(view) {
     state.view = view;
     state.zoom = 1;
+    state.fanout = null;
+    updatefanoutHint();
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
@@ -673,6 +756,13 @@
     if (!state.chart) return;
     clearTimeout(state.freezeTimer);
     if (view === 'force') {
+      // 有缓存就沿用上次的自由布局（不要每次打开都换一套随机位置）
+      if (loadLayoutCache()) {
+        state.chart.clear();
+        state.chart.setOption(buildOption(), { notMerge: true });
+        return;
+      }
+      state.manual = false;
       state.frozen = false;
       // 人特别多时，保留当前布局坐标当力导向的起点（否则从圆形随机起步，几百个节点要算很久）
       const many = state.byId.size > 400;
@@ -686,6 +776,7 @@
       state.freezeTimer = setTimeout(() => freezeNow(), many ? 12000 : 6000);
     } else {
       state.frozen = true;
+      state.manual = false;
       buildGenerationPositions(view);
       relaxPositions(60);
       fitPositions();
@@ -726,8 +817,7 @@
   function renderFocusBar() {
     const bar = document.getElementById('focus-bar');
     if (!bar) return;
-    if (!state.focus) { bar.hidden = true; return; }
-    const c = state.byId.get(state.focus.id) || { name: state.focus.id };
+    if (!state.focus) { bar.hidden = true; return; }    const c = state.byId.get(state.focus.id) || { name: state.focus.id };
     const n = (focusSet() || new Set()).size;
     bar.hidden = false;
     bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} 人
@@ -736,18 +826,53 @@
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
   }
 
+  /** 拖动节点后的提示条（在聚焦条下方）：散了几条线 + 一键复原 */
+  function updatefanoutHint() {
+    const bar = document.getElementById('drag-hint');
+    if (!bar) return;
+    if (!state.manual || !state.fanout) { bar.hidden = true; return; }
+    const c = state.byId.get(state.fanout.id) || { name: state.fanout.id };
+    bar.hidden = false;
+    bar.innerHTML = `🖐 已把「${esc(c.name)}」的 ${state.fanout.count} 条线散开——点线看关系，放大后更好点
+      <button class="ghost tiny" type="button" data-drag-reset="1">复原布局</button>`;
+  }
+
+  /** 供"使用说明"演示：等价于用户拖了一下这个节点 */
+  function simulateDrag(id, dx = 70, dy = -46) {
+    const p = state.pos.get(id);
+    if (!p) return false;
+    state.manual = true;
+    state.frozen = true;
+    state.pos.set(id, { x: p.x + dx, y: p.y + dy });
+    applyFanout(id);
+    computeLabels(state.zoom);
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+    saveLayoutCache();
+    updatefanoutHint();
+    return true;
+  }
+
+  function resetManualLayout() {
+    state.manual = false;
+    state.fanout = null;
+    clearLayoutCache();
+    updatefanoutHint();
+    setView(state.view);
+  }
+
   function applyFocus(id, depth) {
     state.focus = id ? { id, depth: Math.max(1, Math.min(3, depth || 1)) } : null;
     state.focusCache = null;
     clearHighlight(false);
-    state.frozen = false;                       // 聚焦时用 force 布局（子图小，排得开）
+    // 手动摆过位置的：聚焦也只换数据、不动坐标（否则一聚焦就把摆好的布局冲掉）
+    state.frozen = state.manual ? true : false;
     state.fit = { s: 1, cx: 0, cy: 0 };
     if (state.chart) {
       clearTimeout(state.freezeTimer);
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
       state.zoom = 1;
-      if (state.focus) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
+      if (state.focus && !state.manual) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
     }
     renderFocusBar();
     updateCountHint();
@@ -763,7 +888,7 @@
     const sel = document.getElementById('size-filter');
     if (sel && sel.value !== state.sizeFilter) sel.value = state.sizeFilter;
     if (state.chart) {
-      if (state.frozen && !state.focus) {
+      if (state.frozen && !state.focus && !state.manual) {
         buildGenerationPositions(state.view);
         relaxPositions(80);
         fitPositions();
@@ -798,15 +923,29 @@
     state.chart.getZr().on('click', (e) => { if (!e.target) clearHighlight(); });
     // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
     state.chart.getZr().on('dblclick', (e) => { if (!e.target) resetRoam(); });
-    // 拖动节点后同步坐标，避免下次重绘把它拉回去
+    // 拖动节点后：记住位置、进入"手动模式"（此后不自动重排）、把该节点的线散开
     state.chart.on('dragend', () => {
+      if (!state.nodeDrag) return;
       const d = state.chart.getModel().getSeriesByIndex(0).getData();
+      let movedId = null, bestDelta = 0;
       for (let i = 0; i < d.count(); i++) {
         const id = d.getId(i);
         if (!id || String(id).startsWith('__gen_')) continue;
         const l = d.getItemLayout(i);
-        if (l) state.pos.set(id, { x: l[0] ?? l.x, y: l[1] ?? l.y });
+        if (!l) continue;
+        const nx = l[0] ?? l.x, ny = l[1] ?? l.y;
+        const old = state.pos.get(id);
+        const delta = old ? Math.abs(nx - old.x) + Math.abs(ny - old.y) : 0;
+        if (delta > bestDelta) { bestDelta = delta; movedId = id; }
+        state.pos.set(id, { x: nx, y: ny });
       }
+      state.manual = true;
+      state.frozen = true;
+      if (movedId) applyFanout(movedId);
+      computeLabels(state.zoom);
+      state.chart.setOption(buildOption({ keepView: true }));
+      saveLayoutCache();
+      updatefanoutHint();
     });
 
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
@@ -1250,6 +1389,15 @@
         setView(order[(order.indexOf(state.view) + 1) % order.length]);
         break;
       }
+      case 'drag': {
+        // 演示"拖出去 + 散线"：先把拖动开关打开（否则用户接着拖会发现拖不动）
+        state.nodeDrag = true;
+        const dragBtn = document.getElementById('drag-btn');
+        if (dragBtn) dragBtn.textContent = '拖动节点：开';
+        if (!state.frozen) freezeNow();
+        if (hubId) simulateDrag(hubId, 80, -52);
+        break;
+      }
       case 'derived': {
         state.showDerived = !state.showDerived;
         try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
@@ -1318,6 +1466,7 @@
       const nav = ev.target.closest('[data-focus-nav]');
       if (nav && state.focus) { applyFocus(state.focus.id, state.focus.depth + (nav.dataset.focusNav === 'inc' ? 1 : -1)); return; }
       if (ev.target.closest('[data-focus-exit]')) applyFocus(null, 1);
+      if (ev.target.closest('[data-drag-reset]')) resetManualLayout();
     });
 
     const mentionBtn = document.getElementById('mentioned-btn');
@@ -1364,7 +1513,7 @@
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
-    $('#reset-btn').addEventListener('click', () => setView(state.view));
+    $('#reset-btn').addEventListener('click', () => { clearLayoutCache(); state.manual = false; state.fanout = null; updatefanoutHint(); setView(state.view); });
     $('#view-reset-btn').addEventListener('click', resetRoam);
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
@@ -1384,7 +1533,11 @@
     dragBtn.addEventListener('click', () => {
       state.nodeDrag = !state.nodeDrag;
       dragBtn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
-      resetRoam();
+      if (state.nodeDrag) {
+        resetRoam();                                  // 打开：只把缩放/平移复位，不动布局
+      } else {
+        resetManualLayout();                          // 关掉：复原布局（=用户要的"关掉才归位"）
+      }
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）
@@ -1446,6 +1599,8 @@
     applyFocus: (id, depth) => applyFocus(id, depth),
     applySizeFilter: (v) => applySizeFilter(v),
     computeLabels: (z) => computeLabels(z),
+    simulateDrag: (id, dx, dy) => simulateDrag(id, dx, dy),
+    resetManualLayout: () => resetManualLayout(),
     nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
   };
