@@ -1717,11 +1717,23 @@
       "generation": 1,
       "gender": "m",
       "firstCh": 10,
-      "faction": "han",
+      "faction": "wei",
       "title": "谋士",
       "desc": "李傕郭汜谋士，屡献奇计",
       "fate": "献坚守与设宴之计，皆被采用",
-      "note": ""
+      "note": "",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 9,
+          "label": "董卓／李傕帐下"
+        },
+        {
+          "faction": "wei",
+          "fromCh": 23,
+          "label": "随张绣降曹操"
+        }
+      ]
     },
     {
       "id": "li-meng",
@@ -1791,11 +1803,23 @@
       "generation": 1,
       "gender": "m",
       "firstCh": 10,
-      "faction": "qunxiong",
+      "faction": "shu",
       "title": "少年将军",
       "desc": "马腾之子，年十七，英勇无敌",
       "fate": "刺死王方、生擒李蒙，后死战退张济",
-      "note": "马腾子。"
+      "note": "马腾子。",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 10,
+          "label": "西凉起兵"
+        },
+        {
+          "faction": "shu",
+          "fromCh": 65,
+          "label": "兵败后投刘备"
+        }
+      ]
     },
     {
       "id": "ma-yu",
@@ -2231,11 +2255,23 @@
       "generation": 1,
       "gender": "m",
       "firstCh": 12,
-      "faction": "qunxiong",
+      "faction": "wei",
       "title": "部将",
       "desc": "东巷杀出夹攻曹操",
       "fate": "巡海打粮未回，免于定陶之败",
-      "note": ""
+      "note": "",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 3,
+          "label": "吕布帐下"
+        },
+        {
+          "faction": "wei",
+          "fromCh": 20,
+          "label": "白门楼后归曹操"
+        }
+      ]
     },
     {
       "id": "zang-ba",
@@ -2713,11 +2749,23 @@
       "generation": 1,
       "gender": "m",
       "firstCh": 11,
-      "faction": "qunxiong",
+      "faction": "wu",
       "title": "东莱勇士",
       "desc": "东莱黄县人，善弓箭，重气谊。",
       "fate": "救北海后往扬州投刘繇。",
-      "note": ""
+      "note": "",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 11,
+          "label": "扬州刘繇帐下"
+        },
+        {
+          "faction": "wu",
+          "fromCh": 15,
+          "label": "归孙策"
+        }
+      ]
     },
     {
       "id": "zhang-yan",
@@ -3500,11 +3548,23 @@
       "generation": 1,
       "gender": "m",
       "firstCh": 22,
-      "faction": "qunxiong",
+      "faction": "wei",
       "title": "袁绍名将",
       "desc": "孔融称其为世之名将",
       "fate": "随袁绍军",
-      "note": "仅本章对话中提及"
+      "note": "仅本章对话中提及",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 22,
+          "label": "袁绍帐下"
+        },
+        {
+          "faction": "wei",
+          "fromCh": 30,
+          "label": "官渡战降曹操"
+        }
+      ]
     },
     {
       "id": "ma-rong",
@@ -4857,11 +4917,23 @@
       "generation": 3,
       "gender": "m",
       "firstCh": 36,
-      "faction": "shu",
+      "faction": "wei",
       "title": "刘备军师",
       "desc": "颍川人，化名单福为刘备画策",
       "fate": "母被掳，辞刘赴许，终身不设一谋",
-      "note": "单福即徐庶托名"
+      "note": "单福即徐庶托名",
+      "factionHistory": [
+        {
+          "faction": "shu",
+          "fromCh": 35,
+          "label": "刘备帐下"
+        },
+        {
+          "faction": "wei",
+          "fromCh": 36,
+          "label": "母亲被扣，被迫归曹操"
+        }
+      ]
     },
     {
       "id": "xu-shu-mu",
@@ -5254,7 +5326,19 @@
       "title": "都尉",
       "desc": "原江夏将，弃黄祖归孙权，勇猛善射。",
       "fate": "升都尉，领兵五千镇守夏口。",
-      "note": "字兴霸"
+      "note": "字兴霸",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 38,
+          "label": "江夏黄祖帐下"
+        },
+        {
+          "faction": "wu",
+          "fromCh": 39,
+          "label": "投孙权"
+        }
+      ]
     },
     {
       "id": "su-fei",
@@ -5677,11 +5761,23 @@
       "generation": 2,
       "gender": "m",
       "firstCh": 41,
-      "faction": "qunxiong",
+      "faction": "shu",
       "title": "义阳武将",
       "desc": "襄阳斩关迎刘备，大战文聘",
       "fate": "兵败投长沙韩玄",
-      "note": "本章初次登场"
+      "note": "本章初次登场",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 41,
+          "label": "长沙韩玄帐下"
+        },
+        {
+          "faction": "shu",
+          "fromCh": 53,
+          "label": "长沙归刘备"
+        }
+      ]
     },
     {
       "id": "han-xuan",
@@ -5894,7 +5990,19 @@
       "title": "中郎将",
       "desc": "伏兵左路杀出",
       "fate": "助败吴兵",
-      "note": "字汉升"
+      "note": "字汉升",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 41,
+          "label": "长沙韩玄帐下"
+        },
+        {
+          "faction": "shu",
+          "fromCh": 53,
+          "label": "长沙归刘备"
+        }
+      ]
     },
     {
       "id": "qiao-guo-lao",
@@ -6145,7 +6253,19 @@
       "title": "刘备谋士",
       "desc": "与庞统共劝取西川",
       "fate": "致书劝降，被刘璋大骂",
-      "note": "字孝直。"
+      "note": "字孝直。",
+      "factionHistory": [
+        {
+          "faction": "qunxiong",
+          "fromCh": 59,
+          "label": "刘璋帐下"
+        },
+        {
+          "faction": "shu",
+          "fromCh": 60,
+          "label": "迎刘备入蜀"
+        }
+      ]
     },
     {
       "id": "zhang-ren",
@@ -8631,7 +8751,19 @@
       "title": "上将",
       "desc": "天水冀人，事母至孝，文武双全",
       "fate": "归降孔明，得传平生之学",
-      "note": "天水少年将军"
+      "note": "天水少年将军",
+      "factionHistory": [
+        {
+          "faction": "wei",
+          "fromCh": 92,
+          "label": "天水魏将"
+        },
+        {
+          "faction": "shu",
+          "fromCh": 93,
+          "label": "归降诸葛亮"
+        }
+      ]
     },
     {
       "id": "ma-zun",

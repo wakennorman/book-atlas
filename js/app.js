@@ -66,7 +66,28 @@
 
   /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
   const factionNameOf = (c) => (state.book?.factions.find((f) => f.key === c.faction) || {}).name || '其他';
-  const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${c.faction || 'other'}`);
+  /**
+   * 阵营变化的"当前归属"：characters[].factionHistory = [{ faction, fromCh, label }]
+   * · 剧透保护开着时，按"你读到的那一回"算（读者不该在第 3 回就看到他后来投了谁）
+   * · 没开保护 → 取最后一段（最终归属）
+   */
+  function effectiveFactionKey(c) {
+    const h = c && c.factionHistory;
+    if (!Array.isArray(h) || !h.length) return (c && c.faction) || '';
+    const ch = state.progress === null ? Infinity : state.progress;
+    let pick = h[0];
+    for (const seg of h) if (typeof seg.fromCh === 'number' && seg.fromCh <= ch) pick = seg;
+    return pick.faction || (c && c.faction) || '';
+  }
+  const factionColorOf = (c) => {
+    const key = effectiveFactionKey(c);
+    return (state.book?.factions.find((f) => f.key === key) || {}).color || '#8b94a7';
+  };
+  const factionTextOf = (c) => {
+    const key = effectiveFactionKey(c);
+    return (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
+  };
+  const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
   const isMentioned = (c) => c && c.tier === 'mentioned';
@@ -254,7 +275,7 @@
         const key = btn.dataset.faction;
         if (state.activeFaction === key) { clearHighlight(); return; }
         state.activeFaction = key;
-        const nodes = new Set(state.book.characters.filter((c) => c.faction === key).map((c) => c.id));
+        const nodes = new Set(state.book.characters.filter((c) => effectiveFactionKey(c) === key).map((c) => c.id));
         const edges = new Set();
         for (const r of state.book.relations) if (nodes.has(r.from) || nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
         setHighlight(nodes, edges, null, null);
@@ -368,7 +389,7 @@
           ? { color: 'transparent', borderColor: '#8b94a7', borderWidth: 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
           : {
               opacity: dim ? 0.16 : (locked ? 0.4 : 1),
-              color: locked ? '#9aa3b0' : ((b.factions.find((f) => f.key === c.faction) || {}).color || '#8b94a7'),
+              color: locked ? '#9aa3b0' : factionColorOf(c),
               borderColor: panel,
               borderWidth: 1,
             },
@@ -431,11 +452,12 @@
         const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
       const fan = state.fanout && (r.from === state.fanout.id || r.to === state.fanout.id) ? state.fanout.curv.get(key) : null;
+      const otherWhileFan = state.fanout && fan == null;          // 拖动后：不相干的线压暗，让这一束线跳出来
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
-          width: fan != null ? fxOk(1.8) : fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
-          opacity: dim ? 0.07 : (fan != null ? 0.8 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5))),
+          width: fan != null ? fxOk(2.4) : fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
+          opacity: dim ? 0.07 : (fan != null ? 0.9 : (otherWhileFan ? 0.12 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)))),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: fan != null ? fan : 0.08,        // 拖动过的节点：线按角度散开，方便单独点中
         },
@@ -474,7 +496,7 @@
       series: [{
         type: 'graph',
         layout: (state.frozen && !state.focus) ? 'none' : 'force',
-        roam: true, draggable: state.nodeDrag,
+        roam: true, draggable: false,   // 拖动节点由我们自己实现（见下面的 mousedown/mousemove/mouseup）
         // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
         ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
@@ -593,6 +615,76 @@
     state.labels = keep;
   }
 
+  /** 手动模式：把图上"真实"的位置读回 state.pos（ECharts 拖动只动元素，不动我们的数据） */
+  function syncPositionsFromChart() {
+    if (!state.manual || !state.chart) return;
+    try {
+      const d = state.chart.getModel().getSeriesByIndex(0).getData();
+      for (let i = 0; i < d.count(); i++) {
+        const id = d.getId(i);
+        if (!id || String(id).startsWith('__gen_')) continue;
+        const l = d.getItemLayout(i);
+        if (l) state.pos.set(id, { x: l[0] ?? l.x, y: l[1] ?? l.y });
+      }
+    } catch (e) { /* 忽略 */ }
+  }
+
+  /** 鼠标抬起后：等 ECharts 内部把拖动结果写进数据（异步），再回读落盘 */
+  let dragCaptureTimer = null;
+  function scheduleDragCapture() {
+    if (!state.nodeDrag) return;
+    clearTimeout(dragCaptureTimer);
+    dragCaptureTimer = setTimeout(() => captureDragResult(), 60);   // 关键：延后一点读，否则读到的是拖动前的位置
+  }
+
+  /** 从 ZRender 显示列表读"元素真实坐标"（鼠标拖动改的就是元素本身，最权威） */
+  function readElementPositions() {
+    const out = new Map();
+    try {
+      const seriesData = state.chart.getModel().getSeriesByIndex(0).getData();
+      for (const el of state.chart.getZr().storage.getDisplayList()) {
+        const rec = el && el.__ecData;
+        if (!rec || rec.seriesIndex !== 0 || rec.dataIndex === null || rec.dataIndex === undefined) continue;
+        const id = seriesData.getId(rec.dataIndex);
+        if (!id || String(id).startsWith('__gen_')) continue;
+        if (typeof el.x === 'number' && typeof el.y === 'number') out.set(id, { x: el.x, y: el.y });
+      }
+    } catch (e) { /* 忽略 */ }
+    return out;
+  }
+
+  /** 拖完（鼠标抬起）后：位置落盘 + 进入手动模式 + 把该节点的线散开 */
+  function captureDragResult(opts = {}) {
+    if (!state.chart || !state.nodeDrag) return;
+    const els = readElementPositions();                       // 元素真实坐标（拖动直接改的）
+    const d = state.chart.getModel().getSeriesByIndex(0).getData();
+    let movedId = null, best = 0;
+    const next = [];
+    for (let i = 0; i < d.count(); i++) {
+      const id = d.getId(i);
+      if (!id || String(id).startsWith('__gen_')) continue;
+      const l = d.getItemLayout(i);
+      const e = els.get(id);
+      const nx = e ? e.x : (l ? (l[0] ?? l.x) : null);
+      const ny = e ? e.y : (l ? (l[1] ?? l.y) : null);
+      if (nx === null || ny === null) continue;
+      const old = state.pos.get(id);
+      const delta = old ? Math.abs(nx - old.x) + Math.abs(ny - old.y) : 0;
+      if (delta > best) { best = delta; movedId = id; }
+      next.push([id, nx, ny]);
+    }
+    if (best < 2) return;                     // 只是点了下（没真拖动）⇒ 不算手动模式
+    for (const [id, x, y] of next) state.pos.set(id, { x, y });
+    state.manual = true;
+    state.frozen = true;
+    if (opts.silent) { saveLayoutCache(); updatefanoutHint(); return; }   // 拖动过程中：只记账、不重绘（免得打断拖动）
+    if (movedId) applyFanout(movedId);
+    computeLabels(state.zoom);
+    state.chart.setOption(buildOption({ keepView: true }));
+    saveLayoutCache();
+    updatefanoutHint();
+  }
+
   function freezeNow() {
     if (state.frozen || !state.chart) return;
     const d = state.chart.getModel().getSeriesByIndex(0).getData();
@@ -603,6 +695,7 @@
     }
     state.frozen = true;
     if (state.manual) {            // 手动摆过位置：只冻结，不再自动重排（否则就"归位"了）
+      syncPositionsFromChart();
       computeLabels(state.zoom);
       state.chart.setOption(buildOption({ keepView: true }));
       saveLayoutCache();
@@ -668,7 +761,7 @@
     }
     neighbors.sort((a, b) => a.ang - b.ang);                  // 按空间角度排，曲率从小到大铺开
     const N = neighbors.length;
-    const spread = Math.min(0.55, 0.05 * N);
+    const spread = Math.min(2.2, 0.06 * N + 0.25);   // 线越多铺得越开（140 条时到 2.2：每条的弓形都能看出差别）
     const curv = new Map();
     neighbors.forEach((nb, i) => {
       curv.set(nb.key, N > 1 ? spread * ((2 * i) / (N - 1) - 1) : 0);
@@ -833,7 +926,7 @@
     if (!state.manual || !state.fanout) { bar.hidden = true; return; }
     const c = state.byId.get(state.fanout.id) || { name: state.fanout.id };
     bar.hidden = false;
-    bar.innerHTML = `🖐 已把「${esc(c.name)}」的 ${state.fanout.count} 条线散开——点线看关系，放大后更好点
+    bar.innerHTML = `🖐 已把「${esc(c.name)}」的 ${state.fanout.count} 条线散开（其他线已压暗）——点线看关系，放大后更好点
       <button class="ghost tiny" type="button" data-drag-reset="1">复原布局</button>`;
   }
 
@@ -906,11 +999,13 @@
     clearTimeout(state.freezeTimer);
     state.chart = echarts.init(el, null, { renderer: 'canvas' });
     state.frozen = false;
-    state.pos = new Map();
-    state.bands = new Map();
+    if (!state.manual) {
+      state.pos = new Map();
+      state.bands = new Map();
+      state.fit = { s: 1, cx: 0, cy: 0 };
+    }
     state.fit = { s: 1, cx: 0, cy: 0 };
-    setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
-
+    // ⚠️ 事件绑定必须在任何 return 之前（之前手动模式提前 return，导致拖动/点击处理器根本没注册）
     state.chart.on('click', (p) => {
       if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
       if (p.dataType === 'edge') {
@@ -923,30 +1018,66 @@
     state.chart.getZr().on('click', (e) => { if (!e.target) clearHighlight(); });
     // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
     state.chart.getZr().on('dblclick', (e) => { if (!e.target) resetRoam(); });
-    // 拖动节点后：记住位置、进入"手动模式"（此后不自动重排）、把该节点的线散开
-    state.chart.on('dragend', () => {
-      if (!state.nodeDrag) return;
-      const d = state.chart.getModel().getSeriesByIndex(0).getData();
-      let movedId = null, bestDelta = 0;
-      for (let i = 0; i < d.count(); i++) {
-        const id = d.getId(i);
-        if (!id || String(id).startsWith('__gen_')) continue;
-        const l = d.getItemLayout(i);
-        if (!l) continue;
-        const nx = l[0] ?? l.x, ny = l[1] ?? l.y;
-        const old = state.pos.get(id);
-        const delta = old ? Math.abs(nx - old.x) + Math.abs(ny - old.y) : 0;
-        if (delta > bestDelta) { bestDelta = delta; movedId = id; }
-        state.pos.set(id, { x: nx, y: ny });
+    // ── 自己实现节点拖动（不用 ECharts 的 draggable：它只动元素、不发事件，位置会"归位"）──
+    let dragState = null, dragRenderTimer = null;
+    const evXY = (e) => [e.zrX !== undefined ? e.zrX : e.offsetX, e.zrY !== undefined ? e.zrY : e.offsetY];
+    const hitNodeAt = (x, y) => {
+      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
+      if (!pt) return null;
+      let best = null, bestD = Infinity;
+      for (const [id, p] of state.pos) {
+        if (!state.byId.has(id)) continue;
+        const d = Math.hypot(p.x - pt[0], p.y - pt[1]);
+        const r = symbolSize(id) / 2 / Math.max(0.2, state.zoom || 1) + 6;   // 屏幕半径换算回坐标半径
+        if (d > r) continue;
+        if (best === null || d < bestD - 0.5 || (Math.abs(d - bestD) <= 0.5 && symbolSize(id) > symbolSize(best))) { bestD = d; best = id; }
       }
+      return best;
+    };
+    state.chart.getZr().on('mousedown', (e) => {
+      if (!state.nodeDrag) return;
+      const [x, y] = evXY(e);
+      const id = hitNodeAt(x, y);
+      if (!id) return;
+      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
+      const p = state.pos.get(id);
+      if (!pt || !p) return;
+      dragState = { id, dx: p.x - pt[0], dy: p.y - pt[1], moved: false };
+      state.lastHit = id;                                        // 调试用：最近一次按下命中的节点
+      state.draging = true;
+      state.chart.setOption({ series: [{ roam: false }] });     // 拖节点时先关掉画布平移，免得一起动
+    });
+    state.chart.getZr().on('mousemove', (e) => {
+      if (!dragState) return;
+      const [x, y] = evXY(e);
+      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
+      if (!pt) return;
+      dragState.moved = true;
+      state.pos.set(dragState.id, { x: pt[0] + dragState.dx, y: pt[1] + dragState.dy });
       state.manual = true;
       state.frozen = true;
-      if (movedId) applyFanout(movedId);
+      if (!dragRenderTimer) {
+        dragRenderTimer = setTimeout(() => {                     // 节流重绘，跟着鼠标走
+          dragRenderTimer = null;
+          if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+        }, 40);
+      }
+    });
+    const finishDrag = () => {
+      state.chart.setOption({ series: [{ roam: true }] });
+      if (!dragState) return;
+      const { id, moved } = dragState;
+      dragState = null;
+      state.draging = false;
+      if (!moved) return;                                        // 只是点了下：不算拖动
+      applyFanout(id);                                           // 散线
       computeLabels(state.zoom);
       state.chart.setOption(buildOption({ keepView: true }));
       saveLayoutCache();
       updatefanoutHint();
-    });
+    };
+    state.chart.getZr().on('mouseup', finishDrag);
+    state.chart.getZr().on('mouseout', finishDrag);
 
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
     state.chart.on('graphroam', (p) => {
@@ -954,6 +1085,7 @@
       clearTimeout(state.labelTimer);
       state.labelTimer = setTimeout(() => {
         if (state.allLabels || !state.chart) return;
+        syncPositionsFromChart();
         const before = state.labels ? state.labels.size : -1;
         computeLabels(state.zoom);
         if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption({ keepView: true }));
@@ -977,6 +1109,18 @@
     };
     new ResizeObserver(onResize).observe(el);
     window.addEventListener('resize', onResize);
+
+    // 事件都绑好了，现在决定怎么出图：
+    if (state.manual && state.pos.size) {
+      // 手动摆过位置：重建图表也要沿用（否则一切换主题/改剧透设置就"归位"了）
+      state.frozen = true;
+      computeLabels(state.zoom);
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+      updatefanoutHint();
+      return;
+    }
+    setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
   }
 
   function findRel(a, b) {
@@ -985,6 +1129,7 @@
 
   /* ---------------- 高亮 ---------------- */
   function setHighlight(nodes, edges, activeCharId, eventId) {
+    syncPositionsFromChart();          // 手动模式下：先把图上真实位置读回来，免得这次重绘把拖好的位置冲掉
     state.hlNodes = nodes || new Set();
     state.hlEdges = edges || new Set();
     state.activeChar = activeCharId || null;
@@ -1000,6 +1145,7 @@
   }
 
   function clearHighlight(updateVisual = true) {
+    syncPositionsFromChart();
     state.hlNodes = new Set();
     state.hlEdges = new Set();
     state.activeChar = null;
@@ -1149,7 +1295,9 @@
   }
 
   function renderCharacterPanel(c) {
-    const faction = state.book.factions.find((f) => f.key === c.faction);    const allRels = state.book.relations.filter((r) => (r.from === c.id || r.to === c.id) && relVisible(r));
+    const faction = state.book.factions.find((f) => f.key === effectiveFactionKey(c));
+    const factionHist = Array.isArray(c.factionHistory) ? c.factionHistory : [];
+    const allRels = state.book.relations.filter((r) => (r.from === c.id || r.to === c.id) && relVisible(r));
     const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - rels.length;
     const relHtml = rels.map((r) => {
@@ -1178,6 +1326,7 @@
         <span class="badge">关系 ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
+      ${factionHist.length > 1 ? `<p class="card-sub">阵营变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
       <p class="card-fate"><b>结局：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
       <p class="hint" style="margin-top:8px">人太多看不清？只看这个人的关系网：
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
@@ -1601,6 +1750,8 @@
     computeLabels: (z) => computeLabels(z),
     simulateDrag: (id, dx, dy) => simulateDrag(id, dx, dy),
     resetManualLayout: () => resetManualLayout(),
+    selectCharacter: (id) => selectCharacter(id),
+    selectRelation: (a, b) => { const r = findRel(a, b); if (r) selectRelation(r); return !!r; },
     nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
   };

@@ -44,8 +44,7 @@ function validate(file) {
 
   const chars = book.characters || [];
   if (!chars.length) err('characters 为空');
-  const ids = new Set();
-  const names = new Map();
+  const ids = new Set();  const names = new Map();
   for (const c of chars) {
     const where = `角色 ${c.id || '(无 id)'}`;
     req(c, 'id', where); req(c, 'name', where);
@@ -96,6 +95,26 @@ function validate(file) {
       else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`);
     }
   }
+
+  // ---------- 阵营变化（factionHistory）----------
+  for (const c of chars) {
+    const h = c.factionHistory;
+    if (!h) continue;
+    if (!Array.isArray(h) || !h.length) { err(`角色 ${c.id} 的 factionHistory 必须是数组`); continue; }
+    let last = -1;
+    for (const seg of h) {
+      if (!seg || !factions.has(seg.faction)) err(`角色 ${c.id} 的 factionHistory 引用了未定义的阵营「${seg && seg.faction}」`);
+      if (typeof seg.fromCh !== 'number') err(`角色 ${c.id} 的 factionHistory 缺少 fromCh（第几章起）`);
+      else if (seg.fromCh < last) err(`角色 ${c.id} 的 factionHistory 没有按 fromCh 升序`);
+      else last = seg.fromCh;
+    }
+    const finalSeg = h[h.length - 1];
+    if (finalSeg && finalSeg.faction !== c.faction) {
+      warn(`角色 ${c.id} 最后一段阵营（${finalSeg.faction}）与 faction（${c.faction}）不一致——final 归属应当等于最后一段`);
+    }
+  }
+  const withHist = chars.filter((c) => Array.isArray(c.factionHistory) && c.factionHistory.length > 1);
+  if (withHist.length) console.log(`  ℹ 阵营变化人物：${withHist.length} 人（${withHist.slice(0, 6).map((c) => c.name).join('、')}${withHist.length > 6 ? ' …' : ''}）`);
 
   // ---------- 别名覆盖（搜索命中率）----------
   // 读者习惯用「字/号/俗称/自己那版译名」搜——没有别名就等于搜不到。
