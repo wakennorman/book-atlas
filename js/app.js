@@ -39,6 +39,7 @@
     focusCache: null,        // 聚焦集合缓存
     rank: null,              // id -> 关系数排名（sizeFilter 用）
     zoom: 1,                 // 当前缩放（标签按缩放分级显示）
+    viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
     labelTimer: null,
   };
 
@@ -202,6 +203,8 @@
     state.focus = null;
     state.focusCache = null;
     state.zoom = 1;
+    state.viewCenter = [0, 0];
+    state.hubId = null;
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
     if (sizeSel0) sizeSel0.value = state.sizeFilter;
@@ -322,13 +325,22 @@
     return !set || set.has(id);
   };
 
-  function buildOption() {
+  function buildOption(opts = {}) {
     const b = state.book;
     const ink = cssVar('--ink') || '#232a35';
     const muted = cssVar('--muted') || '#6c7482';
     const panel = cssVar('--panel') || '#fff';
     const line = cssVar('--line') || '#e5dfd3';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
+    // 放大补偿：ECharts 的漫游缩放会把符号/字号/线宽一起放大（36× 时一个节点上千像素，屏幕上只剩一块碎片）
+    // ⇒ 放大时按 1/zoom 缩回选项值，保证屏幕上的尺寸始终是"节点原始大小"
+    const zc = (state.zoom || 1) > 1 ? 1 / state.zoom : 1;
+    // 符号在**屏幕上**的目标直径：跟当前节点间距挂钩——
+    // 适配视图里间距只有一两像素时，符号缩成小点（否则几百个 15–40px 的圆会糊成一团）
+    const spacingScreen = (state.stepWorld || 40) * (state.fitLast || 1) * (state.zoom || 1);
+    const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
+    const fxSym = (v) => Math.max(0.04, v * zc * symScale);   // 节点符号（跟着间距缩）
+    const fxOk = (v) => Math.max(0.06, v * zc);                // 标签字号 / 线宽 / 图注圆点（只补偿缩放，屏幕尺寸恒定）
 
     const data = b.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
       const dim = anyDim && !state.hlNodes.has(c.id);
@@ -339,7 +351,7 @@
         id: c.id, name: locked ? '🔒' : c.name, value: c.title,
         category: categoryOf(c),
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
-        symbolSize: (mentioned ? 12 : symbolSize(c.id)) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1),
+        symbolSize: fxSym((mentioned ? 12 : symbolSize(c.id)) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1)),
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
         itemStyle: mentioned
           ? { color: 'transparent', borderColor: '#8b94a7', borderWidth: 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
@@ -385,7 +397,7 @@
           x: isH ? band : bb.minX - 30,
           y: isH ? bb.minY - 26 : band,
           label: {
-            show: true, color: muted, fontSize: 11.5, fontWeight: 'bold',
+            show: true, color: muted, fontSize: fxOk(11.5), fontWeight: 'bold',
             position: isH ? 'top' : 'left', distance: 4,
           },
           itemStyle: { color: 'transparent' },
@@ -410,7 +422,7 @@
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
-          width: state.hlEdges.has(key) && anyDim ? 3 : 1.2,
+          width: fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
           opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: 0.08,
@@ -451,13 +463,15 @@
         type: 'graph',
         layout: (state.frozen && !state.focus) ? 'none' : 'force',
         roam: true, draggable: state.nodeDrag,
+        // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
+        ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], layoutAnimation: true, friction: 0.6, initLayout: 'circular' },
         data, links,
         label: {
           show: true,
           position: state.view === 'force' ? 'right' : 'bottom',
-          distance: 4, fontSize: 10.5, color: ink, formatter: '{b}',
+          distance: 4, fontSize: fxOk(10.5), color: ink, formatter: '{b}',
         },
         labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
@@ -465,7 +479,7 @@
         emphasis: {
           focus: 'adjacency',
           label: { show: true, fontWeight: 'bold' },
-          lineStyle: { width: 3, opacity: 0.9 },
+          lineStyle: { width: fxOk(3), opacity: 0.9 },
         },
         blur: {
           itemStyle: { opacity: 0.15 },
@@ -535,15 +549,22 @@
 
   function computeLabels(zoom = state.zoom || 1) {
     if (state.allLabels || !state.pos.size) { state.labels = null; return; }
-    // 放大后能看清更多名字：屏幕上的节点越大，越多标签有资格显示（像地图分级）
-    const minScreenSize = 15;
+    // 屏幕上的实际符号直径（含放大补偿 + 间距缩放，和 buildOption 里一致）
+    const zc = zoom > 1 ? 1 / zoom : 1;
+    const spacingScreen = (state.stepWorld || 40) * (state.fitLast || 1) * zoom;
+    const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
+    const eff = (id) => symbolSize(id) * zoom * zc * symScale;
+    // 间距还不够大时，只给关系最多的前 40 人标名字（免得一屏几百个名字糊在一起）
+    const zoomedIn = spacingScreen >= 18;
+    const rank = degreeRanking();
+    const MAX_LABELS = 400;
     const cands = state.book.characters
       .filter((c) => state.pos.has(c.id) && passSizeFilter(c.id) && passFocus(c.id))
-      .filter((c) => isMentioned(c) ? state.hlNodes.has(c.id) : symbolSize(c.id) * zoom >= minScreenSize)
+      .filter((c) => (isMentioned(c)
+        ? state.hlNodes.has(c.id)
+        : (zoomedIn ? eff(c.id) >= 6 : (rank.get(c.id) || 9999) <= 40)))
       .map((c) => {
-        const size = symbolSize(c.id) * zoom;
-        // 标签框只按"文字宽度 + 节点半个身子"算——节点直径不能整个算进去，否则放大后盒子巨大、互相压掉
-        const chip = Math.min(size, 64);
+        const chip = Math.min(Math.max(eff(c.id), 6), 64);
         const w = c.name.length * 11.5 + chip + 6, h = Math.max(chip, 18);
         const p = state.pos.get(c.id);
         const sx = p.x * zoom + chip / 2;
@@ -553,6 +574,7 @@
     const placed = [];
     const keep = new Set();
     for (const n of cands) {
+      if (keep.size >= MAX_LABELS) break;
       const hit = placed.some((o) => !(n.bx > o.bx + o.w || n.bx + n.w < o.bx || n.by > o.by + o.h || n.by + n.h < o.by));
       if (!hit) { placed.push(n); keep.add(n.id); }
     }
@@ -570,7 +592,7 @@
     relaxPositions();
     fitPositions();
     computeLabels();
-    state.chart.setOption(buildOption());
+    state.chart.setOption(buildOption({ keepView: true }));
   }
 
   function applyViewHeight() {
@@ -617,6 +639,7 @@
     const viewCross = (view === 'gen-h' ? H : W) - crossPad * 2;
     const mainLen = Math.max(viewMain, (groups.length - 1) * stepMain);
     const crossLen = Math.max(viewCross, (maxCount - 1) * stepCross);
+    state.stepWorld = stepCross;      // 相邻节点的世界间距（buildOption 用它决定符号该画多大）
     groups.forEach((g, gi) => {
       const center = groups.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (groups.length - 1);
       state.bands.set(g, center);
@@ -675,9 +698,21 @@
   function resetRoam() {
     if (!state.chart) return;
     // clear + setOption 会把缩放/平移复位，但保留当前布局坐标
+    state.zoom = 1;
+    state.viewCenter = [0, 0];
+    computeLabels(1);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });
-    state.zoom = 1;
+  }
+
+  /** 缩放到指定倍率（1:1 = 节点原始大小），可指定视角中心 */
+  function applyZoom(zoom, center) {
+    if (!state.chart) return;
+    state.zoom = Math.max(0.02, Math.min(40, zoom || 1));
+    state.viewCenter = center || [0, 0];
+    computeLabels(state.zoom);
+    state.chart.clear();
+    state.chart.setOption(buildOption(), { notMerge: true });   // 全量重建：zoom/center 与标签一起生效
   }
 
   /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
@@ -782,7 +817,7 @@
         if (state.allLabels || !state.chart) return;
         const before = state.labels ? state.labels.size : -1;
         computeLabels(state.zoom);
-        if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption());
+        if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption({ keepView: true }));
       }, 200);
     });
 
@@ -822,7 +857,7 @@
     });
     document.querySelectorAll('.event-chip').forEach((el) => el.classList.toggle('active', el.dataset.event === state.activeEvent));
     freezeNow();
-    if (state.chart) state.chart.setOption(buildOption());
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
   function clearHighlight(updateVisual = true) {
@@ -833,7 +868,7 @@
     state.activeFaction = null;
     document.querySelectorAll('.legend-item').forEach((el) => el.classList.remove('active', 'dim'));
     document.querySelectorAll('.event-chip').forEach((el) => el.classList.remove('active'));
-    if (updateVisual && state.chart) state.chart.setOption(buildOption());
+    if (updateVisual && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
   function renderLockedPanel(kind, item) {
@@ -1180,7 +1215,7 @@
         renderDatalist();
         renderPathSelects();
         updateCountHint();
-        if (state.chart) state.chart.setOption(buildOption());
+        if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
         selectCharacter(hiddenHit.id);
         return;
       }
@@ -1196,7 +1231,7 @@
       state.allLabels = !state.allLabels;
       labelBtn.textContent = state.allLabels ? '标签：全部' : '标签：主要';
       if (!state.allLabels) computeLabels();
-      if (state.chart) state.chart.setOption(buildOption());
+      if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     });
 
     const placeSel = document.getElementById('place-filter');
@@ -1226,7 +1261,7 @@
       syncMentionBtn();
       renderDatalist();
       renderPathSelects();
-      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       updateCountHint();
     });
     syncMentionBtn();
@@ -1240,7 +1275,7 @@
       syncMinorBtn();
       renderDatalist();
       renderPathSelects();
-      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
       updateCountHint();
     });
@@ -1253,7 +1288,7 @@
       state.showDerived = !state.showDerived;
       try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
       syncDerivedBtn();
-      if (state.chart) { freezeNow(); state.chart.setOption(buildOption()); }
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
       updateCountHint();
     });
@@ -1266,14 +1301,17 @@
     $('#view-reset-btn').addEventListener('click', resetRoam);
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
-      // 世界坐标是 1:1 的：最近一次 fit 的缩放是 state.fitLast，跳到 1/它 就是"节点原始大小"
       if (!state.chart) return;
+      // 世界坐标是 1:1 的：最近一次 fit 的缩放是 state.fitLast，跳到 1/它 就是"节点原始大小"
       const target = Math.min(40, 1 / (Math.abs(state.fitLast) || 1));
-      const rel = target / (state.zoom || 1);
-      state.chart.dispatchAction({ type: 'graphRoam', zoom: target });   // graphRoam 的 zoom 是"目标绝对倍率"
-      state.zoom = target;
-      clearTimeout(state.labelTimer);
-      state.labelTimer = setTimeout(() => { computeLabels(state.zoom); if (state.chart) state.chart.setOption(buildOption()); }, 250);
+      const sel = state.panelKind === 'char' && state.panelId ? state.pos.get(state.panelId) : null;
+      // 没选人时对准"关系最多的那个人"（hub）——几何中心在大书上往往是空的
+      if (!state.hubId) {
+        const hub = (state.book.characters || []).slice().sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))[0];
+        state.hubId = hub && hub.id;
+      }
+      const hub = state.hubId ? state.pos.get(state.hubId) : null;
+      applyZoom(target, sel ? [sel.x, sel.y] : (hub ? [hub.x, hub.y] : [0, 0]));
     });
     const dragBtn = $('#drag-btn');
     dragBtn.addEventListener('click', () => {
@@ -1309,7 +1347,7 @@
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       themeBtn.textContent = dark ? '☀️ 日间' : '🌙 夜间';
       localStorage.setItem('ba-theme', dark ? 'dark' : 'light');
-      if (state.chart) state.chart.setOption(buildOption());
+      if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     };
     themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme !== 'dark'));
     setTheme(localStorage.getItem('ba-theme') === 'dark');
