@@ -10,7 +10,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=55">
+  <link rel="stylesheet" href="css/style.css?v=56">
 </head>
 <body>
 
@@ -61,7 +61,6 @@
         <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局">复位视图</button>
         <button id="zoom-one-btn" class="ghost" type="button" title="跳到 1:1 缩放：节点回到原始大小，名字看得最清（大书推荐）">看清（1:1）</button>
         <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
-        <span id="drag-hint" class="hint drag-hint" hidden></span>
         <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
         <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
         <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）">族谱补全：显示</button>
@@ -181,8 +180,8 @@
         </div>
         <div class="help-text">
           <b>④ 拖动节点：把一个人拉出来，专门看他的线</b>
-          <span>点「拖动节点：开」，然后<b>拖动某个圆点</b>（空白处拖动仍是平移画布）。松开后：① 这个位置<b>不会自动归位</b>，缩放、点别处、搜索都不动它；② 这个点身上的线会<b>自动散开</b>，不会叠成一束——线太多时这样就能单独点中某一条。<br>想恢复：点「拖动节点：关」，或点「重置」。</span>
-          <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来（开拖动 + 散线）</button>
+          <span>点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（空白处拖动仍然是平移画布）。<b>松手后先别点别处</b>，位置会留着——这时他身上的线会看得清楚得多；一点空白、缩放或搜索，位置就回到布局（想彻底重排点「重置」）。</span>
+          <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来</button>
         </div>
       </div>
 
@@ -304,6 +303,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=55"></script>
+<script src="js/app.js?v=56"></script>
 </body>
 </html>

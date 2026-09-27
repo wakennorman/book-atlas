@@ -27,8 +27,6 @@
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
-    manual: false,         // 手动摆过位置（打开拖动节点并拖过）⇒ 之后任何重绘都不许"归位"
-    fanout: null,          // { id, curv: Map<edgeKey, number> } 拖动后把该节点的线散开
     maxDeg: 1,             // 本书最大关系数（symbolSize 的开方刻度用）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
     bandLabels: new Map(),   // 分组键 -> 图注文字（第 N 代 / 阵营名）
@@ -229,8 +227,6 @@
     state.zoom = 1;
     state.viewCenter = [0, 0];
     state.hubId = null;
-    state.manual = false;
-    state.fanout = null;
     state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
@@ -451,15 +447,13 @@
         const derived = isDerived(r);
         const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
-      const fan = state.fanout && (r.from === state.fanout.id || r.to === state.fanout.id) ? state.fanout.curv.get(key) : null;
-      const otherWhileFan = state.fanout && fan == null;          // 拖动后：不相干的线压暗，让这一束线跳出来
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
-          width: fan != null ? fxOk(2.4) : fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
-          opacity: dim ? 0.07 : (fan != null ? 0.9 : (otherWhileFan ? 0.12 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)))),
+          width: fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
+          opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
-          curveness: fan != null ? fan : 0.08,        // 拖动过的节点：线按角度散开，方便单独点中
+          curveness: 0.08,
         },
       };
     });
@@ -496,7 +490,7 @@
       series: [{
         type: 'graph',
         layout: (state.frozen && !state.focus) ? 'none' : 'force',
-        roam: false, draggable: false,   // 漫游/拖动都由我们自己实现（ECharts 的漫游会在拖节点时同时平移画布，看起来就是"点不动"）
+        roam: true, draggable: state.nodeDrag,
         // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
         ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
@@ -615,76 +609,6 @@
     state.labels = keep;
   }
 
-  /** 手动模式：把图上"真实"的位置读回 state.pos（ECharts 拖动只动元素，不动我们的数据） */
-  function syncPositionsFromChart() {
-    if (!state.manual || !state.chart) return;
-    try {
-      const d = state.chart.getModel().getSeriesByIndex(0).getData();
-      for (let i = 0; i < d.count(); i++) {
-        const id = d.getId(i);
-        if (!id || String(id).startsWith('__gen_')) continue;
-        const l = d.getItemLayout(i);
-        if (l) state.pos.set(id, { x: l[0] ?? l.x, y: l[1] ?? l.y });
-      }
-    } catch (e) { /* 忽略 */ }
-  }
-
-  /** 鼠标抬起后：等 ECharts 内部把拖动结果写进数据（异步），再回读落盘 */
-  let dragCaptureTimer = null;
-  function scheduleDragCapture() {
-    if (!state.nodeDrag) return;
-    clearTimeout(dragCaptureTimer);
-    dragCaptureTimer = setTimeout(() => captureDragResult(), 60);   // 关键：延后一点读，否则读到的是拖动前的位置
-  }
-
-  /** 从 ZRender 显示列表读"元素真实坐标"（鼠标拖动改的就是元素本身，最权威） */
-  function readElementPositions() {
-    const out = new Map();
-    try {
-      const seriesData = state.chart.getModel().getSeriesByIndex(0).getData();
-      for (const el of state.chart.getZr().storage.getDisplayList()) {
-        const rec = el && el.__ecData;
-        if (!rec || rec.seriesIndex !== 0 || rec.dataIndex === null || rec.dataIndex === undefined) continue;
-        const id = seriesData.getId(rec.dataIndex);
-        if (!id || String(id).startsWith('__gen_')) continue;
-        if (typeof el.x === 'number' && typeof el.y === 'number') out.set(id, { x: el.x, y: el.y });
-      }
-    } catch (e) { /* 忽略 */ }
-    return out;
-  }
-
-  /** 拖完（鼠标抬起）后：位置落盘 + 进入手动模式 + 把该节点的线散开 */
-  function captureDragResult(opts = {}) {
-    if (!state.chart || !state.nodeDrag) return;
-    const els = readElementPositions();                       // 元素真实坐标（拖动直接改的）
-    const d = state.chart.getModel().getSeriesByIndex(0).getData();
-    let movedId = null, best = 0;
-    const next = [];
-    for (let i = 0; i < d.count(); i++) {
-      const id = d.getId(i);
-      if (!id || String(id).startsWith('__gen_')) continue;
-      const l = d.getItemLayout(i);
-      const e = els.get(id);
-      const nx = e ? e.x : (l ? (l[0] ?? l.x) : null);
-      const ny = e ? e.y : (l ? (l[1] ?? l.y) : null);
-      if (nx === null || ny === null) continue;
-      const old = state.pos.get(id);
-      const delta = old ? Math.abs(nx - old.x) + Math.abs(ny - old.y) : 0;
-      if (delta > best) { best = delta; movedId = id; }
-      next.push([id, nx, ny]);
-    }
-    if (best < 2) return;                     // 只是点了下（没真拖动）⇒ 不算手动模式
-    for (const [id, x, y] of next) state.pos.set(id, { x, y });
-    state.manual = true;
-    state.frozen = true;
-    if (opts.silent) { saveLayoutCache(); updatefanoutHint(); return; }   // 拖动过程中：只记账、不重绘（免得打断拖动）
-    if (movedId) applyFanout(movedId);
-    computeLabels(state.zoom);
-    state.chart.setOption(buildOption({ keepView: true }));
-    saveLayoutCache();
-    updatefanoutHint();
-  }
-
   function freezeNow() {
     if (state.frozen || !state.chart) return;
     const d = state.chart.getModel().getSeriesByIndex(0).getData();
@@ -694,79 +618,10 @@
       if (id && layout) state.pos.set(id, { x: layout[0] ?? layout.x, y: layout[1] ?? layout.y });
     }
     state.frozen = true;
-    if (state.manual) {            // 手动摆过位置：只冻结，不再自动重排（否则就"归位"了）
-      syncPositionsFromChart();
-      computeLabels(state.zoom);
-      state.chart.setOption(buildOption({ keepView: true }));
-      saveLayoutCache();
-      return;
-    }
     relaxPositions();
     fitPositions();
     computeLabels();
     state.chart.setOption(buildOption({ keepView: true }));
-    saveLayoutCache();
-  }
-
-  /* —— 布局缓存：自由布局记住上次的结果，不要每次打开都换一套（手动摆过也记下来） —— */
-  function layoutCacheKey() { return `ba-pos-${(state.book?.meta?.slug || 'x')}-${state.view}`; }
-
-  function saveLayoutCache() {
-    if (!state.book || !state.pos.size) return;
-    if (state.view !== 'force' && !state.manual) return;      // 代际/分组视图本来就是算出来的，不用存
-    try {
-      localStorage.setItem(layoutCacheKey(), JSON.stringify({
-        n: state.book.characters.length,
-        manual: !!state.manual,
-        pos: [...state.pos.entries()].map(([id, p]) => [id, Math.round(p.x), Math.round(p.y)]),
-      }));
-    } catch (e) { /* 配额满了就算了 */ }
-  }
-
-  function loadLayoutCache() {
-    if (!state.book) return false;
-    try {
-      const raw = localStorage.getItem(layoutCacheKey());
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      if (!d || d.n !== state.book.characters.length || !Array.isArray(d.pos) || !d.pos.length) return false;
-      state.pos = new Map(d.pos.map(([id, x, y]) => [id, { x, y }]));
-      state.frozen = true;
-      state.manual = !!d.manual;
-      state.fit = { s: 1, cx: 0, cy: 0 };
-      state.bbox = null;
-      computeLabels(1);
-      return true;
-    } catch (e) { return false; }
-  }
-
-  function clearLayoutCache() {
-    try { localStorage.removeItem(layoutCacheKey()); } catch (e) { /* 忽略 */ }
-  }
-
-  /* —— 拖动节点后的"散线"：把该节点的所有线按角度顺序分配不同曲率，避免重叠到点不中 —— */
-  function applyFanout(id) {
-    if (!id || !state.adj.has(id)) { state.fanout = null; return; }
-    const center = state.pos.get(id);
-    if (!center) { state.fanout = null; return; }
-    const seen = new Set();
-    const neighbors = [];
-    for (const { to, rel } of state.adj.get(id) || []) {
-      const key = edgeKey(id, to);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const p = state.pos.get(to);
-      const ang = p ? Math.atan2(p.y - center.y, p.x - center.x) : 0;
-      neighbors.push({ key, ang });
-    }
-    neighbors.sort((a, b) => a.ang - b.ang);                  // 按空间角度排，曲率从小到大铺开
-    const N = neighbors.length;
-    const spread = Math.min(2.2, 0.06 * N + 0.25);   // 线越多铺得越开（140 条时到 2.2：每条的弓形都能看出差别）
-    const curv = new Map();
-    neighbors.forEach((nb, i) => {
-      curv.set(nb.key, N > 1 ? spread * ((2 * i) / (N - 1) - 1) : 0);
-    });
-    state.fanout = { id, curv, count: N };
   }
 
   function applyViewHeight() {
@@ -840,8 +695,6 @@
   function setView(view) {
     state.view = view;
     state.zoom = 1;
-    state.fanout = null;
-    updatefanoutHint();
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
@@ -849,13 +702,6 @@
     if (!state.chart) return;
     clearTimeout(state.freezeTimer);
     if (view === 'force') {
-      // 有缓存就沿用上次的自由布局（不要每次打开都换一套随机位置）
-      if (loadLayoutCache()) {
-        state.chart.clear();
-        state.chart.setOption(buildOption(), { notMerge: true });
-        return;
-      }
-      state.manual = false;
       state.frozen = false;
       // 人特别多时，保留当前布局坐标当力导向的起点（否则从圆形随机起步，几百个节点要算很久）
       const many = state.byId.size > 400;
@@ -869,7 +715,6 @@
       state.freezeTimer = setTimeout(() => freezeNow(), many ? 12000 : 6000);
     } else {
       state.frozen = true;
-      state.manual = false;
       buildGenerationPositions(view);
       relaxPositions(60);
       fitPositions();
@@ -919,50 +764,15 @@
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
   }
 
-  /** 拖动节点后的提示（放在工具栏里，不遮画布）：散了几条线 + 一键复原 */
-  function updatefanoutHint() {
-    const bar = document.getElementById('drag-hint');
-    if (!bar) return;
-    if (!state.manual || !state.fanout) { bar.hidden = true; return; }
-    const c = state.byId.get(state.fanout.id) || { name: state.fanout.id };
-    bar.hidden = false;
-    bar.innerHTML = `🖐 「${esc(c.name)}」的 ${state.fanout.count} 条线已散开（其他线压暗中）
-      <button class="ghost tiny" type="button" data-drag-reset="1">复原布局</button>`;
-  }
-
-  /** 平移/缩放用的节流重绘（自己实现漫游：拖空白＝平移，滚轮＝以光标为中心缩放） */
-  let viewRenderTimer = null;
-  function scheduleViewRender() {
-    if (viewRenderTimer) return;
-    viewRenderTimer = setTimeout(() => {
-      viewRenderTimer = null;
-      if (!state.chart) return;
-      computeLabels(state.zoom);
-      state.chart.setOption(buildOption());     // 合并渲染（含 zoom/center）
-    }, 50);
-  }
-
-  /** 供"使用说明"演示：等价于用户拖了一下这个节点 */
-  function simulateDrag(id, dx = 70, dy = -46) {
+  /** 供"使用说明"演示：把某个人挪开一点（等价于你拖动他） */
+  function nudgeNode(id, dx = 70, dy = -46) {
     const p = state.pos.get(id);
     if (!p) return false;
-    state.manual = true;
     state.frozen = true;
     state.pos.set(id, { x: p.x + dx, y: p.y + dy });
-    applyFanout(id);
     computeLabels(state.zoom);
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
-    saveLayoutCache();
-    updatefanoutHint();
     return true;
-  }
-
-  function resetManualLayout() {
-    state.manual = false;
-    state.fanout = null;
-    clearLayoutCache();
-    updatefanoutHint();
-    setView(state.view);
   }
 
   function applyFocus(id, depth) {
@@ -970,14 +780,14 @@
     state.focusCache = null;
     clearHighlight(false);
     // 手动摆过位置的：聚焦也只换数据、不动坐标（否则一聚焦就把摆好的布局冲掉）
-    state.frozen = state.manual ? true : false;
+    state.frozen = false;
     state.fit = { s: 1, cx: 0, cy: 0 };
     if (state.chart) {
       clearTimeout(state.freezeTimer);
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
       state.zoom = 1;
-      if (state.focus && !state.manual) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
+      if (state.focus) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
     }
     renderFocusBar();
     updateCountHint();
@@ -993,7 +803,7 @@
     const sel = document.getElementById('size-filter');
     if (sel && sel.value !== state.sizeFilter) sel.value = state.sizeFilter;
     if (state.chart) {
-      if (state.frozen && !state.focus && !state.manual) {
+      if (state.frozen && !state.focus) {
         buildGenerationPositions(state.view);
         relaxPositions(80);
         fitPositions();
@@ -1011,11 +821,8 @@
     clearTimeout(state.freezeTimer);
     state.chart = echarts.init(el, null, { renderer: 'canvas' });
     state.frozen = false;
-    if (!state.manual) {
-      state.pos = new Map();
-      state.bands = new Map();
-      state.fit = { s: 1, cx: 0, cy: 0 };
-    }
+    state.pos = new Map();
+    state.bands = new Map();
     state.fit = { s: 1, cx: 0, cy: 0 };
     // ⚠️ 事件绑定必须在任何 return 之前（之前手动模式提前 return，导致拖动/点击处理器根本没注册）
     state.chart.on('click', (p) => {
@@ -1030,111 +837,12 @@
     state.chart.getZr().on('click', (e) => { if (!e.target) clearHighlight(); });
     // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
     state.chart.getZr().on('dblclick', (e) => { if (!e.target) resetRoam(); });
-    // ── 自己实现节点拖动（不用 ECharts 的 draggable：它只动元素、不发事件，位置会"归位"）──
-    let dragState = null, dragRenderTimer = null;
-    const evXY = (e) => [e.zrX !== undefined ? e.zrX : e.offsetX, e.zrY !== undefined ? e.zrY : e.offsetY];
-    const hitNodeAt = (x, y) => {
-      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
-      if (!pt) return null;
-      let best = null, bestD = Infinity;
-      for (const [id, p] of state.pos) {
-        if (!state.byId.has(id)) continue;
-        const d = Math.hypot(p.x - pt[0], p.y - pt[1]);
-        const r = symbolSize(id) / 2 / Math.max(0.2, state.zoom || 1) + 6;   // 屏幕半径换算回坐标半径
-        if (d > r) continue;
-        if (best === null || d < bestD - 0.5 || (Math.abs(d - bestD) <= 0.5 && symbolSize(id) > symbolSize(best))) { bestD = d; best = id; }
-      }
-      return best;
-    };
-    state.chart.getZr().on('mousedown', (e) => {
-      if (!state.nodeDrag) return;
-      const [x, y] = evXY(e);
-      const id = hitNodeAt(x, y);
-      if (!id) return;
-      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
-      const p = state.pos.get(id);
-      if (!pt || !p) return;
-      dragState = { id, dx: p.x - pt[0], dy: p.y - pt[1], moved: false };
-      state.lastHit = id;                                        // 调试用：最近一次按下命中的节点
-      state.draging = true;
-      state.chart.setOption({ series: [{ roam: false }] });     // 拖节点时先关掉画布平移，免得一起动
-    });
-    state.chart.getZr().on('mousemove', (e) => {
-      if (!dragState) return;
-      const [x, y] = evXY(e);
-      const pt = state.chart.convertFromPixel({ seriesIndex: 0 }, [x, y]);
-      if (!pt) return;
-      dragState.moved = true;
-      state.pos.set(dragState.id, { x: pt[0] + dragState.dx, y: pt[1] + dragState.dy });
-      state.manual = true;
-      state.frozen = true;
-      if (!dragRenderTimer) {
-        dragRenderTimer = setTimeout(() => {                     // 节流重绘，跟着鼠标走
-          dragRenderTimer = null;
-          if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
-        }, 40);
-      }
-    });
-    const finishDrag = () => {
-      state.chart.setOption({ series: [{ roam: true }] });
-      if (!dragState) return;
-      const { id, moved } = dragState;
-      dragState = null;
-      state.draging = false;
-      if (!moved) return;                                        // 只是点了下：不算拖动
-      applyFanout(id);                                           // 散线
-      computeLabels(state.zoom);
-      state.chart.setOption(buildOption({ keepView: true }));
-      saveLayoutCache();
-      updatefanoutHint();
-    };
-    state.chart.getZr().on('mouseup', finishDrag);
-    state.chart.getZr().on('mouseout', finishDrag);
-
-    // ── 自己实现平移（拖空白）与缩放（滚轮，以光标为中心）──
-    let panState = null;
-    const canvasCenter = () => { const r = el.getBoundingClientRect(); return [r.width / 2, r.height / 2]; };
-    state.chart.getZr().on('mousedown', (e) => {
-      if (dragState) return;                                   // 已经按在节点上
-      const [x, y] = evXY(e);
-      if (state.nodeDrag && hitNodeAt(x, y)) return;           // 命中节点 ⇒ 交给拖节点
-      panState = { x, y };
-    });
-    state.chart.getZr().on('mousemove', (e) => {
-      if (!panState || dragState) return;
-      const [x, y] = evXY(e);
-      const z = Math.max(0.02, state.zoom || 1);
-      const c = state.viewCenter || [0, 0];
-      state.viewCenter = [c[0] - (x - panState.x) / z, c[1] - (y - panState.y) / z];
-      panState = { x, y };
-      scheduleViewRender();
-    });
-    state.chart.getZr().on('mouseup', () => { panState = null; });
-    state.chart.getZr().on('mouseout', () => { panState = null; });
-    state.chart.getZr().on('mousewheel', (e) => {
-      const raw = e.event || {};
-      if (raw.preventDefault) raw.preventDefault();
-      const dir = (raw.wheelDelta !== undefined ? raw.wheelDelta : -(raw.deltaY || 0)) > 0 ? 1 : -1;
-      const z = Math.max(0.02, state.zoom || 1);
-      const z2 = Math.max(0.02, Math.min(40, z * (dir > 0 ? 1.15 : 1 / 1.15)));
-      if (z2 === z) return;
-      const [x, y] = evXY(e);
-      const [cx, cy] = canvasCenter();
-      const c = state.viewCenter || [0, 0];
-      // 让光标下的那个点保持不动（以光标为中心缩放）
-      const sc = [c[0] + (x - cx) / z, c[1] + (y - cy) / z];
-      state.zoom = z2;
-      state.viewCenter = [sc[0] - (x - cx) / z2, sc[1] - (y - cy) / z2];
-      scheduleViewRender();
-    });
-
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
     state.chart.on('graphroam', (p) => {
       if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
       clearTimeout(state.labelTimer);
       state.labelTimer = setTimeout(() => {
         if (state.allLabels || !state.chart) return;
-        syncPositionsFromChart();
         const before = state.labels ? state.labels.size : -1;
         computeLabels(state.zoom);
         if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption({ keepView: true }));
@@ -1159,16 +867,6 @@
     new ResizeObserver(onResize).observe(el);
     window.addEventListener('resize', onResize);
 
-    // 事件都绑好了，现在决定怎么出图：
-    if (state.manual && state.pos.size) {
-      // 手动摆过位置：重建图表也要沿用（否则一切换主题/改剧透设置就"归位"了）
-      state.frozen = true;
-      computeLabels(state.zoom);
-      state.chart.clear();
-      state.chart.setOption(buildOption(), { notMerge: true });
-      updatefanoutHint();
-      return;
-    }
     setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
   }
 
@@ -1178,7 +876,6 @@
 
   /* ---------------- 高亮 ---------------- */
   function setHighlight(nodes, edges, activeCharId, eventId) {
-    syncPositionsFromChart();          // 手动模式下：先把图上真实位置读回来，免得这次重绘把拖好的位置冲掉
     state.hlNodes = nodes || new Set();
     state.hlEdges = edges || new Set();
     state.activeChar = activeCharId || null;
@@ -1194,7 +891,6 @@
   }
 
   function clearHighlight(updateVisual = true) {
-    syncPositionsFromChart();
     state.hlNodes = new Set();
     state.hlEdges = new Set();
     state.activeChar = null;
@@ -1600,7 +1296,7 @@
         const dragBtn = document.getElementById('drag-btn');
         if (dragBtn) dragBtn.textContent = '拖动节点：开';
         if (!state.frozen) freezeNow();
-        if (hubId) simulateDrag(hubId, 80, -52);
+        if (hubId) nudgeNode(hubId, 80, -52);
         break;
       }
       case 'derived': {
@@ -1671,7 +1367,6 @@
       const nav = ev.target.closest('[data-focus-nav]');
       if (nav && state.focus) { applyFocus(state.focus.id, state.focus.depth + (nav.dataset.focusNav === 'inc' ? 1 : -1)); return; }
       if (ev.target.closest('[data-focus-exit]')) applyFocus(null, 1);
-      if (ev.target.closest('[data-drag-reset]')) resetManualLayout();
     });
 
     const mentionBtn = document.getElementById('mentioned-btn');
@@ -1718,7 +1413,7 @@
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
-    $('#reset-btn').addEventListener('click', () => { clearLayoutCache(); state.manual = false; state.fanout = null; updatefanoutHint(); setView(state.view); });
+    $('#reset-btn').addEventListener('click', () => setView(state.view));
     $('#view-reset-btn').addEventListener('click', resetRoam);
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
@@ -1738,11 +1433,7 @@
     dragBtn.addEventListener('click', () => {
       state.nodeDrag = !state.nodeDrag;
       dragBtn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
-      if (state.nodeDrag) {
-        resetRoam();                                  // 打开：只把缩放/平移复位，不动布局
-      } else {
-        resetManualLayout();                          // 关掉：复原布局（=用户要的"关掉才归位"）
-      }
+      resetRoam();
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）
@@ -1804,8 +1495,6 @@
     applyFocus: (id, depth) => applyFocus(id, depth),
     applySizeFilter: (v) => applySizeFilter(v),
     computeLabels: (z) => computeLabels(z),
-    simulateDrag: (id, dx, dy) => simulateDrag(id, dx, dy),
-    resetManualLayout: () => resetManualLayout(),
     selectCharacter: (id) => selectCharacter(id),
     selectRelation: (a, b) => { const r = findRel(a, b); if (r) selectRelation(r); return !!r; },
     nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
