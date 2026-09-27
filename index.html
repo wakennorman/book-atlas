@@ -10,7 +10,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=52">
+  <link rel="stylesheet" href="css/style.css?v=54">
 </head>
 <body>
 
@@ -61,6 +61,7 @@
         <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局">复位视图</button>
         <button id="zoom-one-btn" class="ghost" type="button" title="跳到 1:1 缩放：节点回到原始大小，名字看得最清（大书推荐）">看清（1:1）</button>
         <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
+        <span id="drag-hint" class="hint drag-hint" hidden></span>
         <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
         <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
         <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）">族谱补全：显示</button>
@@ -70,7 +71,6 @@
     </div>
 
     <div id="focus-bar" class="focus-bar" hidden></div>
-    <div id="drag-hint" class="focus-bar drag-hint" hidden></div>
     <div id="graph" aria-label="人物关系网络图"></div>
 
     <div class="pathbar">
@@ -304,6 +304,6 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=52"></script>
+<script src="js/app.js?v=54"></script>
 </body>
 </html>

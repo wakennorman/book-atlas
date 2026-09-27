@@ -919,14 +919,14 @@
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
   }
 
-  /** 拖动节点后的提示条（在聚焦条下方）：散了几条线 + 一键复原 */
+  /** 拖动节点后的提示（放在工具栏里，不遮画布）：散了几条线 + 一键复原 */
   function updatefanoutHint() {
     const bar = document.getElementById('drag-hint');
     if (!bar) return;
     if (!state.manual || !state.fanout) { bar.hidden = true; return; }
     const c = state.byId.get(state.fanout.id) || { name: state.fanout.id };
     bar.hidden = false;
-    bar.innerHTML = `🖐 已把「${esc(c.name)}」的 ${state.fanout.count} 条线散开（其他线已压暗）——点线看关系，放大后更好点
+    bar.innerHTML = `🖐 「${esc(c.name)}」的 ${state.fanout.count} 条线已散开（其他线压暗中）
       <button class="ghost tiny" type="button" data-drag-reset="1">复原布局</button>`;
   }
 
@@ -1297,6 +1297,7 @@
   function renderCharacterPanel(c) {
     const faction = state.book.factions.find((f) => f.key === effectiveFactionKey(c));
     const factionHist = Array.isArray(c.factionHistory) ? c.factionHistory : [];
+    const lordHist = Array.isArray(c.lordHistory) ? c.lordHistory : [];
     const allRels = state.book.relations.filter((r) => (r.from === c.id || r.to === c.id) && relVisible(r));
     const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - rels.length;
@@ -1336,6 +1337,12 @@
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
       ${state.placeFilter ? `<p class="hint">📍 正在按地点「${esc(placeName(state.placeFilter))}」筛选：图上只高亮该范围内的人与关系。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
+      ${lordHist.length ? `<p class="card-sub">效力变化（旧主 → 新主）：${lordHist.map((s) => {
+        const lordName = s.lord && state.byId.has(s.lord) ? esc((state.byId.get(s.lord) || {}).name) : '自立';
+        const link = s.lord && state.byId.has(s.lord) ? charLink(s.lord) : `<b>自立</b>`;
+        return `${link}<span class="hint">（第 ${s.fromCh} 回）</span>`;
+      }).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回）</span>`}
+        <span class="hint">${lordHist.map((s) => `${s.fromCh}：${esc(s.label || '')}`).join('；')}</span></p>` : ''}
       ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
       <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>`;
     bindGoto(panel());

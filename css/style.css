@@ -192,7 +192,9 @@ main {
   border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink);
   backdrop-filter: blur(6px);
 }
-.drag-hint { top: auto; bottom: 12px; font-size: 12px; }
+/* 拖动后的提示：放在工具栏里（不遮画布） */
+.drag-hint { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.drag-hint .ghost.tiny { padding: 2px 8px; }
 .kin-badge {
   display: inline-block; padding: 1px 6px; border-radius: 999px;
   font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap;

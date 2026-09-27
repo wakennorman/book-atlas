@@ -116,6 +116,25 @@ function validate(file) {
   const withHist = chars.filter((c) => Array.isArray(c.factionHistory) && c.factionHistory.length > 1);
   if (withHist.length) console.log(`  ℹ 阵营变化人物：${withHist.length} 人（${withHist.slice(0, 6).map((c) => c.name).join('、')}${withHist.length > 6 ? ' …' : ''}）`);
 
+  // ---------- 效力变化（lordHistory：旧主 → 新主）----------
+  const charIds = new Set(chars.map((c) => c.id));
+  for (const c of chars) {
+    const h = c.lordHistory;
+    if (!h) continue;
+    if (!Array.isArray(h) || !h.length) { err(`角色 ${c.id} 的 lordHistory 必须是数组`); continue; }
+    let last = -1;
+    for (const seg of h) {
+      if (!seg) { err(`角色 ${c.id} 的 lordHistory 有空条目`); continue; }
+      if (seg.lord && !charIds.has(seg.lord)) err(`角色 ${c.id} 的 lordHistory 引用了不存在的人物「${seg.lord}」`);
+      if (seg.lord === c.id) err(`角色 ${c.id} 的 lordHistory 把自己当主公了`);
+      if (typeof seg.fromCh !== 'number') err(`角色 ${c.id} 的 lordHistory 缺少 fromCh`);
+      else if (seg.fromCh < last) err(`角色 ${c.id} 的 lordHistory 没有按 fromCh 升序`);
+      else last = seg.fromCh;
+    }
+  }
+  const withLord = chars.filter((c) => Array.isArray(c.lordHistory) && c.lordHistory.length > 1);
+  if (withLord.length) console.log(`  ℹ 换过主公的人物：${withLord.length} 人（${withLord.slice(0, 6).map((c) => c.name).join('、')}${withLord.length > 6 ? ' …' : ''}）`);
+
   // ---------- 别名覆盖（搜索命中率）----------
   // 读者习惯用「字/号/俗称/自己那版译名」搜——没有别名就等于搜不到。
   // 只对"有关系、关系不少、却一个别名都没有"的人物提示（次要人物不苛求）。

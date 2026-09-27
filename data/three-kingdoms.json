@@ -919,7 +919,24 @@
       "title": "董卓部将",
       "desc": "侍立卓侧，揪倒伍孚，疑曹操行刺",
       "fate": "兵败出关投袁术",
-      "note": "董卓义子"
+      "note": "董卓义子",
+      "lordHistory": [
+        {
+          "lord": "ding-yuan",
+          "fromCh": 3,
+          "label": "丁原（义父）"
+        },
+        {
+          "lord": "dong-zhuo",
+          "fromCh": 4,
+          "label": "董卓（义父）"
+        },
+        {
+          "lord": "",
+          "fromCh": 12,
+          "label": "自立（据徐州）"
+        }
+      ]
     },
     {
       "id": "wang-yun",
@@ -949,7 +966,24 @@
       "title": "中牟县令",
       "desc": "识破曹操，感其忠义，弃官相随",
       "fate": "投奔东郡",
-      "note": ""
+      "note": "",
+      "lordHistory": [
+        {
+          "lord": "cao-cao",
+          "fromCh": 4,
+          "label": "中牟县令随曹操"
+        },
+        {
+          "lord": "lv-bu",
+          "fromCh": 11,
+          "label": "转投吕布"
+        },
+        {
+          "lord": "",
+          "fromCh": 19,
+          "label": "白门楼不降，赴死"
+        }
+      ]
     },
     {
       "id": "lv-boshe",
@@ -1733,6 +1767,28 @@
           "fromCh": 23,
           "label": "随张绣降曹操"
         }
+      ],
+      "lordHistory": [
+        {
+          "lord": "dong-zhuo",
+          "fromCh": 9,
+          "label": "董卓帐下"
+        },
+        {
+          "lord": "li-jue",
+          "fromCh": 11,
+          "label": "李傕帐下"
+        },
+        {
+          "lord": "zhang-xiu",
+          "fromCh": 18,
+          "label": "张绣帐下"
+        },
+        {
+          "lord": "cao-cao",
+          "fromCh": 23,
+          "label": "随张绣降曹操"
+        }
       ]
     },
     {
@@ -1818,6 +1874,28 @@
           "faction": "shu",
           "fromCh": 65,
           "label": "兵败后投刘备"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "ma-teng",
+          "fromCh": 10,
+          "label": "随父马腾起兵"
+        },
+        {
+          "lord": "han-sui",
+          "fromCh": 58,
+          "label": "与韩遂联兵"
+        },
+        {
+          "lord": "zhang-lu",
+          "fromCh": 64,
+          "label": "兵败投张鲁"
+        },
+        {
+          "lord": "liu-bei",
+          "fromCh": 65,
+          "label": "葭萌关归刘备"
         }
       ]
     },
@@ -2268,6 +2346,18 @@
         },
         {
           "faction": "wei",
+          "fromCh": 20,
+          "label": "白门楼后归曹操"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "lv-bu",
+          "fromCh": 3,
+          "label": "吕布帐下"
+        },
+        {
+          "lord": "cao-cao",
           "fromCh": 20,
           "label": "白门楼后归曹操"
         }
@@ -2724,7 +2814,19 @@
       "title": "公孙瓒部将",
       "desc": "武艺高强，随刘备赴徐州。",
       "fate": "事毕辞归，与刘备挥泪而别。",
-      "note": "字子龙"
+      "note": "字子龙",
+      "lordHistory": [
+        {
+          "lord": "gongsun-zan",
+          "fromCh": 7,
+          "label": "公孙瓒帐下"
+        },
+        {
+          "lord": "liu-bei",
+          "fromCh": 28,
+          "label": "古城相会，归刘备"
+        }
+      ]
     },
     {
       "id": "guan-hai",
@@ -2762,6 +2864,18 @@
         },
         {
           "faction": "wu",
+          "fromCh": 15,
+          "label": "归孙策"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "",
+          "fromCh": 11,
+          "label": "扬州刘繇帐下"
+        },
+        {
+          "lord": "sun-ce",
           "fromCh": 15,
           "label": "归孙策"
         }
@@ -3561,6 +3675,18 @@
         },
         {
           "faction": "wei",
+          "fromCh": 30,
+          "label": "官渡战降曹操"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "yuan-shao",
+          "fromCh": 22,
+          "label": "袁绍帐下"
+        },
+        {
+          "lord": "cao-cao",
           "fromCh": 30,
           "label": "官渡战降曹操"
         }
@@ -4904,7 +5030,19 @@
       "title": "荆州武将",
       "desc": "奉命另设一席款待赵云。",
       "fate": "疑有伏兵，不敢近前",
-      "note": ""
+      "note": "",
+      "lordHistory": [
+        {
+          "lord": "liu-biao",
+          "fromCh": 34,
+          "label": "刘表帐下"
+        },
+        {
+          "lord": "cao-cao",
+          "fromCh": 41,
+          "label": "刘琮降曹后归曹操"
+        }
+      ]
     },
     {
       "id": "xu-shu",
@@ -4930,6 +5068,18 @@
         },
         {
           "faction": "wei",
+          "fromCh": 36,
+          "label": "母亲被扣，被迫归曹操"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "liu-bei",
+          "fromCh": 35,
+          "label": "刘备帐下"
+        },
+        {
+          "lord": "cao-cao",
           "fromCh": 36,
           "label": "母亲被扣，被迫归曹操"
         }
@@ -5335,6 +5485,18 @@
         },
         {
           "faction": "wu",
+          "fromCh": 39,
+          "label": "投孙权"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "huang-zu",
+          "fromCh": 38,
+          "label": "江夏黄祖帐下"
+        },
+        {
+          "lord": "sun-quan",
           "fromCh": 39,
           "label": "投孙权"
         }
@@ -5777,6 +5939,18 @@
           "fromCh": 53,
           "label": "长沙归刘备"
         }
+      ],
+      "lordHistory": [
+        {
+          "lord": "han-xuan",
+          "fromCh": 41,
+          "label": "长沙韩玄帐下"
+        },
+        {
+          "lord": "liu-bei",
+          "fromCh": 53,
+          "label": "长沙归刘备"
+        }
       ]
     },
     {
@@ -6002,6 +6176,18 @@
           "fromCh": 53,
           "label": "长沙归刘备"
         }
+      ],
+      "lordHistory": [
+        {
+          "lord": "han-xuan",
+          "fromCh": 41,
+          "label": "长沙韩玄帐下"
+        },
+        {
+          "lord": "liu-bei",
+          "fromCh": 53,
+          "label": "长沙归刘备"
+        }
       ]
     },
     {
@@ -6160,7 +6346,24 @@
       "title": "马超帐前校尉",
       "desc": "解梦、献计、救韩遂。",
       "fate": "后归曹操。",
-      "note": "马超部将，非庞德公。"
+      "note": "马超部将，非庞德公。",
+      "lordHistory": [
+        {
+          "lord": "ma-chao",
+          "fromCh": 58,
+          "label": "随马超起兵"
+        },
+        {
+          "lord": "zhang-lu",
+          "fromCh": 64,
+          "label": "随马超投张鲁"
+        },
+        {
+          "lord": "cao-cao",
+          "fromCh": 67,
+          "label": "随张鲁降曹操"
+        }
+      ]
     },
     {
       "id": "ma-dai",
@@ -6262,6 +6465,18 @@
         },
         {
           "faction": "shu",
+          "fromCh": 60,
+          "label": "迎刘备入蜀"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "liu-zhang",
+          "fromCh": 59,
+          "label": "刘璋帐下"
+        },
+        {
+          "lord": "liu-bei",
           "fromCh": 60,
           "label": "迎刘备入蜀"
         }
@@ -8760,6 +8975,18 @@
         },
         {
           "faction": "shu",
+          "fromCh": 93,
+          "label": "归降诸葛亮"
+        }
+      ],
+      "lordHistory": [
+        {
+          "lord": "ma-zun",
+          "fromCh": 92,
+          "label": "天水太守马遵帐下"
+        },
+        {
+          "lord": "zhuge-liang",
           "fromCh": 93,
           "label": "归降诸葛亮"
         }
