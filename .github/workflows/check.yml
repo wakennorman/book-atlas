@@ -31,14 +31,10 @@ jobs:
       - name: 搜索命中率审计（别名覆盖 / 译名变体 / 疑似漏人 / 同名）
         run: node scripts/audit-search.mjs --all
 
-      - name: 小程序数据包与 data/*.json 同步
-        run: |
-          node scripts/make-miniprogram-packs.mjs
-          if ! git diff --quiet -- miniprogram/data; then
-            echo "::error::miniprogram/data 与 data/*.json 不同步 —— 请在本地重跑 node scripts/make-miniprogram-packs.mjs 并提交"
-            git diff --stat -- miniprogram/data
-            exit 1
-          fi
+      - name: 小程序数据包与 data/*.json 同步（语义比对）
+        # 不做"重新生成 + git diff"：布局里有 locale 依赖的排序，Windows 与
+        # Ubuntu 生成的字节必然不同，字节比对会天天误报。改为解析两边深比较。
+        run: node scripts/check-packs-sync.mjs
 
       - name: 小程序页面逻辑冒烟（不需要微信开发者工具）
         run: node miniprogram/test/smoke.mjs

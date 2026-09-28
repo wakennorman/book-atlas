@@ -15,6 +15,10 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, 'miniprogram', 'data');
 const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
+/* 稳定的字符串比较（按码点）。
+   不能用 localeCompare：它走 ICU，Windows 与 Ubuntu 对中文名的排序不同，
+   同一份数据在两个系统上会生成不同的布局 ⇒ CI 上"重新生成 + git diff"天天红。 */
+const cmpStr = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
 
 /* ---------- 与网页版同口径的基础量 ---------- */
 function prepare(book) {
@@ -41,7 +45,7 @@ function groupLayout(book, view, { byId, deg, symbolSize }) {
   for (const list of byGen.values()) {
     list.sort((a, b) => (isGen ? ((factionOrder.get(a.faction) ?? 99) - (factionOrder.get(b.faction) ?? 99)) : (a.generation - b.generation))
       || ((deg.get(b.id) || 0) - (deg.get(a.id) || 0))
-      || String(a.name).localeCompare(String(b.name)));
+      || cmpStr(String(a.name), String(b.name)));
   }
   const maxCount = Math.max(1, ...groups.map((g) => byGen.get(g).length));
   const maxSymbol = Math.max(15, ...book.characters.map((c) => symbolSize(c.id)));
