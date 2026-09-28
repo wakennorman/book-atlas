@@ -1,0 +1,5 @@
+page {
+  background: #f4f1ea;
+  color: #232a35;
+  font-size: 14px;
+}

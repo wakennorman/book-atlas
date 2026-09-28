@@ -1,0 +1,11 @@
+{
+  "pages": ["pages/index/index"],
+  "window": {
+    "navigationBarTitleText": "书脉 BookAtlas",
+    "navigationBarBackgroundColor": "#1d2a53",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f1ea"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -166,7 +166,7 @@
 
   function newBlank() {
     ed.book = normalize({
-      meta: { slug: uid('book'), title: '我的新书', author: '', chapters: 20 },
+      meta: { slug: uid('book'), title: '我的新书', author: '', chapters: 20, schemaVersion: 2 },
       factions: [
         { key: 'family', name: '家族', color: '#c99a3f' },
         { key: 'other', name: '其他', color: '#9a6fb0' }
@@ -272,8 +272,231 @@
       else if (r.kin && ['adoptive', 'foster', 'step', 'sworn'].includes(r.kin) && bloodTerm) issues.push(`关系 ${r.from}→${r.to}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」——收养/继亲/结义/抚养要说清是哪一种`);
       else if (!r.kin && guessed) issues.push(`关系 ${r.from}→${r.to}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`);
       else if (r.kin && guessed && guessed !== r.kin) issues.push(`关系 ${r.from}→${r.to}：关系名「${r.type}」看着像${KIN_LABEL[guessed]}，但亲属类型标的是${KIN_LABEL[r.kin]}——对一下哪个对`);
+      // 时间区间（时间旅行）
+      if (typeof r.fromCh === 'number' && typeof r.toCh === 'number' && r.toCh <= r.fromCh) issues.push(`关系 ${r.from}→${r.to} 的 toCh（${r.toCh}）必须大于 fromCh（${r.fromCh}）`);
     }
     return issues;
+  }
+
+  /* ---------------- 数据体检（结构化：每条都能跳到对应条目） ---------------- */
+  /* 音译差异表（与 scripts/audit-search.mjs 同口径）：同一人物在不同译本里的常见写法 */
+  const VARIANT_PAIRS = [
+    ['奥雷里亚诺', '奥雷良诺'], ['乌尔苏拉', '乌苏拉'], ['丽贝卡', '雷贝卡'], ['梅尔基亚德斯', '墨尔基阿德斯'],
+    ['阿玛兰妲', '阿玛兰塔'], ['阿尔卡蒂奥', '阿卡迪奥'], ['何塞·阿尔卡蒂奥', '霍塞·阿卡迪奥'],
+    ['费尔南达', '菲南达'], ['皮拉尔·特内拉', '皮拉·苔列娜'], ['桑塔索菲亚', '圣索菲亚'],
+    ['蕾梅黛丝', '雷梅苔丝'], ['阿基拉尔', '阿吉拉尔'], ['史蒂文森', '斯蒂文森'], ['加布里埃尔', '加夫列尔'],
+    ['加斯通', '加斯东'], ['莫科特', '摩斯科特'], ['尼格罗曼塔', '尼格罗·曼塔'], ['普鲁邓希奥', '普鲁登西奥'],
+    ['拉斯柯尔尼科夫', '拉斯科利尼科夫'], ['玛尔美拉朵夫', '马尔梅拉多夫'], ['索尼雅', '索尼娅'],
+    ['杜尼雅', '杜尼娅'], ['卢仁', '卢津'], ['波尔菲利', '波尔费利'], ['斯维德利盖洛夫', '斯维德里盖洛夫'],
+    ['伊凡诺芙娜', '伊万诺夫娜'], ['阿辽娜', '阿廖娜'], ['拉祖米欣', '拉祖米兴'],
+    ['列别贾特尼科夫', '列别佳特尼科夫'], ['普莉赫丽雅', '普尔赫莉娅'], ['阿芙朵嘉', '阿芙多佳'],
+  ];
+  const baseNameOf = (s) => String(s || '').replace(/[（(].*$/, '').trim();
+
+  function healthCheck() {
+    const b = ed.book;
+    const out = [];
+    const add = (level, msg, sec, idx) => out.push({ level, msg, sec: sec || '', idx: idx === undefined ? null : idx });
+    const ids = new Set(), dup = new Set(), deg = new Map();
+    for (const r of b.relations) { deg.set(r.from, (deg.get(r.from) || 0) + 1); deg.set(r.to, (deg.get(r.to) || 0) + 1); }
+
+    // 人物
+    b.characters.forEach((c, i) => {
+      if (!c.id) add('error', `人物「${c.name || '?'}」缺少 id`, 'characters', i);
+      else if (ids.has(c.id)) { dup.add(c.id); add('error', `人物 id 重复：${c.id}（「${c.name}」）`, 'characters', i); }
+      ids.add(c.id);
+      if (!['m', 'f'].includes(c.gender)) add('warn', `人物「${c.name}」缺少性别 gender（男圆/女圆角方要用）`, 'characters', i);
+      if (typeof c.firstCh !== 'number' || !c.firstCh) add('warn', `人物「${c.name}」缺少首次出场章 firstCh（剧透保护要用）`, 'characters', i);
+      if (!(c.aliases || []).length && (deg.get(c.id) || 0) >= 8) add('info', `「${c.name}」有 ${deg.get(c.id)} 条关系却没有别名——读者按字号 / 俗称 / 别的译名会搜不到`, 'characters', i);
+    });
+    // 同名（去掉括号补充后同名 → 真重名还是同一人被拆成两条？）
+    const byBase = new Map();
+    b.characters.forEach((c, i) => {
+      const k = baseNameOf(c.name);
+      if (!k) return;
+      if (!byBase.has(k)) byBase.set(k, []);
+      byBase.get(k).push({ c, i });
+    });
+    for (const [, list] of byBase) if (list.length > 1) {
+      add('info', `「${baseNameOf(list[0].c.name)}」有 ${list.length} 条同名记录（真重名？还是同一人被拆成两条？）：${list.map((x) => x.c.name).join(' / ')}`, 'characters', list[0].i);
+    }
+    // 译名变体
+    b.characters.forEach((c, i) => {
+      const hay = [c.name, ...(c.aliases || [])].join('|');
+      for (const [a, z] of VARIANT_PAIRS) {
+        if (hay.includes(a) && !hay.includes(z)) add('info', `「${c.name}」可补另一种译法「${z}」——读者按别的译本会搜这个`, 'characters', i);
+        else if (hay.includes(z) && !hay.includes(a)) add('info', `「${c.name}」可补另一种译法「${a}」`, 'characters', i);
+      }
+    });
+    // 阵营
+    const factionKeys = new Set(b.factions.map((f) => f.key));
+    b.characters.forEach((c, i) => { if (c.faction && !factionKeys.has(c.faction)) add('error', `人物「${c.name}」的阵营「${c.faction}」未定义`, 'characters', i); });
+    // 地点
+    const placeIds = new Set(), dupPlaces = new Set();
+    (b.places || []).forEach((p, i) => {
+      if (!p.id) add('error', `地点「${p.name || '?'}」缺少 id`, 'places', i);
+      else if (placeIds.has(p.id)) { dupPlaces.add(p.id); add('error', `地点 id 重复：${p.id}`, 'places', i); }
+      placeIds.add(p.id);
+      if (!p.name) add('warn', `地点 ${p.id} 缺少名称`, 'places', i);
+      if (typeof p.firstCh !== 'number' || !p.firstCh) add('warn', `地点「${p.name}」缺少首次出现章 firstCh（地点筛选要用）`, 'places', i);
+    });
+    // 事件
+    const phaseIds = new Set(b.phases.map((p) => p.id));
+    b.events.forEach((e, i) => {
+      if (typeof e.ch !== 'number' || !e.ch) add('warn', `事件「${e.name}」缺少发生章 ch（剧透保护要用）`, 'events', i);
+      if (e.phase && !phaseIds.has(e.phase)) add('error', `事件「${e.name}」的阶段「${e.phase}」未定义`, 'events', i);
+      if (e.place && !placeIds.has(e.place)) add('error', `事件「${e.name}」的地点「${e.place}」没有在 places 里定义`, 'events', i);
+      for (const cid of e.chars || []) if (!ids.has(cid)) add('error', `事件「${e.name}」引用了不存在的人物 ${cid}`, 'events', i);
+    });
+    // 关系
+    b.relations.forEach((r, i) => {
+      const where = `关系 ${r.from}→${r.to}`;
+      if (!ids.has(r.from) || !ids.has(r.to)) add('error', `${where} 里有人物不存在`, 'relations', i);
+      if (!r.type) add('error', `${where} 缺少关系名 type`, 'relations', i);
+      if (!Array.isArray(r.events) || !r.events.length) add('warn', `${where} 没有「定义关系的小事件」`, 'relations', i);
+      for (const ev of r.events || []) {
+        if (ev.chapter && !/(\d+)/.test(ev.chapter)) add('warn', `${where} 的章节「${ev.chapter}」没有数字（剧透保护要靠它）`, 'relations', i);
+        if (ev.place && !placeIds.has(ev.place)) add('error', `${where} 的小事件地点「${ev.place}」没有在 places 里定义`, 'relations', i);
+      }
+      const guessed = guessKin(r.type);
+      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姑侄)/.test(r.type || '');
+      if (r.kin && !KIN_LABEL[r.kin]) add('error', `${where} 的亲属类型「${r.kin}」不合法`, 'relations', i);
+      else if (r.kin && ['adoptive', 'foster', 'step', 'sworn'].includes(r.kin) && bloodTerm) add('error', `${where}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」`, 'relations', i);
+      else if (!r.kin && guessed) add('info', `${where}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`, 'relations', i);
+      else if (r.kin && guessed && guessed !== r.kin) add('warn', `${where}：关系名看着像${KIN_LABEL[guessed]}，亲属类型却标${KIN_LABEL[r.kin]}`, 'relations', i);
+      // 时间区间
+      if (r.fromCh !== undefined && (!Number.isInteger(r.fromCh) || r.fromCh < 1)) add('error', `${where} 的 fromCh 必须是 ≥1 的整数`, 'relations', i);
+      if (r.toCh !== undefined && (!Number.isInteger(r.toCh) || r.toCh < 1)) add('error', `${where} 的 toCh 必须是 ≥1 的整数`, 'relations', i);
+      if (typeof r.fromCh === 'number' && typeof r.toCh === 'number' && r.toCh <= r.fromCh) add('error', `${where} 的 toCh（${r.toCh}）必须大于 fromCh（${r.fromCh}）`, 'relations', i);
+      if (typeof r.fromCh === 'number' || typeof r.toCh === 'number') {
+        const lo = typeof r.fromCh === 'number' ? r.fromCh : 0;
+        const hi = typeof r.toCh === 'number' ? r.toCh - 1 : Infinity;
+        for (const ev of r.events || []) {
+          const m = String(ev.chapter || '').match(/\d+/);
+          if (!m) continue;
+          const n = Number(m[0]);
+          if (n < lo || n > hi) add('warn', `${where} 的第 ${n} 章事件落在时间区间 [${lo}, ${hi === Infinity ? '∞' : hi}] 之外（时间旅行时看不到）`, 'relations', i);
+        }
+      }
+    });
+    // 亲子成环（血缘 + 父/母 称谓；from＝父母、to＝子女 是数据约定）
+    const parentMap = new Map();
+    for (const r of b.relations) {
+      if (r.kin !== 'blood') continue;
+      const t = String(r.type || '');
+      let parent = null, child = null;
+      if (/^(父|母)/.test(t)) { parent = r.from; child = r.to; }
+      else if (/^(子|女)/.test(t)) { parent = r.to; child = r.from; }
+      if (!parent || !child) continue;
+      if (!parentMap.has(child)) parentMap.set(child, []);
+      parentMap.get(child).push(parent);
+    }
+    const seen = new Set(), stack = new Set();
+    const walk = (id) => {
+      if (stack.has(id)) return true;
+      if (seen.has(id)) return false;
+      seen.add(id); stack.add(id);
+      for (const p of parentMap.get(id) || []) if (walk(p)) { stack.delete(id); return true; }
+      stack.delete(id);
+      return false;
+    };
+    const cyc = [...parentMap.keys()].filter((id) => walk(id));
+    if (cyc.length) add('error', `亲子关系成环（方向写反了？）：${cyc.slice(0, 6).map((id) => (ids.has(id) ? (b.characters.find((c) => c.id === id) || {}).name : id)).join('、')} —— 用 scripts/fix-parent-cycles.mjs 修`, 'relations', null);
+    return out;
+  }
+
+  function healthReportText() {
+    const issues = healthCheck();
+    const b = ed.book;
+    const n = (lv) => issues.filter((i) => i.level === lv).length;
+    const lines = [
+      `《${b.meta.title || '未命名'}》体检报告 · ${new Date().toLocaleString()}`,
+      `${b.characters.length} 人 · ${b.relations.length} 段关系 · ${b.events.length} 个事件 · ${(b.places || []).length} 个地点`,
+      `错误 ${n('error')} · 警告 ${n('warn')} · 提示 ${n('info')}`,
+    ];
+    for (const [lv, label] of [['error', '错误'], ['warn', '警告'], ['info', '提示']]) {
+      const list = issues.filter((i) => i.level === lv);
+      if (!list.length) continue;
+      lines.push('', `【${label}】${list.length} 条`);
+      for (const it of list) lines.push(`- ${it.msg}`);
+    }
+    return lines.join('\n');
+  }
+
+  /** 体检里「去改」：切到对应版块并直接打开那一条的编辑表单 */
+  function jumpTo(sec, idx) {
+    if (!sec || idx === null || idx === undefined || Number.isNaN(Number(idx))) return;
+    ed.section = sec;
+    ed.editing = null;
+    renderAll();
+    const btn = document.querySelector(`#ed-body [data-act="edit"][data-sec="${sec}"][data-idx="${idx}"]`);
+    if (btn) btn.click();
+    const body = document.getElementById('ed-body');
+    if (body && body.scrollIntoView) body.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  /** 剪贴板兜底（http:// 下 navigator.clipboard 可能不可用） */
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); }
+    catch (e) { alert('复制失败，可以手动复制下面这段：\n\n' + text.slice(0, 800)); }
+    ta.remove();
+  }
+
+  /** 一键补齐译名变体（可撤销） */
+  function applyVariantFixes() {
+    let fixed = 0;
+    for (const c of ed.book.characters) {
+      const has = (s) => [c.name, ...(c.aliases || [])].join('|').includes(s);
+      for (const [a, z] of VARIANT_PAIRS) {
+        if (has(a) && !has(z)) { c.aliases = [...(c.aliases || []), z]; fixed++; }
+        else if (has(z) && !has(a)) { c.aliases = [...(c.aliases || []), a]; fixed++; }
+      }
+    }
+    if (fixed) { snapshotBook(`补齐译名变体 ${fixed} 处`); saveDraft(); refreshPreview(); }
+    renderBody();
+    alert(fixed ? `已补齐 ${fixed} 处译名变体（可撤销）` : '没有需要补的译名变体');
+  }
+
+  function formHealth() {    const issues = healthCheck();
+    const b = ed.book;
+    const errs = issues.filter((i) => i.level === 'error');
+    const warns = issues.filter((i) => i.level === 'warn');
+    const infos = issues.filter((i) => i.level === 'info');
+    const covered = b.characters.filter((c) => (c.aliases || []).length).length;
+    const pct = b.characters.length ? Math.round((covered / b.characters.length) * 100) : 0;
+    const periods = b.relations.filter((r) => typeof r.fromCh === 'number' || typeof r.toCh === 'number').length;
+    const group = (title, list, cls) => (!list.length ? '' : `
+      <h3 class="hl-h3">${title}（${list.length}）</h3>
+      <ul class="hl-list ${cls}">${list.slice(0, 120).map((it) => `<li>${esc(it.msg)}${it.sec && it.idx !== null ? ` <button class="ghost tiny" type="button" data-act="health-jump" data-sec="${it.sec}" data-idx="${it.idx}">去改</button>` : ''}</li>`).join('')}</ul>
+      ${list.length > 120 ? `<p class="hint">…还有 ${list.length - 120} 条（点「复制报告」看全部）</p>` : ''}`);
+    return `${head('🩺 数据体检', '发布前跑一遍：结构 / 引用 / 亲属 / 别名 / 时间区间。红色必须修，黄色建议修，蓝色是提示', '<button class="primary" type="button" data-act="health-run">重新体检</button>')}
+      <div class="hl-cards">
+        <div class="hl-card"><b>${errs.length}</b><span>错误</span></div>
+        <div class="hl-card"><b>${warns.length}</b><span>警告</span></div>
+        <div class="hl-card"><b>${infos.length}</b><span>提示</span></div>
+        <div class="hl-card"><b>${pct}%</b><span>别名覆盖</span></div>
+        <div class="hl-card"><b>${periods}</b><span>时间区间</span></div>
+      </div>
+      <p class="hint">${b.characters.length} 人 · ${b.relations.length} 段关系 · ${b.events.length} 个事件 · ${(b.places || []).length} 个地点${errs.length ? '' : ' · <b>结构检查通过 ✓</b>'}</p>
+      <div class="ed-actions" style="margin:10px 0">
+        <button class="ghost" type="button" data-act="health-copy">📋 复制报告</button>
+        <button class="ghost" type="button" data-act="health-variants">🪄 一键补齐译名变体</button>
+      </div>
+      ${group('🔴 错误', errs, 'err')}
+      ${group('🟡 警告', warns, 'warn')}
+      ${group('🔵 提示', infos, 'info')}
+      <h3 class="hl-h3">贡献给项目</h3>
+      <ol class="hl-steps">
+        <li>先把「错误」清零，再点顶栏「<b>导出 JSON</b>」</li>
+        <li>命令行再跑一遍：<code>node scripts/validate.mjs data/&lt;slug&gt;.json</code> 与 <code>node scripts/audit-search.mjs --all</code></li>
+        <li>把 JSON 放进 <code>data/</code>、在 <code>data/books.json</code> 登记一行，然后提 Issue / PR（写清这本书的来源与校对方式）</li>
+      </ol>`;
   }
 
   /* ---------------- 渲染 ---------------- */
@@ -283,7 +506,7 @@
   }
 
   function renderBody() {
-    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, places: listPlaces, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi, batch: formBatch };
+    const f = { meta: formMeta, factions: listFactions, characters: listCharacters, places: listPlaces, relations: listRelations, phases: listPhases, events: listEvents, ai: formAi, batch: formBatch, health: formHealth };
     $('#ed-body').innerHTML = (f[ed.section] || formMeta)();
   }
 
@@ -444,7 +667,7 @@
         <button class="ghost tiny" data-act="del" data-sec="relations" data-idx="${i}">删除</button></td>
       </tr>`;
     }).join('');
-    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护，地点供地点筛选（只标有把握的）；是亲属的还要标清 血缘/收养/继亲/姻亲/结义', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
+    return `${head('关系', '每条关系都要有「定义关系的小事件」；章节号供剧透保护，地点供地点筛选（只标有把握的）；是亲属的还要标清 血缘/收养/继亲/姻亲/结义；关系变了（同盟→反目）就拆成两条并填「成立章/结束章」（时间旅行用）', '<button class="primary" type="button" data-act="add" data-sec="relations">＋ 新增关系</button>')}
       <table class="ed-table"><thead><tr><th>关系</th><th>线型</th><th>小事件</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="hint">还没有关系</td></tr>'}</tbody></table>
       ${ed.editing && ed.editing.sec === 'relations' ? formRelation() : ''}`;
   }
@@ -474,6 +697,8 @@
           <option value="dashed" ${r.style === 'dashed' ? 'selected' : ''}>虚线（对立/伤害）</option>
           <option value="dotted" ${r.style === 'dotted' ? 'selected' : ''}>点线（情人/过去/间接）</option>
         </select></label>
+        <label title="时间旅行用：这条关系从第几章成立（留空＝按依据事件里最小的章号）">成立章 fromCh<input type="number" min="1" data-field="fromCh" value="${r.fromCh ?? ''}" placeholder="如 25"></label>
+        <label title="时间旅行用：从第几章起这条关系不再存在（独占；留空＝一直有效）。例：吕布↔董卓「义父子」第 3–8 章">结束章 toCh<input type="number" min="1" data-field="toCh" value="${r.toCh ?? ''}" placeholder="如 9（可空）"></label>
       </div>
       <div class="ed-sub">
         <div class="ed-sub-head">定义关系的小事件 <button type="button" class="ghost tiny" data-act="rel-add-event">＋ 加一条</button></div>
@@ -544,7 +769,7 @@
   "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
-  "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（只有亲属才填，不是亲属就省略这个字段）", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
+  "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（只有亲属才填，不是亲属就省略这个字段）", "style": "solid|dashed|dotted", "fromCh": "可选：这条关系从第几章成立", "toCh": "可选：从第几章起不再存在（同盟变敌对时，请拆成两条并各给 fromCh/toCh）", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
   "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
   "events": [{ "id": "e1", "phase": "p1", "order": 1, "ch": 1, "name": "", "chars": ["id"], "place": "地点 id 或空", "summary": "", "impact": "", "quote": "" }]
@@ -581,7 +806,7 @@
     } catch (e) { /* 忽略 */ }
     out.className = 'ed-msg';
     out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
-    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个（主要出场人物尽量都收）；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
+    const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个（主要出场人物尽量都收）；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；**同一对人如果关系变了（同盟→反目、主从→仇敌），拆成两条并各给 fromCh/toCh**（toCh 独占，第 3–8 章写作 fromCh:3, toCh:9）；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
     const user = `请为《${ed.book.meta.title || '未命名'}》生成数据草稿。\n\nJSON schema（必须完全遵循）：\n${AI_SCHEMA}\n` +
       (text ? `\n以下是原文节选，请优先从中抽取：\n<<<原文开始>>>\n${text.slice(0, 100000)}\n<<<原文结束>>>\n`
             : '\n注意：没有提供原文，请仅依据广泛公认的公开资料；不确定的细节宁可省略或写进 note。\n');
@@ -1059,7 +1284,7 @@
       'events 的 ch 写这一章的章号，place 写地点 id，**id 用「e-章号-序号」**（例：第 3 章的第二个事件写 e-3-2），phase 可省略（我会自动补）；phases 只在第 1 章输出；' +
       'places：沿用「已有地点名单」的 id，本章新出现的地点可以新增（id 拼音 kebab），没把握就不写 place；' +
       'faction 必须沿用「已有阵营」里的 key（确实不属于任何已有阵营才新起 key）；' +
-      'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；易混同名人物在 note 里写消歧提示；' +
+      'style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；**同一对人如果关系变了（同盟→反目），拆成两条并各给 fromCh/toCh**（toCh 独占）；易混同名人物在 note 里写消歧提示；' +
       '多个人物共用一个名字或绰号时，必须在 name 里带世代/身份（如「何塞·阿尔卡蒂奥（第二代，绰号「巨人」）」）；全部字段中文。';
   }
 
@@ -1250,6 +1475,16 @@
         return;
       }
       if (act === 'cancel') { ed.editing = null; renderBody(); return; }
+      if (act === 'health-run') { renderBody(); return; }
+      if (act === 'health-jump') { jumpTo(sec, Number(idx)); return; }
+      if (act === 'health-variants') { applyVariantFixes(); return; }
+      if (act === 'health-copy') {
+        const text = healthReportText();
+        const done = () => alert('体检报告已复制到剪贴板（可直接贴到 Issue / PR）');
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+        else fallbackCopy(text, done);
+        return;
+      }
       if (act === 'meta-save') { saveDraft(); renderBody(); return; }
       if (act === 'rel-add-event') {
         ed.form.events = ed.form.events || [];
@@ -1374,8 +1609,14 @@
       if (!f.from || !f.to) { alert('请选择两个人物'); return null; }
       if (!f.type) { alert('关系名不能为空'); return null; }
       if (!events.length) { alert('至少写一条小事件'); return null; }
+      const fromCh = Number(f.fromCh) || 0;
+      const toCh = Number(f.toCh) || 0;
+      if (fromCh && toCh && toCh <= fromCh) { alert('「结束章 toCh」必须大于「成立章 fromCh」（区间是 [fromCh, toCh)）'); return null; }
       const kin = f.kin || guessKin(f.type);      // 没选亲属类型时，按关系名自动判一个（可以在表单里改）
-      return { from: f.from, to: f.to, type: f.type, ...(kin ? { kin } : {}), style: f.style || 'solid', events };
+      return {
+        from: f.from, to: f.to, type: f.type, ...(kin ? { kin } : {}), style: f.style || 'solid',
+        ...(fromCh > 0 ? { fromCh } : {}), ...(toCh > 0 ? { toCh } : {}), events
+      };
     }
     if (sec === 'events') {
       if (!f.name) { alert('事件名不能为空'); return null; }
@@ -1449,4 +1690,13 @@
 
   bindTools();
   boot();
+
+  // 调试入口（控制台里可以跑体检、看报告、跳条目）
+  window.__ed = {
+    state: ed,
+    health: () => healthCheck(),
+    report: () => healthReportText(),
+    jump: (sec, idx) => jumpTo(sec, idx),
+    variants: () => applyVariantFixes(),
+  };
 })();

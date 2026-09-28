@@ -19,7 +19,8 @@
         "url": "https://commons.wikimedia.org/wiki/File:One_Hundred_Years_Of_Solitude_Buendia's_Family_Tree.svg"
       }
     ],
-    "chapters": 20
+    "chapters": 20,
+    "schemaVersion": 2
   },
   "factions": [
     {

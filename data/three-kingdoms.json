@@ -10,7 +10,8 @@
     "license": "CC BY-SA 4.0",
     "updated": "2026-09-21",
     "sources": [],
-    "groupMode": "faction"
+    "groupMode": "faction",
+    "schemaVersion": 2
   },
   "factions": [
     {
@@ -13277,7 +13278,8 @@
           "chapter": "第65章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 1
     },
     {
       "from": "liu-bei",
@@ -13356,7 +13358,8 @@
           "chapter": "第65章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 1
     },
     {
       "from": "guan-yu",
@@ -13410,7 +13413,8 @@
           "chapter": "第73章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 1
     },
     {
       "from": "zhang-jue",
@@ -13424,7 +13428,8 @@
           "chapter": "第1章",
           "place": "ju-lu"
         }
-      ]
+      ],
+      "fromCh": 1
     },
     {
       "from": "zhang-jue",
@@ -13563,7 +13568,8 @@
           "chapter": "第1章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 1
     },
     {
       "from": "gongsun-zan",
@@ -13576,7 +13582,9 @@
           "chapter": "第1章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 1,
+      "toCh": 2
     },
     {
       "from": "nanhua-laoxian",
@@ -13833,7 +13841,9 @@
           "chapter": "第8章",
           "place": "dong-zhuo-xiang-fu"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -13847,7 +13857,9 @@
           "place": "luo-yang"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 3,
+      "toCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -13873,7 +13885,9 @@
           "chapter": "第4章",
           "place": "jiade-dian"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -13899,7 +13913,9 @@
           "chapter": "第4章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -13951,7 +13967,9 @@
           "chapter": "第4章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -13964,7 +13982,9 @@
           "chapter": "第4章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 6
     },
     {
       "from": "dong-zhuo",
@@ -13977,7 +13997,9 @@
           "chapter": "第4章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 6
     },
     {
       "from": "li-ru",
@@ -14102,7 +14124,9 @@
           "chapter": "第4章",
           "place": "zhongmou-xian"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 10
     },
     {
       "from": "cao-cao",
@@ -14155,7 +14179,9 @@
           "chapter": "第4章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 4,
+      "toCh": 13
     },
     {
       "from": "dong-zhuo",
@@ -14169,7 +14195,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -14183,7 +14211,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 4
     },
     {
       "from": "dong-zhuo",
@@ -14197,7 +14227,8 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3
     },
     {
       "from": "he-jin",
@@ -14268,7 +14299,8 @@
           "chapter": "第3章",
           "place": "bei-mang-shan"
         }
-      ]
+      ],
+      "fromCh": 3
     },
     {
       "from": "yuan-shao",
@@ -14287,7 +14319,9 @@
           "chapter": "第21章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 22
     },
     {
       "from": "cui-lie",
@@ -14329,7 +14363,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 8
     },
     {
       "from": "li-su",
@@ -14342,7 +14378,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 9
     },
     {
       "from": "zhang-rang",
@@ -14394,7 +14432,8 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3
     },
     {
       "from": "chen-lin",
@@ -14407,7 +14446,8 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3
     },
     {
       "from": "cao-cao",
@@ -14420,7 +14460,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 6
     },
     {
       "from": "yuan-shao",
@@ -14433,7 +14475,8 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3
     },
     {
       "from": "ding-yuan",
@@ -14472,7 +14515,9 @@
           "chapter": "第3章",
           "place": "wen-ming-yuan"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 4
     },
     {
       "from": "peng-bo",
@@ -14524,7 +14569,9 @@
           "chapter": "第3章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 3,
+      "toCh": 9
     },
     {
       "from": "sun-jian",
@@ -14589,7 +14636,9 @@
           "chapter": "第6章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 7
     },
     {
       "from": "dong-zhuo",
@@ -14602,7 +14651,9 @@
           "chapter": "第6章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -14615,7 +14666,8 @@
           "chapter": "第6章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 6
     },
     {
       "from": "dong-zhuo",
@@ -14629,7 +14681,9 @@
           "place": "luo-yang"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 3,
+      "toCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -14655,7 +14709,8 @@
           "chapter": "第6章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 6
     },
     {
       "from": "dong-zhuo",
@@ -14668,7 +14723,8 @@
           "chapter": "第6章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 6
     },
     {
       "from": "dong-zhuo",
@@ -14695,7 +14751,9 @@
           "chapter": "第6章",
           "place": "xing-yang"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 22
     },
     {
       "from": "cao-cao",
@@ -14708,7 +14766,9 @@
           "chapter": "第6章",
           "place": "xing-yang"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 14
     },
     {
       "from": "cao-cao",
@@ -14721,7 +14781,9 @@
           "chapter": "第6章",
           "place": "xing-yang"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 19
     },
     {
       "from": "cao-cao",
@@ -14734,7 +14796,9 @@
           "chapter": "第6章",
           "place": "xing-yang"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 17
     },
     {
       "from": "cao-cao",
@@ -14760,7 +14824,9 @@
           "chapter": "第6章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 13
     },
     {
       "from": "yuan-shao",
@@ -14778,7 +14844,9 @@
           "chapter": "第7章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 13
     },
     {
       "from": "yuan-shao",
@@ -14796,7 +14864,9 @@
           "chapter": "第7章",
           "place": "pan-he"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 22
     },
     {
       "from": "yuan-shao",
@@ -14822,7 +14892,9 @@
           "chapter": "第6章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 34
     },
     {
       "from": "liu-biao",
@@ -14835,7 +14907,9 @@
           "chapter": "第6章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 7
     },
     {
       "from": "sun-jian",
@@ -14848,7 +14922,9 @@
           "chapter": "第6章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 7
     },
     {
       "from": "sun-jian",
@@ -14900,7 +14976,9 @@
           "chapter": "第6章",
           "place": "ping-yuan"
         }
-      ]
+      ],
+      "fromCh": 6,
+      "toCh": 7
     },
     {
       "from": "liu-dai",
@@ -14950,7 +15028,9 @@
           "chapter": "第10章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 59
     },
     {
       "from": "ma-teng",
@@ -14976,7 +15056,8 @@
           "chapter": "第10章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 10
     },
     {
       "from": "li-jue",
@@ -14999,7 +15080,9 @@
           "chapter": "第14章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 9,
+      "toCh": 15
     },
     {
       "from": "li-jue",
@@ -15062,7 +15145,9 @@
           "chapter": "第13章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 14
     },
     {
       "from": "zhu-jun",
@@ -15155,7 +15240,9 @@
           "chapter": "第10章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 12
     },
     {
       "from": "chen-gong",
@@ -15207,7 +15294,9 @@
           "chapter": "第10章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 19
     },
     {
       "from": "cao-cao",
@@ -15235,7 +15324,9 @@
           "chapter": "第37章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 38
     },
     {
       "from": "xun-yu",
@@ -15281,7 +15372,9 @@
           "chapter": "第16章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 10,
+      "toCh": 19
     },
     {
       "from": "dong-zhuo",
@@ -15300,7 +15393,8 @@
           "chapter": "第8章",
           "place": "dong-zhuo-xiang-fu"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "wang-yun",
@@ -15328,7 +15422,9 @@
           "chapter": "第9章",
           "place": "feng-yi-ting"
         }
-      ]
+      ],
+      "fromCh": 9,
+      "toCh": 16
     },
     {
       "from": "dong-zhuo",
@@ -15342,7 +15438,8 @@
           "chapter": "第9章",
           "place": "mei-wu"
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -15356,7 +15453,8 @@
           "chapter": "第9章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "dong-min",
@@ -15411,7 +15509,8 @@
           "chapter": "第9章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "lv-bu",
@@ -15424,7 +15523,8 @@
           "chapter": "第9章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -15437,7 +15537,8 @@
           "chapter": "第9章",
           "place": "mei-wu"
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -15450,7 +15551,8 @@
           "chapter": "第9章",
           "place": "mei-wu"
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "li-jue",
@@ -15463,7 +15565,9 @@
           "chapter": "第9章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 9,
+      "toCh": 10
     },
     {
       "from": "lv-bu",
@@ -15541,7 +15645,8 @@
           "chapter": "第9章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 9
     },
     {
       "from": "ma-ri-di",
@@ -15593,7 +15698,9 @@
           "chapter": "第9章",
           "place": "xuan-ping-men"
         }
-      ]
+      ],
+      "fromCh": 9,
+      "toCh": 10
     },
     {
       "from": "lv-bu",
@@ -15606,7 +15713,9 @@
           "chapter": "第9章",
           "place": "qing-suo-men"
         }
-      ]
+      ],
+      "fromCh": 9,
+      "toCh": 16
     },
     {
       "from": "huangfu-song",
@@ -15690,7 +15799,8 @@
           "chapter": "第8章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "liu-biao",
@@ -15703,7 +15813,9 @@
           "chapter": "第8章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 8,
+      "toCh": 18
     },
     {
       "from": "kuai-liang",
@@ -15716,7 +15828,9 @@
           "chapter": "第8章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 8,
+      "toCh": 18
     },
     {
       "from": "sun-jian",
@@ -15743,7 +15857,8 @@
           "chapter": "第8章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -15796,7 +15911,8 @@
           "chapter": "第8章",
           "place": "wang-yun-fu"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "wang-yun",
@@ -15809,7 +15925,9 @@
           "chapter": "第8章",
           "place": "wang-yun-fu"
         }
-      ]
+      ],
+      "fromCh": 8,
+      "toCh": 9
     },
     {
       "from": "wang-yun",
@@ -15822,7 +15940,8 @@
           "chapter": "第8章",
           "place": "wang-yun-fu"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "lv-bu",
@@ -15835,7 +15954,9 @@
           "chapter": "第8章",
           "place": "feng-yi-ting"
         }
-      ]
+      ],
+      "fromCh": 8,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -15849,7 +15970,9 @@
           "chapter": "第8章",
           "place": "dong-zhuo-xiang-fu"
         }
-      ]
+      ],
+      "fromCh": 8,
+      "toCh": 9
     },
     {
       "from": "dong-zhuo",
@@ -15862,7 +15985,8 @@
           "chapter": "第8章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 8
     },
     {
       "from": "tao-qian",
@@ -15942,7 +16066,9 @@
           "chapter": "第12章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 16
     },
     {
       "from": "liu-bei",
@@ -15955,7 +16081,9 @@
           "chapter": "第12章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 13
     },
     {
       "from": "liu-bei",
@@ -15968,7 +16096,9 @@
           "chapter": "第12章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 14
     },
     {
       "from": "lv-bu",
@@ -15981,7 +16111,9 @@
           "chapter": "第12章",
           "place": "puyang"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 13
     },
     {
       "from": "lv-bu",
@@ -15999,7 +16131,9 @@
           "chapter": "第16章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 17
     },
     {
       "from": "lv-bu",
@@ -16017,7 +16151,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 17
     },
     {
       "from": "lv-bu",
@@ -16035,7 +16171,9 @@
           "chapter": "第18章",
           "place": "taishan"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -16048,7 +16186,9 @@
           "chapter": "第12章",
           "place": "puyang"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -16061,7 +16201,9 @@
           "chapter": "第12章",
           "place": "puyang"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -16074,7 +16216,8 @@
           "chapter": "第12章",
           "place": "puyang"
         }
-      ]
+      ],
+      "fromCh": 12
     },
     {
       "from": "cao-cao",
@@ -16092,7 +16235,9 @@
           "chapter": "第16章",
           "place": "yu-shui"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 17
     },
     {
       "from": "cao-cao",
@@ -16105,7 +16250,9 @@
           "chapter": "第12章",
           "place": "gebei"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 14
     },
     {
       "from": "dian-wei",
@@ -16144,7 +16291,9 @@
           "chapter": "第12章",
           "place": "puyang"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 30
     },
     {
       "from": "cao-cao",
@@ -16157,7 +16306,9 @@
           "chapter": "第12章",
           "place": "maling-shan"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 16
     },
     {
       "from": "cao-cao",
@@ -16274,7 +16425,8 @@
           "chapter": "第12章",
           "place": "juancheng"
         }
-      ]
+      ],
+      "fromCh": 12
     },
     {
       "from": "cao-cao",
@@ -16292,7 +16444,9 @@
           "chapter": "第31章",
           "place": "rang-shan"
         }
-      ]
+      ],
+      "fromCh": 12,
+      "toCh": 32
     },
     {
       "from": "liu-bei",
@@ -16305,7 +16459,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 14
     },
     {
       "from": "zhang-fei",
@@ -16318,7 +16474,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 14
     },
     {
       "from": "lv-bu",
@@ -16341,7 +16499,9 @@
           "chapter": "第14章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 17
     },
     {
       "from": "mi-zhu",
@@ -16354,7 +16514,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 18
     },
     {
       "from": "yuan-shao",
@@ -16367,7 +16529,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 18
     },
     {
       "from": "yuan-shao",
@@ -16380,7 +16544,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 22
     },
     {
       "from": "cao-cao",
@@ -16393,7 +16559,9 @@
           "chapter": "第13章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 17
     },
     {
       "from": "li-jue",
@@ -16406,7 +16574,8 @@
           "chapter": "第13章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 13
     },
     {
       "from": "li-jue",
@@ -16495,7 +16664,9 @@
           "chapter": "第13章",
           "place": "hua-yin"
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 14
     },
     {
       "from": "yang-feng",
@@ -16536,7 +16707,9 @@
           "chapter": "第13章",
           "place": "hua-yin"
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 20
     },
     {
       "from": "fu-de",
@@ -16564,7 +16737,8 @@
           "chapter": "第13章",
           "place": "da-yang"
         }
-      ]
+      ],
+      "fromCh": 13
     },
     {
       "from": "li-le",
@@ -16603,7 +16777,9 @@
           "chapter": "第13章",
           "place": "an-yi"
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 14
     },
     {
       "from": "dong-cheng",
@@ -16683,7 +16859,8 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16
     },
     {
       "from": "lv-bu",
@@ -16721,7 +16898,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 16
     },
     {
       "from": "zhang-ji",
@@ -16824,7 +17002,9 @@
           "chapter": "第16章",
           "place": "wan-cheng"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "cao-cao",
@@ -16842,7 +17022,9 @@
           "chapter": "第17章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 18
     },
     {
       "from": "zhang-xiu",
@@ -16922,7 +17104,9 @@
           "chapter": "第16章",
           "place": "yu-shui"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "zhang-xiu",
@@ -16935,7 +17119,9 @@
           "chapter": "第16章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "yuan-shu",
@@ -16948,7 +17134,8 @@
           "chapter": "第16章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 16
     },
     {
       "from": "yuan-shu",
@@ -16961,7 +17148,9 @@
           "chapter": "第16章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "yuan-shu",
@@ -17000,7 +17189,9 @@
           "chapter": "第16章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "zhang-fei",
@@ -17013,7 +17204,8 @@
           "chapter": "第16章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 16
     },
     {
       "from": "liu-bei",
@@ -17074,7 +17266,9 @@
           "chapter": "第16章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 19
     },
     {
       "from": "liu-bei",
@@ -17087,7 +17281,9 @@
           "chapter": "第16章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 13,
+      "toCh": 18
     },
     {
       "from": "liu-bei",
@@ -17100,7 +17296,9 @@
           "chapter": "第16章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "cao-cao",
@@ -17113,7 +17311,9 @@
           "chapter": "第16章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "lv-bu",
@@ -17126,7 +17326,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 19
     },
     {
       "from": "han-yin",
@@ -17152,7 +17354,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "chen-gui",
@@ -17199,7 +17403,9 @@
           "chapter": "第19章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 24
     },
     {
       "from": "chen-deng",
@@ -17212,7 +17418,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "lv-bu",
@@ -17230,7 +17438,9 @@
           "chapter": "第18章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -17243,7 +17453,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 17
     },
     {
       "from": "song-xian",
@@ -17256,7 +17468,9 @@
           "chapter": "第16章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 19
     },
     {
       "from": "wang-ze",
@@ -17282,7 +17496,9 @@
           "chapter": "第14章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 20
     },
     {
       "from": "zhang-yang",
@@ -17295,7 +17511,8 @@
           "chapter": "第14章",
           "place": "zhi-dao"
         }
-      ]
+      ],
+      "fromCh": 14
     },
     {
       "from": "cao-cao",
@@ -17308,7 +17525,9 @@
           "chapter": "第14章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 17
     },
     {
       "from": "cao-cao",
@@ -17372,7 +17591,9 @@
           "chapter": "第17章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 57
     },
     {
       "from": "cao-cao",
@@ -17410,7 +17631,9 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 79
     },
     {
       "from": "cao-cao",
@@ -17423,7 +17646,9 @@
           "chapter": "第14章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 16
     },
     {
       "from": "li-jue",
@@ -17436,7 +17661,8 @@
           "chapter": "第14章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 14
     },
     {
       "from": "yang-feng",
@@ -17449,7 +17675,9 @@
           "chapter": "第14章",
           "place": "da-liang"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 17
     },
     {
       "from": "xu-huang",
@@ -17462,7 +17690,8 @@
           "chapter": "第14章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 14
     },
     {
       "from": "man-chong",
@@ -17508,7 +17737,9 @@
           "chapter": "第75章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 77
     },
     {
       "from": "liu-bei",
@@ -17521,7 +17752,9 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 16
     },
     {
       "from": "lv-bu",
@@ -17535,7 +17768,9 @@
           "chapter": "第14章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 16
     },
     {
       "from": "zhang-fei",
@@ -17548,7 +17783,9 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 15
     },
     {
       "from": "lv-bu",
@@ -17561,7 +17798,9 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 17
     },
     {
       "from": "lv-bu",
@@ -17574,7 +17813,9 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 16
     },
     {
       "from": "zhang-fei",
@@ -17587,7 +17828,8 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14
     },
     {
       "from": "liu-bei",
@@ -17600,7 +17842,9 @@
           "chapter": "第14章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 21
     },
     {
       "from": "yuan-shu",
@@ -17623,7 +17867,9 @@
           "chapter": "第17章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 14,
+      "toCh": 22
     },
     {
       "from": "yuan-shu",
@@ -17680,7 +17926,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 20
     },
     {
       "from": "chen-gong",
@@ -17693,7 +17941,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "chen-deng",
@@ -17706,7 +17955,8 @@
           "chapter": "第19章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "liu-bei",
@@ -17719,7 +17969,8 @@
           "chapter": "第19章",
           "place": "baimen-lou"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "liu-bei",
@@ -17732,7 +17983,9 @@
           "chapter": "第19章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 20
     },
     {
       "from": "guan-yu",
@@ -17792,7 +18045,9 @@
           "chapter": "第24章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 25
     },
     {
       "from": "sun-qian",
@@ -17820,7 +18075,9 @@
           "chapter": "第54章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 55
     },
     {
       "from": "gao-shun",
@@ -17833,7 +18090,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "zhang-liao",
@@ -17846,7 +18104,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "gao-shun",
@@ -17872,7 +18131,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "song-xian",
@@ -17885,7 +18145,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "wei-xu",
@@ -17898,7 +18159,8 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "song-xian",
@@ -17911,7 +18173,9 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 25
     },
     {
       "from": "hou-cheng",
@@ -17937,7 +18201,8 @@
           "chapter": "第19章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "zhang-fei",
@@ -17990,7 +18255,8 @@
           "chapter": "第19章",
           "place": "shouchun"
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "guo-jia",
@@ -18003,7 +18269,9 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 32
     },
     {
       "from": "xun-yu",
@@ -18016,7 +18284,9 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 20
     },
     {
       "from": "xun-you",
@@ -18034,7 +18304,9 @@
           "chapter": "第42章",
           "place": "jiang-ling"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 43
     },
     {
       "from": "cheng-yu",
@@ -18047,7 +18319,9 @@
           "chapter": "第19章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 20
     },
     {
       "from": "cao-cao",
@@ -18060,7 +18334,9 @@
           "chapter": "第19章",
           "place": "baimen-lou"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 20
     },
     {
       "from": "pang-shu",
@@ -18166,7 +18442,9 @@
           "chapter": "第19章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 31
     },
     {
       "from": "xiahou-yuan",
@@ -18180,7 +18458,9 @@
           "chapter": "第19章",
           "place": "jibei"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 56
     },
     {
       "from": "xiahou-dun",
@@ -18194,7 +18474,9 @@
           "chapter": "第19章",
           "place": "jibei"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 69
     },
     {
       "from": "xu-chu",
@@ -18207,7 +18489,9 @@
           "chapter": "第19章",
           "place": "xiao-guan"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 32
     },
     {
       "from": "xu-huang",
@@ -18220,7 +18504,9 @@
           "chapter": "第19章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 19,
+      "toCh": 50
     },
     {
       "from": "sun-guan",
@@ -18246,7 +18532,8 @@
           "chapter": "第19章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 19
     },
     {
       "from": "liu-xie",
@@ -18260,7 +18547,8 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20
     },
     {
       "from": "cao-cao",
@@ -18273,7 +18561,8 @@
           "chapter": "第20章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 20
     },
     {
       "from": "cao-cao",
@@ -18286,7 +18575,9 @@
           "chapter": "第20章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 48
     },
     {
       "from": "cao-cao",
@@ -18299,7 +18590,9 @@
           "chapter": "第20章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 21
     },
     {
       "from": "cao-cao",
@@ -18312,7 +18605,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 21
     },
     {
       "from": "cao-cao",
@@ -18325,7 +18620,9 @@
           "chapter": "第20章",
           "place": "xu-tian"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 69
     },
     {
       "from": "guan-yu",
@@ -18338,7 +18635,9 @@
           "chapter": "第20章",
           "place": "xu-tian"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 25
     },
     {
       "from": "cao-cao",
@@ -18351,7 +18650,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 22
     },
     {
       "from": "cao-cao",
@@ -18377,7 +18678,8 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20
     },
     {
       "from": "kong-rong",
@@ -18390,7 +18692,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 22
     },
     {
       "from": "cao-cao",
@@ -18416,7 +18720,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 32
     },
     {
       "from": "liu-xie",
@@ -18477,7 +18783,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 21
     },
     {
       "from": "cao-cao",
@@ -18490,7 +18798,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 24
     },
     {
       "from": "dong-cheng",
@@ -18560,7 +18870,9 @@
           "chapter": "第20章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 21
     },
     {
       "from": "ma-teng",
@@ -18586,7 +18898,9 @@
           "chapter": "第21章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 21,
+      "toCh": 24
     },
     {
       "from": "cao-cao",
@@ -18624,7 +18938,8 @@
           "chapter": "第67章",
           "place": "hefei"
         }
-      ]
+      ],
+      "fromCh": 20
     },
     {
       "from": "cao-cao",
@@ -18675,7 +18990,9 @@
           "chapter": "第17章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 51
     },
     {
       "from": "cao-cao",
@@ -18693,7 +19010,9 @@
           "chapter": "第31章",
           "place": "cangting"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 32
     },
     {
       "from": "cao-cao",
@@ -18736,7 +19055,9 @@
           "chapter": "第60章",
           "place": "xi-jiao-chang"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 62
     },
     {
       "from": "dong-cheng",
@@ -18762,7 +19083,8 @@
           "chapter": "第21章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "dong-cheng",
@@ -18776,7 +19098,8 @@
           "chapter": "第21章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "liu-xie",
@@ -18803,7 +19126,8 @@
           "chapter": "第21章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "yuan-shao",
@@ -18816,7 +19140,8 @@
           "chapter": "第21章",
           "place": "yi-jing"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "gongsun-zan",
@@ -18868,7 +19193,8 @@
           "chapter": "第21章",
           "place": "song-shan"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "yuan-shu",
@@ -18934,7 +19260,9 @@
           "chapter": "第21章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 21,
+      "toCh": 22
     },
     {
       "from": "guan-yu",
@@ -18960,7 +19288,8 @@
           "chapter": "第21章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 21
     },
     {
       "from": "zhang-fei",
@@ -18986,7 +19315,9 @@
           "chapter": "第21章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 21,
+      "toCh": 28
     },
     {
       "from": "liu-bei",
@@ -18999,7 +19330,9 @@
           "chapter": "第21章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 21,
+      "toCh": 22
     },
     {
       "from": "liu-bei",
@@ -19145,7 +19478,9 @@
           "chapter": "第56章",
           "place": "tongque-tai"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 57
     },
     {
       "from": "cao-cao",
@@ -19179,7 +19514,9 @@
           "chapter": "第73章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 74
     },
     {
       "from": "chen-deng",
@@ -19192,7 +19529,8 @@
           "chapter": "第22章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 22
     },
     {
       "from": "liu-bei",
@@ -19246,7 +19584,9 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 66
     },
     {
       "from": "yuan-shao",
@@ -19330,7 +19670,8 @@
           "chapter": "第30章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 22
     },
     {
       "from": "yuan-shao",
@@ -19348,7 +19689,9 @@
           "chapter": "第26章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 28
     },
     {
       "from": "yuan-shao",
@@ -19397,7 +19740,8 @@
           "chapter": "第30章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 22
     },
     {
       "from": "yuan-shao",
@@ -19410,7 +19754,9 @@
           "chapter": "第22章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 25
     },
     {
       "from": "yuan-shao",
@@ -19428,7 +19774,8 @@
           "chapter": "第26章",
           "place": "huang-he"
         }
-      ]
+      ],
+      "fromCh": 22
     },
     {
       "from": "yuan-shao",
@@ -19454,7 +19801,9 @@
           "chapter": "第22章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 30
     },
     {
       "from": "ju-shou",
@@ -19467,7 +19816,9 @@
           "chapter": "第22章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 23
     },
     {
       "from": "kong-rong",
@@ -19480,7 +19831,9 @@
           "chapter": "第22章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 40
     },
     {
       "from": "xun-yu",
@@ -19493,7 +19846,9 @@
           "chapter": "第22章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 31
     },
     {
       "from": "cao-cao",
@@ -19636,7 +19991,9 @@
           "chapter": "第24章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 24,
+      "toCh": 78
     },
     {
       "from": "cao-cao",
@@ -19662,7 +20019,9 @@
           "chapter": "第24章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 24,
+      "toCh": 32
     },
     {
       "from": "cao-cao",
@@ -19693,7 +20052,9 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 24,
+      "toCh": 79
     },
     {
       "from": "yuan-shao",
@@ -19740,7 +20101,9 @@
           "chapter": "第24章",
           "place": "ping-yuan"
         }
-      ]
+      ],
+      "fromCh": 24,
+      "toCh": 25
     },
     {
       "from": "zhang-liao",
@@ -19753,7 +20116,9 @@
           "chapter": "第24章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 24,
+      "toCh": 25
     },
     {
       "from": "chen-deng",
@@ -19766,7 +20131,8 @@
           "chapter": "第24章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 24
     },
     {
       "from": "xu-huang",
@@ -19884,7 +20250,9 @@
           "chapter": "第25章",
           "place": "tushan"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 26
     },
     {
       "from": "zhang-liao",
@@ -19907,7 +20275,8 @@
           "chapter": "第32章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 20
     },
     {
       "from": "guan-yu",
@@ -19920,7 +20289,9 @@
           "chapter": "第25章",
           "place": "tushan"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 26
     },
     {
       "from": "guan-yu",
@@ -19946,7 +20317,9 @@
           "chapter": "第25章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 27
     },
     {
       "from": "xu-huang",
@@ -19959,7 +20332,9 @@
           "chapter": "第25章",
           "place": "tushan"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 76
     },
     {
       "from": "xu-chu",
@@ -20011,7 +20386,8 @@
           "chapter": "第25章",
           "place": "baima"
         }
-      ]
+      ],
+      "fromCh": 25
     },
     {
       "from": "yan-liang",
@@ -20037,7 +20413,9 @@
           "chapter": "第25章",
           "place": "baima"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 26
     },
     {
       "from": "cheng-yu",
@@ -20050,7 +20428,9 @@
           "chapter": "第25章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 36
     },
     {
       "from": "xun-yu",
@@ -20063,7 +20443,9 @@
           "chapter": "第25章",
           "place": "tushan"
         }
-      ]
+      ],
+      "fromCh": 22,
+      "toCh": 31
     },
     {
       "from": "yuan-shao",
@@ -20076,7 +20458,9 @@
           "chapter": "第25章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 25,
+      "toCh": 26
     },
     {
       "from": "ju-shou",
@@ -20102,7 +20486,8 @@
           "chapter": "第25章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 25
     },
     {
       "from": "liu-yan-dongjun",
@@ -20128,7 +20513,9 @@
           "chapter": "第23章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 23,
+      "toCh": 40
     },
     {
       "from": "mi-heng",
@@ -20154,7 +20541,9 @@
           "chapter": "第27章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 49
     },
     {
       "from": "guan-yu",
@@ -20167,7 +20556,9 @@
           "chapter": "第27章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 28
     },
     {
       "from": "guan-yu",
@@ -20181,7 +20572,9 @@
           "place": ""
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 27,
+      "toCh": 60
     },
     {
       "from": "liao-hua",
@@ -20221,7 +20614,9 @@
           "chapter": "第27章",
           "place": "xing-yang"
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 73
     },
     {
       "from": "wang-zhi",
@@ -20248,7 +20643,9 @@
           "chapter": "第27章",
           "place": "zhenguo-si"
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 77
     },
     {
       "from": "liu-yan-dongjun",
@@ -20274,7 +20671,9 @@
           "chapter": "第27章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 28
     },
     {
       "from": "guan-yu",
@@ -20365,7 +20764,9 @@
           "chapter": "第27章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 27,
+      "toCh": 28
     },
     {
       "from": "guan-yu",
@@ -20378,7 +20779,8 @@
           "chapter": "第28章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 28
     },
     {
       "from": "zhou-cang",
@@ -20396,7 +20798,9 @@
           "chapter": "第31章",
           "place": "rang-shan"
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 49
     },
     {
       "from": "guan-yu",
@@ -20440,7 +20844,8 @@
           "chapter": "第77章",
           "place": "jueshi"
         }
-      ]
+      ],
+      "fromCh": 28
     },
     {
       "from": "guan-ding",
@@ -20508,7 +20913,9 @@
           "chapter": "第28章",
           "place": "woniu-shan"
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 31
     },
     {
       "from": "zhao-yun",
@@ -20534,7 +20941,9 @@
           "chapter": "第28章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 31
     },
     {
       "from": "yuan-shao",
@@ -20547,7 +20956,8 @@
           "chapter": "第28章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 28
     },
     {
       "from": "yuan-shao",
@@ -20560,7 +20970,8 @@
           "chapter": "第28章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 28
     },
     {
       "from": "yuan-shao",
@@ -20586,7 +20997,8 @@
           "chapter": "第28章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 28
     },
     {
       "from": "guan-yu",
@@ -20599,7 +21011,9 @@
           "chapter": "第28章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 50
     },
     {
       "from": "guo-chang",
@@ -20626,7 +21040,9 @@
           "chapter": "第28章",
           "place": "gucheng"
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 41
     },
     {
       "from": "liu-pi",
@@ -20639,7 +21055,9 @@
           "chapter": "第28章",
           "place": "runan"
         }
-      ]
+      ],
+      "fromCh": 28,
+      "toCh": 31
     },
     {
       "from": "yuan-shao",
@@ -20652,7 +21070,9 @@
           "chapter": "第26章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 28
     },
     {
       "from": "guan-yu",
@@ -20665,7 +21085,9 @@
           "chapter": "第26章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 27
     },
     {
       "from": "guan-yu",
@@ -20678,7 +21100,9 @@
           "chapter": "第26章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 27
     },
     {
       "from": "yan-liang",
@@ -20705,7 +21129,8 @@
           "chapter": "第26章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 26
     },
     {
       "from": "guan-yu",
@@ -20754,7 +21179,9 @@
           "chapter": "第66章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 67
     },
     {
       "from": "cao-cao",
@@ -20780,7 +21207,9 @@
           "chapter": "第26章",
           "place": "runan"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 51
     },
     {
       "from": "guan-yu",
@@ -20793,7 +21222,9 @@
           "chapter": "第26章",
           "place": "runan"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 27
     },
     {
       "from": "sun-qian",
@@ -20885,7 +21316,9 @@
           "chapter": "第26章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 26,
+      "toCh": 30
     },
     {
       "from": "cao-cao",
@@ -20924,7 +21357,8 @@
           "chapter": "第30章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 30
     },
     {
       "from": "cao-cao",
@@ -20937,7 +21371,9 @@
           "chapter": "第30章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 30,
+      "toCh": 32
     },
     {
       "from": "cao-cao",
@@ -20963,7 +21399,8 @@
           "chapter": "第30章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 30
     },
     {
       "from": "xu-huang",
@@ -20976,7 +21413,9 @@
           "chapter": "第30章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 30,
+      "toCh": 31
     },
     {
       "from": "xu-huang",
@@ -21175,7 +21614,8 @@
           "chapter": "第30章",
           "place": "guandu"
         }
-      ]
+      ],
+      "fromCh": 30
     },
     {
       "from": "cao-cao",
@@ -21194,7 +21634,9 @@
           "chapter": "第17章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 31
     },
     {
       "from": "xu-chu",
@@ -21239,7 +21681,8 @@
           "chapter": "第7章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 7
     },
     {
       "from": "sun-ce",
@@ -21305,7 +21748,9 @@
           "chapter": "第61章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 29,
+      "toCh": 62
     },
     {
       "from": "da-qiao",
@@ -21319,7 +21764,8 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "xiao-qiao",
@@ -21333,7 +21779,8 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "xiao-qiao",
@@ -21347,7 +21794,8 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "sun-ce",
@@ -21360,7 +21808,9 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29,
+      "toCh": 44
     },
     {
       "from": "zhou-yu",
@@ -21393,7 +21843,8 @@
           "chapter": "第54章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "zhang-zhao",
@@ -21436,7 +21887,9 @@
           "chapter": "第65章",
           "place": "jiang-dong"
         }
-      ]
+      ],
+      "fromCh": 29,
+      "toCh": 99
     },
     {
       "from": "lu-su",
@@ -21459,7 +21912,8 @@
           "chapter": "第42章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "zhou-yu",
@@ -21472,7 +21926,9 @@
           "chapter": "第29章",
           "place": "linhuai"
         }
-      ]
+      ],
+      "fromCh": 29,
+      "toCh": 44
     },
     {
       "from": "zhuge-jin",
@@ -21490,7 +21946,8 @@
           "chapter": "第76章",
           "place": "mai-cheng"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "sun-ce",
@@ -21529,7 +21986,9 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29,
+      "toCh": 30
     },
     {
       "from": "yu-ji",
@@ -21542,7 +22001,8 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "cao-ren",
@@ -21569,7 +22029,8 @@
           "chapter": "第29章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "hua-xin",
@@ -21647,7 +22108,8 @@
           "chapter": "第29章",
           "place": "wu-jun"
         }
-      ]
+      ],
+      "fromCh": 29
     },
     {
       "from": "yu-fan",
@@ -21731,7 +22193,8 @@
           "chapter": "第31章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 31
     },
     {
       "from": "feng-ji",
@@ -21757,7 +22220,9 @@
           "chapter": "第31章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 32
     },
     {
       "from": "xin-ping",
@@ -21770,7 +22235,9 @@
           "chapter": "第31章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 32
     },
     {
       "from": "shen-pei",
@@ -21783,7 +22250,9 @@
           "chapter": "第31章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 32
     },
     {
       "from": "cao-cao",
@@ -21796,7 +22265,9 @@
           "chapter": "第31章",
           "place": "cangting"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 33
     },
     {
       "from": "shi-huan",
@@ -21822,7 +22293,8 @@
           "chapter": "第31章",
           "place": "cangting"
         }
-      ]
+      ],
+      "fromCh": 31
     },
     {
       "from": "xiahou-yuan",
@@ -21948,7 +22420,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 85
     },
     {
       "from": "liu-bei",
@@ -21989,7 +22463,8 @@
           "chapter": "第31章",
           "place": "runan"
         }
-      ]
+      ],
+      "fromCh": 31
     },
     {
       "from": "liu-bei",
@@ -22020,7 +22495,8 @@
           "chapter": "第41章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 31
     },
     {
       "from": "sun-qian",
@@ -22046,7 +22522,9 @@
           "chapter": "第31章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 34
     },
     {
       "from": "cai-mao",
@@ -22060,7 +22538,9 @@
           "chapter": "第31章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 35
     },
     {
       "from": "liu-bei",
@@ -22074,7 +22554,9 @@
           "chapter": "第31章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 32
     },
     {
       "from": "guan-yu",
@@ -22106,7 +22588,8 @@
           "chapter": "第31章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 31
     },
     {
       "from": "cao-pi",
@@ -22215,7 +22698,8 @@
           "chapter": "第33章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "xu-chu",
@@ -22241,7 +22725,8 @@
           "chapter": "第33章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "cao-cao",
@@ -22259,7 +22744,9 @@
           "chapter": "第39章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 33,
+      "toCh": 68
     },
     {
       "from": "cao-cao",
@@ -22273,7 +22760,8 @@
           "chapter": "第33章",
           "place": "ping-yuan"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "cao-hong",
@@ -22312,7 +22800,8 @@
           "chapter": "第33章",
           "place": "nan-pi"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "xin-ping",
@@ -22339,7 +22828,8 @@
           "chapter": "第33章",
           "place": "nan-pi"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "wang-xiu",
@@ -22352,7 +22842,8 @@
           "chapter": "第33章",
           "place": "nan-pi"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "cao-cao",
@@ -22378,7 +22869,8 @@
           "chapter": "第33章",
           "place": "yi-zhou"
         }
-      ]
+      ],
+      "fromCh": 33
     },
     {
       "from": "cao-cao",
@@ -22391,7 +22883,9 @@
           "chapter": "第33章",
           "place": "nan-pi"
         }
-      ]
+      ],
+      "fromCh": 33,
+      "toCh": 48
     },
     {
       "from": "wu-huan-chu",
@@ -22549,7 +23043,9 @@
           "chapter": "第33章",
           "place": "hu-kou-guan"
         }
-      ]
+      ],
+      "fromCh": 33,
+      "toCh": 46
     },
     {
       "from": "liu-biao",
@@ -22562,7 +23058,9 @@
           "chapter": "第33章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 33,
+      "toCh": 34
     },
     {
       "from": "liu-bei",
@@ -22591,7 +23089,9 @@
           "place": ""
         }
       ],
-      "kin": "blood"
+      "kin": "blood",
+      "fromCh": 34,
+      "toCh": 42
     },
     {
       "from": "liu-biao",
@@ -22610,7 +23110,8 @@
           "chapter": "第35章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 34
     },
     {
       "from": "cai-furen",
@@ -22624,7 +23125,9 @@
           "chapter": "第34章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 34,
+      "toCh": 35
     },
     {
       "from": "liu-biao",
@@ -22738,7 +23241,8 @@
           "chapter": "第34章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 34
     },
     {
       "from": "cai-furen",
@@ -22764,7 +23268,9 @@
           "chapter": "第34章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 34,
+      "toCh": 40
     },
     {
       "from": "zhang-fei",
@@ -22827,7 +23333,8 @@
           "chapter": "第34章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 34
     },
     {
       "from": "kuai-liang",
@@ -22939,7 +23446,9 @@
           "place": "xiang-yang"
         }
       ],
-      "kin": "blood"
+      "kin": "blood",
+      "fromCh": 34,
+      "toCh": 43
     },
     {
       "from": "liu-bei",
@@ -22952,7 +23461,9 @@
           "chapter": "第36章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 37
     },
     {
       "from": "liu-bei",
@@ -22996,7 +23507,9 @@
           "chapter": "第77章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 80
     },
     {
       "from": "liu-feng",
@@ -23023,7 +23536,8 @@
           "chapter": "第36章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 36
     },
     {
       "from": "cao-ren",
@@ -23036,7 +23550,8 @@
           "chapter": "第36章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 36
     },
     {
       "from": "cao-cao",
@@ -23049,7 +23564,9 @@
           "chapter": "第36章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 37
     },
     {
       "from": "cheng-yu",
@@ -23095,7 +23612,9 @@
           "chapter": "第36章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 37
     },
     {
       "from": "cheng-yu",
@@ -23113,7 +23632,9 @@
           "chapter": "第56章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 57
     },
     {
       "from": "xu-shu",
@@ -23126,7 +23647,9 @@
           "chapter": "第36章",
           "place": "wolong-gang"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 37
     },
     {
       "from": "liu-bei",
@@ -23139,7 +23662,9 @@
           "chapter": "第36章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 36,
+      "toCh": 37
     },
     {
       "from": "zhuge-liang",
@@ -23213,7 +23738,8 @@
           "chapter": "第36章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 36
     },
     {
       "from": "si-ma-hui",
@@ -23226,7 +23752,8 @@
           "chapter": "第36章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 36
     },
     {
       "from": "xu-shu",
@@ -23280,7 +23807,9 @@
           "chapter": "第37章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 37,
+      "toCh": 48
     },
     {
       "from": "cao-cao",
@@ -23293,7 +23822,8 @@
           "chapter": "第37章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 37
     },
     {
       "from": "liu-bei",
@@ -23306,7 +23836,8 @@
           "chapter": "第37章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 37
     },
     {
       "from": "xu-shu",
@@ -23319,7 +23850,9 @@
           "chapter": "第37章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 37,
+      "toCh": 39
     },
     {
       "from": "zhuge-liang",
@@ -23469,7 +24002,9 @@
           "chapter": "第37章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 37,
+      "toCh": 39
     },
     {
       "from": "guan-yu",
@@ -23482,7 +24017,9 @@
           "chapter": "第37章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 37,
+      "toCh": 39
     },
     {
       "from": "liu-bei",
@@ -23495,7 +24032,9 @@
           "chapter": "第37章",
           "place": "wolong-gang"
         }
-      ]
+      ],
+      "fromCh": 37,
+      "toCh": 39
     },
     {
       "from": "liu-bei",
@@ -23508,7 +24047,9 @@
           "chapter": "第35章",
           "place": "shuijing-zhuang"
         }
-      ]
+      ],
+      "fromCh": 35,
+      "toCh": 36
     },
     {
       "from": "si-ma-hui",
@@ -23534,7 +24075,9 @@
           "chapter": "第35章",
           "place": "shuijing-zhuang"
         }
-      ]
+      ],
+      "fromCh": 35,
+      "toCh": 36
     },
     {
       "from": "si-ma-hui",
@@ -23587,7 +24130,9 @@
           "chapter": "第35章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 35,
+      "toCh": 36
     },
     {
       "from": "liu-biao",
@@ -23601,7 +24146,8 @@
           "chapter": "第35章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 35
     },
     {
       "from": "cai-furen",
@@ -23615,7 +24161,9 @@
           "chapter": "第35章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 35,
+      "toCh": 40
     },
     {
       "from": "liu-qi",
@@ -23629,7 +24177,8 @@
           "chapter": "第35章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 35
     },
     {
       "from": "liu-bei",
@@ -23648,7 +24197,9 @@
           "place": ""
         }
       ],
-      "kin": "blood"
+      "kin": "blood",
+      "fromCh": 34,
+      "toCh": 43
     },
     {
       "from": "liu-bei",
@@ -23661,7 +24212,8 @@
           "chapter": "第35章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 34
     },
     {
       "from": "cao-ren",
@@ -23674,7 +24226,9 @@
           "chapter": "第35章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 35,
+      "toCh": 36
     },
     {
       "from": "lv-kuang",
@@ -23732,7 +24286,8 @@
           "chapter": "第40章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 40
     },
     {
       "from": "cai-furen",
@@ -23760,7 +24315,8 @@
           "chapter": "第40章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 40
     },
     {
       "from": "cai-mao",
@@ -23877,7 +24433,8 @@
           "chapter": "第40章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 40
     },
     {
       "from": "kong-rong",
@@ -23890,7 +24447,8 @@
           "chapter": "第40章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 40
     },
     {
       "from": "xi-lu",
@@ -23982,7 +24540,9 @@
           "chapter": "第40章",
           "place": "xin-ye"
         }
-      ]
+      ],
+      "fromCh": 40,
+      "toCh": 67
     },
     {
       "from": "zhuge-liang",
@@ -23995,7 +24555,9 @@
           "chapter": "第40章",
           "place": "xin-ye"
         }
-      ]
+      ],
+      "fromCh": 40,
+      "toCh": 41
     },
     {
       "from": "zhuge-liang",
@@ -24023,7 +24585,9 @@
           "chapter": "第63章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 40,
+      "toCh": 64
     },
     {
       "from": "zhuge-liang",
@@ -24041,7 +24605,9 @@
           "chapter": "第51章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 40,
+      "toCh": 52
     },
     {
       "from": "zhuge-liang",
@@ -24069,7 +24635,8 @@
           "chapter": "第63章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 40
     },
     {
       "from": "liu-cong",
@@ -24122,7 +24689,9 @@
           "chapter": "第39章",
           "place": "wu-hui"
         }
-      ]
+      ],
+      "fromCh": 39,
+      "toCh": 67
     },
     {
       "from": "ling-cao",
@@ -24159,7 +24728,8 @@
           "chapter": "第68章",
           "place": "ruxu-kou"
         }
-      ]
+      ],
+      "fromCh": 39
     },
     {
       "from": "sun-quan",
@@ -24232,7 +24802,9 @@
           "place": "jing-zhou"
         }
       ],
-      "kin": "blood"
+      "kin": "blood",
+      "fromCh": 39,
+      "toCh": 41
     },
     {
       "from": "liu-bei",
@@ -24245,7 +24817,9 @@
           "chapter": "第39章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 39,
+      "toCh": 40
     },
     {
       "from": "zhuge-liang",
@@ -24258,7 +24832,9 @@
           "chapter": "第39章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 39,
+      "toCh": 40
     },
     {
       "from": "zhuge-liang",
@@ -24271,7 +24847,9 @@
           "chapter": "第39章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 39,
+      "toCh": 40
     },
     {
       "from": "xiahou-dun",
@@ -24294,7 +24872,9 @@
           "chapter": "第18章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 73
     },
     {
       "from": "xu-shu",
@@ -24307,7 +24887,8 @@
           "chapter": "第39章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 39
     },
     {
       "from": "xiahou-dun",
@@ -24468,7 +25049,8 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 42
     },
     {
       "from": "wu-tai-furen",
@@ -24482,7 +25064,9 @@
           "chapter": "第43章",
           "place": "chaisang-jun"
         }
-      ]
+      ],
+      "fromCh": 43,
+      "toCh": 44
     },
     {
       "from": "liu-bei",
@@ -24560,7 +25144,9 @@
           "chapter": "第65章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 41,
+      "toCh": 82
     },
     {
       "from": "zhuge-liang",
@@ -24573,7 +25159,9 @@
           "chapter": "第43章",
           "place": "chaisang-jun"
         }
-      ]
+      ],
+      "fromCh": 43,
+      "toCh": 44
     },
     {
       "from": "zhuge-liang",
@@ -24586,7 +25174,9 @@
           "chapter": "第43章",
           "place": "chaisang-jun"
         }
-      ]
+      ],
+      "fromCh": 43,
+      "toCh": 102
     },
     {
       "from": "zhang-zhao",
@@ -24651,7 +25241,8 @@
           "chapter": "第43章",
           "place": "chaisang-jun"
         }
-      ]
+      ],
+      "fromCh": 43
     },
     {
       "from": "zhuge-liang",
@@ -24718,7 +25309,9 @@
           "chapter": "第43章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 43,
+      "toCh": 49
     },
     {
       "from": "zhao-yun",
@@ -24736,7 +25329,9 @@
           "chapter": "第65章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 31,
+      "toCh": 85
     },
     {
       "from": "zhao-yun",
@@ -24749,7 +25344,9 @@
           "chapter": "第42章",
           "place": "chang-ban-po"
         }
-      ]
+      ],
+      "fromCh": 42,
+      "toCh": 61
     },
     {
       "from": "liu-qi",
@@ -24763,7 +25360,9 @@
           "chapter": "第42章",
           "place": "han-jin"
         }
-      ]
+      ],
+      "fromCh": 34,
+      "toCh": 43
     },
     {
       "from": "zhuge-liang",
@@ -24776,7 +25375,9 @@
           "chapter": "第42章",
           "place": "jiang-xia"
         }
-      ]
+      ],
+      "fromCh": 42,
+      "toCh": 44
     },
     {
       "from": "zhuge-liang",
@@ -24789,7 +25390,8 @@
           "chapter": "第42章",
           "place": "han-jin"
         }
-      ]
+      ],
+      "fromCh": 42
     },
     {
       "from": "lu-su",
@@ -24802,7 +25404,9 @@
           "chapter": "第42章",
           "place": "jiang-xia"
         }
-      ]
+      ],
+      "fromCh": 42,
+      "toCh": 43
     },
     {
       "from": "zhang-fei",
@@ -24878,7 +25482,9 @@
           "chapter": "第32章",
           "place": "han-dan"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 59
     },
     {
       "from": "han-song",
@@ -24927,7 +25533,9 @@
           "chapter": "第61章",
           "place": "ruxu-wu"
         }
-      ]
+      ],
+      "fromCh": 42,
+      "toCh": 78
     },
     {
       "from": "zhuge-liang",
@@ -24940,7 +25548,9 @@
           "chapter": "第46章",
           "place": "chang-jiang"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 54
     },
     {
       "from": "zhou-yu",
@@ -24953,7 +25563,9 @@
           "chapter": "第46章",
           "place": "dongwu-daying"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 49
     },
     {
       "from": "zhou-yu",
@@ -24966,7 +25578,9 @@
           "chapter": "第46章",
           "place": "dongwu-daying"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 49
     },
     {
       "from": "zhou-yu",
@@ -24979,7 +25593,9 @@
           "chapter": "第46章",
           "place": "dongwu-daying"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 47
     },
     {
       "from": "huang-gai",
@@ -24992,7 +25608,9 @@
           "chapter": "第46章",
           "place": "dongwu-daying"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 47
     },
     {
       "from": "zhou-yu",
@@ -25005,7 +25623,9 @@
           "chapter": "第46章",
           "place": "dongwu-daying"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 47
     },
     {
       "from": "cao-cao",
@@ -25018,7 +25638,9 @@
           "chapter": "第46章",
           "place": "cao-jun-shuizhai"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 47
     },
     {
       "from": "cao-cao",
@@ -25031,7 +25653,9 @@
           "chapter": "第46章",
           "place": "cao-jun-shuizhai"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 47
     },
     {
       "from": "cao-cao",
@@ -25044,7 +25668,9 @@
           "chapter": "第46章",
           "place": "cao-jun-shuizhai"
         }
-      ]
+      ],
+      "fromCh": 46,
+      "toCh": 48
     },
     {
       "from": "gan-furen",
@@ -25118,7 +25744,9 @@
           "chapter": "第41章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 41,
+      "toCh": 42
     },
     {
       "from": "liu-bei",
@@ -25131,7 +25759,8 @@
           "chapter": "第41章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 41
     },
     {
       "from": "liu-bei",
@@ -25144,7 +25773,9 @@
           "chapter": "第41章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 41,
+      "toCh": 83
     },
     {
       "from": "zhao-yun",
@@ -25170,7 +25801,9 @@
           "chapter": "第41章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 41,
+      "toCh": 42
     },
     {
       "from": "zhao-yun",
@@ -25235,7 +25868,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 56
     },
     {
       "from": "zhou-yu",
@@ -25248,7 +25883,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 55
     },
     {
       "from": "huang-gai",
@@ -25274,7 +25911,8 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49
     },
     {
       "from": "cao-cao",
@@ -25292,7 +25930,8 @@
           "chapter": "第56章",
           "place": "tongque-tai"
         }
-      ]
+      ],
+      "fromCh": 49
     },
     {
       "from": "zhou-yu",
@@ -25305,7 +25944,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 51
     },
     {
       "from": "zhou-yu",
@@ -25318,7 +25959,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 51
     },
     {
       "from": "zhao-yun",
@@ -25331,7 +25974,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 56
     },
     {
       "from": "liu-bei",
@@ -25344,7 +25989,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 80
     },
     {
       "from": "guan-yu",
@@ -25357,7 +26004,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 50
     },
     {
       "from": "zhuge-liang",
@@ -25370,7 +26019,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 50
     },
     {
       "from": "zhou-yu",
@@ -25396,7 +26047,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 50
     },
     {
       "from": "kan-ze",
@@ -25427,7 +26080,9 @@
           "chapter": "第51章",
           "place": "youjiang-kou"
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 54
     },
     {
       "from": "liu-qi",
@@ -25440,7 +26095,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 53
     },
     {
       "from": "guan-yu",
@@ -25472,7 +26129,9 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 78
     },
     {
       "from": "zhou-yu",
@@ -25485,7 +26144,9 @@
           "chapter": "第49章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 49,
+      "toCh": 51
     },
     {
       "from": "zhou-yu",
@@ -25498,7 +26159,9 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 46
     },
     {
       "from": "lu-su",
@@ -25511,7 +26174,9 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 46
     },
     {
       "from": "zhou-yu",
@@ -25524,7 +26189,9 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 46
     },
     {
       "from": "zhou-yu",
@@ -25579,7 +26246,8 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44
     },
     {
       "from": "da-qiao",
@@ -25659,7 +26327,8 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44
     },
     {
       "from": "cheng-pu",
@@ -25686,7 +26355,9 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 49
     },
     {
       "from": "zhou-yu",
@@ -25699,7 +26370,9 @@
           "chapter": "第44章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 46
     },
     {
       "from": "zhou-yu",
@@ -25745,7 +26418,9 @@
           "chapter": "第102章",
           "place": "zhaolie-miao"
         }
-      ]
+      ],
+      "fromCh": 44,
+      "toCh": 103
     },
     {
       "from": "pang-tong",
@@ -25771,7 +26446,8 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48
     },
     {
       "from": "xu-shu",
@@ -25797,7 +26473,8 @@
           "chapter": "第48章",
           "place": "san-guan"
         }
-      ]
+      ],
+      "fromCh": 48
     },
     {
       "from": "cao-cao",
@@ -25837,7 +26514,8 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48
     },
     {
       "from": "cao-cao",
@@ -25876,7 +26554,9 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48,
+      "toCh": 49
     },
     {
       "from": "han-dang",
@@ -25889,7 +26569,9 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48,
+      "toCh": 51
     },
     {
       "from": "zhou-tai",
@@ -25902,7 +26584,9 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48,
+      "toCh": 51
     },
     {
       "from": "han-dang",
@@ -25915,7 +26599,9 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48,
+      "toCh": 83
     },
     {
       "from": "wen-pin",
@@ -25954,7 +26640,9 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48,
+      "toCh": 49
     },
     {
       "from": "xun-you",
@@ -25967,7 +26655,8 @@
           "chapter": "第48章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 48
     },
     {
       "from": "huang-gai",
@@ -25980,7 +26669,8 @@
           "chapter": "第47章",
           "place": "dong-wu-shui-zhai"
         }
-      ]
+      ],
+      "fromCh": 47
     },
     {
       "from": "huang-gai",
@@ -26006,7 +26696,9 @@
           "chapter": "第47章",
           "place": "dong-wu-shui-zhai"
         }
-      ]
+      ],
+      "fromCh": 47,
+      "toCh": 49
     },
     {
       "from": "zhou-yu",
@@ -26019,7 +26711,9 @@
           "chapter": "第47章",
           "place": "dong-wu-shui-zhai"
         }
-      ]
+      ],
+      "fromCh": 47,
+      "toCh": 51
     },
     {
       "from": "gan-ning",
@@ -26058,7 +26752,9 @@
           "chapter": "第47章",
           "place": "gan-ning-zhai"
         }
-      ]
+      ],
+      "fromCh": 47,
+      "toCh": 49
     },
     {
       "from": "gan-ning",
@@ -26097,7 +26793,8 @@
           "chapter": "第47章",
           "place": "gan-ning-zhai"
         }
-      ]
+      ],
+      "fromCh": 47
     },
     {
       "from": "cai-he",
@@ -26110,7 +26807,8 @@
           "chapter": "第47章",
           "place": "gan-ning-zhai"
         }
-      ]
+      ],
+      "fromCh": 47
     },
     {
       "from": "jiang-gan",
@@ -26202,7 +26900,9 @@
           "chapter": "第51章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 51,
+      "toCh": 55
     },
     {
       "from": "zhuge-liang",
@@ -26228,7 +26928,8 @@
           "chapter": "第51章",
           "place": "nanjun"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26241,7 +26942,8 @@
           "chapter": "第51章",
           "place": "yiling"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26254,7 +26956,8 @@
           "chapter": "第51章",
           "place": "yiling"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26293,7 +26996,8 @@
           "chapter": "第51章",
           "place": "nanjun"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26306,7 +27010,8 @@
           "chapter": "第51章",
           "place": "nanjun"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26332,7 +27037,8 @@
           "chapter": "第51章",
           "place": "nanjun"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "zhou-yu",
@@ -26538,7 +27244,9 @@
           "chapter": "第55章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 61
     },
     {
       "from": "cheng-pu",
@@ -26551,7 +27259,8 @@
           "chapter": "第55章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 55
     },
     {
       "from": "zhao-yun",
@@ -26564,7 +27273,9 @@
           "chapter": "第55章",
           "place": "dong-fu"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 80
     },
     {
       "from": "sun-qian",
@@ -26577,7 +27288,8 @@
           "chapter": "第55章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 55
     },
     {
       "from": "liu-bei",
@@ -26616,7 +27328,8 @@
           "chapter": "第55章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "ding-feng",
@@ -26629,7 +27342,8 @@
           "chapter": "第55章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "jiang-qin",
@@ -26655,7 +27369,9 @@
           "chapter": "第55章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 68
     },
     {
       "from": "chen-wu",
@@ -26681,7 +27397,9 @@
           "chapter": "第55章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 77
     },
     {
       "from": "huang-gai",
@@ -26694,7 +27412,8 @@
           "chapter": "第55章",
           "place": "huang-zhou"
         }
-      ]
+      ],
+      "fromCh": 55
     },
     {
       "from": "han-dang",
@@ -26707,7 +27426,8 @@
           "chapter": "第55章",
           "place": "huang-zhou"
         }
-      ]
+      ],
+      "fromCh": 51
     },
     {
       "from": "huang-zhong",
@@ -26720,7 +27440,9 @@
           "chapter": "第55章",
           "place": "huang-zhou"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 60
     },
     {
       "from": "wei-yan",
@@ -26733,7 +27455,9 @@
           "chapter": "第55章",
           "place": "huang-zhou"
         }
-      ]
+      ],
+      "fromCh": 55,
+      "toCh": 60
     },
     {
       "from": "guan-yu",
@@ -26747,7 +27471,9 @@
           "place": "huarong-dao"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 50,
+      "toCh": 75
     },
     {
       "from": "guan-yu",
@@ -26760,7 +27486,8 @@
           "chapter": "第50章",
           "place": "huarong-dao"
         }
-      ]
+      ],
+      "fromCh": 50
     },
     {
       "from": "guan-yu",
@@ -26773,7 +27500,9 @@
           "chapter": "第50章",
           "place": "xiakou"
         }
-      ]
+      ],
+      "fromCh": 50,
+      "toCh": 63
     },
     {
       "from": "han-dang",
@@ -26799,7 +27528,8 @@
           "chapter": "第50章",
           "place": "chibi"
         }
-      ]
+      ],
+      "fromCh": 50
     },
     {
       "from": "gan-ning",
@@ -26838,7 +27568,9 @@
           "chapter": "第50章",
           "place": "wulin"
         }
-      ]
+      ],
+      "fromCh": 50,
+      "toCh": 59
     },
     {
       "from": "zhao-yun",
@@ -26851,7 +27583,8 @@
           "chapter": "第50章",
           "place": "yidu"
         }
-      ]
+      ],
+      "fromCh": 50
     },
     {
       "from": "zhou-yu",
@@ -26907,7 +27640,8 @@
           "chapter": "第86章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 50
     },
     {
       "from": "taishi-ci",
@@ -26920,7 +27654,9 @@
           "chapter": "第50章",
           "place": "hefei"
         }
-      ]
+      ],
+      "fromCh": 50,
+      "toCh": 53
     },
     {
       "from": "sun-quan",
@@ -26934,7 +27670,9 @@
           "chapter": "第54章",
           "place": "nan-xu"
         }
-      ]
+      ],
+      "fromCh": 54,
+      "toCh": 65
     },
     {
       "from": "sun-quan",
@@ -26952,7 +27690,8 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 54
     },
     {
       "from": "lv-fan",
@@ -27004,7 +27743,9 @@
           "chapter": "第54章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 54,
+      "toCh": 55
     },
     {
       "from": "zhuge-liang",
@@ -27017,7 +27758,8 @@
           "chapter": "第54章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 54
     },
     {
       "from": "sun-quan",
@@ -27058,7 +27800,9 @@
           "chapter": "第54章",
           "place": "chaisang"
         }
-      ]
+      ],
+      "fromCh": 54,
+      "toCh": 56
     },
     {
       "from": "zhang-fei",
@@ -27111,7 +27855,9 @@
           "place": "chang-sha"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 53,
+      "toCh": 73
     },
     {
       "from": "han-xuan",
@@ -27177,7 +27923,9 @@
           "chapter": "第53章",
           "place": "chang-sha"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 62
     },
     {
       "from": "zhuge-liang",
@@ -27190,7 +27938,9 @@
           "chapter": "第53章",
           "place": "chang-sha"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 87
     },
     {
       "from": "liu-bei",
@@ -27218,7 +27968,9 @@
           "chapter": "第81章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 82
     },
     {
       "from": "liu-bei",
@@ -27246,7 +27998,9 @@
           "chapter": "第81章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 82
     },
     {
       "from": "sun-quan",
@@ -27264,7 +28018,9 @@
           "chapter": "第56章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 57
     },
     {
       "from": "sun-quan",
@@ -27304,7 +28060,9 @@
           "chapter": "第53章",
           "place": "hefei"
         }
-      ]
+      ],
+      "fromCh": 53,
+      "toCh": 67
     },
     {
       "from": "taishi-ci",
@@ -27414,7 +28172,8 @@
           "chapter": "第53章",
           "place": "hefei"
         }
-      ]
+      ],
+      "fromCh": 53
     },
     {
       "from": "liu-bei",
@@ -27428,7 +28187,8 @@
           "chapter": "第53章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 53
     },
     {
       "from": "guan-yu",
@@ -27469,7 +28229,8 @@
           "chapter": "第86章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 56
     },
     {
       "from": "lu-su",
@@ -27482,7 +28243,8 @@
           "chapter": "第56章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 56
     },
     {
       "from": "zhou-yu",
@@ -27495,7 +28257,8 @@
           "chapter": "第56章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 56
     },
     {
       "from": "zhuge-liang",
@@ -27508,7 +28271,9 @@
           "chapter": "第56章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 56,
+      "toCh": 86
     },
     {
       "from": "lu-su",
@@ -27596,7 +28361,9 @@
           "chapter": "第56章",
           "place": "tongque-tai"
         }
-      ]
+      ],
+      "fromCh": 56,
+      "toCh": 59
     },
     {
       "from": "xu-huang",
@@ -27627,7 +28394,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 56
     },
     {
       "from": "hua-xin",
@@ -27681,7 +28449,8 @@
           "chapter": "第61章",
           "place": "shatou-zhen"
         }
-      ]
+      ],
+      "fromCh": 61
     },
     {
       "from": "liu-zhang",
@@ -27695,7 +28464,9 @@
           "chapter": "第61章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 61,
+      "toCh": 65
     },
     {
       "from": "sun-quan",
@@ -27736,7 +28507,8 @@
           "chapter": "第86章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 61
     },
     {
       "from": "sun-quan",
@@ -27782,7 +28554,8 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 61
     },
     {
       "from": "xun-yu",
@@ -27810,7 +28583,8 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59
     },
     {
       "from": "han-sui",
@@ -27838,7 +28612,9 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 65
     },
     {
       "from": "ma-chao",
@@ -27851,7 +28627,9 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 65
     },
     {
       "from": "han-sui",
@@ -27890,7 +28668,9 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 66
     },
     {
       "from": "xu-chu",
@@ -27916,7 +28696,9 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 66
     },
     {
       "from": "cao-cao",
@@ -27929,7 +28711,9 @@
           "chapter": "第59章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 71
     },
     {
       "from": "cao-cao",
@@ -27955,7 +28739,9 @@
           "chapter": "第59章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 64
     },
     {
       "from": "xiahou-yuan",
@@ -27981,7 +28767,9 @@
           "chapter": "第59章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 69
     },
     {
       "from": "zhang-lu",
@@ -28099,7 +28887,9 @@
           "chapter": "第59章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 67
     },
     {
       "from": "yu-jin",
@@ -28125,7 +28915,9 @@
           "chapter": "第59章",
           "place": "wei-he"
         }
-      ]
+      ],
+      "fromCh": 59,
+      "toCh": 71
     },
     {
       "from": "yan-yan",
@@ -28138,7 +28930,9 @@
           "chapter": "第64章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 64,
+      "toCh": 70
     },
     {
       "from": "liu-bei",
@@ -28269,7 +29063,8 @@
           "chapter": "第64章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 64
     },
     {
       "from": "zheng-du",
@@ -28282,7 +29077,9 @@
           "chapter": "第64章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 64,
+      "toCh": 65
     },
     {
       "from": "liu-zhang",
@@ -28296,7 +29093,9 @@
           "chapter": "第64章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 64,
+      "toCh": 65
     },
     {
       "from": "fei-guan",
@@ -28309,7 +29108,9 @@
           "chapter": "第64章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 64,
+      "toCh": 65
     },
     {
       "from": "dong-he",
@@ -28348,7 +29149,8 @@
           "chapter": "第64章",
           "place": "ji-cheng"
         }
-      ]
+      ],
+      "fromCh": 64
     },
     {
       "from": "ma-chao",
@@ -28388,7 +29190,8 @@
           "chapter": "第62章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 62
     },
     {
       "from": "liu-zhang",
@@ -28425,7 +29228,9 @@
           "chapter": "第60章",
           "place": "fu-cheng"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 63
     },
     {
       "from": "liu-zhang",
@@ -28456,7 +29261,8 @@
           "chapter": "第62章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 62
     },
     {
       "from": "liu-bei",
@@ -28531,7 +29337,9 @@
           "chapter": "第62章",
           "place": "fushui-guan"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 63
     },
     {
       "from": "huang-zhong",
@@ -28544,7 +29352,9 @@
           "chapter": "第62章",
           "place": "luo-xian"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 63
     },
     {
       "from": "huang-zhong",
@@ -28570,7 +29380,9 @@
           "chapter": "第62章",
           "place": "luo-xian"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 63
     },
     {
       "from": "liu-bei",
@@ -28583,7 +29395,9 @@
           "chapter": "第62章",
           "place": "luo-xian"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 63
     },
     {
       "from": "ling-bao",
@@ -28717,7 +29531,9 @@
           "chapter": "第62章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 72
     },
     {
       "from": "meng-da",
@@ -28730,7 +29546,9 @@
           "chapter": "第62章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 65
     },
     {
       "from": "pang-tong",
@@ -28743,7 +29561,8 @@
           "chapter": "第62章",
           "place": "fu-cheng"
         }
-      ]
+      ],
+      "fromCh": 62
     },
     {
       "from": "fa-zheng",
@@ -28756,7 +29575,9 @@
           "chapter": "第62章",
           "place": "fu-cheng"
         }
-      ]
+      ],
+      "fromCh": 62,
+      "toCh": 63
     },
     {
       "from": "pang-tong",
@@ -28834,7 +29655,8 @@
           "chapter": "第63章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "guan-yu",
@@ -28866,7 +29688,8 @@
           "chapter": "第63章",
           "place": "fu-guan"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "zhang-fei",
@@ -28880,7 +29703,9 @@
           "place": "ba-jun"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 63,
+      "toCh": 64
     },
     {
       "from": "yan-yan",
@@ -28919,7 +29744,8 @@
           "chapter": "第63章",
           "place": "fu-guan"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "fa-zheng",
@@ -28932,7 +29758,9 @@
           "chapter": "第63章",
           "place": "fu-guan"
         }
-      ]
+      ],
+      "fromCh": 63,
+      "toCh": 65
     },
     {
       "from": "wei-yan",
@@ -28945,7 +29773,8 @@
           "chapter": "第63章",
           "place": "fu-guan"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "liu-bei",
@@ -28958,7 +29787,8 @@
           "chapter": "第63章",
           "place": "fu-guan"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "huang-zhong",
@@ -28971,7 +29801,8 @@
           "chapter": "第63章",
           "place": "luo-cheng"
         }
-      ]
+      ],
+      "fromCh": 63
     },
     {
       "from": "huang-zhong",
@@ -29023,7 +29854,9 @@
           "chapter": "第67章",
           "place": "nanzheng"
         }
-      ]
+      ],
+      "fromCh": 67,
+      "toCh": 74
     },
     {
       "from": "zhang-lu",
@@ -29054,7 +29887,8 @@
           "chapter": "第67章",
           "place": "nanzheng"
         }
-      ]
+      ],
+      "fromCh": 67
     },
     {
       "from": "zhang-liao",
@@ -29080,7 +29914,8 @@
           "chapter": "第67章",
           "place": "xiaoyao-jin"
         }
-      ]
+      ],
+      "fromCh": 67
     },
     {
       "from": "gan-ning",
@@ -29094,7 +29929,9 @@
           "place": ""
         }
       ],
-      "kin": "blood"
+      "kin": "blood",
+      "fromCh": 67,
+      "toCh": 68
     },
     {
       "from": "lv-meng",
@@ -29172,7 +30009,8 @@
           "chapter": "第67章",
           "place": "yi-zhou"
         }
-      ]
+      ],
+      "fromCh": 67
     },
     {
       "from": "yi-ji",
@@ -29228,7 +30066,9 @@
           "chapter": "第66章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 66,
+      "toCh": 73
     },
     {
       "from": "sun-quan",
@@ -29321,7 +30161,8 @@
           "chapter": "第66章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 66
     },
     {
       "from": "ma-liang",
@@ -29334,7 +30175,9 @@
           "chapter": "第66章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 66,
+      "toCh": 75
     },
     {
       "from": "cao-cao",
@@ -29373,7 +30216,9 @@
           "chapter": "第66章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 20,
+      "toCh": 69
     },
     {
       "from": "cao-cao",
@@ -29386,7 +30231,9 @@
           "chapter": "第66章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 66,
+      "toCh": 78
     },
     {
       "from": "cao-cao",
@@ -29518,7 +30365,8 @@
           "chapter": "第66章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 66
     },
     {
       "from": "cao-cao",
@@ -29532,7 +30380,9 @@
           "chapter": "第66章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 66,
+      "toCh": 76
     },
     {
       "from": "xu-chu",
@@ -29564,7 +30414,9 @@
           "chapter": "第17章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 67
     },
     {
       "from": "cao-cao",
@@ -29582,7 +30434,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 66
     },
     {
       "from": "zhang-fei",
@@ -29621,7 +30474,9 @@
           "chapter": "第70章",
           "place": "dangqu-zhai"
         }
-      ]
+      ],
+      "fromCh": 70,
+      "toCh": 72
     },
     {
       "from": "zhang-fei",
@@ -29635,7 +30490,9 @@
           "place": "chengdu"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 70,
+      "toCh": 72
     },
     {
       "from": "cao-hong",
@@ -29648,7 +30505,8 @@
           "chapter": "第70章",
           "place": "nanzheng"
         }
-      ]
+      ],
+      "fromCh": 70
     },
     {
       "from": "guo-huai",
@@ -29674,7 +30532,8 @@
           "chapter": "第70章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 70
     },
     {
       "from": "huang-zhong",
@@ -29727,7 +30586,9 @@
           "chapter": "第70章",
           "place": "micang-shan"
         }
-      ]
+      ],
+      "fromCh": 70,
+      "toCh": 71
     },
     {
       "from": "xiahou-shang",
@@ -29754,7 +30615,9 @@
           "chapter": "第70章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 70,
+      "toCh": 71
     },
     {
       "from": "fa-zheng",
@@ -29772,7 +30635,8 @@
           "chapter": "第65章",
           "place": "luo-cheng"
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "zhao-yun",
@@ -29785,7 +30649,9 @@
           "chapter": "第70章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 70,
+      "toCh": 71
     },
     {
       "from": "gan-ning",
@@ -29799,7 +30665,8 @@
           "chapter": "第68章",
           "place": "ruxu-kou"
         }
-      ]
+      ],
+      "fromCh": 68
     },
     {
       "from": "sun-quan",
@@ -29813,7 +30680,8 @@
           "place": "ruxu-kou"
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 68
     },
     {
       "from": "zhou-tai",
@@ -29968,7 +30836,9 @@
           "chapter": "第68章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 68,
+      "toCh": 80
     },
     {
       "from": "jia-xu",
@@ -29981,7 +30851,8 @@
           "chapter": "第68章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 66
     },
     {
       "from": "cui-yan",
@@ -29994,7 +30865,8 @@
           "chapter": "第68章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 68
     },
     {
       "from": "zuo-ci",
@@ -30095,7 +30967,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 78
     },
     {
       "from": "liu-bei",
@@ -30108,7 +30982,9 @@
           "chapter": "第73章",
           "place": "mian-yang"
         }
-      ]
+      ],
+      "fromCh": 73,
+      "toCh": 80
     },
     {
       "from": "liu-bei",
@@ -30122,7 +30998,9 @@
           "chapter": "第73章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 73,
+      "toCh": 83
     },
     {
       "from": "guan-yu",
@@ -30135,7 +31013,8 @@
           "chapter": "第73章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 73
     },
     {
       "from": "guan-yu",
@@ -30148,7 +31027,8 @@
           "chapter": "第73章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 73
     },
     {
       "from": "guan-yu",
@@ -30200,7 +31080,8 @@
           "chapter": "第73章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 73
     },
     {
       "from": "guan-yu",
@@ -30226,7 +31107,9 @@
           "chapter": "第73章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 73,
+      "toCh": 76
     },
     {
       "from": "wang-fu",
@@ -30239,7 +31122,9 @@
           "chapter": "第73章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 73,
+      "toCh": 76
     },
     {
       "from": "zhuge-jin",
@@ -30265,7 +31150,9 @@
           "chapter": "第73章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 73,
+      "toCh": 74
     },
     {
       "from": "cao-ren",
@@ -30317,7 +31204,8 @@
           "chapter": "第72章",
           "place": "han-shui"
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "wang-ping",
@@ -30343,7 +31231,8 @@
           "chapter": "第72章",
           "place": "han-shui"
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "zhang-fei",
@@ -30369,7 +31258,8 @@
           "chapter": "第72章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "yan-yan",
@@ -30382,7 +31272,8 @@
           "chapter": "第72章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "cao-cao",
@@ -30459,7 +31350,8 @@
           "chapter": "第72章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "pang-de",
@@ -30472,7 +31364,9 @@
           "chapter": "第72章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 72,
+      "toCh": 74
     },
     {
       "from": "wei-yan",
@@ -30498,7 +31392,8 @@
           "chapter": "第72章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 72
     },
     {
       "from": "cao-zhang",
@@ -30524,7 +31419,9 @@
           "chapter": "第72章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 72,
+      "toCh": 79
     },
     {
       "from": "mi-fang",
@@ -30555,7 +31452,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 77
     },
     {
       "from": "guan-yu",
@@ -30568,7 +31467,9 @@
           "chapter": "第76章",
           "place": "xiang-jiang"
         }
-      ]
+      ],
+      "fromCh": 76,
+      "toCh": 77
     },
     {
       "from": "guan-yu",
@@ -30581,7 +31482,8 @@
           "chapter": "第76章",
           "place": "xiang-jiang"
         }
-      ]
+      ],
+      "fromCh": 76
     },
     {
       "from": "guan-yu",
@@ -30594,7 +31496,9 @@
           "chapter": "第76章",
           "place": "xiang-jiang"
         }
-      ]
+      ],
+      "fromCh": 76,
+      "toCh": 77
     },
     {
       "from": "guan-ping",
@@ -30620,7 +31524,8 @@
           "chapter": "第76章",
           "place": "mian-shui"
         }
-      ]
+      ],
+      "fromCh": 76
     },
     {
       "from": "lv-meng",
@@ -30638,7 +31543,9 @@
           "chapter": "第83章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 76,
+      "toCh": 84
     },
     {
       "from": "cao-cao",
@@ -30652,7 +31559,8 @@
           "chapter": "第76章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 76
     },
     {
       "from": "liu-feng",
@@ -30665,7 +31573,9 @@
           "chapter": "第76章",
           "place": "shang-yong"
         }
-      ]
+      ],
+      "fromCh": 76,
+      "toCh": 79
     },
     {
       "from": "guan-yu",
@@ -30718,7 +31628,9 @@
           "chapter": "第76章",
           "place": "mai-cheng"
         }
-      ]
+      ],
+      "fromCh": 76,
+      "toCh": 77
     },
     {
       "from": "guan-yu",
@@ -30744,7 +31656,9 @@
           "chapter": "第75章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 75,
+      "toCh": 76
     },
     {
       "from": "guan-yu",
@@ -30757,7 +31671,9 @@
           "chapter": "第75章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 75,
+      "toCh": 77
     },
     {
       "from": "cao-cao",
@@ -30889,7 +31805,9 @@
           "chapter": "第71章",
           "place": "dui-shan"
         }
-      ]
+      ],
+      "fromCh": 71,
+      "toCh": 91
     },
     {
       "from": "zhao-yun",
@@ -30902,7 +31820,9 @@
           "chapter": "第71章",
           "place": "bei-shan"
         }
-      ]
+      ],
+      "fromCh": 71,
+      "toCh": 72
     },
     {
       "from": "zhao-yun",
@@ -30928,7 +31848,8 @@
           "chapter": "第71章",
           "place": "dingjun-shan"
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "cao-cao",
@@ -30942,7 +31863,8 @@
           "chapter": "第71章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "cai-yong",
@@ -31037,7 +31959,9 @@
           "chapter": "第71章",
           "place": "lan-tian"
         }
-      ]
+      ],
+      "fromCh": 71,
+      "toCh": 72
     },
     {
       "from": "xu-huang",
@@ -31050,7 +31974,9 @@
           "chapter": "第71章",
           "place": "han-jiang"
         }
-      ]
+      ],
+      "fromCh": 71,
+      "toCh": 72
     },
     {
       "from": "xu-huang",
@@ -31063,7 +31989,8 @@
           "chapter": "第71章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "chen-shi",
@@ -31090,7 +32017,8 @@
           "chapter": "第71章",
           "place": "dingjun-shan"
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "huang-zhong",
@@ -31108,7 +32036,8 @@
           "chapter": "第83章",
           "place": "yiling"
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "zhuge-liang",
@@ -31121,7 +32050,8 @@
           "chapter": "第71章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 71
     },
     {
       "from": "liu-feng",
@@ -31134,7 +32064,9 @@
           "chapter": "第71章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 71,
+      "toCh": 76
     },
     {
       "from": "zhang-zhu",
@@ -31298,7 +32230,9 @@
           "chapter": "第79章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 79,
+      "toCh": 80
     },
     {
       "from": "hua-xin",
@@ -31324,7 +32258,8 @@
           "chapter": "第79章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 79
     },
     {
       "from": "liu-bei",
@@ -31337,7 +32272,8 @@
           "chapter": "第79章",
           "place": "shang-yong"
         }
-      ]
+      ],
+      "fromCh": 79
     },
     {
       "from": "peng-yang",
@@ -31381,7 +32317,9 @@
           "chapter": "第94章",
           "place": "xin-cheng"
         }
-      ]
+      ],
+      "fromCh": 79,
+      "toCh": 95
     },
     {
       "from": "shen-dan",
@@ -31395,7 +32333,9 @@
           "chapter": "第79章",
           "place": "shang-yong"
         }
-      ]
+      ],
+      "fromCh": 79,
+      "toCh": 94
     },
     {
       "from": "liu-feng",
@@ -31460,7 +32400,8 @@
           "chapter": "第79章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "li-fu",
@@ -31486,7 +32427,9 @@
           "chapter": "第79章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 79,
+      "toCh": 80
     },
     {
       "from": "guan-yu",
@@ -31608,7 +32551,9 @@
           "chapter": "第78章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 78,
+      "toCh": 80
     },
     {
       "from": "cao-cao",
@@ -31621,7 +32566,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 78
     },
     {
       "from": "cao-cao",
@@ -31701,7 +32647,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 78
     },
     {
       "from": "cao-cao",
@@ -31714,7 +32661,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 78
     },
     {
       "from": "cao-cao",
@@ -31727,7 +32675,8 @@
           "chapter": "第78章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 78
     },
     {
       "from": "pang-de",
@@ -31782,7 +32731,8 @@
           "chapter": "第74章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 74
     },
     {
       "from": "cao-cao",
@@ -31795,7 +32745,8 @@
           "chapter": "第74章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 74
     },
     {
       "from": "yu-jin",
@@ -31821,7 +32772,8 @@
           "chapter": "第74章",
           "place": "zeng-kou-chuan"
         }
-      ]
+      ],
+      "fromCh": 66
     },
     {
       "from": "man-chong",
@@ -31834,7 +32786,8 @@
           "chapter": "第74章",
           "place": "fancheng"
         }
-      ]
+      ],
+      "fromCh": 74
     },
     {
       "from": "cao-ren",
@@ -31970,7 +32923,9 @@
           "chapter": "第82章",
           "place": "jiang-dong"
         }
-      ]
+      ],
+      "fromCh": 82,
+      "toCh": 83
     },
     {
       "from": "sun-ce",
@@ -32057,7 +33012,8 @@
           "chapter": "第82章",
           "place": "yidu"
         }
-      ]
+      ],
+      "fromCh": 82
     },
     {
       "from": "liu-bei",
@@ -32071,7 +33027,9 @@
           "chapter": "第82章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 82,
+      "toCh": 83
     },
     {
       "from": "liu-bei",
@@ -32085,7 +33043,9 @@
           "chapter": "第82章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 82,
+      "toCh": 83
     },
     {
       "from": "guan-xing",
@@ -32181,7 +33141,8 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "guan-yu",
@@ -32194,7 +33155,8 @@
           "chapter": "第77章",
           "place": "jueshi"
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "guan-yu",
@@ -32233,7 +33195,8 @@
           "chapter": "第77章",
           "place": "linju"
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "sun-quan",
@@ -32246,7 +33209,9 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 77,
+      "toCh": 80
     },
     {
       "from": "guan-yu",
@@ -32259,7 +33224,8 @@
           "chapter": "第77章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "cao-cao",
@@ -32272,7 +33238,9 @@
           "chapter": "第77章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 77,
+      "toCh": 78
     },
     {
       "from": "guan-yu",
@@ -32285,7 +33253,8 @@
           "chapter": "第77章",
           "place": "yuquan-shan"
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "liu-bei",
@@ -32382,7 +33351,8 @@
           "chapter": "第77章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 77
     },
     {
       "from": "liu-bei",
@@ -32424,7 +33394,9 @@
           "place": ""
         }
       ],
-      "kin": "sworn"
+      "kin": "sworn",
+      "fromCh": 81,
+      "toCh": 82
     },
     {
       "from": "zhang-fei",
@@ -32437,7 +33409,9 @@
           "chapter": "第81章",
           "place": "langzhong"
         }
-      ]
+      ],
+      "fromCh": 81,
+      "toCh": 83
     },
     {
       "from": "zhang-fei",
@@ -32450,7 +33424,9 @@
           "chapter": "第81章",
           "place": "langzhong"
         }
-      ]
+      ],
+      "fromCh": 81,
+      "toCh": 83
     },
     {
       "from": "fan-jiang",
@@ -32590,7 +33566,8 @@
           "chapter": "第84章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 81
     },
     {
       "from": "lu-xun",
@@ -32603,7 +33580,8 @@
           "chapter": "第84章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 84
     },
     {
       "from": "lu-xun",
@@ -32720,7 +33698,8 @@
           "chapter": "第84章",
           "place": "ma-an-shan"
         }
-      ]
+      ],
+      "fromCh": 84
     },
     {
       "from": "liu-bei",
@@ -32733,7 +33712,8 @@
           "chapter": "第84章",
           "place": "ma-an-shan"
         }
-      ]
+      ],
+      "fromCh": 84
     },
     {
       "from": "ma-liang",
@@ -32850,7 +33830,8 @@
           "chapter": "第80章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "cao-pi",
@@ -32863,7 +33844,8 @@
           "chapter": "第80章",
           "place": "shoushan-tan"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "cao-hong",
@@ -32970,7 +33952,8 @@
           "chapter": "第80章",
           "place": "shoushan-tan"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "si-ma-yi",
@@ -32983,7 +33966,9 @@
           "chapter": "第80章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 80,
+      "toCh": 86
     },
     {
       "from": "hua-xin",
@@ -32996,7 +33981,8 @@
           "chapter": "第80章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "liu-bei",
@@ -33009,7 +33995,9 @@
           "chapter": "第80章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 80,
+      "toCh": 101
     },
     {
       "from": "xu-jing",
@@ -33022,7 +34010,8 @@
           "chapter": "第80章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "qiao-zhou",
@@ -33048,7 +34037,8 @@
           "chapter": "第80章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "zhao-yun",
@@ -33061,7 +34051,8 @@
           "chapter": "第80章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 80
     },
     {
       "from": "zhuge-liang",
@@ -33115,7 +34106,9 @@
           "chapter": "第87章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "zhuge-liang",
@@ -33128,7 +34121,9 @@
           "chapter": "第87章",
           "place": "yongchang"
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "wang-kang",
@@ -33207,7 +34202,9 @@
           "chapter": "第87章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "ma-su",
@@ -33252,7 +34249,9 @@
           "chapter": "第87章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "meng-huo",
@@ -33265,7 +34264,9 @@
           "chapter": "第87章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "zhuge-liang",
@@ -33278,7 +34279,9 @@
           "chapter": "第87章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "zhuge-liang",
@@ -33291,7 +34294,9 @@
           "chapter": "第87章",
           "place": "jindai-shan"
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "zhuge-liang",
@@ -33304,7 +34309,9 @@
           "chapter": "第87章",
           "place": "jindai-shan"
         }
-      ]
+      ],
+      "fromCh": 87,
+      "toCh": 88
     },
     {
       "from": "zhuge-liang",
@@ -33317,7 +34324,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "meng-huo",
@@ -33349,7 +34358,8 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88
     },
     {
       "from": "meng-huo",
@@ -33362,7 +34372,8 @@
           "chapter": "第88章",
           "place": "yin-keng-shan"
         }
-      ]
+      ],
+      "fromCh": 88
     },
     {
       "from": "dong-tu-na",
@@ -33427,7 +34438,9 @@
           "chapter": "第88章",
           "place": "sha-kou"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33440,7 +34453,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33453,7 +34468,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 91
     },
     {
       "from": "zhuge-liang",
@@ -33466,7 +34483,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33479,7 +34498,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33492,7 +34513,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33505,7 +34528,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33518,7 +34543,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33531,7 +34558,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -33544,7 +34573,9 @@
           "chapter": "第88章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 88,
+      "toCh": 96
     },
     {
       "from": "liu-bei",
@@ -33558,7 +34589,9 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83,
+      "toCh": 84
     },
     {
       "from": "liu-bei",
@@ -33572,7 +34605,9 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83,
+      "toCh": 84
     },
     {
       "from": "guan-xing",
@@ -33651,7 +34686,8 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "mi-fang",
@@ -33690,7 +34726,9 @@
           "chapter": "第83章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 83,
+      "toCh": 84
     },
     {
       "from": "zhou-tai",
@@ -33703,7 +34741,8 @@
           "chapter": "第83章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "lu-xun",
@@ -33784,7 +34823,8 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "zhang-da",
@@ -33797,7 +34837,8 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "liu-bei",
@@ -33810,7 +34851,8 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "cheng-bing",
@@ -33836,7 +34878,8 @@
           "chapter": "第83章",
           "place": "xiaoting"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "ma-liang",
@@ -33863,7 +34906,8 @@
           "chapter": "第83章",
           "place": "yiling"
         }
-      ]
+      ],
+      "fromCh": 83
     },
     {
       "from": "wu-ban",
@@ -33958,7 +35002,9 @@
           "chapter": "第91章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 93
     },
     {
       "from": "si-ma-yi",
@@ -33976,7 +35022,9 @@
           "chapter": "第102章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 103
     },
     {
       "from": "cao-zhen",
@@ -33989,7 +35037,9 @@
           "chapter": "第91章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 100
     },
     {
       "from": "hua-xin",
@@ -34097,7 +35147,8 @@
           "chapter": "第91章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 91
     },
     {
       "from": "zhao-yun",
@@ -34115,7 +35166,9 @@
           "chapter": "第95章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 96
     },
     {
       "from": "zhuge-liang",
@@ -34128,7 +35181,9 @@
           "chapter": "第91章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 94
     },
     {
       "from": "zhuge-liang",
@@ -34141,7 +35196,9 @@
           "chapter": "第91章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 92
     },
     {
       "from": "meng-huo",
@@ -34154,7 +35211,8 @@
           "chapter": "第91章",
           "place": "lu-shui"
         }
-      ]
+      ],
+      "fromCh": 91
     },
     {
       "from": "zhuge-liang",
@@ -34167,7 +35225,8 @@
           "chapter": "第91章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 91
     },
     {
       "from": "zhuge-liang",
@@ -34180,7 +35239,9 @@
           "chapter": "第91章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 91,
+      "toCh": 101
     },
     {
       "from": "zhuge-liang",
@@ -34208,7 +35269,9 @@
           "chapter": "第103章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 93,
+      "toCh": 104
     },
     {
       "from": "jiang-wei",
@@ -34280,7 +35343,8 @@
           "chapter": "第93章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 93
     },
     {
       "from": "wang-lang",
@@ -34306,7 +35370,8 @@
           "chapter": "第93章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 93
     },
     {
       "from": "zhuge-liang",
@@ -34539,7 +35604,8 @@
           "chapter": "第94章",
           "place": "xin-cheng"
         }
-      ]
+      ],
+      "fromCh": 94
     },
     {
       "from": "zhuge-liang",
@@ -34565,7 +35631,9 @@
           "chapter": "第94章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 94,
+      "toCh": 95
     },
     {
       "from": "cao-zhen",
@@ -34649,7 +35717,9 @@
           "chapter": "第94章",
           "place": "chang-an"
         }
-      ]
+      ],
+      "fromCh": 94,
+      "toCh": 95
     },
     {
       "from": "cao-rui",
@@ -34682,7 +35752,9 @@
           "chapter": "第105章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 94,
+      "toCh": 106
     },
     {
       "from": "guan-xing",
@@ -34760,7 +35832,9 @@
           "chapter": "第94章",
           "place": "xin-cheng"
         }
-      ]
+      ],
+      "fromCh": 94,
+      "toCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -34773,7 +35847,9 @@
           "chapter": "第94章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 94,
+      "toCh": 101
     },
     {
       "from": "zhuge-liang",
@@ -34786,7 +35862,9 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 91
     },
     {
       "from": "zhuge-liang",
@@ -34825,7 +35903,8 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -34838,7 +35917,9 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 101
     },
     {
       "from": "zhuge-liang",
@@ -34851,7 +35932,9 @@
           "chapter": "第89章",
           "place": "ya-quan"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -34864,7 +35947,9 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 102
     },
     {
       "from": "zhuge-liang",
@@ -34890,7 +35975,8 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -34903,7 +35989,9 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 92
     },
     {
       "from": "zhuge-liang",
@@ -34916,7 +36004,9 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89,
+      "toCh": 91
     },
     {
       "from": "zhuge-liang",
@@ -34929,7 +36019,8 @@
           "chapter": "第89章",
           "place": "xi-er-he"
         }
-      ]
+      ],
+      "fromCh": 89
     },
     {
       "from": "zhuge-liang",
@@ -35049,7 +36140,8 @@
           "chapter": "第96章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 96
     },
     {
       "from": "ma-su",
@@ -35062,7 +36154,8 @@
           "chapter": "第96章",
           "place": "jieting"
         }
-      ]
+      ],
+      "fromCh": 96
     },
     {
       "from": "zhuge-liang",
@@ -35080,7 +36173,9 @@
           "chapter": "第86章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 86,
+      "toCh": 97
     },
     {
       "from": "zhao-yun",
@@ -35093,7 +36188,8 @@
           "chapter": "第96章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 96
     },
     {
       "from": "liu-shan",
@@ -35126,7 +36222,8 @@
           "chapter": "第86章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 86
     },
     {
       "from": "fei-yi",
@@ -35139,7 +36236,9 @@
           "chapter": "第96章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 96,
+      "toCh": 102
     },
     {
       "from": "si-ma-yi",
@@ -35256,7 +36355,8 @@
           "chapter": "第96章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 96
     },
     {
       "from": "jia-kui",
@@ -35334,7 +36434,9 @@
           "chapter": "第96章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 96,
+      "toCh": 98
     },
     {
       "from": "zhuge-liang",
@@ -35366,7 +36468,8 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "han-de",
@@ -35518,7 +36621,9 @@
           "chapter": "第92章",
           "place": "mian-yang"
         }
-      ]
+      ],
+      "fromCh": 92,
+      "toCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -35531,7 +36636,8 @@
           "chapter": "第92章",
           "place": "fengming-shan"
         }
-      ]
+      ],
+      "fromCh": 92
     },
     {
       "from": "si-ma-yi",
@@ -35544,7 +36650,8 @@
           "chapter": "第95章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -35557,7 +36664,9 @@
           "chapter": "第95章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 96
     },
     {
       "from": "ma-su",
@@ -35570,7 +36679,9 @@
           "chapter": "第95章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 96
     },
     {
       "from": "zhuge-liang",
@@ -35583,7 +36694,8 @@
           "chapter": "第95章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -35596,7 +36708,9 @@
           "chapter": "第95章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 98
     },
     {
       "from": "wei-yan",
@@ -35609,7 +36723,9 @@
           "chapter": "第95章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 98
     },
     {
       "from": "zhao-yun",
@@ -35648,7 +36764,9 @@
           "chapter": "第95章",
           "place": "lie-liu-cheng"
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 102
     },
     {
       "from": "meng-da",
@@ -35661,7 +36779,8 @@
           "chapter": "第95章",
           "place": "xin-cheng"
         }
-      ]
+      ],
+      "fromCh": 95
     },
     {
       "from": "zhuge-liang",
@@ -35674,7 +36793,9 @@
           "chapter": "第95章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 95,
+      "toCh": 101
     },
     {
       "from": "ma-dai",
@@ -35700,7 +36821,9 @@
           "chapter": "第100章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 100,
+      "toCh": 102
     },
     {
       "from": "zhuge-liang",
@@ -35726,7 +36849,8 @@
           "chapter": "第100章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 100
     },
     {
       "from": "zhuge-liang",
@@ -35739,7 +36863,9 @@
           "chapter": "第100章",
           "place": "wei-bin"
         }
-      ]
+      ],
+      "fromCh": 100,
+      "toCh": 103
     },
     {
       "from": "si-ma-yi",
@@ -35765,7 +36891,9 @@
           "chapter": "第100章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 100,
+      "toCh": 101
     },
     {
       "from": "gou-an",
@@ -35817,7 +36945,9 @@
           "chapter": "第100章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 100,
+      "toCh": 101
     },
     {
       "from": "qin-liang",
@@ -35939,7 +37069,9 @@
           "chapter": "第103章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 98,
+      "toCh": 104
     },
     {
       "from": "wei-yan",
@@ -35978,7 +37110,9 @@
           "chapter": "第98章",
           "place": "san-guan"
         }
-      ]
+      ],
+      "fromCh": 98,
+      "toCh": 101
     },
     {
       "from": "zhuge-jin",
@@ -36083,7 +37217,8 @@
           "chapter": "第98章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 98
     },
     {
       "from": "si-ma-yi",
@@ -36101,7 +37236,8 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 103
     },
     {
       "from": "zhuge-liang",
@@ -36114,7 +37250,9 @@
           "chapter": "第103章",
           "place": "shangfang-gu"
         }
-      ]
+      ],
+      "fromCh": 103,
+      "toCh": 104
     },
     {
       "from": "zhuge-liang",
@@ -36127,7 +37265,8 @@
           "chapter": "第103章",
           "place": "shangfang-gu"
         }
-      ]
+      ],
+      "fromCh": 103
     },
     {
       "from": "zhuge-liang",
@@ -36166,7 +37305,8 @@
           "chapter": "第103章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 103
     },
     {
       "from": "xin-pi",
@@ -36231,7 +37371,9 @@
           "chapter": "第103章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 103,
+      "toCh": 104
     },
     {
       "from": "si-ma-yi",
@@ -36244,7 +37386,8 @@
           "chapter": "第103章",
           "place": "weinan"
         }
-      ]
+      ],
+      "fromCh": 103
     },
     {
       "from": "xiahou-hui",
@@ -36271,7 +37414,8 @@
           "chapter": "第103章",
           "place": "shangfang-gu"
         }
-      ]
+      ],
+      "fromCh": 103
     },
     {
       "from": "zhuge-liang",
@@ -36284,7 +37428,8 @@
           "chapter": "第105章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 105
     },
     {
       "from": "ma-dai",
@@ -36297,7 +37442,8 @@
           "chapter": "第105章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 105
     },
     {
       "from": "ma-dai",
@@ -36310,7 +37456,8 @@
           "chapter": "第105章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 105
     },
     {
       "from": "yang-yi",
@@ -36323,7 +37470,8 @@
           "chapter": "第105章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 105
     },
     {
       "from": "jiang-wan",
@@ -36388,7 +37536,8 @@
           "chapter": "第105章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 105
     },
     {
       "from": "cao-rui",
@@ -36716,7 +37865,8 @@
           "chapter": "第106章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 106
     },
     {
       "from": "si-ma-yi",
@@ -36755,7 +37905,9 @@
           "chapter": "第106章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 106,
+      "toCh": 107
     },
     {
       "from": "cao-shuang",
@@ -36794,7 +37946,9 @@
           "chapter": "第106章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 106,
+      "toCh": 107
     },
     {
       "from": "guan-lu",
@@ -37274,7 +38428,9 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104,
+      "toCh": 105
     },
     {
       "from": "zhuge-liang",
@@ -37287,7 +38443,8 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104
     },
     {
       "from": "zhuge-liang",
@@ -37300,7 +38457,9 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104,
+      "toCh": 105
     },
     {
       "from": "wei-yan",
@@ -37313,7 +38472,9 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104,
+      "toCh": 105
     },
     {
       "from": "wei-yan",
@@ -37326,7 +38487,9 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104,
+      "toCh": 105
     },
     {
       "from": "fei-yi",
@@ -37365,7 +38528,8 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104
     },
     {
       "from": "liao-li",
@@ -37391,7 +38555,8 @@
           "chapter": "第104章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 104
     },
     {
       "from": "jiang-wan",
@@ -37404,7 +38569,8 @@
           "chapter": "第104章",
           "place": "wuzhang-yuan"
         }
-      ]
+      ],
+      "fromCh": 104
     },
     {
       "from": "fei-yi",
@@ -37431,7 +38597,8 @@
           "chapter": "第111章",
           "place": "di-dao"
         }
-      ]
+      ],
+      "fromCh": 111
     },
     {
       "from": "deng-ai",
@@ -37483,7 +38650,9 @@
           "chapter": "第111章",
           "place": "duan-gu"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 115
     },
     {
       "from": "jiang-wei",
@@ -37506,7 +38675,9 @@
           "chapter": "第113章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 119
     },
     {
       "from": "jiang-wei",
@@ -37519,7 +38690,9 @@
           "chapter": "第111章",
           "place": "zhong-ti"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 114
     },
     {
       "from": "jiang-wei",
@@ -37545,7 +38718,9 @@
           "chapter": "第111章",
           "place": "duan-gu"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 113
     },
     {
       "from": "jiang-wei",
@@ -37571,7 +38746,9 @@
           "chapter": "第111章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 118
     },
     {
       "from": "jia-kui",
@@ -37598,7 +38775,9 @@
           "chapter": "第111章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 112
     },
     {
       "from": "jia-chong",
@@ -37678,7 +38857,9 @@
           "chapter": "第111章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 113
     },
     {
       "from": "sun-chen",
@@ -37786,7 +38967,9 @@
           "chapter": "第111章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 112
     },
     {
       "from": "chen-tai",
@@ -37812,7 +38995,9 @@
           "chapter": "第114章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 114,
+      "toCh": 115
     },
     {
       "from": "jiang-wei",
@@ -37986,7 +39171,9 @@
           "chapter": "第114章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 114,
+      "toCh": 115
     },
     {
       "from": "zhang-yi-shu",
@@ -37999,7 +39186,9 @@
           "chapter": "第114章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 114,
+      "toCh": 115
     },
     {
       "from": "fu-qian",
@@ -38012,7 +39201,9 @@
           "chapter": "第114章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 114,
+      "toCh": 115
     },
     {
       "from": "deng-ai",
@@ -38134,7 +39325,8 @@
           "chapter": "第119章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 107
     },
     {
       "from": "jiang-wei",
@@ -38147,7 +39339,9 @@
           "chapter": "第110章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 110,
+      "toCh": 111
     },
     {
       "from": "jiang-wei",
@@ -38160,7 +39354,9 @@
           "chapter": "第110章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 110,
+      "toCh": 111
     },
     {
       "from": "jiang-wei",
@@ -38178,7 +39374,9 @@
           "chapter": "第112章",
           "place": "wei-shui"
         }
-      ]
+      ],
+      "fromCh": 110,
+      "toCh": 113
     },
     {
       "from": "jiang-wei",
@@ -38204,7 +39402,9 @@
           "chapter": "第110章",
           "place": "di-dao-cheng"
         }
-      ]
+      ],
+      "fromCh": 110,
+      "toCh": 111
     },
     {
       "from": "guanqiu-jian",
@@ -38269,7 +39469,9 @@
           "chapter": "第112章",
           "place": "shouchun"
         }
-      ]
+      ],
+      "fromCh": 112,
+      "toCh": 116
     },
     {
       "from": "si-ma-zhao",
@@ -38282,7 +39484,8 @@
           "chapter": "第112章",
           "place": "shouchun"
         }
-      ]
+      ],
+      "fromCh": 112
     },
     {
       "from": "si-ma-zhao",
@@ -38347,7 +39550,8 @@
           "chapter": "第112章",
           "place": "anfeng"
         }
-      ]
+      ],
+      "fromCh": 112
     },
     {
       "from": "sun-chen",
@@ -38520,7 +39724,9 @@
           "chapter": "第112章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 112,
+      "toCh": 113
     },
     {
       "from": "qiao-zhou",
@@ -38546,7 +39752,9 @@
           "chapter": "第112章",
           "place": "changcheng"
         }
-      ]
+      ],
+      "fromCh": 112,
+      "toCh": 114
     },
     {
       "from": "jiang-wei",
@@ -38700,7 +39908,9 @@
           "chapter": "第115章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 115,
+      "toCh": 118
     },
     {
       "from": "zhong-hui",
@@ -38713,7 +39923,9 @@
           "chapter": "第117章",
           "place": "jian-ge"
         }
-      ]
+      ],
+      "fromCh": 117,
+      "toCh": 118
     },
     {
       "from": "zhong-hui",
@@ -38835,7 +40047,9 @@
           "chapter": "第115章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 115,
+      "toCh": 116
     },
     {
       "from": "jiang-wei",
@@ -38848,7 +40062,8 @@
           "chapter": "第115章",
           "place": "tao-yang"
         }
-      ]
+      ],
+      "fromCh": 115
     },
     {
       "from": "jiang-wei",
@@ -38861,7 +40076,9 @@
           "chapter": "第115章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 115,
+      "toCh": 116
     },
     {
       "from": "jiang-wei",
@@ -38874,7 +40091,8 @@
           "chapter": "第115章",
           "place": "hou-he"
         }
-      ]
+      ],
+      "fromCh": 115
     },
     {
       "from": "deng-ai",
@@ -38887,7 +40105,8 @@
           "chapter": "第115章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 115
     },
     {
       "from": "deng-ai",
@@ -38905,7 +40124,9 @@
           "chapter": "第116章",
           "place": "ta-zhong"
         }
-      ]
+      ],
+      "fromCh": 111,
+      "toCh": 119
     },
     {
       "from": "sima-wang",
@@ -38984,7 +40205,8 @@
           "chapter": "第113章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 113
     },
     {
       "from": "sun-xiu",
@@ -39010,7 +40232,8 @@
           "chapter": "第113章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 113
     },
     {
       "from": "zhang-bu",
@@ -39220,7 +40443,9 @@
           "chapter": "第113章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 113,
+      "toCh": 114
     },
     {
       "from": "jiang-wei",
@@ -39233,7 +40458,9 @@
           "chapter": "第113章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 113,
+      "toCh": 114
     },
     {
       "from": "huang-hao",
@@ -39246,7 +40473,9 @@
           "chapter": "第113章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 113,
+      "toCh": 115
     },
     {
       "from": "dang-jun",
@@ -39272,7 +40501,9 @@
           "chapter": "第113章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 113,
+      "toCh": 118
     },
     {
       "from": "liu-shan",
@@ -39328,7 +40559,9 @@
           "chapter": "第118章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 118,
+      "toCh": 119
     },
     {
       "from": "si-ma-zhao",
@@ -39341,7 +40574,8 @@
           "chapter": "第118章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 118
     },
     {
       "from": "si-ma-zhao",
@@ -39354,7 +40588,8 @@
           "chapter": "第118章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 118
     },
     {
       "from": "zhong-hui",
@@ -39367,7 +40602,9 @@
           "chapter": "第118章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 118,
+      "toCh": 119
     },
     {
       "from": "wei-guan",
@@ -39380,7 +40617,9 @@
           "chapter": "第118章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 118,
+      "toCh": 119
     },
     {
       "from": "qiao-zhou",
@@ -39419,7 +40658,8 @@
           "chapter": "第118章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 118
     },
     {
       "from": "huang-hao",
@@ -39432,7 +40672,9 @@
           "chapter": "第118章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 118,
+      "toCh": 119
     },
     {
       "from": "si-ma-zhao",
@@ -39445,7 +40687,9 @@
           "chapter": "第116章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 116,
+      "toCh": 118
     },
     {
       "from": "si-ma-zhao",
@@ -39498,7 +40742,9 @@
           "chapter": "第116章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 116,
+      "toCh": 117
     },
     {
       "from": "zhong-hui",
@@ -39602,7 +40848,9 @@
           "chapter": "第116章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 116,
+      "toCh": 118
     },
     {
       "from": "shi-po",
@@ -39628,7 +40876,8 @@
           "chapter": "第116章",
           "place": "baishui-guan"
         }
-      ]
+      ],
+      "fromCh": 116
     },
     {
       "from": "liao-hua",
@@ -39641,7 +40890,8 @@
           "chapter": "第116章",
           "place": "baishui-guan"
         }
-      ]
+      ],
+      "fromCh": 116
     },
     {
       "from": "ning-sui",
@@ -39680,7 +40930,9 @@
           "chapter": "第7章",
           "place": "jiang-dong"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 8
     },
     {
       "from": "yuan-shao",
@@ -39706,7 +40958,9 @@
           "chapter": "第7章",
           "place": "pan-he"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 18
     },
     {
       "from": "gongsun-zan",
@@ -39772,7 +41026,9 @@
           "chapter": "第7章",
           "place": "he-nei"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 22
     },
     {
       "from": "han-fu",
@@ -39811,7 +41067,9 @@
           "chapter": "第7章",
           "place": "jie-qiao"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 21
     },
     {
       "from": "liu-bei",
@@ -39824,7 +41082,9 @@
           "chapter": "第7章",
           "place": "pan-he"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 28
     },
     {
       "from": "yuan-shu",
@@ -39838,7 +41098,8 @@
           "chapter": "第7章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 7
     },
     {
       "from": "yuan-shu",
@@ -39851,7 +41112,8 @@
           "chapter": "第7章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 7
     },
     {
       "from": "liu-biao",
@@ -39865,7 +41127,9 @@
           "chapter": "第7章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 35
     },
     {
       "from": "liu-biao",
@@ -39878,7 +41142,9 @@
           "chapter": "第7章",
           "place": "xiang-yang"
         }
-      ]
+      ],
+      "fromCh": 7,
+      "toCh": 8
     },
     {
       "from": "sun-jian",
@@ -40325,7 +41591,9 @@
           "chapter": "第2章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 2,
+      "toCh": 6
     },
     {
       "from": "zhang-ju",
@@ -40660,7 +41928,8 @@
           "chapter": "第2章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 2
     },
     {
       "from": "he-jin",
@@ -40673,7 +41942,9 @@
           "chapter": "第2章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 2,
+      "toCh": 3
     },
     {
       "from": "he-jin",
@@ -40686,7 +41957,9 @@
           "chapter": "第2章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 2,
+      "toCh": 3
     },
     {
       "from": "liu-tao",
@@ -40790,7 +42063,8 @@
           "chapter": "第18章",
           "place": "xiang-cheng"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "zhang-xiu",
@@ -40803,7 +42077,8 @@
           "chapter": "第18章",
           "place": "xiang-cheng"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "liu-biao",
@@ -40816,7 +42091,8 @@
           "chapter": "第18章",
           "place": "an-zhong"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "liu-biao",
@@ -40842,7 +42118,8 @@
           "chapter": "第18章",
           "place": "yu-shui"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "guo-jia",
@@ -40868,7 +42145,9 @@
           "chapter": "第18章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 31
     },
     {
       "from": "yuan-shao",
@@ -40881,7 +42160,9 @@
           "chapter": "第18章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 21
     },
     {
       "from": "cao-cao",
@@ -40912,7 +42193,9 @@
           "chapter": "第17章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -40925,7 +42208,8 @@
           "chapter": "第18章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "chen-gui",
@@ -40938,7 +42222,8 @@
           "chapter": "第18章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "chen-gong",
@@ -40951,7 +42236,8 @@
           "chapter": "第18章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "lv-bu",
@@ -40964,7 +42250,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 19
     },
     {
       "from": "liu-bei",
@@ -40977,7 +42265,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "chen-gong",
@@ -41003,7 +42293,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 19
     },
     {
       "from": "zhang-liao",
@@ -41016,7 +42308,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 19
     },
     {
       "from": "guan-yu",
@@ -41029,7 +42323,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 24
     },
     {
       "from": "xiahou-yuan",
@@ -41095,7 +42391,9 @@
           "chapter": "第18章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 29
     },
     {
       "from": "liu-biao",
@@ -41108,7 +42406,8 @@
           "chapter": "第18章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "liu-biao",
@@ -41121,7 +42420,8 @@
           "chapter": "第18章",
           "place": "hu-kou"
         }
-      ]
+      ],
+      "fromCh": 18
     },
     {
       "from": "mi-zhu",
@@ -41135,7 +42435,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 19
     },
     {
       "from": "sun-qian",
@@ -41148,7 +42450,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 16,
+      "toCh": 19
     },
     {
       "from": "jian-yong",
@@ -41161,7 +42465,9 @@
           "chapter": "第18章",
           "place": "xiaopei"
         }
-      ]
+      ],
+      "fromCh": 18,
+      "toCh": 28
     },
     {
       "from": "zang-ba",
@@ -41239,7 +42545,9 @@
           "chapter": "第17章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 21
     },
     {
       "from": "yuan-shu",
@@ -41330,7 +42638,8 @@
           "chapter": "第17章",
           "place": "huainan"
         }
-      ]
+      ],
+      "fromCh": 17
     },
     {
       "from": "chen-gong",
@@ -41343,7 +42652,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "lv-bu",
@@ -41356,7 +42667,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "lv-bu",
@@ -41369,7 +42682,9 @@
           "chapter": "第17章",
           "place": "xiapi"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -41382,7 +42697,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "lv-bu",
@@ -41395,7 +42712,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "lv-bu",
@@ -41408,7 +42727,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -41421,7 +42742,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "lv-bu",
@@ -41434,7 +42757,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 19
     },
     {
       "from": "chen-deng",
@@ -41460,7 +42785,8 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17
     },
     {
       "from": "lv-bu",
@@ -41577,7 +42903,9 @@
           "chapter": "第17章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "cao-cao",
@@ -41590,7 +42918,9 @@
           "chapter": "第17章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "cao-cao",
@@ -41657,7 +42987,8 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17
     },
     {
       "from": "liu-bei",
@@ -41671,7 +43002,9 @@
           "chapter": "第17章",
           "place": "xuzhou"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "zhang-xiu",
@@ -41684,7 +43017,9 @@
           "chapter": "第17章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "zhang-xiu",
@@ -41697,7 +43032,9 @@
           "chapter": "第17章",
           "place": "nanyang"
         }
-      ]
+      ],
+      "fromCh": 17,
+      "toCh": 18
     },
     {
       "from": "zhang-xiu",
@@ -41814,7 +43151,9 @@
           "chapter": "第60章",
           "place": "xi-jiao-chang"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 71
     },
     {
       "from": "zhang-song",
@@ -41827,7 +43166,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 62
     },
     {
       "from": "liu-zhang",
@@ -41840,7 +43181,9 @@
           "chapter": "第60章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 64
     },
     {
       "from": "liu-zhang",
@@ -41944,7 +43287,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 71
     },
     {
       "from": "liu-bei",
@@ -41957,7 +43302,8 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60
     },
     {
       "from": "liu-bei",
@@ -41970,7 +43316,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 77
     },
     {
       "from": "liu-bei",
@@ -41983,7 +43331,8 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60
     },
     {
       "from": "liu-bei",
@@ -41996,7 +43345,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 63
     },
     {
       "from": "liu-zhang",
@@ -42022,7 +43373,8 @@
           "chapter": "第60章",
           "place": "fu-cheng"
         }
-      ]
+      ],
+      "fromCh": 60
     },
     {
       "from": "liu-zhang",
@@ -42062,7 +43414,9 @@
           "chapter": "第60章",
           "place": "jing-zhou"
         }
-      ]
+      ],
+      "fromCh": 60,
+      "toCh": 62
     },
     {
       "from": "yuan-shao",
@@ -42145,7 +43499,8 @@
           "chapter": "第32章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 32
     },
     {
       "from": "feng-ji",
@@ -42184,7 +43539,9 @@
           "chapter": "第32章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "xin-ping",
@@ -42197,7 +43554,9 @@
           "chapter": "第32章",
           "place": "jizhou"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "xin-pi",
@@ -42211,7 +43570,8 @@
           "chapter": "第32章",
           "place": "ping-yuan"
         }
-      ]
+      ],
+      "fromCh": 32
     },
     {
       "from": "xin-pi",
@@ -42237,7 +43597,9 @@
           "chapter": "第32章",
           "place": "ye-jun"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "lv-kuang",
@@ -42264,7 +43626,9 @@
           "chapter": "第32章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "shen-rong",
@@ -42304,7 +43668,9 @@
           "chapter": "第32章",
           "place": "zhang-he"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "xu-huang",
@@ -42343,7 +43709,9 @@
           "chapter": "第32章",
           "place": "li-yang"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "liu-biao",
@@ -42356,7 +43724,9 @@
           "chapter": "第32章",
           "place": "xi-ping"
         }
-      ]
+      ],
+      "fromCh": 32,
+      "toCh": 33
     },
     {
       "from": "liu-bei",
@@ -42369,7 +43739,8 @@
           "chapter": "第32章",
           "place": "xi-ping"
         }
-      ]
+      ],
+      "fromCh": 32
     },
     {
       "from": "yuan-shang",
@@ -42567,7 +43938,8 @@
           "chapter": "第69章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 69
     },
     {
       "from": "cao-cao",
@@ -42593,7 +43965,8 @@
           "chapter": "第69章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 69
     },
     {
       "from": "zhang-fei",
@@ -42606,7 +43979,8 @@
           "chapter": "第69章",
           "place": "xiabian"
         }
-      ]
+      ],
+      "fromCh": 69
     },
     {
       "from": "ma-chao",
@@ -42645,7 +44019,9 @@
           "chapter": "第69章",
           "place": "nanzheng"
         }
-      ]
+      ],
+      "fromCh": 69,
+      "toCh": 70
     },
     {
       "from": "zhang-he",
@@ -42658,7 +44034,9 @@
           "chapter": "第69章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 69,
+      "toCh": 71
     },
     {
       "from": "guan-lu",
@@ -42749,7 +44127,9 @@
           "chapter": "第65章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 72
     },
     {
       "from": "liu-bei",
@@ -42762,7 +44142,8 @@
           "chapter": "第65章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "zhang-fei",
@@ -42775,7 +44156,9 @@
           "chapter": "第65章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 69
     },
     {
       "from": "guan-yu",
@@ -42867,7 +44250,8 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "li-yan",
@@ -42880,7 +44264,8 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "liu-bei",
@@ -42893,7 +44278,9 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 101
     },
     {
       "from": "huang-zhong",
@@ -42919,7 +44306,9 @@
           "chapter": "第65章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 104
     },
     {
       "from": "zhang-fei",
@@ -43036,7 +44425,9 @@
           "chapter": "第65章",
           "place": "jiang-dong"
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 66
     },
     {
       "from": "zheng-du",
@@ -43049,7 +44440,8 @@
           "chapter": "第65章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 65
     },
     {
       "from": "meng-da",
@@ -43062,7 +44454,9 @@
           "chapter": "第65章",
           "place": "jiameng-guan"
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 70
     },
     {
       "from": "pang-de",
@@ -43075,7 +44469,9 @@
           "chapter": "第65章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 65,
+      "toCh": 67
     },
     {
       "from": "zhuge-liang",
@@ -43088,7 +44484,8 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101
     },
     {
       "from": "li-yan",
@@ -43101,7 +44498,8 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101
     },
     {
       "from": "li-yan",
@@ -43128,7 +44526,9 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101,
+      "toCh": 104
     },
     {
       "from": "zhuge-liang",
@@ -43141,7 +44541,9 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101,
+      "toCh": 104
     },
     {
       "from": "gou-an",
@@ -43154,7 +44556,8 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101
     },
     {
       "from": "zhuge-liang",
@@ -43167,7 +44570,9 @@
           "chapter": "第101章",
           "place": "longshang"
         }
-      ]
+      ],
+      "fromCh": 101,
+      "toCh": 104
     },
     {
       "from": "zhang-he",
@@ -43180,7 +44585,8 @@
           "chapter": "第101章",
           "place": "mumendao"
         }
-      ]
+      ],
+      "fromCh": 101
     },
     {
       "from": "sun-li",
@@ -43206,7 +44612,8 @@
           "chapter": "第101章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 101
     },
     {
       "from": "yang-yi",
@@ -43219,7 +44626,9 @@
           "chapter": "第101章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 101,
+      "toCh": 102
     },
     {
       "from": "sun-quan",
@@ -43350,7 +44759,8 @@
           "chapter": "第86章",
           "place": "xudu"
         }
-      ]
+      ],
+      "fromCh": 86
     },
     {
       "from": "cao-pi",
@@ -43415,7 +44825,9 @@
           "chapter": "第86章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 86,
+      "toCh": 91
     },
     {
       "from": "yong-kai",
@@ -43441,7 +44853,9 @@
           "chapter": "第86章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 86,
+      "toCh": 87
     },
     {
       "from": "xiahou-yuan",
@@ -43524,7 +44938,8 @@
           "chapter": "第102章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 102
     },
     {
       "from": "sun-quan",
@@ -43550,7 +44965,9 @@
           "chapter": "第102章",
           "place": "bei-yuan"
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 103
     },
     {
       "from": "si-ma-yi",
@@ -43615,7 +45032,9 @@
           "chapter": "第102章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 105
     },
     {
       "from": "sun-quan",
@@ -43641,7 +45060,9 @@
           "chapter": "第102章",
           "place": "qi-shan"
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 103
     },
     {
       "from": "fei-yi",
@@ -43693,7 +45114,9 @@
           "chapter": "第102章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 103
     },
     {
       "from": "zhuge-liang",
@@ -43706,7 +45129,9 @@
           "chapter": "第102章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 104
     },
     {
       "from": "zhuge-liang",
@@ -43745,7 +45170,9 @@
           "chapter": "第102章",
           "place": ""
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 103
     },
     {
       "from": "si-ma-yi",
@@ -43758,7 +45185,9 @@
           "chapter": "第102章",
           "place": "xie-gu"
         }
-      ]
+      ],
+      "fromCh": 102,
+      "toCh": 103
     },
     {
       "from": "si-ma-yi",
@@ -43932,7 +45361,9 @@
           "chapter": "第107章",
           "place": "han-zhong"
         }
-      ]
+      ],
+      "fromCh": 107,
+      "toCh": 110
     },
     {
       "from": "jiang-wei",
@@ -44091,7 +45522,8 @@
           "chapter": "第107章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 107
     },
     {
       "from": "cao-shuang",
@@ -44104,7 +45536,8 @@
           "chapter": "第107章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 107
     },
     {
       "from": "hu-lie",
@@ -44159,7 +45592,8 @@
           "chapter": "第119章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 119
     },
     {
       "from": "zhong-hui",
@@ -44172,7 +45606,8 @@
           "chapter": "第119章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 119
     },
     {
       "from": "jiang-wei",
@@ -44185,7 +45620,8 @@
           "chapter": "第119章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 119
     },
     {
       "from": "wei-guan",
@@ -44198,7 +45634,8 @@
           "chapter": "第119章",
           "place": "chengdu"
         }
-      ]
+      ],
+      "fromCh": 119
     },
     {
       "from": "tian-xu",
@@ -44250,7 +45687,8 @@
           "chapter": "第119章",
           "place": "luo-yang"
         }
-      ]
+      ],
+      "fromCh": 119
     },
     {
       "from": "huo-yi",

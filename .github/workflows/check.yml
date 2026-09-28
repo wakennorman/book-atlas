@@ -1,0 +1,44 @@
+name: 数据体检（发布门禁）
+
+# 目的：让"数据坏了 / 小程序包没同步 / 代码语法错"在 PR 阶段就被拦住，
+# 而不是等发布之后才在页面上发现。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: JS 语法检查
+        run: |
+          for f in js/app.js js/editor.js \
+                   miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
+                   miniprogram/pages/index/index.js miniprogram/app.js; do
+            node --check "$f"
+          done
+
+      - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
+        run: node scripts/validate.mjs --all
+
+      - name: 搜索命中率审计（别名覆盖 / 译名变体 / 疑似漏人 / 同名）
+        run: node scripts/audit-search.mjs --all
+
+      - name: 小程序数据包与 data/*.json 同步
+        run: |
+          node scripts/make-miniprogram-packs.mjs
+          if ! git diff --quiet -- miniprogram/data; then
+            echo "::error::miniprogram/data 与 data/*.json 不同步 —— 请在本地重跑 node scripts/make-miniprogram-packs.mjs 并提交"
+            git diff --stat -- miniprogram/data
+            exit 1
+          fi
+
+      - name: 小程序页面逻辑冒烟（不需要微信开发者工具）
+        run: node miniprogram/test/smoke.mjs

@@ -18,7 +18,8 @@
         "name": "俄语原题：Преступление и наказание（1866）"
       }
     ],
-    "groupMode": "faction"
+    "groupMode": "faction",
+    "schemaVersion": 2
   },
   "factions": [
     {

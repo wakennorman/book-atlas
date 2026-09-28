@@ -27,6 +27,7 @@
     freezeTimer: null,
     progress: null,        // 剧透保护：null=全部解锁；数字=已读到第几章，之后的锁定
     chapter: 1,            // 章节视图：当前翻到第几章
+    timeTravel: false,     // 时间旅行：把图谱拨回第 chapter 章（只画当时已发生的关系）
     nodeDrag: false,       // 是否允许拖动单个节点（默认关，避免与画布平移打架）
     maxDeg: 1,             // 本书最大关系数（symbolSize 的开方刻度用）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
@@ -36,6 +37,10 @@
     showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
     showMinor: false,        // 是否显示 tier=minor 的次要人物（大书默认折叠）
     showDerived: true,       // 是否显示"族谱补全"推导出来的祖孙/叔侄等关系（默认显示）
+    a11yPalette: false,      // 无障碍：色盲友好配色（Okabe–Ito 八色，按阵营顺序分配）
+    fontSize: 'm',           // 无障碍：字号 s | m | l
+    edgeStyles: new Set(),   // 关系过滤：只显示这些线条（空＝全部）solid | dashed | dotted
+    edgeKins: new Set(),     // 关系过滤：只显示这些亲缘桶（空＝全部）blood | marriage | adopt | sworn | none
     sizeFilter: 'all',       // all | mid | main（按关系数只显示主要人物；大书用）
     focus: null,             // { id, depth } 只看某人 N 跳以内（无限画布的"放大镜"）
     focusCache: null,        // 聚焦集合缓存
@@ -73,14 +78,42 @@
   function effectiveFactionKey(c) {
     const h = c && c.factionHistory;
     if (!Array.isArray(h) || !h.length) return (c && c.faction) || '';
-    const ch = state.progress === null ? Infinity : state.progress;
+    const n = asOf();
+    const ch = n !== null ? n : (state.progress === null ? Infinity : state.progress);
     let pick = h[0];
     for (const seg of h) if (typeof seg.fromCh === 'number' && seg.fromCh <= ch) pick = seg;
     return pick.faction || (c && c.faction) || '';
   }
+  /* ---------------- 无障碍：色盲友好配色 + 字号 ---------------- */
+  const A11Y_PALETTE = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7', '#8b94a7'];
+  const FONT_SCALE = { s: 0.9, m: 1, l: 1.18 };
+  const fontScale = () => FONT_SCALE[state.fontSize] || 1;
+  const factionIndexOf = (key) => Math.max(0, state.book ? state.book.factions.findIndex((f) => f.key === key) : 0);
+  const factionColorByKey = (key) => {
+    if (state.a11yPalette) return A11Y_PALETTE[factionIndexOf(key) % A11Y_PALETTE.length];
+    const f = state.book && state.book.factions.find((x) => x.key === key);
+    return (f && f.color) || '#8b94a7';
+  };
+  function syncDisplayUI() {
+    document.body.dataset.fontsize = state.fontSize;
+    document.querySelectorAll('[data-palette]').forEach((el) => el.classList.toggle('on', (el.dataset.palette === 'a11y') === !!state.a11yPalette));
+    document.querySelectorAll('[data-font]').forEach((el) => el.classList.toggle('on', el.dataset.font === state.fontSize));
+    const btn = document.getElementById('display-btn');
+    if (btn) btn.classList.toggle('active', !!state.a11yPalette || state.fontSize !== 'm');
+  }
+  function applyDisplay() {
+    try {
+      localStorage.setItem('ba-a11y-palette', state.a11yPalette ? '1' : '0');
+      localStorage.setItem('ba-fontsize', state.fontSize);
+    } catch (e) { /* 隐私模式忽略 */ }
+    syncDisplayUI();
+    renderLegend();
+    if (state.chart) { computeLabels(state.zoom); state.chart.clear(); state.chart.setOption(buildOption(), { notMerge: true }); }
+  }
+
   const factionColorOf = (c) => {
     const key = effectiveFactionKey(c);
-    return (state.book?.factions.find((f) => f.key === key) || {}).color || '#8b94a7';
+    return factionColorByKey(key);
   };
   const factionTextOf = (c) => {
     const key = effectiveFactionKey(c);
@@ -93,6 +126,46 @@
   const isMinor = (c) => c && c.tier === 'minor';
   const isDerived = (r) => !!(r && r.derived);                 // 由亲子关系推导出来的族谱边（原文没有直接互动）
   const relVisible = (r) => !isDerived(r) || state.showDerived;
+
+  /* —— 关系过滤（边的类型）：亲缘桶 + 线条样式，两轴独立，空＝不过滤 —— */
+  const styleOf = (r) => (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid');
+  const kinBucketOf = (r) => {
+    const k = r && r.kin;
+    if (k === 'blood') return 'blood';
+    if (k === 'marriage' || k === 'inlaw') return 'marriage';
+    if (k === 'adoptive' || k === 'foster' || k === 'step') return 'adopt';
+    if (k === 'sworn') return 'sworn';
+    return 'none';
+  };
+  const passEdgeFilter = (r) => {
+    if (!r) return true;
+    if (state.edgeStyles.size && !state.edgeStyles.has(styleOf(r))) return false;
+    if (state.edgeKins.size && !state.edgeKins.has(kinBucketOf(r))) return false;
+    return true;
+  };
+  const edgeFilterCount = () => state.edgeStyles.size + state.edgeKins.size;
+  function syncEdgeFilterUI() {
+    const btn = document.getElementById('edge-filter-btn');
+    if (btn) {
+      const n = edgeFilterCount();
+      btn.textContent = n ? `关系：筛选 ${n} 项` : '关系：全部';
+      btn.classList.toggle('active', n > 0);
+    }
+    document.querySelectorAll('[data-edge-kin]').forEach((el) => { el.checked = state.edgeKins.has(el.dataset.edgeKin); });
+    document.querySelectorAll('[data-edge-style]').forEach((el) => { el.checked = state.edgeStyles.has(el.dataset.edgeStyle); });
+    const dv = document.getElementById('edge-derived');
+    if (dv) dv.checked = !!state.showDerived;
+  }
+  function saveEdgeFilter() {
+    try { localStorage.setItem('ba-edge-filter', JSON.stringify({ styles: [...state.edgeStyles], kins: [...state.edgeKins] })); } catch (e) { /* 隐私模式忽略 */ }
+  }
+  function applyEdgeFilter() {
+    saveEdgeFilter();
+    syncEdgeFilterUI();
+    if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
+    refreshPanel();
+    updateCountHint();
+  }
   // 折叠：mentioned（没出场）/ minor（只跟一两个人有关系，大书里默认收起）——被高亮/搜索命中时照样显示
   const isCharHidden = (c) => {
     if (!c) return false;
@@ -107,7 +180,7 @@
   const placeNodeScope = () => {
     if (!state.placeFilter) return null;
     const nodes = new Set();
-    for (const e of state.book.events) if (e.place === state.placeFilter && !eventLocked(e)) for (const cid of e.chars || []) if (state.byId.has(cid)) nodes.add(cid);
+    for (const e of state.book.events) if (e.place === state.placeFilter && !eventLocked(e) && eventVisibleAt(e)) for (const cid of e.chars || []) if (state.byId.has(cid)) nodes.add(cid);
     for (const r of state.book.relations) for (const ev of r.events || []) if (ev.place === state.placeFilter) { nodes.add(r.from); nodes.add(r.to); }
     return nodes;
   };
@@ -126,7 +199,36 @@
   const relLocked = (r) => lockedCh(relCh(r));
   const eventLocked = (e) => lockedCh(typeof e.ch === 'number' ? e.ch : 0);
   const eventChOf = (ev) => chOf(ev?.chapter) ?? 0;
-  const visibleRelEvents = (r) => (r.events || []).filter((ev) => state.progress === null || eventChOf(ev) <= state.progress);
+
+  /* ---------------- 时间旅行（把图谱拨回第 N 章，不动真实阅读进度） ---------------- */
+  const asOf = () => {
+    if (!state.timeTravel) return null;
+    return Math.min(state.chapter || 1, timeCeiling());   // 剧透保护开着时，图谱最多拨到"读到的那一章"
+  };
+  const beforeAsOf = (ch) => { const n = asOf(); return n !== null && (Number(ch) || 0) > n; };
+  // 关系的时间区间：fromCh＝成立章（缺省用「解锁章」）、toCh＝结束章（独占：第 toCh 章起不再存在）
+  const relFrom = (r) => (typeof r.fromCh === 'number' ? r.fromCh : relCh(r));
+  const relAliveAt = (r, n) => {
+    const from = relFrom(r);
+    const to = typeof r.toCh === 'number' ? r.toCh : null;
+    return from <= n && (to === null || to > n);
+  };
+  const relVisibleAt = (r) => { const n = asOf(); return n === null || relAliveAt(r, n); };
+  const charVisibleAt = (c) => !beforeAsOf(charCh(c));
+  const eventVisibleAt = (e) => !beforeAsOf(typeof e.ch === 'number' ? e.ch : 0);
+  const periodText = (r) => {
+    if (typeof r.fromCh !== 'number' && typeof r.toCh !== 'number') return '';
+    const from = relFrom(r);
+    let to = typeof r.toCh === 'number' ? r.toCh : null;
+    // ★ 不提前告诉读者"这段关系到第几章结束"：结束章在进度/时间旅行之后时，只写"第 X 章起"
+    const cands = [state.progress, asOf()].filter((x) => typeof x === 'number');
+    const limit = cands.length ? Math.min(...cands) : null;
+    if (to !== null && limit !== null && to - 1 > limit) to = null;
+    return to !== null ? `第 ${from}–${to - 1} 章` : `第 ${from} 章起`;
+  };
+
+  const visibleRelEvents = (r) => (r.events || []).filter((ev) =>
+    (state.progress === null || eventChOf(ev) <= state.progress) && !beforeAsOf(eventChOf(ev)));
   const relHiddenEventCount = (r) => (r.events || []).length - visibleRelEvents(r).length;
   // 人物的「最后出场章」＝本人出场章、相关事件章、相关关系事件章的最大值（用来决定结局能不能显示）
   const charLastCh = (c) => {
@@ -204,6 +306,8 @@
   }
 
   async function loadBook(slug) {
+    const perf = (window.__baPerf = window.__baPerf || {});
+    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     const meta = state.books.find((b) => b.slug === slug);
     let book;
     if (meta && meta.inline) {
@@ -214,6 +318,7 @@
       const res = await fetch(meta.file, { cache: 'no-cache' });
       book = await res.json();
     }
+    perf.fetchParse = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0));
     state.book = book;
     state.byId = new Map(book.characters.map((c) => [c.id, c]));
     state.adj = new Map(book.characters.map((c) => [c.id, []]));
@@ -236,6 +341,8 @@
     state.zoom = 1;
     state.viewCenter = [0, 0];
     state.hubId = null;
+    state.kbCursor = null;                 // 换书后键盘光标重置
+    state.symCache = null;                 // 换书后要重算节点尺寸缓存
     state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
@@ -244,6 +351,22 @@
     try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
     try { state.showMinor = localStorage.getItem('ba-minor') === '1'; } catch (e) { state.showMinor = false; }
     try { state.showDerived = localStorage.getItem('ba-derived') !== '0'; } catch (e) { state.showDerived = true; }
+    // 无障碍：配色与字号
+    try {
+      state.a11yPalette = localStorage.getItem('ba-a11y-palette') === '1';
+      const fs = localStorage.getItem('ba-fontsize');
+      state.fontSize = ['s', 'm', 'l'].includes(fs) ? fs : 'm';
+    } catch (e) { state.a11yPalette = false; state.fontSize = 'm'; }
+    syncDisplayUI();
+    // 关系过滤（边的类型）也跟着记住
+    state.edgeStyles = new Set();
+    state.edgeKins = new Set();
+    try {
+      const f = JSON.parse(localStorage.getItem('ba-edge-filter') || '{}');
+      if (Array.isArray(f.styles)) state.edgeStyles = new Set(f.styles);
+      if (Array.isArray(f.kins)) state.edgeKins = new Set(f.kins);
+    } catch (e) { /* 坏数据忽略 */ }
+    syncEdgeFilterUI();
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
@@ -253,6 +376,8 @@
     let savedCh = 0;
     try { savedCh = Number(localStorage.getItem('ba-chapter-' + book.meta.slug)) || 0; } catch (e) { savedCh = 0; }
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, savedCh || state.progress || 1));
+    try { state.timeTravel = localStorage.getItem('ba-timetravel') === '1'; } catch (e) { state.timeTravel = false; }
+    if (state.timeTravel) state.chapter = Math.min(state.chapter, timeCeiling());
     clearHighlight(false);
     try { history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`); } catch (e) { /* file:// 或沙箱里可能不允许改地址 */ }
     renderHeader();
@@ -261,24 +386,36 @@
     renderPathSelects();
     renderTimeline();
     renderChapter();
+    syncTimeTravelUI();
     renderPlaceSelect();
     renderPanelWelcome();
     initChart();
     syncSpoilerButton();
+    perf.chart = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0) - perf.fetchParse);
+    perf.total = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0);
+    perf.slug = slug;
+    perf.nodes = book.characters.length;
+    perf.relations = book.relations.length;
     if (!savedSpoiler) setTimeout(() => openSpoilerModal(), 400);
   }
 
   /* ---------------- 头部 / 图例 / 表单 ---------------- */
   function renderHeader() {
     const b = state.book, m = b.meta || {};
-    $('#book-meta').textContent = `《${m.title || b.meta?.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`;
+    const catalog = state.books.find((x) => x.slug === m.slug) || {};
+    const links = (catalog.links || []).map((l) =>
+      `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('');
+    $('#book-meta').innerHTML =
+      esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`) +
+      (links ? ` <span class="meta-links">${links}</span>` : '');
+    document.title = `《${m.title || '书脉'}》· 书脉 BookAtlas`;
     $('#footer-note').textContent = `${m.note || ''} ${m.prophecy ? '「' + m.prophecy + '」' : ''}`.trim();
   }
 
   function renderLegend() {
     const el = $('#legend');
     el.innerHTML = state.book.factions.map((f) =>
-      `<button type="button" class="legend-item" data-faction="${esc(f.key)}"><span class="dot" style="background:${esc(f.color)}"></span>${esc(f.name)}</button>`
+      `<button type="button" class="legend-item" data-faction="${esc(f.key)}"><span class="dot" style="background:${esc(factionColorByKey(f.key))}"></span>${esc(f.name)}</button>`
     ).join('');
     el.querySelectorAll('.legend-item').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -295,12 +432,12 @@
 
   function renderDatalist() {
     $('#char-list').innerHTML = state.book.characters
-      .filter((c) => !charLocked(c) && !isCharHidden(c))
+      .filter((c) => !charLocked(c) && charVisibleAt(c) && !isCharHidden(c))
       .map((c) => `<option value="${esc(c.name)}">${esc(c.title)}</option>`).join('');
   }
 
   function renderPathSelects() {
-    const opts = state.book.characters.filter((c) => !charLocked(c) && !isCharHidden(c))
+    const opts = state.book.characters.filter((c) => !charLocked(c) && charVisibleAt(c) && !isCharHidden(c))
       .map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
     const a = $('#path-a'), b = $('#path-b');
     a.innerHTML = `<option value="">人物 A</option>${opts}`;
@@ -311,10 +448,16 @@
   /* ---------------- 图表 ---------------- */
   function nodeDegree(id) { return state.adj.get(id)?.length || 0; }
   // 大小＝关系条数（开方压缩：曹操和只有 4 条关系的人也能看出差别，又不至于顶到天花板）
+  // 缓存起来：这个函数在松弛/标签里会被调用几十万次
   function symbolSize(id) {
+    if (!state.symCache) state.symCache = new Map();
+    const hit = state.symCache.get(id);
+    if (hit !== undefined) return hit;
     const deg = nodeDegree(id);
     const max = Math.max(1, state.maxDeg || 1);
-    return Math.max(13, Math.min(40, 13 + 27 * Math.sqrt(deg / max)));
+    const v = Math.max(13, Math.min(40, 13 + 27 * Math.sqrt(deg / max)));
+    state.symCache.set(id, v);
+    return v;
   }
   function categoryOf(c) {
     const idx = state.book.factions.findIndex((f) => f.key === c.faction);
@@ -351,7 +494,7 @@
       const next = [];
       for (const id of frontier) {
         for (const { to, rel } of state.adj.get(id) || []) {
-          if (relLocked(rel)) continue;
+          if (relLocked(rel) || !relVisibleAt(rel)) continue;
           if (set.has(to)) continue;
           set.add(to);
           next.push(to);
@@ -374,6 +517,7 @@
     const panel = cssVar('--panel') || '#fff';
     const line = cssVar('--line') || '#e5dfd3';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
+    const pairSeen = new Map();     // 同一对之间已画了几条边（决定曲率，见下面的 links）
     // 放大补偿：ECharts 的漫游缩放会把符号/字号/线宽一起放大（36× 时一个节点上千像素，屏幕上只剩一块碎片）
     // ⇒ 放大时按 1/zoom 缩回选项值，保证屏幕上的尺寸始终是"节点原始大小"
     const zc = (state.zoom || 1) > 1 ? 1 / state.zoom : 1;
@@ -384,7 +528,7 @@
     const fxSym = (v) => Math.max(0.04, v * zc * symScale);   // 节点符号（跟着间距缩）
     const fxOk = (v) => Math.max(0.06, v * zc);                // 标签字号 / 线宽 / 图注圆点（只补偿缩放，屏幕尺寸恒定）
 
-    const data = b.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
+    const data = b.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
       const dim = anyDim && !state.hlNodes.has(c.id);
       const locked = charLocked(c);
       const mentioned = isMentioned(c);
@@ -456,18 +600,24 @@
       .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
       .filter((r) => passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to))
       .filter(relVisible)
+      .filter(passEdgeFilter)
+      .filter(relVisibleAt)
       .map((r) => {
         const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
         const derived = isDerived(r);
         const key = edgeKey(r.from, r.to);
       const dim = anyDim && !state.hlEdges.has(key);
+      // 同一对之间的多条边（阶段关系：同盟→反目…）用不同曲率扇开，否则会叠成一条线
+      const n = pairSeen.get(key) || 0;
+      pairSeen.set(key, n + 1);
+      const curve = (n === 0 ? 0.08 : (n % 2 === 1 ? -1 : 1) * (0.08 + 0.12 * Math.floor(n / 2)));
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
           width: fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
           opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
-          curveness: 0.08,
+          curveness: Math.min(0.5, curve),
         },
       };
     });
@@ -481,13 +631,13 @@
         extraCssText: 'max-width:340px;white-space:normal;line-height:1.55;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)',
         formatter: (p) => {
           if (p.dataType === 'edge') {
-            const rel = findRel(p.data.source, p.data.target);
+            const rel = findRel(p.data.source, p.data.target, p.data.value);
             if (!rel) return '';
             const [first, second] = orderPair(rel.from, rel.to);
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
             const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}<br>${evs}` +
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
               (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条事件在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
@@ -513,7 +663,7 @@
         label: {
           show: true,
           position: state.view === 'force' ? 'right' : 'bottom',
-          distance: 4, fontSize: fxOk(10.5), color: ink, formatter: '{b}',
+          distance: 4, fontSize: fxOk(10.5 * fontScale()), color: ink, formatter: '{b}',
         },
         labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
@@ -533,26 +683,45 @@
     };
   }
 
+  /** 防重叠松弛：网格邻域 + 数组局部运算（不再每对都查 Map / 重算节点尺寸） */
   function relaxPositions(iterations = 140) {
     if (state.pos.size < 2) return;
-    const ids = [...state.pos.keys()];
+    const nodes = [];
+    for (const [id, p] of state.pos) nodes.push({ id, x: p.x, y: p.y, size: symbolSize(id) });
     const pad = 12;
+    const cell = 60;                       // 网格边长（> 最大节点直径 + pad，保证 3×3 邻域够用）
     for (let it = 0; it < iterations; it++) {
-      for (let i = 0; i < ids.length; i++) {
-        for (let j = i + 1; j < ids.length; j++) {
-          const a = state.pos.get(ids[i]), b = state.pos.get(ids[j]);
-          let dx = b.x - a.x, dy = b.y - a.y;
-          const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-          const min = (symbolSize(ids[i]) + symbolSize(ids[j])) / 2 + pad;
-          if (d < min) {
-            const k = (min - d) / d / 2;
-            dx *= k; dy *= k;
-            state.pos.set(ids[i], { x: a.x - dx, y: a.y - dy });
-            state.pos.set(ids[j], { x: b.x + dx, y: b.y + dy });
+      const grid = new Map();
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        const key = `${Math.floor(n.x / cell)}:${Math.floor(n.y / cell)}`;
+        let arr = grid.get(key);
+        if (!arr) { arr = []; grid.set(key, arr); }
+        arr.push(i);
+      }
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        const gx = Math.floor(a.x / cell), gy = Math.floor(a.y / cell);
+        for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
+          const arr = grid.get(`${gx + ox}:${gy + oy}`);
+          if (!arr) continue;
+          for (const j of arr) {
+            if (j <= i) continue;                     // 每对只处理一次
+            const b = nodes[j];
+            let dx = b.x - a.x, dy = b.y - a.y;
+            const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+            const min = (a.size + b.size) / 2 + pad;
+            if (d < min) {
+              const k = (min - d) / d / 2;
+              dx *= k; dy *= k;
+              a.x -= dx; a.y -= dy;
+              b.x += dx; b.y += dy;
+            }
           }
         }
       }
     }
+    for (const n of nodes) state.pos.set(n.id, { x: n.x, y: n.y });
   }
 
   function fitPositions() {
@@ -607,7 +776,7 @@
         : (zoomedIn ? eff(c.id) >= 6 : (rank.get(c.id) || 9999) <= 40)))
       .map((c) => {
         const chip = Math.min(Math.max(eff(c.id), 6), 64);
-        const w = c.name.length * 11.5 + chip + 6, h = Math.max(chip, 18);
+        const w = c.name.length * 11.5 * fontScale() + chip + 6, h = Math.max(chip, 18);
         const p = state.pos.get(c.id);
         const sx = p.x * zoom + chip / 2;
         return { id: c.id, deg: nodeDegree(c.id), bx: sx - w / 2, by: p.y * zoom - h / 2, w, h };
@@ -623,6 +792,22 @@
     state.labels = keep;
   }
 
+  /** 时间旅行会让"当时还没出现"的节点重新出现；力导向视图里它们没有坐标 ⇒ 用邻居重心补一个 */
+  function fillMissingPositions() {
+    if (!state.pos.size || !state.book) return;
+    const missing = [...state.byId.keys()].filter((id) => !state.pos.has(id));
+    if (!missing.length) return;
+    let cx = 0, cy = 0, n = 0;
+    for (const p of state.pos.values()) { cx += p.x; cy += p.y; n++; }
+    cx /= (n || 1); cy /= (n || 1);
+    for (const id of missing) {
+      const nb = (state.adj.get(id) || []).map((e) => state.pos.get(e.to)).filter(Boolean);
+      state.pos.set(id, nb.length
+        ? { x: nb.reduce((s, p) => s + p.x, 0) / nb.length, y: nb.reduce((s, p) => s + p.y, 0) / nb.length }
+        : { x: cx, y: cy });
+    }
+  }
+
   function freezeNow() {
     if (state.frozen || !state.chart) return;
     const d = state.chart.getModel().getSeriesByIndex(0).getData();
@@ -632,6 +817,7 @@
       if (id && layout) state.pos.set(id, { x: layout[0] ?? layout.x, y: layout[1] ?? layout.y });
     }
     state.frozen = true;
+    fillMissingPositions();
     relaxPositions();
     fitPositions();
     computeLabels();
@@ -768,8 +954,18 @@
     const el = document.getElementById('count-hint');
     if (!el || !state.book) return;
     const total = state.book.characters.length;
-    const shown = state.book.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
-    el.textContent = shown >= total ? `${total} 人` : `显示 ${shown} / ${total} 人`;
+    const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
+    let text = shown >= total ? `${total} 人` : `显示 ${shown} / ${total} 人`;
+    // 关系数也报一下：过滤/剧透/折叠挡住多少条，一眼能看出来
+    const rels = state.book.relations;
+    const shownRels = rels.filter((r) =>
+      state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r) && relVisible(r) && passEdgeFilter(r) && relVisibleAt(r)
+      && !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to))
+      && passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to)).length;
+    if (shownRels < rels.length) text += ` · 关系 ${shownRels} / ${rels.length}`;
+    const n = asOf();
+    el.textContent = (n !== null ? `🕰 第 ${n} 章 · ` : '') + text;
+    updateAria();
   }
   function renderFocusBar() {
     const bar = document.getElementById('focus-bar');
@@ -847,7 +1043,7 @@
     state.chart.on('click', (p) => {
       if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
       if (p.dataType === 'edge') {
-        const rel = findRel(p.data.source, p.data.target);
+        const rel = findRel(p.data.source, p.data.target, p.data.value);
         if (rel) selectRelation(rel);
       } else if (p.dataType === 'node') {
         selectCharacter(p.data.id);
@@ -889,8 +1085,84 @@
     setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
   }
 
-  function findRel(a, b) {
-    return state.book.relations.find((r) => (r.from === a && r.to === b) || (r.from === b && r.to === a));
+  /** 找关系：同一对人可能有多条（阶段关系）——优先按"边上写的类型 + 当前时间可见"匹配 */
+  function findRel(a, b, type) {
+    const cands = state.book.relations.filter((r) => (r.from === a && r.to === b) || (r.from === b && r.to === a));
+    if (!cands.length) return null;
+    if (type !== undefined && type !== null) {
+      const hit = cands.find((r) => r.type === type && !relLocked(r) && relVisibleAt(r));
+      if (hit) return hit;
+    }
+    return cands.find((r) => !relLocked(r) && relVisibleAt(r)) || cands[0];
+  }
+
+  /* ---------------- 键盘与读屏（canvas 图对键盘/读屏天生不友好，这里补语义层） ---------------- */
+  function announce(msg) {
+    const el = document.getElementById('sr-live');
+    if (!el) return;
+    el.textContent = '';
+    setTimeout(() => { el.textContent = msg; }, 40);   // 先清空，重复内容也会被念
+  }
+  function graphAriaLabel() {
+    if (!state.book) return '人物关系网络图（加载中）';
+    const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
+    const cur = state.kbCursor ? state.byId.get(state.kbCursor) : null;
+    const n = asOf();
+    return `《${titleOf()}》人物关系图：显示 ${shown} / ${state.book.characters.length} 人`
+      + (n !== null ? `，时间旅行在第 ${n} 章` : '')
+      + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
+      + (cur ? `；当前选中 ${cur.name}（关系 ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章出场）` : '')
+      + '。Tab 聚焦后可用方向键在人物间移动，回车查看档案。';
+  }
+  function updateAria() {
+    const el = document.getElementById('graph');
+    if (el) el.setAttribute('aria-label', graphAriaLabel());
+  }
+  function focusNode(id) {
+    state.kbCursor = id;
+    const p = state.pos.get(id);
+    if (p && state.chart) {
+      state.viewCenter = [p.x, p.y];               // 键盘走到哪儿，视图跟到哪儿
+      computeLabels(state.zoom);
+      state.chart.clear();
+      state.chart.setOption(buildOption(), { notMerge: true });
+    }
+    selectCharacter(id);                           // 面板 + 高亮（读屏读的是面板里的文字）
+    updateAria();
+    const c = state.byId.get(id);
+    if (c) announce(`${c.name}，关系 ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章出场${c.title ? `，${c.title}` : ''}`);
+  }
+  /** 方向键在人物之间移动：选"最正对该方向、最近"的那个 */
+  function moveCursor(key) {
+    const pos = state.pos;
+    if (!pos.size || !state.book) return;
+    const ok = (id) => {
+      const c = state.byId.get(id);
+      return !!c && pos.has(id) && !charLocked(c) && charVisibleAt(c) && !isCharHidden(c) && passSizeFilter(id) && passFocus(id);
+    };
+    const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
+    if (!dir) return;
+    const cands = [...state.byId.keys()].filter(ok);
+    if (!cands.length) return;
+    const curId = state.kbCursor && ok(state.kbCursor) ? state.kbCursor : null;
+    if (!curId) {
+      const first = (state.hubId && ok(state.hubId)) ? state.hubId : cands.slice().sort((a, b) => nodeDegree(b) - nodeDegree(a))[0];
+      focusNode(first);
+      return;
+    }
+    const cur = pos.get(curId);
+    let best = null;
+    for (const id of cands) {
+      if (id === curId) continue;
+      const p = pos.get(id);
+      const dx = p.x - cur.x, dy = p.y - cur.y;
+      const proj = dx * dir[0] + dy * dir[1];
+      if (proj <= 1) continue;
+      const perp = Math.abs(dx * dir[1] - dy * dir[0]);
+      const score = proj + perp * 2.5;
+      if (!best || score < best.score) best = { id, score };
+    }
+    if (best) focusNode(best.id);
   }
 
   /* ---------------- 高亮 ---------------- */
@@ -957,7 +1229,10 @@
     }
     const nodes = new Set([id]);
     const edges = new Set();
-    for (const e of state.adj.get(id)) { nodes.add(e.to); edges.add(edgeKey(id, e.to)); }
+    for (const e of state.adj.get(id)) {
+      if (!relVisible(e.rel) || !passEdgeFilter(e.rel) || !relVisibleAt(e.rel)) continue;
+      nodes.add(e.to); edges.add(edgeKey(id, e.to));
+    }
     state.panelKind = 'char';
     state.panelId = id;
     state.activeRel = null;
@@ -998,6 +1273,7 @@
     panel().innerHTML = `
       <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」<br>
       空白处拖动＝平移画布，滚轮＝缩放，<b>双击空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
+      <b>键盘</b>：Tab 聚焦到图上后，<b>方向键</b>在人物之间移动、<b>回车</b>看档案、<b>Esc</b> 取消选中（读屏会念出当前位置）。<br>
       底部「两人关系」会算出最短关系链，并列出每一跳的依据事件。</p>`;
   }
 
@@ -1020,7 +1296,7 @@
     if (!sel) return;
     const places = [...(state.book.places || [])].sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0));
     sel.innerHTML = '<option value="">📍 全部地点</option>' + places
-      .filter((p) => state.progress === null || (p.firstCh ?? 0) <= state.progress)
+      .filter((p) => (state.progress === null || (p.firstCh ?? 0) <= state.progress) && !beforeAsOf(p.firstCh ?? 0))
       .map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
     if (state.placeFilter && ![...sel.options].some((o) => o.value === state.placeFilter)) state.placeFilter = null;
     sel.value = state.placeFilter || '';
@@ -1063,8 +1339,21 @@
     const factionHist = Array.isArray(c.factionHistory) ? c.factionHistory : [];
     const lordHist = Array.isArray(c.lordHistory) ? c.lordHistory : [];
     const allRels = state.book.relations.filter((r) => (r.from === c.id || r.to === c.id) && relVisible(r));
-    const rels = allRels.filter((r) => !relLocked(r)).sort((a, b) => (a.type > b.type ? 1 : -1));
-    const lockedCount = allRels.length - rels.length;
+    const unlocked = allRels.filter((r) => !relLocked(r) && relVisibleAt(r));
+    const rels = unlocked.filter(passEdgeFilter).sort((a, b) => (a.type > b.type ? 1 : -1));
+    const lockedCount = allRels.length - unlocked.length;
+    const filteredCount = unlocked.length - rels.length;
+    // 「他的一生」：按章排的事件（含地点与引文），吃剧透保护
+    const lifeEvs = state.book.events.filter((e) => (e.chars || []).includes(c.id)).sort((a, b) => (a.ch || 0) - (b.ch || 0));
+    const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
+    const lifeHtml = lifeEvs.length ? `
+      <h3 style="margin-top:12px;font-size:14px">他的一生（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
+      <ul class="life-list">${lifeShown.slice(0, 40).map((e) => `
+        <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(e.name)}</button>
+          <div class="rel-event">· ${esc(e.summary)}${e.place ? ` <button class="linkbtn" type="button" data-place-filter="${esc(e.place)}">📍${esc(placeName(e.place))}</button>` : ''}</div>
+          ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
+        </li>`).join('')}${lifeShown.length > 40 ? `<li class="hint">…还有 ${lifeShown.length - 40} 个事件（可用阶段轴看全）</li>` : ''}</ul>
+      ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个事件在你读到的进度之后</p>` : ''}` : '';
     const relHtml = rels.map((r) => {
       const other = r.from === c.id ? r.to : r.from;
       const vis = visibleRelEvents(r);
@@ -1072,7 +1361,7 @@
       const evs = vis.map((e) =>
         `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
         </div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
@@ -1096,8 +1385,10 @@
       <p class="hint" style="margin-top:8px">人太多看不清？只看这个人的关系网：
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
+        <button class="ghost tiny" type="button" data-char-card="${esc(c.id)}" title="导出这个人的 PNG 卡片：身份、结局、关键关系与依据事件">🖼 人物卡</button>
         ${state.focus ? '<button class="ghost tiny" type="button" data-focus-exit="1">退出聚焦</button>' : ''}
       </p>
+      ${lifeHtml}
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
       ${state.placeFilter ? `<p class="hint">📍 正在按地点「${esc(placeName(state.placeFilter))}」筛选：图上只高亮该范围内的人与关系。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
@@ -1108,7 +1399,14 @@
       }).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回）</span>`}
         <span class="hint">${lordHist.map((s) => `${s.fromCh}：${esc(s.label || '')}`).join('；')}</span></p>` : ''}
       ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
-      <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>`;
+      ${filteredCount ? `<p class="hint">🫥 ${filteredCount} 条关系被「关系过滤」挡住
+        <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
+      <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>
+      <p style="margin-top:10px">
+        <button class="ghost tiny" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个人（不剧透）</button>
+        <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
+      </p>
+      <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
   }
 
@@ -1119,6 +1417,7 @@
     panel().innerHTML = `
       <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
       <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : '定义这段关系的事件'}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
+      ${periodText(r) ? `<p class="card-sub">关系时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
       ${evs || '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
     bindGoto(panel());
@@ -1147,6 +1446,8 @@
       if (cur === toId) break;
       for (const e of state.adj.get(cur) || []) {
         if (!relVisible(e.rel)) continue;
+        if (!passEdgeFilter(e.rel)) continue;
+        if (!relVisibleAt(e.rel)) continue;
         if (!prev.has(e.to)) { prev.set(e.to, { from: cur, rel: e.rel }); queue.push(e.to); }
       }
     }
@@ -1181,7 +1482,12 @@
     panel().innerHTML = `
       <div class="card-title">关系链：${esc(charName(a))} → ${esc(charName(b))}</div>
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
-      <ul class="path-steps">${html || '<li class="hint">同一个人</li>'}</ul>`;
+      <ul class="path-steps">${html || '<li class="hint">同一个人</li>'}</ul>
+      <p style="margin-top:10px">
+        <button class="ghost tiny" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
+        <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
+      </p>
+      <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
   }
 
@@ -1193,6 +1499,7 @@
       const evs = state.book.events
         .filter((e) => e.phase === p.id)
         .filter((e) => !state.placeFilter || e.place === state.placeFilter)
+        .filter((e) => eventVisibleAt(e))
         .sort((a, b) => a.order - b.order);
       if (!evs.length) return '';
       return `<div class="phase">
@@ -1240,10 +1547,60 @@
     };
   }
 
+  /* ---------------- 时间旅行：UI 与重绘 ---------------- */
+  function timeCeiling() {
+    const total = maxChapter() || 1;
+    return state.progress === null ? total : Math.min(total, state.progress);
+  }
+  function syncTimeTravelUI() {
+    const btn = document.getElementById('time-btn');
+    const slider = document.getElementById('time-slider');
+    const hint = document.getElementById('time-hint');
+    const ceil = timeCeiling();
+    if (btn) {
+      const n = asOf();
+      btn.textContent = state.timeTravel ? `🕰 时间旅行：第 ${n} 章` : '🕰 时间旅行：关';
+      btn.classList.toggle('on', !!state.timeTravel);
+    }
+    if (slider) {
+      slider.hidden = !state.timeTravel;
+      slider.min = '1';
+      slider.max = String(ceil);
+      slider.value = String(Math.min(state.chapter, ceil));
+    }
+    if (hint) {
+      if (!state.timeTravel) hint.textContent = '';
+      else if (state.progress !== null && state.chapter > state.progress) hint.textContent = `（剧透保护：图谱最多拨到第 ${state.progress} 章）`;
+      else hint.textContent = '只画当时已发生的关系';
+    }
+  }
+  function applyTimeTravelGraph() {
+    if (!state.chart) return;
+    fillMissingPositions();
+    computeLabels(state.zoom);
+    state.chart.setOption(buildOption({ keepView: true }));
+  }
+  function applyTimeTravel() {
+    try { localStorage.setItem('ba-timetravel', state.timeTravel ? '1' : '0'); } catch (e) { /* 隐私模式忽略 */ }
+    state.chapter = Math.max(1, Math.min(maxChapter() || 1, state.chapter || 1));
+    syncTimeTravelUI();
+    clearHighlight(false);
+    renderDatalist();
+    renderPathSelects();
+    renderTimeline();
+    renderPlaceSelect();
+    renderChapter();
+    applyTimeTravelGraph();
+    updateCountHint();
+    refreshPanel();
+  }
+
   function goChapter(n) {
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(n) || 1));
     try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch (e) { /* 忽略 */ }
     renderChapter();
+    if (state.timeTravel) applyTimeTravel();
+    else syncTimeTravelUI();
     const el = document.getElementById('chapter-panel');
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   }
@@ -1324,10 +1681,10 @@
 
   /** 当前筛选下真正画在图上的节点与连线（导出的输入；与 buildOption 的过滤条件一致） */
   function exportSelection() {
-    const nodes = state.book.characters.filter((c) => !isCharHidden(c) && passSizeFilter(c.id) && passFocus(c.id));
+    const nodes = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id));
     const idset = new Set(nodes.map((c) => c.id));
     const links = state.book.relations.filter((r) =>
-      idset.has(r.from) && idset.has(r.to) && !relLocked(r) && relVisible(r));
+      idset.has(r.from) && idset.has(r.to) && !relLocked(r) && relVisible(r) && passEdgeFilter(r) && relVisibleAt(r));
     return { nodes, links };
   }
 
@@ -1415,7 +1772,7 @@
     let lx = 52;
     ctx.font = font(21);
     for (const f of state.book.factions.slice(0, 9)) {
-      ctx.fillStyle = f.color;
+      ctx.fillStyle = factionColorByKey(f.key);
       ctx.beginPath(); ctx.arc(lx + 7, H - 78, 7, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = muted; ctx.fillText(f.name, lx + 20, H - 71);
       lx += 20 + ctx.measureText(f.name).width + 26;
@@ -1426,6 +1783,26 @@
     return cv.toDataURL('image/png');
   }
 
+  /** 导出用的坐标：state.pos 是"已适配屏幕"的（乘过 fitLast），导出要还原回世界尺度，
+   *  否则大书（fit 只有 0.09）会出现"节点尺寸是世界单位、间距被压扁"⇒ 糊成一团；
+   *  布局还没跑完时（刚切书等）再用当前视图的确定性布局补齐 */
+  function exportPositions(nodes) {
+    const inv = 1 / (Math.abs(state.fitLast) || 1);
+    let base = state.pos;
+    if (!nodes.every((c) => base.has(c.id)) && state.view !== 'force') {
+      const backupPos = state.pos, backupBands = state.bands;
+      buildGenerationPositions(state.view);
+      const computed = state.pos;
+      state.pos = backupPos;
+      state.bands = backupBands;
+      base = new Map(backupPos);
+      for (const c of nodes) if (!base.has(c.id) && computed.has(c.id)) base.set(c.id, computed.get(c.id));
+    }
+    const scaled = new Map();
+    for (const [id, p] of base) scaled.set(id, { x: p.x * inv, y: p.y * inv });
+    return scaled;
+  }
+
   /** 关系图的矢量渲染（打印页 / 分享图共用）
    *  page=true：A3 横向打印页（标题 + 图例 + 页脚）
    *  page=false：只出图，画布贴着图形包围盒（分享图内嵌用，不受用户当前缩放影响） */
@@ -1433,7 +1810,8 @@
     if (!state.book) return '';
     if (!state.pos.size && state.chart) freezeNow();
     const { nodes, links } = exportSelection();
-    const placed = nodes.map((c) => ({ c, p: state.pos.get(c.id) })).filter((x) => x.p);
+    const pos = exportPositions(nodes);
+    const placed = nodes.map((c) => ({ c, p: pos.get(c.id) })).filter((x) => x.p);
     if (!placed.length) return '';
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const { p } of placed) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
@@ -1452,7 +1830,7 @@
     const rad = (c) => Math.max(page ? 0.9 : 3, Math.min(20, symbolSize(c.id) / 2 * k));
     const edges = [];
     for (const r of links) {
-      const a = state.pos.get(r.from), b = state.pos.get(r.to);
+      const a = pos.get(r.from), b = pos.get(r.to);
       if (!a || !b) continue;
       const c = byId.get(r.from);
       const col = charLocked(c) ? '#9aa3b0' : factionColorOf(c);
@@ -1499,7 +1877,7 @@
     }
     const legend = !page ? '' : state.book.factions.map((f, i) => {
       const x = M + (i % 6) * 66, y = 27 - Math.floor(i / 6) * 5;
-      return `<circle cx="${x}" cy="${(y - 1.3).toFixed(1)}" r="1.5" fill="${f.color}"/><text x="${(x + 3).toFixed(1)}" y="${y}" font-size="3" fill="#6c7482">${xmlEsc(f.name)}</text>`;
+      return `<circle cx="${x}" cy="${(y - 1.3).toFixed(1)}" r="1.5" fill="${factionColorByKey(f.key)}"/><text x="${(x + 3).toFixed(1)}" y="${y}" font-size="3" fill="#6c7482">${xmlEsc(f.name)}</text>`;
     }).join('');
     const now = new Date();
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1522,6 +1900,418 @@
   }
 
   function buildPrintSvg() { return buildGraphSvg({ page: true }); }
+
+  /** 轻提示（导出成功/失败等短消息） */
+  function toast(msg, ms = 2800) {
+    let el = document.getElementById('ba-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'ba-toast'; document.body.appendChild(el); }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  /** canvas 文本换行（按像素量宽；最多 maxLines 行，超出加省略号） */
+  function wrapText(ctx, text, maxWidth, maxLines) {
+    const chars = [...String(text || '')];
+    const lines = [];
+    let cur = '';
+    for (const ch of chars) {
+      if (ch === '\n') { lines.push(cur); cur = ''; if (lines.length >= maxLines) break; continue; }
+      if (cur && ctx.measureText(cur + ch).width > maxWidth) {
+        lines.push(cur); cur = ch;
+        if (lines.length >= maxLines) break;
+      } else cur += ch;
+    }
+    if (lines.length < maxLines && cur) lines.push(cur);
+    if (lines.length >= maxLines) {
+      let last = lines[maxLines - 1] || '';
+      while (last && ctx.measureText(last + '…').width > maxWidth) last = last.slice(0, -1);
+      lines[maxLines - 1] = last + '…';
+    }
+    return lines;
+  }
+
+  /** 人物卡 PNG（返回 dataURL）：身份 / 结局 / 关键关系（带依据事件）；吃剧透保护与关系过滤 */
+  async function buildCharacterPng(id) {
+    const c = state.byId.get(id);
+    if (!c) return '';
+    const W = 1200;
+    const bg = cssVar('--bg') || '#f4f1ea';
+    const panel = cssVar('--panel') || '#ffffff';
+    const ink = cssVar('--ink') || '#232a35';
+    const muted = cssVar('--muted') || '#6c7482';
+    const line = cssVar('--line') || '#e5dfd3';
+    const font = (size, weight) => `${weight ? weight + ' ' : ''}${size}px -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif`;
+    // 先算内容（关系行数决定卡片高度）
+    const allOf = state.book.relations.filter((r) => r.from === c.id || r.to === c.id);
+    const rels = allOf.filter((r) => !relLocked(r) && relVisible(r) && passEdgeFilter(r))
+      .sort((a, b) => nodeDegree(b.from === c.id ? b.to : b.from) - nodeDegree(a.from === c.id ? a.to : a.from))
+      .slice(0, 8);
+    const lockedRels = allOf.filter((r) => relLocked(r)).length;
+    const H = Math.max(560, Math.min(1080, 500 + rels.length * 56 + (lockedRels ? 26 : 0)));
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    const L = 64, R = W - 64;
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = panel;
+    roundRectPath(ctx, 28, 28, W - 56, H - 56, 22); ctx.fill();
+    ctx.strokeStyle = line; ctx.lineWidth = 2; ctx.stroke();
+    let y = 100;
+    ctx.fillStyle = ink; ctx.font = font(40, 700);
+    ctx.fillText(c.name, L, y);
+    const nameW = ctx.measureText(c.name).width;
+    const aliases = (c.aliases || []).filter((a) => a && a !== c.name && a.length <= Math.max(2, Math.floor(c.name.length * 0.6))).slice(0, 4);
+    if (aliases.length) {
+      ctx.fillStyle = muted; ctx.font = font(20);
+      ctx.fillText(`（${aliases.join('，')}）`, L + nameW + 8, y - 2);
+    }
+    y += 24;
+    const f = state.book.factions.find((x) => x.key === effectiveFactionKey(c)) || {};
+    ctx.fillStyle = f.color || '#8b94a7';
+    roundRectPath(ctx, L, y, 120, 8, 4); ctx.fill();
+    ctx.fillStyle = muted; ctx.font = font(19);
+    const badges = [f.name || '其他', c.gender === 'f' ? '♀ 女' : '♂ 男',
+      state.groupMode === 'generation' ? genText(c.generation) : '', c.title || '',
+      `关系 ${(state.adj.get(c.id) || []).length} 条`].filter(Boolean).join(' · ');
+    ctx.fillText(badges, L, y + 30);
+    y += 66;
+    ctx.fillStyle = ink; ctx.font = font(21);
+    for (const ln of wrapText(ctx, c.desc, R - L, 3)) { ctx.fillText(ln, L, y); y += 32; }
+    y += 4;
+    ctx.fillStyle = muted; ctx.font = font(19, 700); ctx.fillText('结局', L, y);
+    ctx.font = font(19);
+    const fateText = fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : (c.fate || '—');
+    for (const ln of wrapText(ctx, fateText, R - L - 60, 2)) { ctx.fillText(ln, L + 56, y); y += 28; }
+    y += 12;
+    ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(R, y); ctx.stroke();
+    y += 32;
+    ctx.fillStyle = ink; ctx.font = font(21, 700); ctx.fillText('关键关系', L, y); y += 32;
+    if (!rels.length) {
+      ctx.fillStyle = muted; ctx.font = font(19); ctx.fillText('（暂无可显示的关系）', L, y); y += 34;
+    }
+    for (const r of rels) {
+      const other = r.from === c.id ? r.to : r.from;
+      const otherName = charLocked(state.byId.get(other)) ? '🔒' : charName(other);
+      // 第一行：对方 — 关系类型
+      ctx.fillStyle = ink; ctx.font = font(20, 700);
+      ctx.fillText(otherName, L, y);
+      const w = ctx.measureText(otherName).width;
+      ctx.fillStyle = muted; ctx.font = font(19);
+      ctx.fillText(`— ${r.type} —`, L + w + 8, y);
+      // 第二行：一条依据事件（小字、单行省略）
+      const ev = (visibleRelEvents(r)[0] || {});
+      ctx.font = font(17);
+      const evText = ev.text ? wrapText(ctx, `· ${ev.text}${ev.chapter ? `（${ev.chapter}）` : ''}`, R - L - 16, 1)[0] || '' : '';
+      if (evText) { ctx.fillStyle = muted; ctx.fillText(evText, L + 16, y + 24); }
+      y += 56;
+    }
+    if (lockedRels) {
+      ctx.fillStyle = muted; ctx.font = font(17);
+      ctx.fillText(`🔒 还有 ${lockedRels} 条关系在你读到的进度之后`, L, y - 8);
+    }
+    ctx.fillStyle = muted; ctx.font = font(19);
+    ctx.fillText(`书脉 BookAtlas · ${SITE_URL}`, L, H - 60);
+    ctx.textAlign = 'right';
+    ctx.fillText(state.progress === null ? '全部解锁' : `剧透保护：读到第 ${state.progress} 章`, R, H - 60);
+    ctx.textAlign = 'left';
+    return cv.toDataURL('image/png');
+  }
+
+  /* ---------------- AI 讲解（不剧透）：资料先在本地按进度过滤，再交给模型 ---------------- */
+  const AI_DEFAULT_BASE = 'https://api.deepseek.com/v1';
+  const aiConfig = () => ({
+    base: (localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE).replace(/\/+$/, ''),
+    key: localStorage.getItem('ba-ai-key') || '',
+    model: localStorage.getItem('ba-ai-model') || 'deepseek-chat',
+  });
+
+  function openAiModal(msg) {
+    const modal = document.getElementById('ai-modal');
+    if (!modal) return;
+    const cfg = aiConfig();
+    const base = document.getElementById('ai-base');
+    const model = document.getElementById('ai-model');
+    const key = document.getElementById('ai-key');
+    if (base) base.value = cfg.base;
+    if (model) model.value = cfg.model;
+    if (key) key.value = cfg.key;
+    const hint = document.getElementById('ai-hint');
+    if (hint) hint.textContent = msg || 'DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。';
+    modal.hidden = false;
+  }
+  function saveAiConfig() {
+    const base = ((document.getElementById('ai-base') || {}).value || '').trim() || AI_DEFAULT_BASE;
+    const model = ((document.getElementById('ai-model') || {}).value || '').trim() || 'deepseek-chat';
+    const key = ((document.getElementById('ai-key') || {}).value || '').trim();
+    try {
+      localStorage.setItem('ba-ai-base', base.replace(/\/+$/, ''));
+      localStorage.setItem('ba-ai-model', model);
+      localStorage.setItem('ba-ai-key', key);
+    } catch (e) { /* 隐私模式忽略 */ }
+    const modal = document.getElementById('ai-modal');
+    if (modal) modal.hidden = true;
+    toast(key ? '已保存 AI 配置（只在本机，与编辑器共用）' : '已清空 API Key');
+  }
+
+  /** 讲解的"进度上限"：剧透保护与时间旅行取更小的那个；都没有＝全书 */
+  const aiCeiling = () => {
+    const cands = [state.progress, asOf()].filter((x) => typeof x === 'number');
+    return cands.length ? Math.min(...cands) : (maxChapter() || 1);
+  };
+
+  /** 关系链资料：每一跳的关系 + 只保留已解锁的依据事件 */
+  function aiChainContext(steps) {
+    return steps.map((s, i) => {
+      const evs = visibleRelEvents(s.rel).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
+      const period = periodText(s.rel) ? `（关系时段：${periodText(s.rel)}）` : '';
+      return `${i + 1}. ${charName(s.from)} — ${s.rel.type} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
+    }).join('\n');
+  }
+
+  /** 人物资料：档案 + 关系 + 事件；结局按剧透保护决定给不给 */
+  function aiCharContext(c) {
+    const head = [
+      `姓名：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}`,
+      c.title ? `身份：${c.title}` : '',
+      state.groupMode === 'generation' ? `代际：${genText(c.generation)}` : `阵营：${factionTextOf(c)}`,
+      `首次出场：第 ${charCh(c)} 章`,
+      c.desc ? `简介：${c.desc}` : '',
+      fateLocked(c) ? '' : (c.fate ? `结局：${c.fate}` : ''),
+    ].filter(Boolean).join('\n');
+    const rels = state.book.relations
+      .filter((r) => (r.from === c.id || r.to === c.id) && !relLocked(r) && relVisibleAt(r) && passEdgeFilter(r))
+      .slice(0, 20)
+      .map((r) => {
+        const other = r.from === c.id ? r.to : r.from;
+        const evs = visibleRelEvents(r).map((e) => e.text).slice(0, 2).join('；');
+        return `- ${charName(other)}：${r.type}${periodText(r) ? `（${periodText(r)}）` : ''}${evs ? `　依据：${evs}` : ''}`;
+      }).join('\n');
+    const evs = state.book.events
+      .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
+      .slice(0, 16)
+      .map((e) => `- 第 ${e.ch} 章《${e.name}》：${e.summary}`)
+      .join('\n');
+    return `${head}\n\n与他/她有关的人（只列你读到的部分）：\n${rels || '（暂无）'}\n\n相关事件（只列你读到的部分）：\n${evs || '（暂无）'}`;
+  }
+
+  /** 组装提示词（测试也用它，便于断言"资料里没有未来信息"） */
+  function aiPrompt(kind, payload) {
+    const ceiling = aiCeiling();
+    const total = maxChapter() || 1;
+    const prog = state.progress === null
+      ? `读者没有开启剧透保护（可以看到全书信息，上限第 ${total} 章）`
+      : `读者读到第 ${state.progress} 章（共 ${total} 章）`;
+    const system = [
+      `你是《${titleOf()}》的阅读助手。`,
+      prog,
+      `硬性要求：① 只能使用下面提供的资料，不要使用你自己的记忆；② 只描述发生在第 ${ceiling} 章及之前的事；`,
+      `③ 不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；`,
+      `④ 资料里没有的不要编；⑤ 语气平实、口语化，不要小标题、不要列表，不超过 220 字。`,
+    ].join('');
+    const user = kind === 'chain'
+      ? `【任务】用几句话说清这段关系链是怎么一环扣一环的。\n\n【关系链（按跳数）】\n${aiChainContext(payload)}\n\n【读者进度】第 ${ceiling} 章`
+      : `【任务】用几句话说清这个人是谁、和他人的关系是怎么来的。\n\n【人物资料】\n${aiCharContext(payload)}\n\n【读者进度】第 ${ceiling} 章`;
+    return { system, user, ceiling };
+  }
+
+  async function aiExplain(kind, payload) {
+    const cfg = aiConfig();
+    if (!cfg.key) { openAiModal('还没有配置 API Key —— 填好之后再点一次「🤖 讲一遍」就行。'); return; }
+    const box = document.getElementById('ai-answer');
+    if (box) {
+      box.hidden = false;
+      box.innerHTML = `<div class="ai-head">🤖 正在生成…</div><div class="hint">只用你读到的部分（第 ${aiCeiling()} 章之前）</div>`;
+    }
+    const { system, user } = aiPrompt(kind, payload);
+    try {
+      const res = await fetch(`${cfg.base}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
+        body: JSON.stringify({ model: cfg.model, temperature: 0.4, max_tokens: 700, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+      });
+      if (!res.ok) throw new Error(`接口返回 ${res.status}：${(await res.text()).slice(0, 140)}`);
+      const data = await res.json();
+      const text = (((data || {}).choices || [{}])[0].message || {}).content || '';
+      if (!String(text).trim()) throw new Error('模型没有返回内容');
+      if (box) box.innerHTML = `<div class="ai-head">🤖 AI 讲解</div>${esc(text)}<div class="ai-foot">基于你读到的第 ${aiCeiling()} 章 · 资料已在本地按进度过滤 · 模型 ${esc(cfg.model)} · <button class="linkbtn" type="button" data-ai-settings="1">⚙️ 设置</button></div>`;
+    } catch (e) {
+      const msg = String((e && e.message) || e);
+      if (box) box.innerHTML = `<div class="ai-head">🤖 讲解失败</div><div class="ai-err">${esc(msg)}</div><div class="ai-foot">${/Failed to fetch|CORS|NetworkError/i.test(msg) ? '浏览器直连被拦：换一个允许跨域的端点，或用编辑器里的命令行方式。' : '可以再点一次「🤖 讲一遍」重试。'} · <button class="linkbtn" type="button" data-ai-settings="1">⚙️ 设置</button></div>`;
+    }
+  }
+
+  /* ---------------- 阅读伴侣 EPUB（可传进微信读书：只含整理数据，不含原著正文） ---------------- */
+  /** SVG 光栅化成图片（EPUB 里放；顺带把宽度限制住，别让文件太大）
+   *  type: 'png' | 'jpeg' —— 线稿+文字用 JPEG 体积小得多（EPUB 里够清楚） */
+  function rasterizeSvg(svg, scale = 2, maxW = 2000, type = 'image/jpeg', quality = 0.9) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+      const img = new Image();
+      img.onload = () => {
+        const w = Math.min(maxW, Math.max(200, Math.round(img.width * scale)));
+        const h = Math.max(1, Math.round((img.height / img.width) * w));
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve({ dataUrl: cv.toDataURL(type, quality), width: w, height: h, type });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('矢量图渲染失败')); };
+      img.src = url;
+    });
+  }
+
+  /** dataURL → Uint8Array（★ 不能走 strToU8：那会按 UTF-8 编码，把 ≥0x80 的字节改掉，图片直接坏） */
+  function dataUrlToBytes(dataUrl) {
+    const bin = atob(String(dataUrl).split(',')[1] || '');
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+
+  function epubPage(title, body) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-CN" lang="zh-CN">
+<head><meta charset="utf-8"/><title>${esc(title)}</title><link rel="stylesheet" type="text/css" href="style.css"/></head>
+<body>
+${body}
+</body></html>`;
+  }
+
+  /** 组装 EPUB（跟随当前进度：锁着的人/事件不写进去，读到后面再导出一次即可） */
+  async function buildCompanionEpub() {
+    if (!window.fflate || !window.fflate.zipSync) throw new Error('缺少打包库 vendor/fflate.min.js');
+    const f = window.fflate;
+    const b = state.book, m = b.meta || {};
+    const title = `《${titleOf()}》阅读伴侣`;
+    const date = new Date();
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const progNote = state.progress === null
+      ? '（导出时：全部解锁）'
+      : `（导出时：剧透保护读到第 ${state.progress} 章 —— 之后的内容没有写进来，读到后面再导出一次即可）`;
+
+    // 1) 关系总图（JPEG：线稿+文字的体积比 PNG 小一个数量级）
+    const img = await rasterizeSvg(buildGraphSvg({ page: false }), 2, 2000, 'image/jpeg', 0.9);
+    const imgName = img.type === 'image/png' ? 'graph.png' : 'graph.jpg';
+    const imgMime = img.type;
+
+    // 2) 人物志（按首次出场章排序；锁着的人不写）
+    const chars = b.characters
+      .filter((c) => !charLocked(c) && charVisibleAt(c))
+      .sort((x, y) => charCh(x) - charCh(y) || (nodeDegree(y.id) - nodeDegree(x.id)));
+    const charHtml = chars.map((c) => {
+      const rels = b.relations
+        .filter((r) => (r.from === c.id || r.to === c.id) && !relLocked(r) && relVisibleAt(r) && relVisible(r))
+        .sort((x, y) => nodeDegree(y.from === c.id ? y.to : y.from) - nodeDegree(x.from === c.id ? x.to : x.from));
+      const relHtml = rels.map((r) => {
+        const other = r.from === c.id ? r.to : r.from;
+        const evs = visibleRelEvents(r).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
+        const period = periodText(r) ? `〔${periodText(r)}〕` : '';
+        return `<li><b>${esc(charName(other))}</b> — ${esc(r.type)}${period}${evs ? `　依据：${evs}` : ''}</li>`;
+      }).join('');
+      const life = b.events
+        .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
+        .sort((x, y) => (x.ch || 0) - (y.ch || 0))
+        .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${esc(e.summary)}</li>`)
+        .join('');
+      return `<section class="char">
+  <h2>${esc(c.name)}</h2>
+  <p class="meta">${esc([factionTextOf(c), c.gender === 'f' ? '女' : '男', c.title, `第 ${charCh(c)} 章出场`].filter(Boolean).join(' · '))}</p>
+  ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
+  ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
+  <p class="meta">结局：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
+  ${life ? `<h3>他/她的一生（按章）</h3><ul>${life}</ul>` : ''}
+  ${relHtml ? `<h3>与谁有关 · 凭什么事件</h3><ul>${relHtml}</ul>` : ''}
+</section>`;
+    }).join('\n');
+
+    // 3) 事件轴（按阶段；锁着的跳过）
+    const phases = [...(b.phases || [])].sort((x, y) => x.order - y.order);
+    const evHtml = phases.map((p) => {
+      const evs = b.events.filter((e) => e.phase === p.id && !eventLocked(e) && eventVisibleAt(e)).sort((x, y) => x.order - y.order);
+      if (!evs.length) return '';
+      return `<h2>${esc(p.name)}</h2>` + evs.map((e) => `<section class="ev">
+  <h3>第 ${e.ch ?? '?'} 章 · ${esc(e.name)}</h3>
+  <p>${esc(e.summary)}</p>
+  ${e.impact ? `<p class="meta">影响：${esc(e.impact)}</p>` : ''}
+  ${e.place ? `<p class="meta">地点：${esc(placeName(e.place))}</p>` : ''}
+  <p class="meta">涉及：${esc((e.chars || []).map(charName).join('、'))}</p>
+  ${e.quote ? `<blockquote>「${esc(e.quote)}」</blockquote>` : ''}
+</section>`).join('\n');
+    }).join('\n');
+
+    const stats = `显示 ${chars.length} / ${b.characters.length} 人 · ${b.relations.length} 段关系 · ${b.events.length} 个事件`;
+    const pages = {
+      'cover.xhtml': epubPage('封面', `<div class="cover">
+  <h1>${esc(title)}</h1>
+  <p class="meta">${esc(m.author || '')} · ${esc(stats)}</p>
+  <p>把这本书的人物关系、定义关系的小事件与标志性事件，整理成一份<b>可以放在手边</b>的小册子。</p>
+  <p class="meta">不含原著正文 · 阅读辅助用途 · 数据 CC BY-SA 4.0 · 由「书脉 BookAtlas」生成于 ${dateStr} ${esc(progNote)}</p>
+</div>`),
+      'howto.xhtml': epubPage('怎么用', `<h1>怎么用这份伴侣</h1>
+<ol>
+  <li><b>配合原著读</b>：在微信读书里把这份文件当作一本"配套小册子"（传书导入后与原著并排读）。</li>
+  <li><b>剧透保护</b>：这份文件<b>跟随导出时的阅读进度</b>——之后的剧情没写进来。读到后面想更新，回网页版/小程序再导出一次即可。</li>
+  <li><b>关系总图</b>：下一节的图是全书关系网络（放大看）；每段关系的<b>依据事件</b>写在人物志里。</li>
+  <li><b>想按进度解锁、查两人关系、看时间旅行</b>：用在线版 <b>${esc(SITE_URL)}</b> 或微信小程序（同一个数据，可按章解锁）。</li>
+</ol>`),
+      'graph.xhtml': epubPage('关系总图', `<h1>关系总图</h1>
+<p class="meta">${esc(stats)}${state.progress === null ? '' : ` · 剧透保护读到第 ${state.progress} 章`}</p>
+<div class="fig"><img src="${imgName}" alt="人物关系图"/></div>
+<p class="meta">${esc((b.factions || []).map((x) => x.name).join(' / '))}</p>`),
+      'characters.xhtml': epubPage('人物志', `<h1>人物志（按出场章排序）</h1>${charHtml || '<p>（暂无可写的人物）</p>'}`),
+      'events.xhtml': epubPage('事件轴', `<h1>重大事件轴</h1>${evHtml || '<p>（暂无可写的事件）</p>'}`),
+    };
+
+    // 4) 打包（mimetype 必须第一个、且不压缩）
+    const css = `body{font-family:serif;line-height:1.7;margin:1em}h1{font-size:1.5em}h2{font-size:1.2em;margin-top:1.4em;border-bottom:1px solid #ddd}h3{font-size:1.05em;margin-top:1em}.meta{color:#666;font-size:.9em}ul{padding-left:1.2em}li{margin:.3em 0}.fig{text-align:center}.fig img{max-width:100%}blockquote{margin:.6em 0;padding-left:.8em;border-left:3px solid #ccc;color:#555}.cover{margin-top:3em;text-align:center}.char,.ev{margin-bottom:1.2em}`;
+    const files = {
+      'mimetype': [f.strToU8('application/epub+zip'), { level: 0 }],
+      'META-INF/container.xml': f.strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`),
+      'OEBPS/content.opf': f.strToU8(`<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="bookid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>${esc(title)}</dc:title>
+    <dc:creator>书脉 BookAtlas</dc:creator>
+    <dc:language>zh-CN</dc:language>
+    <dc:identifier id="bookid">bookatlas-${esc(slugOf())}-${dateStr}</dc:identifier>
+    <dc:rights>整理数据 CC BY-SA 4.0 · 不含原著正文</dc:rights>
+    <dc:description>${esc(m.author || '')} · ${esc(stats)}</dc:description>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="css" href="style.css" media-type="text/css"/>
+    <item id="graph" href="${imgName}" media-type="${imgMime}"/>
+${Object.keys(pages).map((p, i) => `    <item id="p${i}" href="${p}" media-type="application/xhtml+xml"/>`).join('\n')}
+  </manifest>
+  <spine toc="ncx">
+${Object.keys(pages).map((p, i) => `    <itemref idref="p${i}"/>`).join('\n')}
+  </spine>
+</package>`),
+      'OEBPS/toc.ncx': f.strToU8(`<?xml version="1.0" encoding="utf-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head><meta name="dtb:uid" content="bookatlas-${esc(slugOf())}"/></head>
+  <docTitle><text>${esc(title)}</text></docTitle>
+  <navMap>
+${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}"><navLabel><text>${esc(['封面', '怎么用', '关系总图', '人物志', '事件轴'][i] || p)}</text></navLabel><content src="${p}"/></navPoint>`).join('\n')}
+  </navMap>
+</ncx>`),
+      'OEBPS/style.css': f.strToU8(css),
+      ['OEBPS/' + imgName]: dataUrlToBytes(img.dataUrl),
+    };
+    for (const [name, html] of Object.entries(pages)) files['OEBPS/' + name] = f.strToU8(html);
+    const bytes = f.zipSync(files, { level: 6 });
+    return { bytes, pages: Object.keys(pages).length, chars: chars.length, imgW: img.width, imgH: img.height };
+  }
 
   async function runExport(kind) {
     if (!state.book) return;
@@ -1551,6 +2341,11 @@
         if (!svg) { say('布局还没准备好：先在图上点一下（或等布局跑完）再试。'); return; }
         downloadText(`${titleOf()}-关系图-A3.svg`, svg, 'image/svg+xml');
         say('已导出打印版 SVG —— 用浏览器打开后可「打印 → 另存为 PDF」。');
+      } else if (kind === 'epub') {
+        say('正在打包阅读伴侣（含关系总图，稍等）…');
+        const res = await buildCompanionEpub();
+        downloadBlob(`${titleOf()}-阅读伴侣.epub`, new Blob([res.bytes], { type: 'application/epub+zip' }));
+        say(`已导出 EPUB（${Math.round(res.bytes.length / 1024)} KB · ${res.pages} 节 · ${res.chars} 人 · 图 ${res.imgW}×${res.imgH}）—— 传进微信读书：用「传书到手机」或文件传输助手导入。`);
       }
     } catch (e) {
       say('导出失败：' + ((e && e.message) || e));
@@ -1584,6 +2379,7 @@
   function applySpoiler(on, ch) {
     closeSpoilerModal();
     state.progress = on ? ch : null;
+    if (state.timeTravel) state.chapter = Math.min(state.chapter, timeCeiling());
     const slug = state.book?.meta?.slug || 'book';
     try {
       localStorage.setItem('ba-spoiler-' + slug, JSON.stringify(on ? { on: true, ch } : { on: false }));
@@ -1594,6 +2390,7 @@
       renderPathSelects();
       renderTimeline();
       renderChapter();
+      syncTimeTravelUI();
       renderPlaceSelect();
       renderPanelWelcome();
       initChart();
@@ -1685,6 +2482,20 @@
         if (m) { m.hidden = false; const h = document.getElementById('export-hint'); if (h) h.textContent = ''; }
         break;
       }
+      case 'edge': {
+        state.edgeKins = new Set(['blood', 'marriage', 'adopt', 'sworn']);
+        state.edgeStyles = new Set();
+        applyEdgeFilter();
+        break;
+      }
+      case 'charcard': {
+        const hub = (state.book.characters || []).slice().sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))[0];
+        if (hub) selectCharacter(hub.id);
+        break;
+      }
+      case 'ai':
+        openAiModal();
+        break;
     }
   }
 
@@ -1780,11 +2591,88 @@
       state.showDerived = !state.showDerived;
       try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
       syncDerivedBtn();
+      syncEdgeFilterUI();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
       updateCountHint();
     });
     syncDerivedBtn();
+
+    // 显示设置（色盲友好配色 / 字号）
+    const dispPanel = document.getElementById('display-panel');
+    if (dispPanel) {
+      document.addEventListener('click', (ev) => {
+        if (ev.target.closest('#display-btn')) { dispPanel.hidden = !dispPanel.hidden; return; }
+        if (!dispPanel.hidden && !ev.target.closest('#display-panel')) dispPanel.hidden = true;
+        const pal = ev.target.closest('[data-palette]');
+        if (pal) { state.a11yPalette = pal.dataset.palette === 'a11y'; applyDisplay(); return; }
+        const fnt = ev.target.closest('[data-font]');
+        if (fnt) { state.fontSize = fnt.dataset.font; applyDisplay(); }
+      });
+    }
+
+    // 关系过滤（边的类型）：亲缘桶 + 线条样式 + 快捷预设
+    const epPanel = document.getElementById('edge-filter-panel');
+    if (epPanel) {
+      document.addEventListener('click', (ev) => {
+        if (ev.target.closest('#edge-filter-btn')) { epPanel.hidden = !epPanel.hidden; return; }
+        if (!epPanel.hidden && !ev.target.closest('#edge-filter-panel')) epPanel.hidden = true;
+        const kin = ev.target.closest('[data-edge-kin]');
+        if (kin) {
+          if (kin.checked) state.edgeKins.add(kin.dataset.edgeKin); else state.edgeKins.delete(kin.dataset.edgeKin);
+          applyEdgeFilter();
+          return;
+        }
+        const st = ev.target.closest('[data-edge-style]');
+        if (st) {
+          if (st.checked) state.edgeStyles.add(st.dataset.edgeStyle); else state.edgeStyles.delete(st.dataset.edgeStyle);
+          applyEdgeFilter();
+          return;
+        }
+        const pre = ev.target.closest('[data-edge-preset]');
+        if (pre) {
+          const k = pre.dataset.edgePreset;
+          if (k === 'kin') { state.edgeKins = new Set(['blood', 'marriage', 'adopt', 'sworn']); state.edgeStyles = new Set(); }
+          else if (k === 'enemy') { state.edgeStyles = new Set(['dashed']); state.edgeKins = new Set(); }
+          else { state.edgeStyles = new Set(); state.edgeKins = new Set(); }
+          applyEdgeFilter();
+          return;
+        }
+        if (ev.target.closest('[data-edge-reset]')) {
+          state.edgeStyles = new Set(); state.edgeKins = new Set();
+          applyEdgeFilter();
+        }
+      });
+    }
+    const derivedBox = document.getElementById('edge-derived');
+    if (derivedBox) derivedBox.addEventListener('change', () => {
+      state.showDerived = derivedBox.checked;
+      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      syncDerivedBtn();
+      if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
+      refreshPanel();
+      updateCountHint();
+    });
+
+    // 人物卡 PNG（面板里「🖼 人物卡」）
+    document.addEventListener('click', async (ev) => {
+      const card = ev.target.closest('[data-char-card]');
+      if (!card) return;
+      const id = card.dataset.charCard;
+      card.disabled = true;
+      try {
+        const url = await buildCharacterPng(id);
+        if (!url) { toast('这张卡暂时生成不了'); return; }
+        const a = document.createElement('a');
+        a.href = url; a.download = `${charName(id)}-人物卡.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        toast(`已导出「${charName(id)}」人物卡`);
+      } catch (e) {
+        toast('导出失败：' + ((e && e.message) || e));
+      } finally {
+        card.disabled = false;
+      }
+    });
 
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
@@ -1856,15 +2744,59 @@
     if (chPrev) chPrev.addEventListener('click', () => goChapter(state.chapter - 1));
     if (chNext) chNext.addEventListener('click', () => goChapter(state.chapter + 1));
     if (chSel) chSel.addEventListener('change', () => goChapter(Number(chSel.value)));
+
+    // 时间旅行：把图谱拨回第 N 章（滑块拖动时节流重绘）
+    const timeBtn = document.getElementById('time-btn');
+    const timeSlider = document.getElementById('time-slider');
+    if (timeBtn) timeBtn.addEventListener('click', () => {
+      state.timeTravel = !state.timeTravel;
+      if (state.timeTravel) state.chapter = Math.min(state.chapter, timeCeiling());
+      applyTimeTravel();
+    });
+    if (timeSlider) {
+      let sliderTimer = null;
+      timeSlider.addEventListener('input', () => {
+        state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(timeSlider.value) || 1));
+        try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch (e) { /* 忽略 */ }
+        syncTimeTravelUI();
+        renderChapter();
+        clearTimeout(sliderTimer);
+        sliderTimer = setTimeout(() => {
+          applyTimeTravelGraph();
+          renderDatalist();
+          renderPathSelects();
+          renderTimeline();
+          renderPlaceSelect();
+          updateCountHint();
+          refreshPanel();
+        }, 90);
+      });
+    }
     document.addEventListener('keydown', (ev) => {
       if (ev.target && /^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) return;
-      const modalOpen = ['#export-modal', '#spoiler-modal', '#help-modal'].some((s) => {
+      const modalOpen = ['#export-modal', '#spoiler-modal', '#help-modal', '#ai-modal'].some((s) => {
         const el = document.querySelector(s); return el && !el.hidden;
       });
       if (modalOpen) return;
+      const graphEl = document.getElementById('graph');
+      const onGraph = graphEl && document.activeElement === graphEl;
+      if (onGraph) {
+        // 图聚焦时：方向键在人物间移动、回车看档案、Esc 取消选中
+        if (/^Arrow(Left|Right|Up|Down)$/.test(ev.key)) { ev.preventDefault(); moveCursor(ev.key); return; }
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          if (state.kbCursor) selectCharacter(state.kbCursor);
+          return;
+        }
+        if (ev.key === 'Escape') { state.kbCursor = null; clearHighlight(); updateAria(); return; }
+        return;
+      }
       if (ev.key === 'ArrowLeft') goChapter(state.chapter - 1);
       if (ev.key === 'ArrowRight') goChapter(state.chapter + 1);
     });
+    // 点一下图就聚焦它，之后方向键直接可用
+    const graphEl = document.getElementById('graph');
+    if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ } });
 
     // 导出 / 分享
     const exportModal = document.getElementById('export-modal');
@@ -1882,6 +2814,27 @@
       });
       document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
     }
+
+    // AI 讲解（不剧透）
+    document.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-ai-settings]')) { openAiModal(); return; }
+      if (ev.target.closest('[data-ai-close]')) { const m = document.getElementById('ai-modal'); if (m) m.hidden = true; return; }
+      if (ev.target.closest('#ai-save')) { saveAiConfig(); return; }
+      const btn = ev.target.closest('[data-ai]');
+      if (!btn) return;
+      if (btn.dataset.ai === 'chain') {
+        const a = $('#path-a').value, b = $('#path-b').value;
+        if (!a || !b) { toast('先在底部选两个人'); return; }
+        const steps = bfs(a, b);
+        if (!steps) { toast('在图里找不到通路'); return; }
+        aiExplain('chain', steps);
+      } else if (btn.dataset.ai === 'char') {
+        const c = state.byId.get(btn.dataset.id || '');
+        if (c) aiExplain('char', c);
+      }
+    });
+    const aiModal = document.getElementById('ai-modal');
+    if (aiModal) document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !aiModal.hidden) aiModal.hidden = true; });
 
     const themeBtn = $('#theme-btn');
     const setTheme = (dark) => {
@@ -1915,10 +2868,36 @@
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
     goChapter: (n) => goChapter(n),
     chapterDigest: (n) => chapterDigest(n),
+    asOf: () => asOf(),
+    setTimeTravel: (on, ch) => {
+      state.timeTravel = !!on;
+      if (typeof ch === 'number') state.chapter = ch;
+      applyTimeTravel();
+      return { on: state.timeTravel, chapter: state.chapter };
+    },
     exportSelection: () => exportSelection(),
     buildStandaloneHtml: () => buildStandaloneHtml(),
     buildSharePng: () => buildSharePng(),
     buildPrintSvg: () => buildPrintSvg(),
+    buildCharacterPng: (id) => buildCharacterPng(id),
+    buildCompanionEpub: () => buildCompanionEpub(),
+    aiConfig: () => aiConfig(),
+    aiPrompt: (kind, payload) => aiPrompt(kind, payload),
+    aiExplain: (kind, payload) => aiExplain(kind, payload),
+    bfs: (a, b) => bfs(a, b),
+    applyEdgeFilter: (styles, kins) => {
+      state.edgeStyles = new Set(styles || []);
+      state.edgeKins = new Set(kins || []);
+      applyEdgeFilter();
+    },
+    edgeFilter: () => ({ styles: [...state.edgeStyles], kins: [...state.edgeKins] }),
+    moveCursor: (key) => { moveCursor(key); return state.kbCursor; },
+    kbCursor: () => state.kbCursor,
+    ariaLabel: () => graphAriaLabel(),
+    announce: (m) => announce(m),
+    setPalette: (on) => { state.a11yPalette = !!on; applyDisplay(); return state.a11yPalette; },
+    setFontSize: (s) => { state.fontSize = ['s', 'm', 'l'].includes(s) ? s : 'm'; applyDisplay(); return state.fontSize; },
+    fontScale: () => fontScale(),
     runExport: (kind) => runExport(kind),
   };
 

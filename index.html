@@ -4,13 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>书脉 BookAtlas · 人物关系与事件图谱</title>
-  <meta name="description" content="把一本书的人物关系、定义关系的小事件与标志性事件放在一张图上，支持两人关系查询。">
+  <meta name="description" content="把一本书的人物关系、定义关系的小事件与标志性事件放在一张图上，支持两人关系查询、剧透保护与时间旅行。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="书脉 BookAtlas">
+  <meta property="og:title" content="书脉 BookAtlas · 把一本书读成一张图">
+  <meta property="og:description" content="人物关系网络 + 事件轴 + 两人关系最短链 + 剧透保护 + 时间旅行：同盟变反目会随时间切换。已收录《百年孤独》《罪与罚》《三国演义》，自带本地编辑器与数据体检。">
+  <meta property="og:url" content="https://wakennorman.github.io/book-atlas/">
+  <meta property="og:image" content="https://wakennorman.github.io/book-atlas/assets/og-cover.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://wakennorman.github.io/book-atlas/assets/og-cover.jpg">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/favicon.ico" sizes="48x48">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=59">
+  <link rel="stylesheet" href="css/style.css?v=68">
 </head>
 <body>
 
@@ -65,13 +75,62 @@
         <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
         <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
         <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）">族谱补全：显示</button>
+        <button id="edge-filter-btn" class="ghost" type="button" title="按关系类型过滤：只看亲缘 / 只看对立 / 隐藏某类线条">关系：全部</button>
+        <button id="display-btn" class="ghost" type="button" title="显示设置：色盲友好配色 / 字号">♿ 显示</button>
+        <div id="display-panel" class="edge-panel display-panel" hidden>
+          <div class="ep-group">
+            <b>配色</b>
+            <div class="disp-row">
+              <button class="ghost tiny" type="button" data-palette="default">默认</button>
+              <button class="ghost tiny" type="button" data-palette="a11y">色盲友好</button>
+            </div>
+            <p class="hint">色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。</p>
+          </div>
+          <div class="ep-group">
+            <b>字号</b>
+            <div class="disp-row">
+              <button class="ghost tiny" type="button" data-font="s">小</button>
+              <button class="ghost tiny" type="button" data-font="m">中</button>
+              <button class="ghost tiny" type="button" data-font="l">大</button>
+            </div>
+            <p class="hint">影响图上的名字与右侧面板文字（设置按书存在本机）。</p>
+          </div>
+        </div>
+        <div id="edge-filter-panel" class="edge-panel" hidden>
+          <div class="ep-group">
+            <b>亲缘</b>
+            <label><input type="checkbox" data-edge-kin="blood">血缘</label>
+            <label><input type="checkbox" data-edge-kin="marriage">婚姻 · 姻亲</label>
+            <label><input type="checkbox" data-edge-kin="adopt">收养 · 抚养 · 继亲</label>
+            <label><input type="checkbox" data-edge-kin="sworn">结义</label>
+            <label><input type="checkbox" data-edge-kin="none">无亲缘标注（朋友 / 君臣 / 敌对…）</label>
+          </div>
+          <div class="ep-group">
+            <b>线条</b>
+            <label><input type="checkbox" data-edge-style="solid">实线 · 亲缘 / 同盟</label>
+            <label><input type="checkbox" data-edge-style="dashed">虚线 · 对立 / 伤害</label>
+            <label><input type="checkbox" data-edge-style="dotted">点线 · 情人 / 过去 / 间接</label>
+          </div>
+          <div class="ep-group">
+            <b>其它</b>
+            <label><input type="checkbox" id="edge-derived">族谱补全（推导的祖孙 / 叔侄）</label>
+          </div>
+          <div class="ep-presets">
+            <button class="ghost tiny" type="button" data-edge-preset="kin">只看亲缘</button>
+            <button class="ghost tiny" type="button" data-edge-preset="enemy">只看对立 · 伤害</button>
+            <button class="ghost tiny" type="button" data-edge-preset="reset">全部重置</button>
+          </div>
+          <p class="hint">勾选＝只显示勾选的类型；一个都不勾＝全部显示。两人关系（底部）也会跟着过滤。</p>
+        </div>
         <span id="count-hint" class="hint"></span>
         <span class="view-label shape-legend" title="形状区分：圆＝男，圆角方＝女（大小表示关系多少）"><i class="sh sh-m"></i>男 <i class="sh sh-f"></i>女</span>
       </div>
     </div>
 
     <div id="focus-bar" class="focus-bar" hidden></div>
-    <div id="graph" aria-label="人物关系网络图"></div>
+    <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
+    <p id="graph-kb-hint" class="sr-only">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
+    <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
     <div class="pathbar">
       <span class="pathbar-label">两人关系</span>
@@ -97,6 +156,11 @@
           <select id="ch-select" aria-label="跳到某一章" title="跳到某一章"></select>
           <button id="ch-next" class="ghost tiny" type="button" title="下一章">▶</button>
         </div>
+      </div>
+      <div class="ch-time">
+        <button id="time-btn" class="ghost tiny" type="button" title="把图谱拨回第 N 章：只画当时已经发生的关系（「同盟→反目」这类变化会跟着时间变）">🕰 时间旅行：关</button>
+        <input id="time-slider" type="range" min="1" max="20" value="1" step="1" hidden aria-label="时间滑块：拨到某一章">
+        <span id="time-hint" class="hint"></span>
       </div>
       <div id="chapter-body" class="ch-body"></div>
     </div>
@@ -299,7 +363,8 @@
         </div>
         <div class="help-text">
           <b>⑩ 读到哪儿了：第 N 章的世界</b>
-          <span>右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。</span>
+          <span>右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>
+          面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的关系（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。</span>
           <button type="button" class="ghost tiny" data-help-act="chapter">试一下：翻到第 1 章看看</button>
         </div>
       </div>
@@ -319,9 +384,80 @@
           <button type="button" class="ghost tiny" data-help-act="export">试一下：打开导出面板</button>
         </div>
       </div>
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
+            <circle cx="40" cy="26" r="8" fill="#c99a3f"/>
+            <circle cx="120" cy="26" r="8" fill="#c99a3f"/>
+            <path d="M48 26h64" stroke="#c99a3f" stroke-width="3"/>
+            <circle cx="40" cy="66" r="8" fill="#4a7fc4"/>
+            <circle cx="120" cy="66" r="8" fill="#4a7fc4"/>
+            <path class="hf-dashline" d="M48 66h64" stroke="#c0504d" stroke-width="3" stroke-dasharray="5 5"/>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>⑫ 只看亲缘线 / 只看对立线（关系过滤）</b>
+          <span>工具栏「关系：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
+          <button type="button" class="ghost tiny" data-help-act="edge">试一下：只看亲缘线</button>
+        </div>
+      </div>
+
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
+            <rect x="18" y="12" width="56" height="66" rx="8" fill="var(--panel-2)" stroke="var(--line)"/>
+            <circle cx="46" cy="32" r="10" fill="#c99a3f"/>
+            <path d="M28 54h36M28 64h26" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M86 30h40M86 44h28M86 58h34" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+            <circle class="hf-pulse" cx="138" cy="66" r="7" fill="#4c9f70"/>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>⑬ 人物志与人物卡</b>
+          <span>点任意人物：面板里除了档案与关系，还有<b>「他的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
+          <button type="button" class="ghost tiny" data-help-act="charcard">试一下：打开关系最多的人</button>
+        </div>
+      </div>
+      <div class="help-item">
+        <div class="help-fig">
+          <svg viewBox="0 0 160 90" aria-hidden="true">
+            <circle cx="34" cy="30" r="9" fill="#c99a3f"/>
+            <circle cx="126" cy="30" r="9" fill="#4a7fc4"/>
+            <path class="hf-trace" d="M43 30h74" stroke="#4c9f70" stroke-width="3" stroke-linecap="round"/>
+            <rect x="26" y="56" width="108" height="22" rx="6" fill="var(--panel-2)" stroke="var(--line)"/>
+            <path d="M36 67h60" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
+            <text x="120" y="72" font-size="11" fill="var(--muted)">🤖</text>
+          </svg>
+        </div>
+        <div class="help-text">
+          <b>⑭ AI 讲解（不剧透）</b>
+          <span>跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
+          <button type="button" class="ghost tiny" data-help-act="ai">试一下：打开 AI 设置</button>
+        </div>
+      </div>
     </div>
 
     <p class="hint" style="margin-top:12px">随时点「复位视图」或双击空白回到全貌；想再打开这份说明，点右上角「📖 怎么用」。</p>
+  </div>
+</div>
+
+<div id="ai-modal" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-title">
+    <div class="modal-head">
+      <h2 id="ai-title">🤖 AI 讲解设置</h2>
+      <button type="button" class="modal-close" data-ai-close="1" title="关闭">✕</button>
+    </div>
+    <p class="hint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
+    <div class="ai-form">
+      <label>接口地址<input id="ai-base" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
+      <label>模型<input id="ai-model" placeholder="deepseek-chat" autocomplete="off"></label>
+      <label>API Key<input id="ai-key" type="password" placeholder="sk-…" autocomplete="off"></label>
+    </div>
+    <p class="hint" id="ai-hint">DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。</p>
+    <div class="ai-actions">
+      <button class="primary" type="button" id="ai-save">保存到本机</button>
+      <button class="ghost" type="button" data-ai-close="1">取消</button>
+    </div>
   </div>
 </div>
 
@@ -348,6 +484,10 @@
       <button class="spoiler-opt" type="button" data-export="json">
         <b>④ 数据 JSON</b>
         <span>这本书的原始数据：可以自己改，也可以拖进编辑器接着整理。</span>
+      </button>
+      <button class="spoiler-opt" type="button" data-export="epub">
+        <b>⑤ 阅读伴侣 EPUB —— 传进微信读书</b>
+        <span>关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
       </button>
     </div>
     <p class="hint" id="export-hint"></p>
@@ -377,6 +517,7 @@
 </div>
 
 <script src="vendor/echarts.min.js"></script>
-<script src="js/app.js?v=59"></script>
+<script src="vendor/fflate.min.js"></script>
+<script src="js/app.js?v=68"></script>
 </body>
 </html>

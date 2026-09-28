@@ -1,0 +1,192 @@
+<view class="page">
+  <!-- 顶部工具栏 -->
+  <view class="topbar">
+    <picker class="pill" mode="selector" range="{{bookTitles}}" value="{{bookIndex}}" bindchange="onBook">
+      <view class="pill-in">📚 {{bookTitles[bookIndex]}}</view>
+    </picker>
+    <view class="pill" bindtap="cycleLayout"><view class="pill-in">布局：{{layoutLabel}}</view></view>
+    <view class="pill" bindtap="cycleSize"><view class="pill-in">人数：{{sizeLabel}}</view></view>
+    <view class="pill {{showMinor ? 'on' : ''}}" bindtap="toggleMinor"><view class="pill-in">次要：{{showMinor ? '显示' : '隐藏'}}</view></view>
+    <view class="pill {{showMentioned ? 'on' : ''}}" bindtap="toggleMentioned"><view class="pill-in">提及：{{showMentioned ? '显示' : '隐藏'}}</view></view>
+    <view class="pill {{showDerived ? 'on' : ''}}" bindtap="toggleDerived"><view class="pill-in">推导：{{showDerived ? '显示' : '隐藏'}}</view></view>
+    <view class="pill {{allLabels ? 'on' : ''}}" bindtap="toggleLabels"><view class="pill-in">标签：{{allLabels ? '全部' : '主要'}}</view></view>
+    <view class="pill" bindtap="makeShareCard"><view class="pill-in">🖼 分享图</view></view>
+    <view class="pill {{paletteOn || fontSize !== 'm' ? 'on' : ''}}" bindtap="openDisplay"><view class="pill-in">♿ 显示</view></view>
+    <picker class="pill" mode="selector" range="{{spoilerOptions}}" value="{{progress === null ? 0 : progress}}" bindchange="onSpoiler">
+      <view class="pill-in">{{progress === null ? '🔓 剧透保护：关' : '🔒 读到第 ' + progress + ' 章'}}</view>
+    </picker>
+  </view>
+
+  <!-- 搜索 + 两人关系 + 关系过滤 -->
+  <view class="searchbar">
+    <input class="sinput" value="{{searchText}}" placeholder="搜人物：上校 / 孔明 / 乌苏拉…"
+      bindinput="onSearchInput" bindconfirm="onSearchConfirm" confirm-type="search" />
+    <view class="pill small" bindtap="onSearchConfirm"><view class="pill-in">🔍 搜</view></view>
+  </view>
+  <view class="pathbar">
+    <view class="pill small" bindtap="openPathPick" data-which="A">
+      <view class="pill-in">{{pathALabel}}</view>
+    </view>
+    <text class="arrow">→</text>
+    <view class="pill small" bindtap="openPathPick" data-which="B">
+      <view class="pill-in">{{pathBLabel}}</view>
+    </view>
+    <view class="pill small" bindtap="runPath"><view class="pill-in">查询</view></view>
+    <view class="pill small" bindtap="clearPath"><view class="pill-in">清除</view></view>
+    <view class="pill small {{edgeFilterLabel === '关系：全部' ? '' : 'on'}}" bindtap="openFilter">
+      <view class="pill-in">{{edgeFilterLabel}}</view>
+    </view>
+    <text class="hint">{{pathHint}}</text>
+  </view>
+
+  <!-- 章节条 + 时间旅行 -->
+  <view class="chapterbar">
+    <view class="cbtn" bindtap="prevChapter">◀</view>
+    <view class="ctext" bindtap="openChapter">📖 第 {{chapter}} 章<text class="more"> · 看这一章</text></view>
+    <view class="cbtn" bindtap="nextChapter">▶</view>
+    <view class="pill small {{timeTravel ? 'on' : ''}}" bindtap="toggleTime"><view class="pill-in">🕰 时间旅行</view></view>
+    <view class="pill small" bindtap="markRead"><view class="pill-in">✓ 我读到这一章了</view></view>
+  </view>
+  <view class="timebar" wx:if="{{timeTravel}}">
+    <slider class="tslider" min="1" max="{{timeCeil}}" value="{{chapter}}" activeColor="#c99a3f" block-size="18"
+      bindchanging="onTimeSlide" bindchange="onTimeSlide" />
+    <text class="thint">图谱只画当时已发生的关系</text>
+  </view>
+
+  <!-- 图谱 -->
+  <canvas type="2d" id="graph" class="canvas"
+    bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
+
+  <!-- 显示设置（无障碍） -->
+  <view class="sheet" wx:if="{{displayOpen}}">
+    <view class="sheet-head">
+      <view class="sheet-title">显示设置</view>
+      <view class="sheet-close" bindtap="closeDisplay">✕</view>
+    </view>
+    <view class="h3">配色</view>
+    <view class="chips">
+      <text class="chip {{paletteOn ? '' : 'on'}}" data-palette="default" bindtap="setPalette">默认</text>
+      <text class="chip {{paletteOn ? 'on' : ''}}" data-palette="a11y" bindtap="setPalette">色盲友好</text>
+    </view>
+    <view class="hint">色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。</view>
+    <view class="h3">字号</view>
+    <view class="chips">
+      <text class="chip {{fontSize === 's' ? 'on' : ''}}" data-font="s" bindtap="setFont">小</text>
+      <text class="chip {{fontSize === 'm' ? 'on' : ''}}" data-font="m" bindtap="setFont">中</text>
+      <text class="chip {{fontSize === 'l' ? 'on' : ''}}" data-font="l" bindtap="setFont">大</text>
+    </view>
+    <view class="hint">影响图上的名字（设置存在本机）</view>
+  </view>
+
+  <!-- 选人物（两人关系用：可搜索，871 人也不用滚轮） -->
+  <view class="sheet" wx:if="{{pathPick}}">
+    <view class="sheet-head">
+      <view class="sheet-title">选人物 {{pathPick}}</view>
+      <view class="sheet-close" bindtap="closePathPick">✕</view>
+    </view>
+    <input class="sinput" value="{{pathQuery}}" placeholder="搜名字 / 字号 / 别名…" bindinput="onPathQuery" confirm-type="search" />
+    <view class="pick-list">
+      <view class="pick-item" wx:for="{{pathList}}" wx:key="id" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="pickPath">
+        <text>{{item.name}}</text><text class="deg">{{item.deg}} 条关系</text>
+      </view>
+      <view class="hint" wx:if="{{!pathList.length}}">没有匹配的人（或被剧透保护挡住了）</view>
+    </view>
+  </view>
+
+  <!-- 关系过滤面板 -->
+  <view class="sheet" wx:if="{{filterOpen}}">
+    <view class="sheet-head">
+      <view class="sheet-title">关系过滤</view>
+      <view class="sheet-close" bindtap="closeFilter">✕</view>
+    </view>
+    <view class="sheet-sub">勾选＝只显示勾选的类型；一个都不勾＝全部显示（两人关系也跟着过滤）</view>
+    <view class="h3">亲缘</view>
+    <checkbox-group bindchange="onKinChange">
+      <label class="chk" wx:for="{{kinOptions}}" wx:key="v">
+        <checkbox value="{{item.v}}" checked="{{item.checked}}" />{{item.t}}
+      </label>
+    </checkbox-group>
+    <view class="h3">线条</view>
+    <checkbox-group bindchange="onStyleChange">
+      <label class="chk" wx:for="{{styleOptions}}" wx:key="v">
+        <checkbox value="{{item.v}}" checked="{{item.checked}}" />{{item.t}}
+      </label>
+    </checkbox-group>
+    <view class="chips" style="margin-top:20rpx">
+      <text class="chip" data-k="kin" bindtap="preset">只看亲缘</text>
+      <text class="chip" data-k="enemy" bindtap="preset">只看对立 · 伤害</text>
+      <text class="chip" data-k="reset" bindtap="preset">全部重置</text>
+    </view>
+  </view>
+
+  <!-- 底部面板 -->
+  <view class="sheet" wx:if="{{panel}}">
+    <view class="sheet-head">
+      <view class="sheet-title">{{panel.title}}</view>
+      <view class="sheet-close" bindtap="closePanel">✕</view>
+    </view>
+    <view class="sheet-sub">{{panel.sub}}</view>
+
+    <block wx:if="{{panel.kind === 'char'}}">
+      <view class="aliases" wx:if="{{panel.aliases}}">别名：{{panel.aliases}}</view>
+      <view class="desc">{{panel.desc}}</view>
+      <view class="fate">结局：{{panel.fate}}</view>
+      <view class="h3">他的一生（按章）</view>
+      <view class="life" wx:if="{{panel.life.length}}">
+        <view class="life-item" wx:for="{{panel.life}}" wx:key="index">
+          <text class="ch">第 {{item.ch}} 章</text>{{item.name}}
+          <view class="ev">{{item.summary}}</view>
+        </view>
+      </view>
+      <view class="hint" wx:else>暂无（或都在你读到的进度之后）</view>
+      <view class="h3">与谁有关 · 凭什么事件（{{panel.relCount}} 条）</view>
+      <view class="rel" wx:for="{{panel.rels}}" wx:key="index">
+        <view class="rel-head">{{item.other}} <text class="type">— {{item.type}} —</text>
+          <text class="badge" wx:if="{{item.kin}}">{{item.kin}}</text>
+          <text class="badge" wx:if="{{item.period}}">{{item.period}}</text>
+        </view>
+        <view class="ev" wx:if="{{item.ev}}">{{item.ev}}</view>
+      </view>
+      <view class="hint" wx:if="{{panel.lockedRels}}">🔒 还有 {{panel.lockedRels}} 条关系在你读到的进度之后</view>
+    </block>
+
+    <block wx:if="{{panel.kind === 'rel'}}">
+      <view class="ev" wx:for="{{panel.evs}}" wx:key="index">
+        · {{item.text}}<text class="badge" wx:if="{{item.place}}">📍{{item.place}}</text><text class="badge" wx:if="{{item.chapter}}">{{item.chapter}}</text>
+      </view>
+      <view class="hint" wx:if="{{!panel.evs.length}}">暂无记录</view>
+    </block>
+
+    <block wx:if="{{panel.kind === 'path'}}">
+      <view class="rel" wx:for="{{panel.steps}}" wx:key="index">
+        <view class="rel-head">
+          <text class="idx">{{item.idx}}</text>
+          {{item.from}} <text class="type">— {{item.type}} —</text> {{item.to}}
+          <text class="badge" wx:if="{{item.kin}}">{{item.kin}}</text>
+          <text class="badge" wx:if="{{item.period}}">{{item.period}}</text>
+        </view>
+        <view class="ev" wx:for="{{item.evs}}" wx:for-item="ev" wx:key="index">
+          · {{ev.text}}<text class="badge" wx:if="{{ev.place}}">📍{{ev.place}}</text><text class="badge" wx:if="{{ev.chapter}}">{{ev.chapter}}</text>
+        </view>
+        <view class="hint" wx:if="{{item.hidden}}">🔒 还有 {{item.hidden}} 条事件在你读到的进度之后</view>
+      </view>
+    </block>
+
+    <block wx:if="{{panel.kind === 'chapter'}}">
+      <view class="locked" wx:if="{{panel.locked}}">🔒 这一章还没解锁——读完再来看。</view>
+      <block wx:else>
+        <view class="h3" wx:if="{{panel.newChars.length}}">✨ 初次登场</view>
+        <view class="chips"><text class="chip" wx:for="{{panel.newChars}}" wx:key="index">{{item}}</text></view>
+        <view class="h3" wx:if="{{panel.newRels.length}}">🤝 本章新关系</view>
+        <view class="rel" wx:for="{{panel.newRels}}" wx:key="index">· {{item}}</view>
+        <view class="h3" wx:if="{{panel.events.length}}">⚡ 本章事件</view>
+        <view class="life-item" wx:for="{{panel.events}}" wx:key="index">
+          <text class="ch">第 {{item.ch}} 章</text>{{item.name}}
+          <view class="ev">{{item.summary}}</view>
+        </view>
+        <view class="h3" wx:if="{{panel.places.length}}">📍 出现的地点</view>
+        <view class="chips"><text class="chip" wx:for="{{panel.places}}" wx:key="index">{{item}}</text></view>
+      </block>
+    </block>
+  </view>
+</view>

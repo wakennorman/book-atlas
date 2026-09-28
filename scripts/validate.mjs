@@ -82,6 +82,12 @@ function validate(file) {
 
   const rels = book.relations || [];
   if (!rels.length) err('relations 为空');
+  // 数据格式版本：让以后改 schema 时能识别老数据
+  const SCHEMA = 2;
+  const sv = book.meta && book.meta.schemaVersion;
+  if (sv === undefined) warn('meta.schemaVersion 缺失（当前格式建议写 2）');
+  else if (typeof sv !== 'number' || sv < 1) warn(`meta.schemaVersion「${sv}」不合法（应为正整数）`);
+  else if (sv > SCHEMA) warn(`meta.schemaVersion=${sv} 比本工具支持的 ${SCHEMA} 新——升级脚本再跑`);
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     if (!ids.has(r.from)) err(`${where} 的 from 不存在`);
@@ -93,6 +99,22 @@ function validate(file) {
     for (const e of r.events || []) {
       if (!e.text) err(`${where} 的事件缺少 text`);
       else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`);
+    }
+    // 时间区间（时间旅行用）：fromCh＝成立章、toCh＝结束章（独占）
+    if (r.fromCh !== undefined && (!Number.isInteger(r.fromCh) || r.fromCh < 1)) err(`${where} 的 fromCh 必须是 ≥1 的整数`);
+    if (r.toCh !== undefined && (!Number.isInteger(r.toCh) || r.toCh < 1)) err(`${where} 的 toCh 必须是 ≥1 的整数`);
+    if (typeof r.fromCh === 'number' && typeof r.toCh === 'number' && r.toCh <= r.fromCh) {
+      err(`${where} 的 toCh（${r.toCh}）必须大于 fromCh（${r.fromCh}）——区间是 [fromCh, toCh)`);
+    }
+    if (typeof r.fromCh === 'number' || typeof r.toCh === 'number') {
+      const lo = typeof r.fromCh === 'number' ? r.fromCh : 0;
+      const hi = typeof r.toCh === 'number' ? r.toCh - 1 : Infinity;
+      for (const e of r.events || []) {
+        const n = (String(e.chapter || '').match(/\d+/) || [null])[0];
+        if (n === null) continue;
+        const num = Number(n);
+        if (num < lo || num > hi) warn(`${where} 的第 ${num} 章事件落在时间区间 [${lo}, ${hi === Infinity ? '∞' : hi}] 之外（时间旅行时这条事件看不到）`);
+      }
     }
   }
 
@@ -207,6 +229,12 @@ function validate(file) {
   if (kinRels.length) {
     const detail = KIN_KEYS.filter((k) => kinRels.some((r) => r.kin === k)).map((k) => `${KIN[k]} ${kinRels.filter((r) => r.kin === k).length}`).join(' · ');
     console.log(`  ℹ 亲属关系 ${kinRels.length} 条：${detail}`);
+  }
+  // 时间区间（时间旅行）
+  const periodRels = rels.filter((r) => typeof r.fromCh === 'number' || typeof r.toCh === 'number');
+  if (periodRels.length) {
+    const closed = periodRels.filter((r) => typeof r.toCh === 'number').length;
+    console.log(`  ℹ 时间区间 ${periodRels.length} 条（其中 ${closed} 条有结束章）——时间旅行会按章只画当时那一段`);
   }
 
   // ---------- 文案规范检查（v0.3 起：防「主语跳来跳去 / 称谓不明 / 提到的人不在 chars 里」） ----------
