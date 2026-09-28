@@ -34,6 +34,9 @@ jobs:
       - name: 网页版核心逻辑冒烟测试
         run: node test/smoke.mjs
 
+      - name: 共享核心逻辑单元测试
+        run: node test/core.mjs
+
       - name: Web E2E 冒烟测试
         run: node test/e2e.mjs
 

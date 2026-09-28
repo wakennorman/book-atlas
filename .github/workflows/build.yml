@@ -1,0 +1,35 @@
+name: 构建（压缩 JS/CSS）
+
+# 目的：push 到 main 时自动压缩 JS/CSS，提交到 dist/ 目录
+# 本地开发时引用未压缩的文件，CI 构建后引用压缩后的文件
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 压缩 JS
+        run: npx esbuild js/app.js js/editor.js js/export.js js/ai.js --minify --outdir=dist/js --out-extension:.js=.min.js
+
+      - name: 压缩 CSS
+        run: npx esbuild css/style.css css/editor.css --minify --outdir=dist/css
+
+      - name: 提交压缩文件
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/
+          git diff --staged --quiet || git commit -m "build: 压缩 JS/CSS"
+          git push

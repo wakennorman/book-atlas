@@ -53030,7 +53030,8 @@
       "impact": "刘备得谋主，新野始有军师。",
       "chars": [
         "liu-bei",
-        "zhuge-liang"
+        "zhuge-liang",
+        "xu-shu"
       ],
       "phase": "p3",
       "order": 10
@@ -53048,7 +53049,8 @@
         "zhang-fei",
         "lv-kuang",
         "lv-xiang",
-        "cao-ren"
+        "cao-ren",
+        "xu-shu"
       ],
       "phase": "p3",
       "order": 11
@@ -53413,7 +53415,8 @@
       "impact": "孙刘联盟成形，奠定赤壁之战基础",
       "chars": [
         "zhuge-liang",
-        "sun-quan"
+        "sun-quan",
+        "liu-xie"
       ],
       "phase": "p3",
       "order": 59
@@ -54939,7 +54942,8 @@
         "sun-furen",
         "liu-shan",
         "zhou-shan",
-        "zhu-rong-furen"
+        "zhu-rong-furen",
+        "wu-tai-furen"
       ],
       "phase": "p4",
       "order": 63
@@ -55928,7 +55932,8 @@
         "zhao-yun",
         "xu-huang",
         "liu-bei",
-        "huang-zhong"
+        "huang-zhong",
+        "wang-ping"
       ],
       "phase": "p4",
       "order": 127
@@ -56608,7 +56613,8 @@
         "sun-huan",
         "li-yi",
         "xie-jing",
-        "wu-ban"
+        "wu-ban",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p4",
       "order": 191
@@ -56622,7 +56628,8 @@
       "chars": [
         "huang-zhong",
         "liu-bei",
-        "guan-xing"
+        "guan-xing",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p4",
       "order": 192
@@ -56783,7 +56790,8 @@
       "chars": [
         "liu-bei",
         "guan-xing",
-        "wu-ban"
+        "wu-ban",
+        "zhang-bao-zhangfei"
       ],
       "quote": "父丧未远而犹如此，况日后乎？",
       "phase": "p4",
@@ -57133,7 +57141,8 @@
         "dong-tu-na",
         "a-hui-nan",
         "zhang-yi-shu",
-        "meng-huo"
+        "meng-huo",
+        "wang-ping"
       ],
       "phase": "p5",
       "order": 10
@@ -57273,7 +57282,8 @@
         "zhou-tai",
         "guan-xing",
         "xia-xun",
-        "zhou-ping"
+        "zhou-ping",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p4",
       "order": 194
@@ -57319,7 +57329,8 @@
         "zhang-fei",
         "liu-bei",
         "fan-jiang",
-        "zhang-da"
+        "zhang-da",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p4",
       "order": 197
@@ -57736,7 +57747,8 @@
       "summary": "王平军由西路入，误饮哑泉，皆不能言，孔明大惊。",
       "impact": "蜀军中毒失声，平蛮受阻。",
       "chars": [
-        "zhuge-liang"
+        "zhuge-liang",
+        "wang-ping"
       ],
       "phase": "p5",
       "order": 21
@@ -57867,7 +57879,8 @@
         "zhao-yun",
         "zhang-bao",
         "guan-xing",
-        "xiahou-mao"
+        "xiahou-mao",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p5",
       "order": 37
@@ -57898,7 +57911,8 @@
         "zhang-bao",
         "zhuge-liang",
         "xiahou-mao",
-        "cui-liang"
+        "cui-liang",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p5",
       "order": 39
@@ -58054,7 +58068,8 @@
       "impact": "孔明病退回汉中，蜀军暂停北伐。",
       "chars": [
         "zhuge-liang",
-        "si-ma-yi"
+        "si-ma-yi",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p5",
       "order": 77
@@ -58083,7 +58098,8 @@
       "impact": "街亭成蜀军咽喉要害，为后文失守埋患。",
       "chars": [
         "zhuge-liang",
-        "ma-su"
+        "ma-su",
+        "wang-ping"
       ],
       "phase": "p5",
       "order": 52
@@ -58123,7 +58139,8 @@
       "chars": [
         "guan-xing",
         "zhang-bao",
-        "zhuge-liang"
+        "zhuge-liang",
+        "zhang-bao-zhangfei"
       ],
       "phase": "p5",
       "order": 55
@@ -58305,7 +58322,8 @@
       "impact": "蜀军再度北伐。",
       "chars": [
         "zhuge-liang",
-        "jiang-wei"
+        "jiang-wei",
+        "wang-ping"
       ],
       "phase": "p5",
       "order": 72
@@ -59308,7 +59326,8 @@
         "sun-liang",
         "sun-chen",
         "quan-shang",
-        "liu-cheng"
+        "liu-cheng",
+        "sun-xiu"
       ],
       "phase": "p6",
       "order": 49
@@ -60548,7 +60567,8 @@
         "si-ma-yi",
         "zhuge-liang",
         "guo-huai",
-        "zhang-ni"
+        "zhang-ni",
+        "wang-ping"
       ],
       "phase": "p5",
       "order": 96
@@ -60734,7 +60754,8 @@
       "chars": [
         "pu-yang-xing",
         "sun-hao",
-        "zhang-bu"
+        "zhang-bu",
+        "sun-xiu"
       ],
       "phase": "p6",
       "order": 89
