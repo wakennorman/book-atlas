@@ -118,6 +118,21 @@
 2. 命令行再跑一遍：`node scripts/validate.mjs data/<slug>.json` 与 `node scripts/audit-search.mjs --all`（命令行比网页多几项高噪音的文案 lint）
 3. 把 JSON 放进 `data/`、在 `data/books.json` 登记一行，然后提 Issue / PR —— 写清**这本书的来源**（哪个译本 / 哪个电子版）与**校对方式**
 
+### 测试与代码检查
+
+```bash
+# 网页版核心逻辑冒烟（Node 跑，不需要浏览器）
+node test/smoke.mjs
+
+# 小程序页面逻辑冒烟（不需要微信开发者工具）
+node miniprogram/test/smoke.mjs
+
+# ESLint 代码检查（需要先 npm install）
+npm run lint
+```
+
+CI（`.github/workflows/check.yml`）会自动跑：JS 语法检查、ESLint、网页版冒烟、数据校验、搜索审计、小程序包同步检查、小程序冒烟。
+
 ### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
 
 浏览器里跑 120 回要一直开着标签页；命令行版把每章结果即时写进 `data/.gen-<slug>.json`，**断了能接着跑**：
@@ -282,12 +297,12 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/fix-parent-cycles.mjs` | 修亲子关系方向（人工核对表）+ 报告可疑方向 + 亲子环检测：`node scripts/fix-parent-cycles.mjs --all [--write]` |
 | `scripts/derive-kin.mjs` | 族谱补全：从亲子边推导祖孙/曾祖孙/叔侄等（`derived: true`，图上虚线+「推导」标）：`node scripts/derive-kin.mjs --all [--write]` |
 | `scripts/assign-phases.mjs` | 按 `phases[].from/to` 的章区间把事件归到阶段（逐章生成只有第 1 章输出 phase）：`node scripts/assign-phases.mjs data/xx.json [--write]` |
-| `scripts/_patch-relation-periods.mjs` | 给"同一对人、多条关系"标时间区间（按关系名+线型自动分段）：`node scripts/_patch-relation-periods.mjs [--write]` |
 | `scripts/make-miniprogram-packs.mjs` | 生成微信小程序的数据包（含预计算布局）：`node scripts/make-miniprogram-packs.mjs` |
 | `scripts/wholebook.mjs` | **整本生成（命令行版）**：逐章抽取 → 合并去重 → 写出数据；可 `--jobs` 并发、可断点续跑 |
 | `scripts/dedupe-chars.mjs` | 同名/别名人物合并（整本生成后必跑一遍）：`node scripts/dedupe-chars.mjs data/xx.json [--write]` |
 | `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
+| `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 73 [--dry-run]` |
 | `tools/local-sink.mjs` | 本地小接收器：编辑器「导出 JSON」直接写进 `data/`（无头浏览器里下载会落到别处）：`node tools/local-sink.mjs` |
 | `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），自动遵守 `.gitignore`，同时开/查 Pages |
 

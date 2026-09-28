@@ -1,0 +1,13 @@
+{
+  "name": "book-atlas",
+  "version": "0.72",
+  "private": true,
+  "description": "书脉 BookAtlas · 人物关系与事件图谱",
+  "scripts": {
+    "lint": "eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ --ext .js,.mjs",
+    "test": "node test/smoke.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

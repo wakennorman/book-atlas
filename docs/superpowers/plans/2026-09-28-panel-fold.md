@@ -995,7 +995,7 @@ Expected: `messages: []`。
 - Modify: `D:\Claude Code+DeepSeekV4\memory\book-atlas-project-2026-09-20.md`
 - Modify: `D:\Claude Code+DeepSeekV4\memory\MEMORY.md`
 
-- [ ] **Step 1: 重建发布包装脚本（带 BOM，中文消息不会被当 GBK）**
+- [x] **Step 1: 重建发布包装脚本（带 BOM，中文消息不会被当 GBK）**
 
 Run:
 ```powershell
@@ -1017,7 +1017,7 @@ Get-Content $ps1 -TotalCount 3
 ```
 Expected: 前 3 行是注释行 + `$Message = @'` + 中文消息首行（**不乱码**；乱码即说明 BOM 没写上，重跑）。
 
-- [ ] **Step 2: 执行发布**
+- [x] **Step 2: 执行发布**
 
 Run:
 ```powershell
@@ -1025,7 +1025,7 @@ Run:
 ```
 Expected: 退出码 0，输出含新的 commit sha / 成功提示；失败则读输出排错（绝不改用 git push）。
 
-- [ ] **Step 3: 线上复验（新标签页打开 live）**
+- [x] **Step 3: 线上复验（新标签页打开 live）**
 
 1. `tools.browser.tabs.open({ url: 'https://wakennorman.github.io/book-atlas/' })` → 记 `liveTabID`
 2. `tools.browser.evaluate`（缓存名；若返回 pending/未 resolve，隔几百毫秒再调一次直到拿到数组）:
@@ -1055,7 +1055,7 @@ Expected: `keys === ['bookatlas-v72']`（旧 v68 缓存已被 activate 删除）
 Expected: `foldAlive === true`、`visible === 6`、`n === 6`、`foot` 以 `再显示 20 条` 或 `⌄ 展开全部` 开头、`epubStillThere === true`（老功能回归）。
 4. `tools.browser.console({ tabID: liveTabID, level: 'error' })` → Expected: `messages: []`。
 
-- [ ] **Step 4: memory 编年史追加**
+- [x] **Step 4: memory 编年史追加**
 
 Edit `D:\Claude Code+DeepSeekV4\memory\book-atlas-project-2026-09-20.md` —— 追加到文件末尾：
 
@@ -1075,7 +1075,7 @@ Edit `D:\Claude Code+DeepSeekV4\memory\book-atlas-project-2026-09-20.md` —— 
 **关联：** [[book-atlas-project-2026-09-20]]
 ```
 
-- [ ] **Step 5: MEMORY.md 索引行更新**
+- [x] **Step 5: MEMORY.md 索引行更新**
 
 Edit `D:\Claude Code+DeepSeekV4\memory\MEMORY.md`：
 
@@ -1088,7 +1088,7 @@ newString:
 版本编年史 v0.19–v0.72（时间旅行/不剧透 AI/小程序/无障碍/EPUB 阅读伴侣/长列表展开收起）· **发版必同步三处版本号（index.html ?v= / sw CACHE / sw SHELL——v0.69–71 漏 bump 导致老访客停旧码）**
 ```
 
-- [ ] **Step 6: 收尾**
+- [x] **Step 6: 收尾**
 
 Run:
 ```powershell

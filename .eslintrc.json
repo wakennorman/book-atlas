@@ -1,0 +1,43 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "ignorePatterns": [
+    "vendor/",
+    "miniprogram/data/",
+    "node_modules/",
+    "research/",
+    "docs/"
+  ],
+  "rules": {
+    "no-undef": "error",
+    "no-unused-vars": ["warn", { "args": "none", "varsIgnorePattern": "^_" }],
+    "prefer-const": "warn",
+    "no-var": "warn",
+    "no-redeclare": "error",
+    "no-dupe-keys": "error",
+    "no-dupe-args": "error",
+    "no-unreachable": "warn",
+    "no-cond-assign": "error",
+    "no-constant-condition": "warn",
+    "no-dupe-else-if": "error",
+    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "no-extra-semi": "warn",
+    "no-func-assign": "error",
+    "no-import-assign": "error",
+    "no-setter-return": "error",
+    "no-sparse-arrays": "warn",
+    "no-template-curly-in-string": "off",
+    "no-unexpected-multiline": "warn",
+    "no-unsafe-negation": "warn",
+    "use-isnan": "error",
+    "valid-typeof": "error"
+  }
+}

@@ -21,9 +21,18 @@ jobs:
         run: |
           for f in js/app.js js/editor.js \
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
-                   miniprogram/pages/index/index.js miniprogram/app.js; do
+                   miniprogram/pages/index/index.js miniprogram/app.js \
+                   shared/graph-core.js scripts/bump-version.mjs test/smoke.mjs; do
             node --check "$f"
           done
+
+      - name: ESLint 代码检查
+        run: |
+          npm install
+          npx eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs --ignore-pattern vendor/ --ignore-pattern miniprogram/data/ --ignore-pattern node_modules/ --ignore-pattern research/ --ignore-pattern docs/ || true
+
+      - name: 网页版核心逻辑冒烟测试
+        run: node test/smoke.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all
