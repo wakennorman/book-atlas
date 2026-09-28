@@ -1,0 +1,23 @@
+书脉 BookAtlas - 页面测试指南
+
+要测试页面是否正常加载：
+
+1. 启动本地服务器：
+   python -m http.server 8765
+
+2. 在浏览器中访问：
+   http://localhost:8765/
+
+3. 检查控制台（F12）是否有错误：
+   - 如果有"数据加载失败：请用本地服务器打开" -> 确认使用的是 http://localhost:8765/ 而不是 file:///...
+   - 如果有 JavaScript 错误 -> 查看具体错误信息
+
+4. 清除 Service Worker（如果页面看起来是空壳）：
+   - F12 -> Application -> Service Workers
+   - 点击 "Unregister"
+   - Application -> Storage -> Clear site data
+   - 刷新页面
+
+5. 强制刷新：
+   Ctrl+Shift+R (Windows) / Cmd+Shift+R (Mac)
+

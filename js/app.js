@@ -340,10 +340,16 @@
         const res = await fetch('data/books.json', { cache: 'no-cache' });
         state.books = (await res.json()).books || [];
       } catch (e) {
-        $('#book-meta').textContent = '数据加载失败：请用本地服务器打开（见 README）';
+        console.error('Boot failed:', e);
+        const metaEl = $('#book-meta');
+        if (metaEl) metaEl.textContent = '数据加载失败：请用本地服务器打开（见 README）';
         return;
       }
-      if (!state.books.length) { $('#book-meta').textContent = '还没有书目数据'; return; }
+      if (!state.books.length) { 
+        const metaEl = $('#book-meta');
+        if (metaEl) metaEl.textContent = '还没有书目数据';
+        return; 
+      }
     }
 
     const params = new URLSearchParams(location.search);
