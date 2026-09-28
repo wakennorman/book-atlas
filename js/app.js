@@ -2112,8 +2112,18 @@
   }
 
   /* ---------------- AI 讲解（不剧透）：资料先在本地按进度过滤，再交给模型 ---------------- */
-  import { AI_DEFAULT_BASE, getAiConfig as _getAiConfig } from '../shared/ai-config.js';
-  const aiConfig = _getAiConfig;
+  const AI_DEFAULT_BASE = 'https://api.deepseek.com/v1';
+  const aiConfig = () => {
+    try {
+      return {
+        base: localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE,
+        model: localStorage.getItem('ba-ai-model') || 'deepseek-chat',
+        key: localStorage.getItem('ba-ai-key') || '',
+      };
+    } catch (e) {
+      return { base: AI_DEFAULT_BASE, model: 'deepseek-chat', key: '' };
+    }
+  };
 
   function openAiModal(msg) {
     const modal = document.getElementById('ai-modal');
