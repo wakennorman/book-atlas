@@ -483,6 +483,24 @@
       (links ? ` <span class="meta-links">${links}</span>` : '');
     document.title = `《${m.title || '书脉'}》· 书脉 BookAtlas`;
     $('#footer-note').textContent = `${m.note || ''} ${m.prophecy ? '「' + m.prophecy + '」' : ''}`.trim();
+    updateSearchPlaceholder();
+  }
+
+  // 搜索框 placeholder：取当前书关系数最多的前 3 个人，拼成提示
+  function updateSearchPlaceholder() {
+    const input = document.getElementById('search-input');
+    if (!input || !state.book) return;
+    const deg = new Map(state.book.characters.map((c) => [c.id, 0]));
+    for (const r of state.book.relations) {
+      if (deg.has(r.from)) deg.set(r.from, (deg.get(r.from) || 0) + 1);
+      if (deg.has(r.to)) deg.set(r.to, (deg.get(r.to) || 0) + 1);
+    }
+    const top = [...state.book.characters]
+      .sort((a, b) => (deg.get(b.id) || 0) - (deg.get(a.id) || 0))
+      .slice(0, 3)
+      .map((c) => c.name)
+      .join(' / ');
+    input.placeholder = top ? `搜人物：${top}…` : '搜人物…';
   }
 
   function renderLegend() {
@@ -2094,12 +2112,8 @@
   }
 
   /* ---------------- AI 讲解（不剧透）：资料先在本地按进度过滤，再交给模型 ---------------- */
-  const AI_DEFAULT_BASE = 'https://api.deepseek.com/v1';
-  const aiConfig = () => ({
-    base: (localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE).replace(/\/+$/, ''),
-    key: localStorage.getItem('ba-ai-key') || '',
-    model: localStorage.getItem('ba-ai-model') || 'deepseek-chat',
-  });
+  import { AI_DEFAULT_BASE, getAiConfig as _getAiConfig } from '../shared/ai-config.js';
+  const aiConfig = _getAiConfig;
 
   function openAiModal(msg) {
     const modal = document.getElementById('ai-modal');

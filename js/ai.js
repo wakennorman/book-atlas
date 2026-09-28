@@ -11,19 +11,9 @@
   if (!BA) return;
 
   const { state } = BA;
-  const AI_DEFAULT_BASE = 'https://api.deepseek.com/v1';
+  import { AI_DEFAULT_BASE, getAiConfig } from '../shared/ai-config.js';
 
-  function aiConfig() {
-    try {
-      return {
-        base: localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE,
-        model: localStorage.getItem('ba-ai-model') || 'deepseek-chat',
-        key: localStorage.getItem('ba-ai-key') || '',
-      };
-    } catch (e) {
-      return { base: AI_DEFAULT_BASE, model: 'deepseek-chat', key: '' };
-    }
-  }
+  const aiConfig = getAiConfig;
 
   function openAiModal(msg) {
     const modal = document.getElementById('ai-modal');
