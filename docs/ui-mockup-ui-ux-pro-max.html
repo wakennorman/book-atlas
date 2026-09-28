@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>书脉 BookAtlas · UI 模板 (ui-ux-pro-max)</title>
+<style>
+  /* ui-ux-pro-max 设计系统：Soft UI Evolution 风格 */
+  :root {
+    /* 配色：Soft UI Evolution - 柔和、高级、有机形状 */
+    --color-primary: #4A6CF7;
+    --color-primary-light: #6B8AFF;
+    --color-primary-dark: #3A5CE0;
+    --color-secondary: #6C757D;
+    --color-success: #28A745;
+    --color-warning: #FFC107;
+    --color-danger: #DC3545;
+    --color-bg: #F8F9FA;
+    --color-surface: #FFFFFF;
+    --color-surface-soft: #F1F3F5;
+    --color-text: #212529;
+    --color-text-muted: #6C757D;
+    --color-border: #DEE2E6;
+    --color-border-light: #E9ECEF;
+
+    /* 圆角 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+    /* 间距 */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+
+    /* 字体 */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    padding: var(--space-10);
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* 按钮系统 */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 40px;
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:hover {
+    background: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+  .btn-secondary:hover {
+    background: var(--color-surface-soft);
+    border-color: var(--color-text-muted);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text-muted);
+  }
+  .btn-ghost:hover {
+    background: var(--color-surface-soft);
+    color: var(--color-text);
+  }
+
+  /* 卡片 */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+    transition: all 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* 输入框 */
+  .input {
+    width: 100%;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background: var(--color-surface);
+    transition: all 0.2s ease;
+    min-height: 40px;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+  }
+  .input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* 工具栏 */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+    flex-wrap: wrap;
+  }
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--color-border);
+    margin: 0 var(--space-2);
+  }
+
+  /* 标签 */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-xl);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--color-surface-soft);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border-light);
+  }
+  .chip-primary {
+    background: rgba(74, 108, 247, 0.1);
+    color: var(--color-primary);
+    border-color: rgba(74, 108, 247, 0.2);
+  }
+  .chip-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--color-success);
+    border-color: rgba(40, 167, 69, 0.2);
+  }
+  .chip-warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    border-color: rgba(255, 193, 7, 0.2);
+  }
+
+  /* 区域 */
+  .section {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-4);
+  }
+
+  /* 字体层级 */
+  .font-h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .font-h2 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .font-body {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .font-caption {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="font-h1">书脉 BookAtlas · UI 模板 (ui-ux-pro-max)</h1>
+  <p class="font-caption" style="margin-bottom: var(--space-8)">基于 Soft UI Evolution 风格 - 柔和、高级、有机形状</p>
+
+  <!-- 按钮 -->
+  <div class="section">
+    <div class="section-title">按钮系统</div>
+    <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+      <button class="btn btn-primary">主要操作</button>
+      <button class="btn btn-secondary">次要操作</button>
+      <button class="btn btn-ghost">文字按钮</button>
+    </div>
+  </div>
+
+  <!-- 工具栏 -->
+  <div class="section">
+    <div class="section-title">工具栏</div>
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button class="btn btn-secondary" style="min-height:32px;padding:0 12px;font-size:13px">自由</button>
+        <button class="btn btn-ghost" style="min-height:32px;padding:0 12px;font-size:13px">代际·横</button>
+        <button class="btn btn-ghost" style="min-height:32px;padding:0 12px;font-size:13px">代际·纵</button>
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <button class="btn btn-ghost" style="min-height:32px;padding:0 12px;font-size:13px">重置</button>
+        <button class="btn btn-ghost" style="min-height:32px;padding:0 12px;font-size:13px">复位视图</button>
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <input class="input" style="min-height:32px;width:200px;font-size:13px" placeholder="搜人物…">
+        <button class="btn btn-primary" style="min-height:32px;padding:0 12px;font-size:13px">搜索</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 标签 -->
+  <div class="section">
+    <div class="section-title">标签 / 徽章</div>
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+      <span class="chip chip-primary">血缘</span>
+      <span class="chip chip-success">婚姻</span>
+      <span class="chip chip-warning">结义</span>
+    </div>
+  </div>
+
+  <!-- 卡片 -->
+  <div class="section">
+    <div class="section-title">人物卡片</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4)">
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:var(--space-2)">曹操</div>
+        <div class="font-caption">魏王 · 宦官之后 · 乱世奸雄</div>
+        <div class="font-caption" style="margin-top:var(--space-2)">关系：32 条 · 首次出场：第 1 章</div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:var(--space-2)">刘备</div>
+        <div class="font-caption">蜀汉先主 · 汉景帝阁下玄孙</div>
+        <div class="font-caption" style="margin-top:var(--space-2)">关系：28 条 · 首次出场：第 1 章</div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:var(--space-2)">诸葛亮</div>
+        <div class="font-caption">蜀汉丞相 · 卧龙先生</div>
+        <div class="font-caption" style="margin-top:var(--space-2)">关系：24 条 · 首次出场：第 38 章</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 字体层级 -->
+  <div class="section">
+    <div class="section-title">字体层级</div>
+    <div style="margin-bottom:var(--space-4)">
+      <div class="font-caption" style="margin-bottom:var(--space-1)">标题 H1</div>
+      <div class="font-h1">书脉 BookAtlas</div>
+    </div>
+    <div style="margin-bottom:var(--space-4)">
+      <div class="font-caption" style="margin-bottom:var(--space-1)">标题 H2</div>
+      <div class="font-h2">人物关系与事件图谱</div>
+    </div>
+    <div style="margin-bottom:var(--space-4)">
+      <div class="font-caption" style="margin-bottom:var(--space-1)">正文</div>
+      <div class="font-body">把一本书的人物关系、定义关系的小事件和标志性事件放在一张图上。</div>
+    </div>
+    <div>
+      <div class="font-caption" style="margin-bottom:var(--space-1)">注释</div>
+      <div class="font-caption">支持两人关系查询、剧透保护与时间旅行。</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
