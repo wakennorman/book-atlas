@@ -124,6 +124,9 @@
 # 网页版核心逻辑冒烟（Node 跑，不需要浏览器）
 node test/smoke.mjs
 
+# Web E2E 冒烟（启动本地服务，验证页面和资源加载）
+node test/e2e.mjs
+
 # 小程序页面逻辑冒烟（不需要微信开发者工具）
 node miniprogram/test/smoke.mjs
 
@@ -131,7 +134,7 @@ node miniprogram/test/smoke.mjs
 npm run lint
 ```
 
-CI（`.github/workflows/check.yml`）会自动跑：JS 语法检查、ESLint、网页版冒烟、数据校验、搜索审计、小程序包同步检查、小程序冒烟。
+CI（`.github/workflows/check.yml`）会自动跑：JS 语法检查、ESLint、网页版冒烟、E2E 冒烟、数据校验、搜索审计、小程序包同步检查、小程序冒烟。
 
 ### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
 

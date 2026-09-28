@@ -19,10 +19,10 @@ jobs:
 
       - name: JS 语法检查
         run: |
-          for f in js/app.js js/editor.js \
+          for f in js/app.js js/editor.js js/export.js js/ai.js \
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
-                   shared/graph-core.js scripts/bump-version.mjs test/smoke.mjs; do
+                   shared/graph-core.js scripts/bump-version.mjs test/smoke.mjs test/e2e.mjs; do
             node --check "$f"
           done
 
@@ -33,6 +33,9 @@ jobs:
 
       - name: 网页版核心逻辑冒烟测试
         run: node test/smoke.mjs
+
+      - name: Web E2E 冒烟测试
+        run: node test/e2e.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

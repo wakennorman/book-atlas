@@ -68,5 +68,5 @@ if (dryRun) {
   for (const c of changes) console.log(`  ${c.file}（${c.count} 处）`);
 } else {
   console.log(`版本号已同步到 v${newVer}：`);
-  for (const c of changes) console.log(`  ${file}（${c.count} 处）`);
+  for (const c of changes) console.log(`  ${c.file}（${c.count} 处）`);
 }

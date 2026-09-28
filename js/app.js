@@ -2897,28 +2897,49 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const graphEl = document.getElementById('graph');
     if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ } });
 
+    // 动态加载模块（按需加载，减少首屏体积）
+    const _moduleCache = {};
+    async function loadModule(name) {
+      if (_moduleCache[name]) return _moduleCache[name];
+      const url = `js/${name}.js?v=${window.__BA_VERSION || '1'}`;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`加载 ${name} 失败`));
+        document.head.appendChild(s);
+      });
+      _moduleCache[name] = true;
+      return true;
+    }
+
     // 导出 / 分享
     const exportModal = document.getElementById('export-modal');
     const closeExport = () => { if (exportModal) exportModal.hidden = true; };
     if (exportModal) {
       document.addEventListener('click', (ev) => {
         if (ev.target.closest('#export-btn')) {
+          loadModule('export').catch(() => {});
           exportModal.hidden = false;
           const h = document.getElementById('export-hint'); if (h) h.textContent = '';
           return;
         }
         if (ev.target.closest('[data-export-close]') || ev.target === exportModal) { closeExport(); return; }
         const opt = ev.target.closest('[data-export]');
-        if (opt && !opt.disabled) runExport(opt.dataset.export);
+        if (opt && !opt.disabled) {
+          loadModule('export').then(() => {
+            if (window.__BA_EXPORT__?.runExport) window.__BA_EXPORT__.runExport(opt.dataset.export);
+          }).catch(() => runExport(opt.dataset.export));
+        }
       });
       document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
     }
 
     // AI 讲解（不剧透）
     document.addEventListener('click', (ev) => {
-      if (ev.target.closest('[data-ai-settings]')) { openAiModal(); return; }
+      if (ev.target.closest('[data-ai-settings]')) { loadModule('ai').then(() => window.__BA_AI__?.openAiModal()).catch(() => openAiModal()); return; }
       if (ev.target.closest('[data-ai-close]')) { const m = document.getElementById('ai-modal'); if (m) m.hidden = true; return; }
-      if (ev.target.closest('#ai-save')) { saveAiConfig(); return; }
+      if (ev.target.closest('#ai-save')) { loadModule('ai').then(() => window.__BA_AI__?.saveAiConfig()).catch(() => saveAiConfig()); return; }
       const btn = ev.target.closest('[data-ai]');
       if (!btn) return;
       if (btn.dataset.ai === 'chain') {
