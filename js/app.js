@@ -48,11 +48,83 @@
     zoom: 1,                 // 当前缩放（标签按缩放分级显示）
     viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
     labelTimer: null,
+    fold: {},                // 长列表折叠：key -> 当前显示条数（缺省＝默认收起）
   };
 
   /* ---------------- 工具 ---------------- */
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+  /* ---- 长列表「展开/收起」（规范：docs/superpowers/specs/2026-09-28-panel-fold-design.md）---- */
+  const FOLD_BATCH = 20;     // 超长列表每次「再显示」的条数
+  const FOLD_ONESTEP = 40;   // 总数 ≤ 此值时一键展开（不分批）
+
+  // 折叠段的视图模型：按 state.fold[key] 算当前显示几条、按钮文案与语义
+  function foldVM(key, n, unit, total) {
+    const shown = Math.min(Math.max(state.fold[key] || n, n), total);
+    const open = shown > n;
+    const full = shown >= total;
+    let act = 'more';
+    const step = Math.min(FOLD_BATCH, total - shown);   // 最后一批常不足 20，文案必须说真话
+    let text = `再显示 ${step} ${unit}（${shown} / ${total}）`;
+    if (full) { act = 'collapse'; text = '⌃ 收起'; }
+    else if (total <= FOLD_ONESTEP) { act = 'all'; text = `⌄ 展开全部 ${total} ${unit}`; }
+    return { shown, open, full, act, text };
+  }
+
+  // 把"已渲染好的条目 HTML 数组"包成可折叠段；总数 ≤ n 时原样返回（不折）
+  // opts: { key, n, unit, cls, wrap('ul'|'div'), bare(不折时 true＝不包外层), items }
+  function foldSection(opts) {
+    const { key, n, unit = '条', cls = '', wrap = 'ul', bare = false, items } = opts;
+    const total = items.length;
+    if (total <= n) return bare ? items.join('') : `<${wrap} class="${cls}">${items.join('')}</${wrap}>`;
+    const v = foldVM(key, n, unit, total);
+    const bid = `fold-${String(key).replace(/[^a-zA-Z0-9]+/g, '-')}`;
+    // 超出当前显示数的条目，在开标签后补 hidden（条目都是我们自己拼的开标签：要同时认 <li>/<button>/<div>，否则关系卡 bare 模式的 div 条目烘不上 hidden）
+    const body = items.map((h, i) => {
+      if (i < v.shown) return h;
+      const out = h.replace(/^(\s*<[a-zA-Z][\w-]*)/, '$1 hidden');
+      if (out === h) console.warn('foldSection: 条目未以开标签开头，hidden 烘焙失败（会漏到首屏）', key, i);
+      return out;
+    }).join('');
+    return `<section class="fold${v.open ? ' is-open' : ''}" data-fold-key="${esc(key)}" data-n="${n}" data-unit="${esc(unit)}">
+      <div class="fold-head"${v.open ? '' : ' hidden'}><button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="collapse" aria-expanded="${v.open}" aria-controls="${bid}">⌃ 收起</button></div>
+      <${wrap} class="${cls} fold-body${v.full ? '' : ' is-cut'}" id="${bid}">${body}</${wrap}>
+      <div class="fold-foot">
+        <button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="${v.act}" aria-expanded="${v.open}" aria-controls="${bid}">${v.text}</button>
+        <button class="fold-btn fold-alt" type="button" data-fold="${esc(key)}" data-fold-act="all" aria-expanded="${v.open}" aria-controls="${bid}"${total > FOLD_ONESTEP && !v.full ? '' : ' hidden'}>全部展开</button>
+      </div>
+    </section>`;
+  }
+
+  // 点击后原地刷新一个折叠段：只切 hidden 与按钮文案，不重渲染面板（AI 结果等状态不丢）
+  function applyFolds(sec) {
+    if (!sec || !sec.classList || !sec.classList.contains('fold')) return;
+    const key = sec.dataset.foldKey;
+    const n = Number(sec.dataset.n) || 6;
+    const unit = sec.dataset.unit || '条';
+    const foldBody = sec.querySelector('.fold-body');
+    if (!foldBody) return;
+    const kids = [...foldBody.children];
+    const v = foldVM(key, n, unit, kids.length);
+    kids.forEach((el, i) => { el.hidden = i >= v.shown; });
+    sec.classList.toggle('is-open', v.open);
+    foldBody.classList.toggle('is-cut', !v.full);
+    const head = sec.querySelector('.fold-head');
+    if (head) head.hidden = !v.open;
+    const foot = sec.querySelectorAll('.fold-foot .fold-btn');
+    if (foot[0]) {
+      foot[0].dataset.foldAct = v.act;
+      foot[0].textContent = v.text;
+      foot[0].setAttribute('aria-expanded', String(v.open));
+    }
+    if (foot[1]) {
+      foot[1].hidden = !(kids.length > FOLD_ONESTEP && !v.full);
+      foot[1].setAttribute('aria-expanded', String(v.open));
+    }
+    const headBtn = head && head.querySelector('.fold-btn');
+    if (headBtn) headBtn.setAttribute('aria-expanded', String(v.open));
+  }
 
   // 亲属关系（kin）徽章：血缘 / 婚姻 / 姻亲 / 收养 / 抚养 / 继亲 / 结义
   const KIN_LABEL = { blood: '血缘', marriage: '婚姻', inlaw: '姻亲', adoptive: '收养', foster: '抚养', step: '继亲', sworn: '结义' };
@@ -337,6 +409,7 @@
     state.placeFilter = null;
     state.rank = null;
     state.focus = null;
+    state.fold = {};                    // 换书后清空长列表展开状态
     state.focusCache = null;
     state.zoom = 1;
     state.viewCenter = [0, 0];
@@ -1310,10 +1383,10 @@
       <div class="card-sub">${esc(p.type || '地点')} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
       <p class="card-desc">${esc(p.desc || '')}</p>
       <h3 style="margin-top:12px;font-size:14px">在这里发生的事（${evs.length}）</h3>
-      <ul class="rel-list">${evs.length ? evs.map((e) => `<li class="rel">
+      ${evs.length ? foldSection({ key: `place:${id}`, n: 10, unit: '条', cls: 'rel-list', items: evs.map((e) => `<li class="rel">
         <div class="rel-head">${esc(e.name)} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
         <div class="rel-event">· ${esc(e.summary)}</div>
-      </li>`).join('') : '<li class="hint">暂无（或都在你读到的进度之后）</li>'}</ul>
+      </li>`) }) : '<ul class="rel-list"><li class="hint">暂无（或都在你读到的进度之后）</li></ul>'}
       <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">显示全部地点</button></p>`;
     bindGoto(panel());
   }
@@ -1346,15 +1419,16 @@
     // 「他的一生」：按章排的事件（含地点与引文），吃剧透保护
     const lifeEvs = state.book.events.filter((e) => (e.chars || []).includes(c.id)).sort((a, b) => (a.ch || 0) - (b.ch || 0));
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
-    const lifeHtml = lifeEvs.length ? `
-      <h3 style="margin-top:12px;font-size:14px">他的一生（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
-      <ul class="life-list">${lifeShown.slice(0, 40).map((e) => `
+    const lifeItems = lifeShown.map((e) => `
         <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(e.name)}</button>
           <div class="rel-event">· ${esc(e.summary)}${e.place ? ` <button class="linkbtn" type="button" data-place-filter="${esc(e.place)}">📍${esc(placeName(e.place))}</button>` : ''}</div>
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
-        </li>`).join('')}${lifeShown.length > 40 ? `<li class="hint">…还有 ${lifeShown.length - 40} 个事件（可用阶段轴看全）</li>` : ''}</ul>
+        </li>`);
+    const lifeHtml = lifeEvs.length ? `
+      <h3 style="margin-top:12px;font-size:14px">他的一生（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
+      ${foldSection({ key: `life:${c.id}`, n: 8, unit: '个', cls: 'life-list', items: lifeItems })}
       ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个事件在你读到的进度之后</p>` : ''}` : '';
-    const relHtml = rels.map((r) => {
+    const relItems = rels.map((r) => {
       const other = r.from === c.id ? r.to : r.from;
       const vis = visibleRelEvents(r);
       const hidden = (r.events || []).length - vis.length;
@@ -1366,7 +1440,7 @@
         </div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
       </li>`;
-    }).join('');
+    });
 
     panel().innerHTML = `
       <div class="card-title">${esc(c.name)}</div>
@@ -1401,7 +1475,7 @@
       ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
       ${filteredCount ? `<p class="hint">🫥 ${filteredCount} 条关系被「关系过滤」挡住
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
-      <ul class="rel-list">${relHtml || '<li class="hint">暂无记录</li>'}</ul>
+      ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
       <p style="margin-top:10px">
         <button class="ghost tiny" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个人（不剧透）</button>
         <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
@@ -1412,13 +1486,13 @@
 
   function renderRelationPanel(r) {
     const [first, second] = orderPair(r.from, r.to);
-    const evs = (r.events || []).map((e) =>
-      `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+    const evItems = (r.events || []).map((e) =>
+      `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`);
     panel().innerHTML = `
       <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
       <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : '定义这段关系的事件'}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
       ${periodText(r) ? `<p class="card-sub">关系时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
-      ${evs || '<p class="hint">暂无记录</p>'}
+      ${evItems.length ? foldSection({ key: `relev:${first}|${second}`, n: 10, unit: '条', cls: 'rel-events', wrap: 'div', bare: true, items: evItems }) : '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
     bindGoto(panel());
   }
@@ -1469,7 +1543,7 @@
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
     setHighlight(nodes, edges, null, null);
 
-    const html = steps.map((s, i) => {
+    const stepItems = steps.map((s, i) => {
       const vis = visibleRelEvents(s.rel);
       const hidden = (s.rel.events || []).length - vis.length;
       const evs = vis.map((e) =>
@@ -1478,11 +1552,11 @@
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
       </li>`;
-    }).join('');
+    });
     panel().innerHTML = `
       <div class="card-title">关系链：${esc(charName(a))} → ${esc(charName(b))}</div>
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
-      <ul class="path-steps">${html || '<li class="hint">同一个人</li>'}</ul>
+      ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
       <p style="margin-top:10px">
         <button class="ghost tiny" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
         <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
@@ -1640,8 +1714,8 @@
         : `<button class="primary tiny" type="button" data-ch-mark="${n}">${state.progress === null ? '🔒 从这一章开始防剧透' : `✓ 我读到第 ${n} 章了`}</button>`;
       body.innerHTML = `
         <p class="card-sub">本章 <b>${d.charsHere.length}</b> 人出场 · 新增关系 <b>${d.relsNew.length}</b> 条 · 事件 <b>${d.events.length}</b> 个 · 地点 <b>${d.places.length}</b> 处</p>
-        ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4><div class="ch-chips">${d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div></div>` : ''}
-        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4><ul class="ch-list">${d.relsNew.slice(0, 12).map((r) => `<li><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`).join('')}${d.relsNew.length > 12 ? `<li class="hint">…还有 ${d.relsNew.length - 12} 条</li>` : ''}</ul></div>` : ''}
+        ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
         ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
         ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `<button class="ch-chip" type="button" data-place-filter="${esc(id)}">${esc(placeName(id))}${d.placesNew.includes(id) ? ' ✨' : ''}</button>`).join('')}</div></div>` : ''}
         <div class="ch-teaser">${teaser}</div>
@@ -2728,6 +2802,31 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.addEventListener('keydown', (ev) => {
       const modal = document.getElementById('spoiler-modal');
       if (ev.key === 'Escape' && modal && !modal.hidden) applySpoiler(false);
+    });
+
+    // 长列表「展开/收起」（document 级委托：面板都是 innerHTML 重建的）
+    document.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-fold]');
+      if (!btn) return;
+      const sec = btn.closest('.fold');
+      if (!sec) return;
+      const key = sec.dataset.foldKey;
+      const n = Number(sec.dataset.n) || 6;
+      const foldBody = sec.querySelector('.fold-body');
+      const total = foldBody ? foldBody.children.length : 0;
+      const shown = Math.min(Math.max(state.fold[key] || n, n), total);
+      const act = btn.dataset.foldAct;
+      if (act === 'collapse') {
+        delete state.fold[key];
+        applyFolds(sec);
+        sec.scrollIntoView({ block: 'nearest' });   // 收起后段首回到视野，人不丢
+      } else if (act === 'all') {
+        state.fold[key] = total;
+        applyFolds(sec);
+      } else {
+        state.fold[key] = Math.min(shown + FOLD_BATCH, total);
+        applyFolds(sec);
+      }
     });
 
     $('#path-go').addEventListener('click', runPath);

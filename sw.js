@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v68';
+const CACHE = 'bookatlas-v72';
 const SHELL = [
   './',
   './index.html',
@@ -25,8 +25,8 @@ const SHELL = [
   './editor.html?v=30',
   './css/editor.css?v=30',
   './js/editor.js?v=30',
-  './css/style.css?v=68',
-  './js/app.js?v=68',
+  './css/style.css?v=72',
+  './js/app.js?v=72',
   './vendor/fflate.min.js?v=30',
   './vendor/pdf.min.js?v=30',
   './vendor/pdf.worker.min.js?v=30'
