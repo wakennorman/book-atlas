@@ -19,6 +19,7 @@
     activeChar: null,
     activeEvent: null,
     activeFaction: null,
+    clickLock: null,       // 点击锁定：搜单个人物 / 两人关系查询后 = { nodes, edges, label }；图上只能点高亮集合
     allLabels: false,
     view: 'force',         // force | gen-h | gen-v
     bands: new Map(),      // 代际视图：generation -> 主坐标
@@ -464,11 +465,18 @@
     try { state.timeTravel = localStorage.getItem('ba-timetravel') === '1'; } catch (e) { state.timeTravel = false; }
     if (state.timeTravel) state.chapter = Math.min(state.chapter, timeCeiling());
     clearHighlight(false);
+    // 换书清掉上一本书的选中残留：两人关系输入值/精确 id、搜索框精确 id（id 是旧书人物的）
+    for (const id of ['path-a', 'path-b', 'search-input']) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (id !== 'search-input') el.value = '';
+      delete el.dataset.id;
+    }
+    const ph0 = document.getElementById('path-hint');
+    if (ph0) ph0.textContent = '';
     try { history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`); } catch (e) { /* file:// 或沙箱里可能不允许改地址 */ }
     renderHeader();
     renderLegend();
-    renderDatalist();
-    renderPathSelects();
     renderTimeline();
     renderChapter();
     syncTimeTravelUI();
@@ -553,7 +561,7 @@
       .slice(0, 3)
       .map((c) => c.name)
       .join(' / ');
-    input.placeholder = top ? `搜人物：${top}…` : '搜人物…';
+    input.placeholder = top ? `搜单个人物：${top}…` : '搜单个人物…';
   }
 
   function renderLegend() {
@@ -574,19 +582,107 @@
     });
   }
 
-  function renderDatalist() {
-    $('#char-list').innerHTML = state.book.characters
-      .filter((c) => !charLocked(c) && charVisibleAt(c) && !isCharHidden(c))
-      .map((c) => `<option value="${esc(c.name)}">${esc(c.title)}</option>`).join('');
+  /* ---------------- 输入+下拉（combobox）：搜单个人物 / 两人关系 A、B 共用 ----------------
+     选中结果写进 input.dataset.id（精确 id——百年孤独世代重名，按名字找会取错第几个） */
+  function comboSub(c) {
+    const parts = [];
+    if (state.groupMode === 'generation') parts.push(genText(c.generation));
+    if (c.title) parts.push(c.title);
+    if (!parts.length) { const f = factionTextOf(c); if (f) parts.push(f); }
+    if (isCharHidden(c)) parts.push('已折叠，点选展开');
+    return parts.join(' · ');
   }
+  function comboItems(kind) {
+    // 关系数多的排前面（三国 871 人，下拉直接看到曹操/刘备比按数据顺序强）
+    return state.book.characters
+      .filter((c) => !charLocked(c) && charVisibleAt(c) && (kind === 'path' ? !isCharHidden(c) : true))
+      .slice()
+      .sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))
+      .map((c) => ({ id: c.id, name: c.name, aliases: c.aliases || [], sub: comboSub(c) }));
+  }
+  /** 给 input 挂上下拉：输入即过滤，↑↓ 选择，回车选中（列表开着时）否则交给 onEnter */
+  function attachCombo(input, opts) {
+    // opts: { kind: 'search'|'path', onPick?: (item)=>void, onEnter?: ()=>void }
+    const wrap = input.closest('.combo') || input.parentNode;
+    const listId = `${input.id}-combo-list`;
+    const list = document.createElement('div');
+    list.id = listId;
+    list.className = 'combo-list';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    wrap.appendChild(list);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-controls', listId);
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-autocomplete', 'list');
 
-  function renderPathSelects() {
-    const opts = state.book.characters.filter((c) => !charLocked(c) && charVisibleAt(c) && !isCharHidden(c))
-      .map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-    const a = $('#path-a'), b = $('#path-b');
-    a.innerHTML = `<option value="">人物 A</option>${opts}`;
-    b.innerHTML = `<option value="">人物 B</option>${opts}`;
-    // 默认给一个与主线有关的提示（第一对主要人物由数据决定，这里保持空）
+    let all = [], filtered = [], active = -1;
+
+    function close() { list.hidden = true; active = -1; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); }
+    function open() {
+      const q = input.value.trim().toLowerCase();
+      all = comboItems(opts.kind);
+      filtered = (q ? all.filter((it) => it.name.toLowerCase().includes(q) || it.aliases.some((a) => a.toLowerCase().includes(q))) : all).slice(0, 60);
+      active = filtered.length ? 0 : -1;
+      render();
+    }
+    function render() {
+      if (filtered.length) {
+        list.innerHTML = filtered.map((it, i) =>
+          `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}</div>`
+        ).join('') + (all.length > filtered.length
+          ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
+      } else {
+        list.innerHTML = `<div class="combo-item combo-empty" role="presentation">没找到「${esc(input.value.trim())}」${opts.kind === 'search' ? '；回车按文字搜' : ''}</div>`;
+      }
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      if (active >= 0) input.setAttribute('aria-activedescendant', `${listId}-i${active}`);
+      // 翻转：下方放不下（含 .graph-pane overflow:hidden 会裁掉下拉）就向上翻
+      const r = input.getBoundingClientRect();
+      const pane = wrap.closest('.graph-pane');
+      // 宽度：至少跟输入框齐平，最多 340px，但不越过面板右缘（overflow:hidden 会裁）
+      const paneR = pane ? pane.getBoundingClientRect().right : window.innerWidth - 8;
+      list.style.width = `${Math.round(Math.max(r.width, Math.min(340, paneR - r.left - 8)))}px`;
+      list.style.right = 'auto';
+      const limit = Math.min(window.innerHeight - 8, pane ? pane.getBoundingClientRect().bottom - 8 : Infinity);
+      const up = r.bottom + (list.offsetHeight || 0) + 8 > limit && r.top - (list.offsetHeight || 0) - 8 > 8;
+      list.classList.toggle('up', up);
+      const on = list.querySelector('.combo-item.on');
+      if (on) on.scrollIntoView({ block: 'nearest' });
+    }
+    function pick(i) {
+      const it = filtered[i];
+      if (!it) return;
+      input.value = it.name;
+      input.dataset.id = it.id;
+      close();
+      if (opts.onPick) opts.onPick(it);
+    }
+
+    input.addEventListener('input', () => { delete input.dataset.id; open(); });
+    input.addEventListener('focus', () => open());
+    input.addEventListener('blur', () => setTimeout(close, 100));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (list.hidden) open(); else if (filtered.length) {
+          active = e.key === 'ArrowDown' ? (active + 1) % filtered.length : (active - 1 + filtered.length) % filtered.length;
+          render();
+        }
+        return;
+      }
+      if (e.key === 'Enter') {
+        if (!list.hidden && active >= 0) { e.preventDefault(); pick(active); return; }
+        if (opts.onEnter) { e.preventDefault(); opts.onEnter(); }
+        return;
+      }
+      if (e.key === 'Escape' && !list.hidden) { e.preventDefault(); close(); }
+    });
+    list.addEventListener('mousedown', (e) => e.preventDefault());   // 防止点选项前失焦把列表关了
+    list.addEventListener('click', (e) => { const el = e.target.closest('.combo-item[data-i]'); if (el) pick(Number(el.dataset.i)); });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    return { close };
   }
 
   /* ---------------- 图表 ---------------- */
@@ -1063,6 +1159,7 @@
     // 不清除会导致节点跑到视野外（图显示空白）
     state.focus = null;
     state.focusCache = null;
+    unlockClick();                              // 「重置」＝锁定解除路径之一
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
@@ -1165,13 +1262,63 @@
   function renderFocusBar() {
     const bar = document.getElementById('focus-bar');
     if (!bar) return;
-    if (!state.focus) { bar.hidden = true; return; }    const c = state.byId.get(state.focus.id) || { name: state.focus.id };
+    if (!state.focus) { bar.hidden = true; stackBars(); return; }
+    const c = state.byId.get(state.focus.id) || { name: state.focus.id };
     const n = (focusSet() || new Set()).size;
     bar.hidden = false;
     bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} 人
       <button class="ghost tiny" type="button" data-focus-nav="dec">− 跳</button>
       <button class="ghost tiny" type="button" data-focus-nav="inc">＋ 跳</button>
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
+    stackBars();
+  }
+
+  /* —— 点击锁定：搜单个人物 / 两人关系查询成功后进入；可点集合＝当前高亮集合（亮=能点、灰=点不动） ——
+     解除路径：「重置」「复位视图」（双击空白同款）；或右栏人名等任何换上下文的选择——
+     setHighlight / clearHighlight 起手清锁，图上点击在选中后用 restoreLock 回填（锁不随点击漂移） */
+  function lockFromHighlight(label) {
+    if (!state.hlNodes.size) return;
+    state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '' };
+    renderLockBar();
+  }
+  function unlockClick() {
+    if (!state.clickLock) return;
+    state.clickLock = null;
+    renderLockBar();
+  }
+  function restoreLock(lock) { state.clickLock = lock; renderLockBar(); }
+  function blockLockClick() {
+    const lock = state.clickLock;
+    if (!lock) return;
+    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置 / 复位视图」或右栏人名可解除）`;
+    toast(msg);
+    announce(msg);
+  }
+  function renderLockBar() {
+    const bar = document.getElementById('lock-bar');
+    if (!bar) return;
+    const lock = state.clickLock;
+    if (!lock) { bar.hidden = true; stackBars(); return; }
+    bar.hidden = false;
+    bar.innerHTML = `🔒 聚焦「${esc(lock.label)}」· 只能点图上亮着的人和线 <span class="lock-hint">「重置 / 复位视图」或右栏人名可解除</span>`;
+    stackBars();
+  }
+  /** 聚焦条/锁定条：fixed 悬浮，按「顶栏下沿、图区顶端」定位；两条同时可见时上下叠放 */
+  function stackBars() {
+    const g = document.getElementById('graph');
+    const fb = document.getElementById('focus-bar');
+    const lb = document.getElementById('lock-bar');
+    if (!g || !fb || !lb) return;
+    const tbEl = document.querySelector('.topbar');
+    const tb = tbEl ? tbEl.getBoundingClientRect() : { bottom: 70 };
+    const gr = g.getBoundingClientRect();
+    const minTop = Math.round(Math.max(10, tb.bottom + 8));
+    const visible = gr.bottom > minTop + 60;      // 图整个滚出视口上部就藏起来，别飘在别的内容上
+    fb.style.visibility = visible ? '' : 'hidden';
+    lb.style.visibility = visible ? '' : 'hidden';
+    const base = Math.max(Math.round(gr.top + 10), minTop);
+    fb.style.top = base + 'px';
+    lb.style.top = (fb.hidden ? base : Math.round(fb.getBoundingClientRect().bottom + 6)) + 'px';
   }
 
   /** 供"使用说明"演示：把某个人挪开一点（等价于你拖动他） */
@@ -1239,16 +1386,22 @@
     // ⚠️ 事件绑定必须在任何 return 之前（之前手动模式提前 return，导致拖动/点击处理器根本没注册）
     state.chart.on('click', (p) => {
       if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
+      const lock = state.clickLock;
       if (p.dataType === 'edge') {
+        if (lock && !lock.edges.has(edgeKey(p.data.source, p.data.target))) { blockLockClick(); return; }
         const rel = findRel(p.data.source, p.data.target, p.data.value);
         if (rel) selectRelation(rel);
+        if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
       } else if (p.dataType === 'node') {
+        if (lock && !lock.nodes.has(p.data.id)) { blockLockClick(); return; }
         selectCharacter(p.data.id);
+        if (lock) restoreLock(lock);
       }
     });
-    state.chart.getZr().on('click', (e) => { if (!e.target) clearHighlight(); });
+    // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 复位视图 / 右栏人名」）
+    state.chart.getZr().on('click', (e) => { if (!e.target && !state.clickLock) clearHighlight(); });
     // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
-    state.chart.getZr().on('dblclick', (e) => { if (!e.target) resetRoam(); });
+    state.chart.getZr().on('dblclick', (e) => { if (!e.target) { unlockClick(); resetRoam(); } });
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
     state.chart.on('graphroam', (p) => {
       if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
@@ -1364,6 +1517,7 @@
 
   /* ---------------- 高亮 ---------------- */
   function setHighlight(nodes, edges, activeCharId, eventId) {
+    unlockClick();                              // 换上下文（图外选择）＝解除点击锁定
     state.hlNodes = nodes || new Set();
     state.hlEdges = edges || new Set();
     state.activeChar = activeCharId || null;
@@ -1380,6 +1534,7 @@
   }
 
   function clearHighlight(updateVisual = true) {
+    unlockClick();
     state.hlNodes = new Set();
     state.hlEdges = new Set();
     state.activeChar = null;
@@ -1541,7 +1696,8 @@
     const rels = unlocked.filter(passEdgeFilter).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - unlocked.length;
     const filteredCount = unlocked.length - rels.length;
-    // 「他的一生」：按章排的事件（含地点与引文），吃剧透保护
+    // 「X的一生」：按章排的事件（含地点与引文），吃剧透保护；标题按性别人称
+    const lifeName = `${c.gender === 'f' ? '她' : '他'}的一生`;
     const lifeEvs = state.book.events.filter((e) => (e.chars || []).includes(c.id)).sort((a, b) => (a.ch || 0) - (b.ch || 0));
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
     const lifeItems = lifeShown.map((e) => `
@@ -1550,7 +1706,7 @@
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
         </li>`);
     const lifeHtml = lifeEvs.length ? `
-      <h3 style="margin-top:12px;font-size:14px">他的一生（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
+      <h3 style="margin-top:12px;font-size:14px">${lifeName}（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
       ${foldSection({ key: `life:${c.id}`, n: 8, unit: '个', cls: 'life-list', items: lifeItems })}
       ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个事件在你读到的进度之后</p>` : ''}` : '';
     const relItems = rels.map((r) => {
@@ -1657,8 +1813,18 @@
     return steps;
   }
 
+  /** 两人关系输入框 → 人物 id：优先下拉选中的精确 id，没选过就按输入文字匹配一次 */
+  function pathCharId(input) {
+    if (input.dataset.id && state.byId.has(input.dataset.id)) return input.dataset.id;
+    const q = input.value.trim();
+    if (!q) return '';
+    const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
+    const c = state.book.characters.find((x) => !charLocked(x) && charVisibleAt(x) && !isCharHidden(x) && match(x));
+    return c ? c.id : '';
+  }
+
   function runPath() {
-    const a = $('#path-a').value, b = $('#path-b').value;
+    const a = pathCharId($('#path-a')), b = pathCharId($('#path-b'));
     const hint = $('#path-hint');
     if (!a || !b) { hint.textContent = '请选择两个人'; return; }
     const steps = bfs(a, b);
@@ -1667,6 +1833,7 @@
     const nodes = new Set([a, ...steps.map((s) => s.to)]);
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
     setHighlight(nodes, edges, null, null);
+    lockFromHighlight(`${charName(a)} → ${charName(b)}`);   // 点击锁定：只能点这条链的点和线
 
     const stepItems = steps.map((s, i) => {
       const vis = visibleRelEvents(s.rel);
@@ -1808,8 +1975,6 @@
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, state.chapter || 1));
     syncTimeTravelUI();
     clearHighlight(false);
-    renderDatalist();
-    renderPathSelects();
     renderTimeline();
     renderPlaceSelect();
     renderChapter();
@@ -2455,7 +2620,7 @@ ${body}
   ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
   ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
   <p class="meta">结局：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
-  ${life ? `<h3>他/她的一生（按章）</h3><ul>${life}</ul>` : ''}
+  ${life ? `<h3>${c.gender === 'f' ? '她' : '他'}的一生（按章）</h3><ul>${life}</ul>` : ''}
   ${relHtml ? `<h3>与谁有关 · 凭什么事件</h3><ul>${relHtml}</ul>` : ''}
 </section>`;
     }).join('\n');
@@ -2615,8 +2780,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     } catch (e) { /* 隐私模式忽略 */ }
     try {
       clearHighlight(false);
-      renderDatalist();
-      renderPathSelects();
       renderTimeline();
       renderChapter();
       syncTimeTravelUI();
@@ -2728,35 +2891,61 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     }
   }
 
+  /** 被折叠的人物：自动展开层级（次要/提及）再定位——搜索永远找得到 */
+  function revealChar(c) {
+    if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch (e) { /* 忽略 */ } }
+    if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch (e) { /* 忽略 */ } }
+    const minorBtn2 = document.getElementById('minor-btn');
+    if (minorBtn2) minorBtn2.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏';
+    const mentionBtn2 = document.getElementById('mentioned-btn');
+    if (mentionBtn2) mentionBtn2.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏';
+    updateCountHint();
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+  }
+  /** 选中一个人物并进入点击锁定（下拉点选走这里：精确 id，世代重名不会取错） */
+  function chooseCharById(id) {
+    const c = state.byId.get(id);
+    if (!c) return;
+    if (charLocked(c)) { renderLockedPanel('character', c); return; }
+    if (isCharHidden(c)) revealChar(c);
+    selectCharacter(c.id);
+    lockFromHighlight(c.name);
+  }
+
   function bindUI() {
     const search = $('#search-input');
     const doSearch = () => {
       const q = search.value.trim();
       if (!q) return;
+      // 刚从下拉选中过：直接用精确 id
+      const picked = search.dataset.id;
+      const pc = picked ? state.byId.get(picked) : null;
+      if (pc && pc.name === q) { chooseCharById(pc.id); return; }
       const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
       const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
-      if (c) { selectCharacter(c.id); return; }
+      if (c) { selectCharacter(c.id); lockFromHighlight(c.name); return; }
       const hiddenHit = state.book.characters.find((x) => isCharHidden(x) && match(x));
       if (hiddenHit) {                                  // 被折叠的人：自动展开层级再定位（搜索永远找得到）
-        if (isMinor(hiddenHit)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch (e) { /* 忽略 */ } }
-        if (isMentioned(hiddenHit)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch (e) { /* 忽略 */ } }
-        const minorBtn2 = document.getElementById('minor-btn');
-        if (minorBtn2) minorBtn2.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏';
-        const mentionBtn2 = document.getElementById('mentioned-btn');
-        if (mentionBtn2) mentionBtn2.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏';
-        renderDatalist();
-        renderPathSelects();
-        updateCountHint();
-        if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+        revealChar(hiddenHit);
         selectCharacter(hiddenHit.id);
+        lockFromHighlight(hiddenHit.name);
         return;
       }
       const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
       $('#path-hint').textContent = lockedHit ? `「${q}」还没到你读到的进度（剧透保护中）` : `没找到「${q}」`;
     };
-    search.addEventListener('change', doSearch);
-    search.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
-    $('#search-clear').addEventListener('click', () => { search.value = ''; clearHighlight(); });
+    const searchCombo = attachCombo(search, {
+      kind: 'search',
+      onPick: (it) => chooseCharById(it.id),
+      onEnter: () => doSearch(),
+    });
+    search.addEventListener('change', () => { searchCombo.close(); doSearch(); });
+    $('#search-clear').addEventListener('click', () => { search.value = ''; delete search.dataset.id; searchCombo.close(); clearHighlight(); });
+
+    // 两人关系 A、B：同样可直接输入名字，下拉可选（选中 id 记在 dataset）
+    const pathA = $('#path-a'), pathB = $('#path-b');
+    attachCombo(pathA, { kind: 'path', onEnter: () => runPath() });
+    attachCombo(pathB, { kind: 'path', onEnter: () => runPath() });
 
     const labelBtn = $('#label-btn');
     labelBtn.addEventListener('click', () => {
@@ -2791,8 +2980,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       state.showMentioned = !state.showMentioned;
       try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch (e) { /* 忽略 */ }
       syncMentionBtn();
-      renderDatalist();
-      renderPathSelects();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       updateCountHint();
     });
@@ -2805,8 +2992,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       state.showMinor = !state.showMinor;
       try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch (e) { /* 忽略 */ }
       syncMinorBtn();
-      renderDatalist();
-      renderPathSelects();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
       updateCountHint();
@@ -2907,7 +3092,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     $('#reset-btn').addEventListener('click', () => setView(state.view));
-    $('#view-reset-btn').addEventListener('click', resetRoam);
+    $('#view-reset-btn').addEventListener('click', () => { unlockClick(); resetRoam(); });
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
       if (!state.chart) return;
@@ -2987,9 +3172,16 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     $('#path-go').addEventListener('click', runPath);
     $('#path-clear').addEventListener('click', () => {
       $('#path-a').value = ''; $('#path-b').value = '';
+      delete $('#path-a').dataset.id; delete $('#path-b').dataset.id;
       $('#path-hint').textContent = '';
       clearHighlight();
     });
+
+    // 聚焦条/锁定条跟随图区位置（passive + rAF 节流）
+    let barTick = false;
+    const scheduleBars = () => { if (barTick) return; barTick = true; requestAnimationFrame(() => { barTick = false; stackBars(); }); };
+    window.addEventListener('scroll', scheduleBars, { passive: true });
+    window.addEventListener('resize', stackBars);
 
     // 章节视图：翻章 / 跳章（左右方向键也能翻）
     const chPrev = document.getElementById('ch-prev');
@@ -3017,8 +3209,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         clearTimeout(sliderTimer);
         sliderTimer = setTimeout(() => {
           applyTimeTravelGraph();
-          renderDatalist();
-          renderPathSelects();
           renderTimeline();
           renderPlaceSelect();
           updateCountHint();
@@ -3039,7 +3229,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         if (/^Arrow(Left|Right|Up|Down)$/.test(ev.key)) { ev.preventDefault(); moveCursor(ev.key); return; }
         if (ev.key === 'Enter' || ev.key === ' ') {
           ev.preventDefault();
-          if (state.kbCursor) selectCharacter(state.kbCursor);
+          if (state.kbCursor) {
+            const lock = state.clickLock;
+            if (lock && !lock.nodes.has(state.kbCursor)) { blockLockClick(); return; }
+            selectCharacter(state.kbCursor);
+            if (lock) restoreLock(lock);
+          }
           return;
         }
         if (ev.key === 'Escape') { state.kbCursor = null; clearHighlight(); updateAria(); return; }
@@ -3098,7 +3293,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       const btn = ev.target.closest('[data-ai]');
       if (!btn) return;
       if (btn.dataset.ai === 'chain') {
-        const a = $('#path-a').value, b = $('#path-b').value;
+        const a = pathCharId($('#path-a')), b = pathCharId($('#path-b'));
         if (!a || !b) { toast('先在底部选两个人'); return; }
         const steps = bfs(a, b);
         if (!steps) { toast('在图里找不到通路'); return; }

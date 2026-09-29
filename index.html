@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=79">
+  <link rel="stylesheet" href="css/style.css?v=80">
 </head>
 <body>
 
@@ -64,8 +64,9 @@
   <section class="pane graph-pane">
     <div class="pane-head">
       <div class="search-wrap">
-        <input id="search-input" list="char-list" type="search" placeholder="搜人物…" autocomplete="off">
-        <datalist id="char-list"></datalist>
+        <span class="combo" id="search-combo">
+          <input id="search-input" type="search" placeholder="搜单个人物…" autocomplete="off">
+        </span>
         <button id="search-clear" class="ghost" type="button">清空</button>
         <select id="place-filter" title="按地点筛选事件与人物"></select>
       </div>
@@ -143,15 +144,20 @@
     </div>
 
     <div id="focus-bar" class="focus-bar" hidden></div>
+    <div id="lock-bar" class="focus-bar" hidden></div>
     <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
     <p id="graph-kb-hint" class="sr-only">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
     <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
     <div class="pathbar">
       <span class="pathbar-label">两人关系</span>
-      <select id="path-a" aria-label="人物 A"></select>
+      <span class="combo" id="path-a-combo">
+        <input id="path-a" type="search" placeholder="人物 A" autocomplete="off" aria-label="人物 A（可输入名字，下拉可选）">
+      </span>
       <span class="arrow">→</span>
-      <select id="path-b" aria-label="人物 B"></select>
+      <span class="combo" id="path-b-combo">
+        <input id="path-b" type="search" placeholder="人物 B" autocomplete="off" aria-label="人物 B（可输入名字，下拉可选）">
+      </span>
       <button id="path-go" class="primary" type="button">查询</button>
       <button id="path-clear" class="ghost" type="button">清除</button>
       <span id="path-hint" class="hint"></span>
@@ -431,7 +437,7 @@
         </div>
         <div class="help-text">
           <b>⑬ 人物志与人物卡</b>
-          <span>点任意人物：面板里除了档案与关系，还有<b>「他的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
+          <span>点任意人物：面板里除了档案与关系，还有<b>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
           <button type="button" class="ghost tiny" data-help-act="charcard">试一下：打开关系最多的人</button>
         </div>
       </div>
@@ -535,6 +541,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=79"></script>
+<script src="js/app.js?v=80"></script>
 </body>
 </html>

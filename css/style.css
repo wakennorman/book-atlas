@@ -153,6 +153,7 @@ main {
 .pane-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; flex-wrap: wrap; }
 .search-wrap { display: flex; align-items: center; gap: 8px; min-width: 220px; flex: 1 1 260px; }
 .search-wrap input { flex: 1 1 auto; max-width: none; }
+.search-wrap .combo { flex: 1 1 auto; min-width: 0; }
 
 .legend-row { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; min-width: 0; }
 .view-row { display: flex; align-items: center; gap: 6px; flex: 1 1 100%; flex-wrap: wrap; position: relative; }
@@ -211,7 +212,7 @@ main {
   padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel-2);
 }
 .pathbar-label { font-weight: 700; font-size: 13px; color: var(--muted); }
-.pathbar select { max-width: 170px; }
+.pathbar .combo { max-width: 170px; min-width: 0; }
 .arrow { color: var(--muted); }
 
 /* ---------- 侧栏 ---------- */
@@ -333,13 +334,37 @@ main {
 @keyframes hfFan { 0%, 30% { opacity: 0; stroke-dashoffset: 90; } 48% { opacity: 1; stroke-dashoffset: 0; } 88% { opacity: 1; stroke-dashoffset: 0; } 100% { opacity: 0; stroke-dashoffset: 90; } }
 
 .focus-bar {
-  position: absolute; left: 50%; transform: translateX(-50%); top: 10px; z-index: 20;
+  /* 固定悬浮在图区上方：原先 absolute 锚在文档顶端，被 sticky 顶栏（z-30）压住看不见；
+     top 默认值由 stackBars() 按「顶栏下沿 / 图区顶端」动态算（含叠放第二条） */
+  position: fixed; left: 50%; transform: translateX(-50%); top: 78px; z-index: 40;
   display: flex; align-items: center; gap: 8px;
   padding: 8px 14px; border-radius: 24px; font-size: 12.5px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   border: 1px solid var(--line); box-shadow: var(--shadow-md); color: var(--ink);
   backdrop-filter: blur(6px);
 }
+.focus-bar .lock-hint { color: var(--muted); }
+
+/* ---------- combobox：输入即过滤 + 下拉选人（搜单个人物 / 两人关系 A、B 共用） ---------- */
+.combo { position: relative; display: block; min-width: 0; }
+.combo > input { width: 100%; max-width: none; box-sizing: border-box; }
+.combo-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-lg); max-height: min(320px, 62vh); overflow-y: auto;
+}
+.combo-list.up { top: auto; bottom: calc(100% + 4px); }   /* 贴近底边时向上翻，别被面板 overflow 裁掉 */
+.combo-item {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 9px 12px; min-height: 40px;
+  font-size: 13.5px; cursor: pointer; color: var(--ink);
+}
+.combo-item b { font-weight: 600; }
+.combo-sub { margin-left: auto; font-size: 11.5px; color: var(--muted); text-align: right; }
+.combo-item:hover, .combo-item.on { background: var(--soft); }
+.combo-item.combo-empty { color: var(--muted); cursor: default; font-size: 12.5px; }
+
+/* 锁定条是纯提示（无按钮）：不吃指针事件，压在图上也不挡节点点击 */
+#lock-bar { pointer-events: none; }
 .kin-badge {
   display: inline-block; padding: 2px 8px; border-radius: 24px;
   font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;
@@ -591,7 +616,7 @@ button.spoiler-opt:hover {
      整页会被事件轴撑到没法用） */
   .meta { max-width: 52vw; }
   .brand-text h1 { font-size: 16px; }
-  .pathbar select { max-width: 45%; flex: 1 1 40%; }
+  .pathbar .combo { max-width: 45%; flex: 1 1 40%; }
   .pane-head { padding: 8px 10px; }
 }
 @media (max-width: 480px) {
@@ -624,7 +649,7 @@ button.spoiler-opt:hover {
 
   .pane-head { padding: 8px; gap: 6px; }
   .search-wrap { min-width: 0; flex: 1 1 100%; }
-  .search-wrap input { min-width: 0; }
+  .search-wrap input, .search-wrap .combo { min-width: 0; }
   #place-filter, #size-filter { max-width: 44vw; }
   .legend-row { flex-wrap: wrap; gap: 6px; }
   .legend { flex: 1 1 100%; }
@@ -640,7 +665,7 @@ button.spoiler-opt:hover {
   .ch-nav select { max-width: 96px; padding: 5px 10px; }
   .ch-foot { justify-content: flex-start; }
   .pathbar { flex-wrap: wrap; }
-  .pathbar select { max-width: 100%; flex: 1 1 100%; }
+  .pathbar .combo { max-width: 100%; flex: 1 1 100%; }
   .modal { padding: 16px; max-height: 86vh; }
   .help-item { grid-template-columns: 1fr; }
   .help-fig svg { width: 100%; max-width: 200px; }
