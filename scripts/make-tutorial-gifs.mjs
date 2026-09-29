@@ -13,7 +13,7 @@
  * 场景（见下面 SCENES）：
  *   search       搜「诸葛亮」→ 回车 → 面板打开、图上居中聚焦
  *   event-focus  点事件轴「桃园三结义」→ 图上高亮 + 自动放大聚焦
- *   time-travel  打开时间旅行 → 拖滑块到第 60 章 → 图按章过滤
+ *   time-travel  打开时间旅行 → 拖滑块到第 11 章 → 图按章过滤（百年孤独）
  *
  * 产物：docs/tutorial/frames/<scene>/NNN.png（帧）→ docs/tutorial/<scene>.gif（由 python 合成）
  * 依赖：系统 Edge；本地服务（没起会自动 python -m http.server 8765）
@@ -82,13 +82,13 @@ const SCENES = {
     ],
   },
   'time-travel': {
-    url: '?book=three-kingdoms',
+    url: '?book=one-hundred-years-of-solitude',
     steps: [
       { wait: 400, hold: 3 },
       { move: '#time-btn', hold: 2 },
       { click: '#time-btn', hold: 4 },  // 打开滑块
-      { drag: { from: '#time-slider', to: 0.55 }, hold: 6 },  // 拖到约第 60 章
-      { hold: 14 },                     // 看：只画第 60 章之前已发生的关系
+      { drag: { from: '#time-slider', to: 0.55 }, hold: 6 },  // 拖到约第 11 章（全书 20 章）
+      { hold: 14 },                     // 看：只画第 11 章之前已发生的关系
     ],
   },
   // —— 百年孤独：覆盖「怎么用」第 1-6 点 ——

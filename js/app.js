@@ -2931,7 +2931,11 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const helpModal = document.getElementById('help-modal');
     const closeHelp = () => { if (helpModal) helpModal.hidden = true; };
     const helpBtn = document.getElementById('help-btn');
-    if (helpBtn && helpModal) helpBtn.addEventListener('click', () => { helpModal.hidden = false; helpModal.querySelector('.modal').scrollTop = 0; });
+    if (helpBtn && helpModal) helpBtn.addEventListener('click', () => {
+      helpModal.hidden = false; helpModal.querySelector('.modal').scrollTop = 0;
+      // 演示 GIF 首次打开才加载（合计约 2MB，别拖慢首屏）
+      helpModal.querySelectorAll('img[data-gif]').forEach((img) => { img.src = img.dataset.gif; img.removeAttribute('data-gif'); });
+    });
     if (helpModal) {
       helpModal.addEventListener('click', (ev) => {
         if (ev.target === helpModal || ev.target.closest('[data-help-close]')) closeHelp();

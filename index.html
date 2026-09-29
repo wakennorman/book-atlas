@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=76">
+  <link rel="stylesheet" href="css/style.css?v=77">
 </head>
 <body>
 
@@ -205,17 +205,9 @@
     <p class="hint">每条都可以点「试一下」，立刻在这一页的图上做给你看。</p>
 
     <div class="help-list">
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <circle class="hf-dot" cx="52" cy="46" r="13" fill="#c99a3f"/>
-            <circle class="hf-dot hf-slow" cx="24" cy="24" r="7" fill="#9a6fb0"/>
-            <circle class="hf-dot hf-slow" cx="30" cy="68" r="8" fill="#4a7fc4"/>
-            <circle class="hf-dot hf-slow" cx="82" cy="20" r="6" fill="#c0504d"/>
-            <rect class="hf-panel" x="96" y="10" width="60" height="70" rx="7" fill="var(--panel-2)" stroke="var(--line)"/>
-            <path class="hf-line" d="M104 24h44M104 34h32M104 44h40M104 54h26" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
-            <path class="hf-cursor" d="M0 0 L0 15 L4.5 11 L7.5 18 L11 16.5 L8 10 L13.5 10 Z" fill="var(--ink)"/>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/solitude-open.gif?v=77" alt="演示：点开一个圆点，打开人物档案">
         </div>
         <div class="help-text">
           <b>① 点一个圆点，看这个人</b>
@@ -224,13 +216,9 @@
         </div>
       </div>
 
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <rect x="14" y="30" width="132" height="30" rx="15" fill="var(--panel-2)" stroke="var(--line)"/>
-            <text class="hf-type" x="30" y="50" font-size="13" fill="var(--muted)">孔明…</text>
-            <circle class="hf-hit" cx="132" cy="45" r="9" fill="#4c9f70"/>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/solitude-search.gif?v=77" alt="演示：搜「乌苏拉」并定位到这个人">
         </div>
         <div class="help-text">
           <b>② 用「字 / 号 / 俗称 / 别的译本」也能搜到人</b>
@@ -239,14 +227,10 @@
         </div>
       </div>
 
-      <div class="help-item">
-        <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <circle cx="80" cy="45" r="6" fill="#c99a3f"/>
-            <circle cx="48" cy="30" r="5" fill="#4a7fc4"/>
-            <circle cx="112" cy="58" r="5" fill="#c0504d"/>
-            <text class="hf-label" x="80" y="30" font-size="11" text-anchor="middle" fill="var(--ink)">名字</text>
-          </svg>
+      <div class="help-item has-gif">
+        <div class="help-fig gifs">
+          <img class="help-gif" data-gif="docs/tutorial/solitude-size.gif?v=77" alt="演示：人数切到「主要」只留主要人物">
+          <img class="help-gif" data-gif="docs/tutorial/solitude-focus.gif?v=77" alt="演示：聚焦一个人的圈子">
         </div>
         <div class="help-text">
           <b>③ 人太多看不清：三板斧 + 一键看清</b>
@@ -257,21 +241,9 @@
         </div>
       </div>
 
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <circle class="hf-ghost" cx="40" cy="45" r="10" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>
-            <circle cx="20" cy="18" r="6" fill="#4a7fc4"/>
-            <circle cx="24" cy="72" r="6" fill="#c0504d"/>
-            <circle cx="96" cy="14" r="6" fill="#4c9f70"/>
-            <circle cx="106" cy="76" r="6" fill="#9a6fb0"/>
-            <path class="hf-fan" d="M92 30 Q 58 10 20 18" stroke="#4a7fc4" fill="none" stroke-width="2"/>
-            <path class="hf-fan" d="M92 30 Q 50 60 24 72" stroke="#c0504d" fill="none" stroke-width="2"/>
-            <path class="hf-fan" d="M92 30 Q 78 8 96 14" stroke="#4c9f70" fill="none" stroke-width="2"/>
-            <path class="hf-fan" d="M92 30 Q 88 60 106 76" stroke="#9a6fb0" fill="none" stroke-width="2"/>
-            <circle class="hf-drag" cx="92" cy="30" r="11" fill="#c99a3f"/>
-            <g transform="translate(96,34)"><path class="hf-hand" d="M0 0 L0 13 L4 9.5 L6.5 16 L9.5 14.5 L7 8.5 L12 8.5 Z" fill="var(--ink)"/></g>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/solitude-drag.gif?v=77" alt="演示：按住圆点把一个人拖出来">
         </div>
         <div class="help-text">
           <b>④ 拖动节点：把一个人拉出来，专门看他的线</b>
@@ -280,17 +252,9 @@
         </div>
       </div>
 
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <circle class="hf-dot" cx="46" cy="30" r="10" fill="#c99a3f"/>
-            <circle class="hf-dot hf-slow" cx="80" cy="52" r="8" fill="#4a7fc4"/>
-            <circle class="hf-dot" cx="46" cy="70" r="9" fill="#c99a3f"/>
-            <circle class="hf-dot hf-slow" cx="118" cy="34" r="7" fill="#4c9f70"/>
-            <path d="M56 34 L72 48 M46 40 L46 60" stroke="var(--muted)" stroke-width="2"/>
-            <path d="M132 20c-6 0-11 5-11 11 0 8 11 20 11 20s11-12 11-20c0-6-5-11-11-11z" fill="#e0564f"/>
-            <circle cx="132" cy="31" r="4" fill="#fff"/>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/solitude-place.gif?v=77" alt="演示：选一个地点，只看那里的人和事">
         </div>
         <div class="help-text">
           <b>⑤ 按地点看戏</b>
@@ -299,17 +263,9 @@
         </div>
       </div>
 
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <circle class="hf-dim" cx="40" cy="26" r="9" fill="#9aa3b0"/>
-            <text x="40" y="30" font-size="10" text-anchor="middle" fill="#fff">🔒</text>
-            <circle class="hf-dim" cx="40" cy="64" r="9" fill="#9aa3b0"/>
-            <text x="40" y="68" font-size="10" text-anchor="middle" fill="#fff">🔒</text>
-            <circle class="hf-dot" cx="104" cy="45" r="12" fill="#c99a3f"/>
-            <path d="M52 30 L92 42" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/>
-            <path d="M52 60 L92 48" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/solitude-spoiler.gif?v=77" alt="演示：打开剧透保护设置">
         </div>
         <div class="help-text">
           <b>⑥ 怕剧透：开「剧透保护」</b>
@@ -369,14 +325,9 @@
           <a class="ghost tiny" href="editor.html">打开编辑器</a>
         </div>
       </div>
-      <div class="help-item">
+      <div class="help-item has-gif">
         <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <rect x="16" y="14" width="128" height="62" rx="8" fill="var(--panel-2)" stroke="var(--line)"/>
-            <path d="M28 30h60M28 42h44M28 54h52" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
-            <circle class="hf-pulse" cx="118" cy="30" r="7" fill="#c99a3f"/>
-            <circle class="hf-pulse" cx="118" cy="52" r="5" fill="#4a7fc4"/>
-          </svg>
+          <img class="help-gif" data-gif="docs/tutorial/time-travel.gif?v=77" alt="演示：时间旅行滑块拨到第 11 章，图只画当时已发生的关系">
         </div>
         <div class="help-text">
           <b>⑩ 读到哪儿了：第 N 章的世界</b>
@@ -535,6 +486,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=76"></script>
+<script src="js/app.js?v=77"></script>
 </body>
 </html>
