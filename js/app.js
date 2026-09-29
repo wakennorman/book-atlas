@@ -136,6 +136,12 @@
     const k = rel && rel.kin;
     return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${KIN_LABEL[k]}：${KIN_HINT[k] || ''}">${KIN_LABEL[k]}</span>` : '';
   };
+  // 性别徽章：♂/♀（U+2642/U+2640）不在中文字体里，手机端字体回退的字形又大又靠下，
+  // 药丸框里永远对不齐 → 改用内联 SVG（与平台字体无关，各端像素一致、可居中）
+  const SEX_SVG = {
+    f: '<svg class="sex" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="4"/><path d="M8 9.5V15M5.5 12.5h5"/></svg>女',
+    m: '<svg class="sex" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="9.5" r="4"/><path d="M9.5 6.5L14.5 1.5M10.5 1.5h4v4"/></svg>男'
+  };
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
   const charName = (id) => state.byId.get(id)?.name || id;
@@ -1567,7 +1573,7 @@
       ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
-        <span class="badge">${c.gender === 'f' ? '♀ 女' : '♂ 男'}</span>
+        <span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
         <span class="badge">关系 ${allRels.length} 条</span>
