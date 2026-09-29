@@ -303,6 +303,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/make-miniprogram-packs.mjs` | 生成微信小程序的数据包（含预计算布局）：`node scripts/make-miniprogram-packs.mjs` |
 | `scripts/wholebook.mjs` | **整本生成（命令行版）**：逐章抽取 → 合并去重 → 写出数据；可 `--jobs` 并发、可断点续跑 |
 | `scripts/dedupe-chars.mjs` | 同名/别名人物合并（整本生成后必跑一遍）：`node scripts/dedupe-chars.mjs data/xx.json [--write]` |
+| `scripts/merge-duplicate-relations.mjs` | **重复关系线合并**：同一对人物 + 同一类型的多条记录会扇开成多根一样的线（三国曾有 87 组），合并时并入小事件、统一方向、取区间并集；区间有空档的阶段关系（同盟→分裂→再同盟）自动跳过。`node scripts/merge-duplicate-relations.mjs [--write]`；`validate.mjs` 会拦住新出现的重复 |
 | `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
 | `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 73 [--dry-run]` |

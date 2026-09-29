@@ -13277,9 +13277,78 @@
           "text": "玄德遣使赐云长金帛，云长遣关平来谢",
           "chapter": "第65章",
           "place": "chengdu"
+        },
+        {
+          "text": "突围时关公在后，敌住张辽",
+          "chapter": "第16章",
+          "place": "xiaopei"
+        },
+        {
+          "text": "关羽奉命整顿船只渡百姓",
+          "chapter": "第41章",
+          "place": "han-jiang"
+        },
+        {
+          "text": "刘备称三人义同生死，不肯相离",
+          "chapter": "第2章",
+          "place": "luo-yang"
+        },
+        {
+          "text": "关张失散重逢，哭拜刘备",
+          "chapter": "第19章",
+          "place": "xuzhou"
+        },
+        {
+          "text": "关羽言旧袍乃皇叔所赐，穿之如见兄面",
+          "chapter": "第25章",
+          "place": "xudu"
+        },
+        {
+          "text": "挂印封金，千里单骑寻兄",
+          "chapter": "第27章",
+          "place": "xudu"
+        },
+        {
+          "text": "关定庄相见，执手啼哭不止",
+          "chapter": "第28章",
+          "place": "guan-ding-zhuang"
+        },
+        {
+          "text": "关羽劝刘备赴会，以免荆州生疑。",
+          "chapter": "第34章",
+          "place": "xin-ye"
+        },
+        {
+          "text": "关羽谏刘备勿收义子，恐后生乱",
+          "chapter": "第36章",
+          "place": "fancheng"
+        },
+        {
+          "text": "关羽引江夏兵于汉津截出接应刘备",
+          "chapter": "第42章",
+          "place": "han-jin"
+        },
+        {
+          "text": "关羽伏兵杀出，周瑜拨马便走",
+          "chapter": "第55章",
+          "place": "huang-zhou"
+        },
+        {
+          "text": "云长引三百军救刘备，又救张飞",
+          "chapter": "第31章",
+          "place": "rang-shan"
+        },
+        {
+          "text": "关羽从江陵杀来围困周瑜",
+          "chapter": "第56章",
+          "place": "jiang-ling"
+        },
+        {
+          "text": "关羽守荆州，拒襄阳要路。",
+          "chapter": "第60章",
+          "place": "jing-zhou"
         }
-      ],
-      "fromCh": 1
+      ]
     },
     {
       "from": "liu-bei",
@@ -13357,9 +13426,63 @@
           "text": "张飞请战马超，玄德随后赶到关上",
           "chapter": "第65章",
           "place": "jiameng-guan"
+        },
+        {
+          "text": "张飞夺马惹祸，刘备责之",
+          "chapter": "第16章",
+          "place": "xiaopei"
+        },
+        {
+          "text": "张飞引军杀血路救出刘备",
+          "chapter": "第41章",
+          "place": ""
+        },
+        {
+          "text": "刘备令张飞击高升，张飞亦随其弃官",
+          "chapter": "第2章",
+          "place": "yangcheng"
+        },
+        {
+          "text": "张飞自芒砀山来归，拜见刘备",
+          "chapter": "第19章",
+          "place": "xuzhou"
+        },
+        {
+          "text": "张飞救龚都被围，云长杀退乐进",
+          "chapter": "第31章",
+          "place": "runan"
+        },
+        {
+          "text": "张飞谏刘备勿赴襄阳之会。",
+          "chapter": "第34章",
+          "place": "xin-ye"
+        },
+        {
+          "text": "张飞长坂桥退敌后回见刘备",
+          "chapter": "第42章",
+          "place": "chang-ban-qiao"
+        },
+        {
+          "text": "张飞江上护阿斗，斥嫂嫂无礼",
+          "chapter": "第61章",
+          "place": "youjiang-jia-kou"
+        },
+        {
+          "text": "张飞从秭归杀来围困周瑜",
+          "chapter": "第56章",
+          "place": "zi-gui"
+        },
+        {
+          "text": "张飞奉命领四郡巡江，守荆州。",
+          "chapter": "第60章",
+          "place": "jing-zhou"
+        },
+        {
+          "text": "张飞赴成都抱先主足而哭，陈桃园之誓，誓死为二兄报仇",
+          "chapter": "第81章",
+          "place": "chengdu"
         }
-      ],
-      "fromCh": 1
+      ]
     },
     {
       "from": "guan-yu",
@@ -13412,9 +13535,23 @@
           "text": "关羽言翼德吾弟也，位与吾相并可也",
           "chapter": "第73章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "二人相叙失散之事，各洒泪",
+          "chapter": "第19章",
+          "place": "xuzhou"
+        },
+        {
+          "text": "张飞接应，与关羽同上流会合",
+          "chapter": "第41章",
+          "place": "bai-he"
+        },
+        {
+          "text": "关张同居一帐，随刘备同起同去",
+          "chapter": "第2章",
+          "place": "anxi-xian"
         }
-      ],
-      "fromCh": 1
+      ]
     },
     {
       "from": "zhang-jue",
@@ -13427,9 +13564,13 @@
           "text": "巨鹿共商起兵取天下",
           "chapter": "第1章",
           "place": "ju-lu"
+        },
+        {
+          "text": "兄弟同起黄巾，张角死后张宝仍统众",
+          "chapter": "第2章",
+          "place": "yangcheng"
         }
-      ],
-      "fromCh": 1
+      ]
     },
     {
       "from": "zhang-jue",
@@ -13567,9 +13708,13 @@
           "text": "刘备游学时尝师事郑玄",
           "chapter": "第1章",
           "place": ""
+        },
+        {
+          "text": "刘备同陈登亲至郑玄家求书",
+          "chapter": "第22章",
+          "place": "xuzhou"
         }
-      ],
-      "fromCh": 1
+      ]
     },
     {
       "from": "gongsun-zan",
@@ -13822,6 +13967,11 @@
           "text": "董卓欲杀袁绍，李儒劝阻，绍弃官奔冀州",
           "chapter": "第4章",
           "place": "luo-yang"
+        },
+        {
+          "text": "筵上袁绍拔剑与董卓对敌",
+          "chapter": "第3章",
+          "place": "luo-yang"
         }
       ]
     },
@@ -13855,11 +14005,25 @@
           "text": "布侍立卓侧，受命为曹操择马",
           "chapter": "第4章",
           "place": "luo-yang"
+        },
+        {
+          "text": "董卓令吕布断后，又令其发掘陵寝",
+          "chapter": "第6章",
+          "place": "luo-yang"
+        },
+        {
+          "text": "卓呼“吾儿奉先何在”，布应诏一戟杀之",
+          "chapter": "第9章",
+          "place": "bei-ye-men"
+        },
+        {
+          "text": "董卓因吕布窥貂蝉，叱之逐出",
+          "chapter": "第8章",
+          "place": "dong-zhuo-xiang-fu"
         }
       ],
       "kin": "sworn",
-      "fromCh": 3,
-      "toCh": 8
+      "fromCh": 3
     },
     {
       "from": "dong-zhuo",
@@ -14065,6 +14229,11 @@
           "text": "兄辩被废为弘农王，弟协继位为帝",
           "chapter": "第4章",
           "place": "jiade-dian"
+        },
+        {
+          "text": "兄弟以衣相结，随萤火寻路",
+          "chapter": "第3章",
+          "place": "bei-mang-shan"
         }
       ]
     },
@@ -14083,6 +14252,11 @@
         {
           "text": "袁隗列席省中废立之宴",
           "chapter": "第3章",
+          "place": "luo-yang"
+        },
+        {
+          "text": "袁绍为袁隗之侄，现为司隶校尉",
+          "chapter": "第2章",
           "place": "luo-yang"
         }
       ]
@@ -14226,9 +14400,13 @@
           "text": "董卓封弟董旻为左将军鄠侯",
           "chapter": "第3章",
           "place": "luo-yang"
+        },
+        {
+          "text": "董旻随董卓亲属被斩首号令",
+          "chapter": "第9章",
+          "place": "mei-wu"
         }
-      ],
-      "fromCh": 3
+      ]
     },
     {
       "from": "he-jin",
@@ -14288,21 +14466,6 @@
       ]
     },
     {
-      "from": "liu-bian",
-      "to": "liu-xie",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "兄弟以衣相结，随萤火寻路",
-          "chapter": "第3章",
-          "place": "bei-mang-shan"
-        }
-      ],
-      "fromCh": 3
-    },
-    {
       "from": "yuan-shao",
       "to": "yuan-shu",
       "type": "兄弟",
@@ -14318,10 +14481,14 @@
           "text": "袁术让帝号于袁绍，欲送玉玺",
           "chapter": "第21章",
           "place": "huainan"
+        },
+        {
+          "text": "袁术求马不得，自此兄弟不睦",
+          "chapter": "第7章",
+          "place": "nanyang"
         }
       ],
-      "fromCh": 3,
-      "toCh": 22
+      "fromCh": 3
     },
     {
       "from": "cui-lie",
@@ -14463,20 +14630,6 @@
       ],
       "fromCh": 3,
       "toCh": 6
-    },
-    {
-      "from": "yuan-shao",
-      "to": "dong-zhuo",
-      "type": "政敌",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "筵上袁绍拔剑与董卓对敌",
-          "chapter": "第3章",
-          "place": "luo-yang"
-        }
-      ],
-      "fromCh": 3
     },
     {
       "from": "ding-yuan",
@@ -14668,22 +14821,6 @@
         }
       ],
       "fromCh": 6
-    },
-    {
-      "from": "dong-zhuo",
-      "to": "lv-bu",
-      "type": "义父子（收吕布为义子）",
-      "style": "solid",
-      "events": [
-        {
-          "text": "董卓令吕布断后，又令其发掘陵寝",
-          "chapter": "第6章",
-          "place": "luo-yang"
-        }
-      ],
-      "kin": "sworn",
-      "fromCh": 3,
-      "toCh": 8
     },
     {
       "from": "dong-zhuo",
@@ -15377,26 +15514,6 @@
       "toCh": 19
     },
     {
-      "from": "dong-zhuo",
-      "to": "lv-bu",
-      "type": "义父子（收吕布为义子）",
-      "kin": "sworn",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "卓呼“吾儿奉先何在”，布应诏一戟杀之",
-          "chapter": "第9章",
-          "place": "bei-ye-men"
-        },
-        {
-          "text": "董卓因吕布窥貂蝉，叱之逐出",
-          "chapter": "第8章",
-          "place": "dong-zhuo-xiang-fu"
-        }
-      ],
-      "fromCh": 8
-    },
-    {
       "from": "wang-yun",
       "to": "diao-chan",
       "type": "义父女（王允收为义女）",
@@ -15407,6 +15524,11 @@
           "text": "允称貂蝉为吾女，以之许嫁吕布",
           "chapter": "第9章",
           "place": ""
+        },
+        {
+          "text": "王允跪求貂蝉行连环计",
+          "chapter": "第8章",
+          "place": "wang-yun-fu"
         }
       ]
     },
@@ -15457,20 +15579,6 @@
       "fromCh": 9
     },
     {
-      "from": "dong-min",
-      "to": "dong-zhuo",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "董旻随董卓亲属被斩首号令",
-          "chapter": "第9章",
-          "place": "mei-wu"
-        }
-      ]
-    },
-    {
       "from": "dong-huang",
       "to": "dong-zhuo",
       "type": "叔侄",
@@ -15481,6 +15589,11 @@
           "text": "董璜随董卓亲属被斩首号令",
           "chapter": "第9章",
           "place": "mei-wu"
+        },
+        {
+          "text": "董卓封侄董璜为侍中领禁军",
+          "chapter": "第8章",
+          "place": "chang-an"
         }
       ]
     },
@@ -15847,21 +15960,6 @@
     },
     {
       "from": "dong-zhuo",
-      "to": "dong-huang",
-      "type": "叔侄",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "董卓封侄董璜为侍中领禁军",
-          "chapter": "第8章",
-          "place": "chang-an"
-        }
-      ],
-      "fromCh": 8
-    },
-    {
-      "from": "dong-zhuo",
       "to": "zhang-wen",
       "type": "诬杀",
       "style": "dashed",
@@ -15898,21 +15996,6 @@
           "place": "dong-zhuo-xiang-fu"
         }
       ]
-    },
-    {
-      "from": "wang-yun",
-      "to": "diao-chan",
-      "type": "义父女（王允收为义女）",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "王允跪求貂蝉行连环计",
-          "chapter": "第8章",
-          "place": "wang-yun-fu"
-        }
-      ],
-      "fromCh": 8
     },
     {
       "from": "wang-yun",
@@ -16215,9 +16298,13 @@
           "text": "曹性与郝萌同杀曹操一阵",
           "chapter": "第12章",
           "place": "puyang"
+        },
+        {
+          "text": "曹性随侯成、郝萌接应高顺",
+          "chapter": "第18章",
+          "place": "xiaopei"
         }
-      ],
-      "fromCh": 12
+      ]
     },
     {
       "from": "cao-cao",
@@ -16513,6 +16600,11 @@
           "text": "糜竺谏刘备勿收留吕布",
           "chapter": "第13章",
           "place": ""
+        },
+        {
+          "text": "糜竺随刘备弃小沛奔许都",
+          "chapter": "第16章",
+          "place": "xiaopei"
         }
       ],
       "fromCh": 13,
@@ -16726,8 +16818,8 @@
       ]
     },
     {
-      "from": "fu-houhou",
-      "to": "liu-xie",
+      "from": "liu-xie",
+      "to": "fu-houhou",
       "type": "夫妻",
       "kin": "marriage",
       "style": "solid",
@@ -16736,9 +16828,18 @@
           "text": "帝后于瓦屋共食粗粝",
           "chapter": "第13章",
           "place": "da-yang"
+        },
+        {
+          "text": "献帝回宫泣诉许田受辱",
+          "chapter": "第20章",
+          "place": "xudu"
+        },
+        {
+          "text": "帝后共谋诛操，事泄抱头痛哭",
+          "chapter": "第66章",
+          "place": "xudu"
         }
-      ],
-      "fromCh": 13
+      ]
     },
     {
       "from": "li-le",
@@ -17209,54 +17310,6 @@
     },
     {
       "from": "liu-bei",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞夺马惹祸，刘备责之",
-          "chapter": "第16章",
-          "place": "xiaopei"
-        },
-        {
-          "text": "张飞引军杀血路救出刘备",
-          "chapter": "第41章",
-          "place": ""
-        },
-        {
-          "text": "刘备令张飞击高升，张飞亦随其弃官",
-          "chapter": "第2章",
-          "place": "yangcheng"
-        }
-      ]
-    },
-    {
-      "from": "liu-bei",
-      "to": "guan-yu",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "突围时关公在后，敌住张辽",
-          "chapter": "第16章",
-          "place": "xiaopei"
-        },
-        {
-          "text": "关羽奉命整顿船只渡百姓",
-          "chapter": "第41章",
-          "place": "han-jiang"
-        },
-        {
-          "text": "刘备称三人义同生死，不肯相离",
-          "chapter": "第2章",
-          "place": "luo-yang"
-        }
-      ]
-    },
-    {
-      "from": "liu-bei",
       "to": "sun-qian",
       "type": "主从",
       "style": "solid",
@@ -17265,25 +17318,15 @@
           "text": "孙乾劝刘备求救吕布，又劝投曹操",
           "chapter": "第16章",
           "place": "xiaopei"
+        },
+        {
+          "text": "孙乾劝刘备速告急于曹操",
+          "chapter": "第18章",
+          "place": "xiaopei"
         }
       ],
       "fromCh": 16,
       "toCh": 19
-    },
-    {
-      "from": "liu-bei",
-      "to": "mi-zhu",
-      "type": "主从",
-      "style": "solid",
-      "events": [
-        {
-          "text": "糜竺随刘备弃小沛奔许都",
-          "chapter": "第16章",
-          "place": "xiaopei"
-        }
-      ],
-      "fromCh": 13,
-      "toCh": 18
     },
     {
       "from": "liu-bei",
@@ -17590,10 +17633,20 @@
           "text": "许褚三合斩张先于马下。",
           "chapter": "第17章",
           "place": "nanyang"
+        },
+        {
+          "text": "许褚与张辽同往长坂桥探听",
+          "chapter": "第42章",
+          "place": "chang-ban-qiao"
+        },
+        {
+          "text": "许褚应声出马，一刀斩尹楷",
+          "chapter": "第32章",
+          "place": "han-dan"
         }
       ],
       "fromCh": 14,
-      "toCh": 57
+      "toCh": 59
     },
     {
       "from": "cao-cao",
@@ -17630,6 +17683,21 @@
           "text": "夏侯惇见冤魂惊倒得病",
           "chapter": "第78章",
           "place": "luo-yang"
+        },
+        {
+          "text": "夏侯惇请为都督，领十万兵攻新野",
+          "chapter": "第39章",
+          "place": "xudu"
+        },
+        {
+          "text": "惇传“鸡肋”号令，被操叱退",
+          "chapter": "第72章",
+          "place": "xie-gu"
+        },
+        {
+          "text": "夏侯惇领兵五万先行击吕布",
+          "chapter": "第18章",
+          "place": "xudu"
         }
       ],
       "fromCh": 14,
@@ -17988,48 +18056,6 @@
       "toCh": 20
     },
     {
-      "from": "guan-yu",
-      "to": "liu-bei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关张失散重逢，哭拜刘备",
-          "chapter": "第19章",
-          "place": "xuzhou"
-        }
-      ]
-    },
-    {
-      "from": "zhang-fei",
-      "to": "liu-bei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞自芒砀山来归，拜见刘备",
-          "chapter": "第19章",
-          "place": "xuzhou"
-        }
-      ]
-    },
-    {
-      "from": "guan-yu",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "二人相叙失散之事，各洒泪",
-          "chapter": "第19章",
-          "place": "xuzhou"
-        }
-      ]
-    },
-    {
       "from": "mi-zhu",
       "to": "liu-bei",
       "type": "君臣",
@@ -18074,10 +18100,30 @@
           "text": "孙乾与吕范同赴江南说合亲事",
           "chapter": "第54章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "差孙乾星夜赍书往袁绍处",
+          "chapter": "第22章",
+          "place": "jizhou"
+        },
+        {
+          "text": "孙乾赍书荆州，为玄德陈诉蔡瑁之谋",
+          "chapter": "第35章",
+          "place": "jing-zhou"
+        },
+        {
+          "text": "孙乾在城中声扬劝百姓随行",
+          "chapter": "第41章",
+          "place": ""
+        },
+        {
+          "text": "玄德差孙乾赍金珠从小路赴汉中",
+          "chapter": "第65章",
+          "place": ""
         }
       ],
       "fromCh": 19,
-      "toCh": 55
+      "toCh": 66
     },
     {
       "from": "gao-shun",
@@ -18431,8 +18477,8 @@
       ]
     },
     {
-      "from": "cao-ren",
-      "to": "cao-cao",
+      "from": "cao-cao",
+      "to": "cao-ren",
       "type": "兄弟",
       "kin": "blood",
       "style": "solid",
@@ -18441,6 +18487,16 @@
           "text": "曹仁引三千兵袭取沛城",
           "chapter": "第19章",
           "place": "xiaopei"
+        },
+        {
+          "text": "曹仁伏于右，夹攻袁军",
+          "chapter": "第30章",
+          "place": "guandu"
+        },
+        {
+          "text": "南征袁术前令曹仁守许都。",
+          "chapter": "第17章",
+          "place": "xudu"
         }
       ],
       "fromCh": 17,
@@ -18725,25 +18781,6 @@
       "toCh": 32
     },
     {
-      "from": "liu-xie",
-      "to": "fu-houhou",
-      "type": "夫妻",
-      "kin": "marriage",
-      "style": "solid",
-      "events": [
-        {
-          "text": "献帝回宫泣诉许田受辱",
-          "chapter": "第20章",
-          "place": "xudu"
-        },
-        {
-          "text": "帝后共谋诛操，事泄抱头痛哭",
-          "chapter": "第66章",
-          "place": "xudu"
-        }
-      ]
-    },
-    {
       "from": "fu-wan",
       "to": "fu-houhou",
       "type": "父女",
@@ -18937,6 +18974,21 @@
           "text": "曹操遣薛悌送木匣，授守合淝之策",
           "chapter": "第67章",
           "place": "hefei"
+        },
+        {
+          "text": "张辽代关羽禀三事，回报曹操",
+          "chapter": "第25章",
+          "place": "tushan"
+        },
+        {
+          "text": "张辽扯住曹操辔环，请回军再战",
+          "chapter": "第42章",
+          "place": "chang-ban-qiao"
+        },
+        {
+          "text": "张辽不三合大败袁尚",
+          "chapter": "第32章",
+          "place": "li-yang"
         }
       ],
       "fromCh": 20
@@ -18989,6 +19041,11 @@
           "text": "郭嘉引《春秋》义谏曹操勿自刎。",
           "chapter": "第17章",
           "place": ""
+        },
+        {
+          "text": "郭嘉献缓攻待变之策",
+          "chapter": "第32章",
+          "place": "li-yang"
         }
       ],
       "fromCh": 17,
@@ -19054,10 +19111,14 @@
           "text": "荀彧谏曹操免张松死。",
           "chapter": "第60章",
           "place": "xi-jiao-chang"
+        },
+        {
+          "text": "荀彧有书报刘备乘虚来攻许昌",
+          "chapter": "第31章",
+          "place": "xudu"
         }
       ],
-      "fromCh": 17,
-      "toCh": 62
+      "fromCh": 17
     },
     {
       "from": "dong-cheng",
@@ -19533,19 +19594,6 @@
       "fromCh": 22
     },
     {
-      "from": "liu-bei",
-      "to": "zheng-xuan",
-      "type": "师徒",
-      "style": "solid",
-      "events": [
-        {
-          "text": "刘备同陈登亲至郑玄家求书",
-          "chapter": "第22章",
-          "place": "xuzhou"
-        }
-      ]
-    },
-    {
       "from": "zheng-xuan",
       "to": "yuan-shao",
       "type": "世交",
@@ -19557,36 +19605,6 @@
           "place": "xuzhou"
         }
       ]
-    },
-    {
-      "from": "liu-bei",
-      "to": "sun-qian",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "差孙乾星夜赍书往袁绍处",
-          "chapter": "第22章",
-          "place": "jizhou"
-        },
-        {
-          "text": "孙乾赍书荆州，为玄德陈诉蔡瑁之谋",
-          "chapter": "第35章",
-          "place": "jing-zhou"
-        },
-        {
-          "text": "孙乾在城中声扬劝百姓随行",
-          "chapter": "第41章",
-          "place": ""
-        },
-        {
-          "text": "玄德差孙乾赍金珠从小路赴汉中",
-          "chapter": "第65章",
-          "place": ""
-        }
-      ],
-      "fromCh": 22,
-      "toCh": 66
     },
     {
       "from": "yuan-shao",
@@ -20149,50 +20167,6 @@
     },
     {
       "from": "guan-yu",
-      "to": "liu-bei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关羽言旧袍乃皇叔所赐，穿之如见兄面",
-          "chapter": "第25章",
-          "place": "xudu"
-        },
-        {
-          "text": "挂印封金，千里单骑寻兄",
-          "chapter": "第27章",
-          "place": "xudu"
-        },
-        {
-          "text": "关定庄相见，执手啼哭不止",
-          "chapter": "第28章",
-          "place": "guan-ding-zhuang"
-        },
-        {
-          "text": "关羽劝刘备赴会，以免荆州生疑。",
-          "chapter": "第34章",
-          "place": "xin-ye"
-        },
-        {
-          "text": "关羽谏刘备勿收义子，恐后生乱",
-          "chapter": "第36章",
-          "place": "fancheng"
-        },
-        {
-          "text": "关羽引江夏兵于汉津截出接应刘备",
-          "chapter": "第42章",
-          "place": "han-jin"
-        },
-        {
-          "text": "关羽伏兵杀出，周瑜拨马便走",
-          "chapter": "第55章",
-          "place": "huang-zhou"
-        }
-      ]
-    },
-    {
-      "from": "guan-yu",
       "to": "gan-furen",
       "type": "叔嫂",
       "kin": "inlaw",
@@ -20253,30 +20227,6 @@
       ],
       "fromCh": 25,
       "toCh": 26
-    },
-    {
-      "from": "zhang-liao",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张辽代关羽禀三事，回报曹操",
-          "chapter": "第25章",
-          "place": "tushan"
-        },
-        {
-          "text": "张辽扯住曹操辔环，请回军再战",
-          "chapter": "第42章",
-          "place": "chang-ban-qiao"
-        },
-        {
-          "text": "张辽不三合大败袁尚",
-          "chapter": "第32章",
-          "place": "li-yang"
-        }
-      ],
-      "fromCh": 20
     },
     {
       "from": "guan-yu",
@@ -20843,9 +20793,33 @@
           "text": "关平随父突围，力尽被擒同死。",
           "chapter": "第77章",
           "place": "jueshi"
+        },
+        {
+          "text": "关平随云长引三百军到穰山救应",
+          "chapter": "第31章",
+          "place": "rang-shan"
+        },
+        {
+          "text": "关平代父迎战庞德，又救父回营。",
+          "chapter": "第74章",
+          "place": "fancheng"
+        },
+        {
+          "text": "关羽引关平、周仓投华容道埋伏",
+          "chapter": "第49章",
+          "place": ""
+        },
+        {
+          "text": "关平赍书往荆州，后随关羽同守荆州",
+          "chapter": "第63章",
+          "place": "jing-zhou"
+        },
+        {
+          "text": "关平奉命赴川送书谢赐金帛",
+          "chapter": "第65章",
+          "place": "jing-zhou"
         }
-      ],
-      "fromCh": 28
+      ]
     },
     {
       "from": "guan-ding",
@@ -21618,27 +21592,6 @@
       "fromCh": 30
     },
     {
-      "from": "cao-cao",
-      "to": "cao-ren",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "曹仁伏于右，夹攻袁军",
-          "chapter": "第30章",
-          "place": "guandu"
-        },
-        {
-          "text": "南征袁术前令曹仁守许都。",
-          "chapter": "第17章",
-          "place": "xudu"
-        }
-      ],
-      "fromCh": 17,
-      "toCh": 31
-    },
-    {
       "from": "xu-chu",
       "to": "gao-lan",
       "type": "敌将",
@@ -21680,9 +21633,18 @@
           "text": "策与权同为吴夫人所生",
           "chapter": "第7章",
           "place": ""
+        },
+        {
+          "text": "国太引伯符遗言定内外问计",
+          "chapter": "第44章",
+          "place": "chaisang"
+        },
+        {
+          "text": "孙权谥兄孙策为长沙桓王",
+          "chapter": "第98章",
+          "place": ""
         }
-      ],
-      "fromCh": 7
+      ]
     },
     {
       "from": "sun-ce",
@@ -21763,9 +21725,13 @@
           "text": "孙策临终嘱乔夫人孝养尊姑",
           "chapter": "第29章",
           "place": "wu-jun"
+        },
+        {
+          "text": "孔明称大乔是孙伯符将军主妇",
+          "chapter": "第44章",
+          "place": "chaisang"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "xiao-qiao",
@@ -21778,9 +21744,13 @@
           "text": "策嘱乔夫人令妹转致周郎辅权",
           "chapter": "第29章",
           "place": "wu-jun"
+        },
+        {
+          "text": "孔明言江东乔公二女为姊妹",
+          "chapter": "第44章",
+          "place": "chaisang"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "xiao-qiao",
@@ -21793,9 +21763,13 @@
           "text": "乔夫人转致其妹嘱周瑜辅佐孙权",
           "chapter": "第29章",
           "place": "wu-jun"
+        },
+        {
+          "text": "孔明言小乔乃周瑜之妻，瑜大怒",
+          "chapter": "第44章",
+          "place": "chaisang"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "sun-ce",
@@ -21842,9 +21816,28 @@
           "text": "周瑜上书孙权献美人计，孙权依计",
           "chapter": "第54章",
           "place": "nan-xu"
+        },
+        {
+          "text": "吴国太提亡姐遗言，权将问计周瑜",
+          "chapter": "第43章",
+          "place": "chaisang-jun"
+        },
+        {
+          "text": "孙权差陆逊为先锋接应周瑜",
+          "chapter": "第49章",
+          "place": ""
+        },
+        {
+          "text": "周瑜收军点将，申报吴侯",
+          "chapter": "第51章",
+          "place": ""
+        },
+        {
+          "text": "周瑜上书请兴兵取荆州雪恨",
+          "chapter": "第56章",
+          "place": ""
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "zhang-zhao",
@@ -21886,14 +21879,33 @@
           "text": "张昭献计使刘备双手奉还荆州",
           "chapter": "第65章",
           "place": "jiang-dong"
+        },
+        {
+          "text": "张昭献计诳郡主取阿斗",
+          "chapter": "第61章",
+          "place": ""
+        },
+        {
+          "text": "张昭献计拘诸葛瑾老小索荆州",
+          "chapter": "第66章",
+          "place": "jiang-dong"
+        },
+        {
+          "text": "张昭献计送关羽首级与曹操。",
+          "chapter": "第77章",
+          "place": "jianye"
+        },
+        {
+          "text": "从张昭之谋立油鼎威慑邓芝",
+          "chapter": "第86章",
+          "place": ""
         }
       ],
-      "fromCh": 29,
-      "toCh": 99
+      "fromCh": 29
     },
     {
-      "from": "lu-su",
-      "to": "sun-quan",
+      "from": "sun-quan",
+      "to": "lu-su",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -21911,9 +21923,28 @@
           "text": "鲁肃请往江夏吊丧并结好刘备",
           "chapter": "第42章",
           "place": ""
+        },
+        {
+          "text": "鲁肃呈借荆州文书，孙权责备其糊涂",
+          "chapter": "第54章",
+          "place": "nan-xu"
+        },
+        {
+          "text": "孙权下马迎鲁肃，并辔而行",
+          "chapter": "第53章",
+          "place": "hefei"
+        },
+        {
+          "text": "孙权责鲁肃讨还荆州",
+          "chapter": "第56章",
+          "place": ""
+        },
+        {
+          "text": "权怒责鲁肃作保借荆州不还",
+          "chapter": "第66章",
+          "place": "jiang-dong"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "zhou-yu",
@@ -21931,8 +21962,8 @@
       "toCh": 44
     },
     {
-      "from": "zhuge-jin",
-      "to": "sun-quan",
+      "from": "sun-quan",
+      "to": "zhuge-jin",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -21945,9 +21976,28 @@
           "text": "奉命入麦城劝降关羽",
           "chapter": "第76章",
           "place": "mai-cheng"
+        },
+        {
+          "text": "权遣瑾入川索荆州，瑾奔走无功",
+          "chapter": "第66章",
+          "place": "jiang-dong"
+        },
+        {
+          "text": "诸葛瑾愿往荆州为世子求婚，孙权用之",
+          "chapter": "第73章",
+          "place": "jiang-dong"
+        },
+        {
+          "text": "孙权以生死之盟信诸葛瑾不叛",
+          "chapter": "第82章",
+          "place": "jiang-dong"
+        },
+        {
+          "text": "诸葛瑾愿舍残生为使，去见蜀主说之",
+          "chapter": "第81章",
+          "place": "jiang-dong"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "sun-ce",
@@ -22107,9 +22157,13 @@
           "text": "张纮赍印回吴，并荐顾雍",
           "chapter": "第29章",
           "place": "wu-jun"
+        },
+        {
+          "text": "张纮遗书劝迁秣陵，孙权览书大哭",
+          "chapter": "第61章",
+          "place": "moling"
         }
-      ],
-      "fromCh": 29
+      ]
     },
     {
       "from": "yu-fan",
@@ -22192,9 +22246,13 @@
           "text": "外甥高干自并州引兵五万助战",
           "chapter": "第31章",
           "place": "jizhou"
+        },
+        {
+          "text": "高干为袁绍外甥，守并州",
+          "chapter": "第33章",
+          "place": ""
         }
-      ],
-      "fromCh": 31
+      ]
     },
     {
       "from": "feng-ji",
@@ -22419,38 +22477,20 @@
           "text": "赵云奉命迎张松，奉酒食。",
           "chapter": "第60章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "赵云怀阿斗归，伏地泣拜刘备",
+          "chapter": "第42章",
+          "place": "chang-ban-po"
+        },
+        {
+          "text": "赵云谏以田宅还民，玄德从之",
+          "chapter": "第65章",
+          "place": "chengdu"
         }
       ],
       "fromCh": 31,
       "toCh": 85
-    },
-    {
-      "from": "liu-bei",
-      "to": "guan-yu",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "云长引三百军救刘备，又救张飞",
-          "chapter": "第31章",
-          "place": "rang-shan"
-        }
-      ]
-    },
-    {
-      "from": "liu-bei",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞救龚都被围，云长杀退乐进",
-          "chapter": "第31章",
-          "place": "runan"
-        }
-      ]
     },
     {
       "from": "liu-bei",
@@ -22557,39 +22597,6 @@
       ],
       "fromCh": 31,
       "toCh": 32
-    },
-    {
-      "from": "guan-yu",
-      "to": "guan-ping",
-      "type": "养父子（关羽收关平为义子）",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关平随云长引三百军到穰山救应",
-          "chapter": "第31章",
-          "place": "rang-shan"
-        },
-        {
-          "text": "关平代父迎战庞德，又救父回营。",
-          "chapter": "第74章",
-          "place": "fancheng"
-        }
-      ]
-    },
-    {
-      "from": "xun-yu",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "荀彧有书报刘备乘虚来攻许昌",
-          "chapter": "第31章",
-          "place": "xudu"
-        }
-      ],
-      "fromCh": 31
     },
     {
       "from": "cao-pi",
@@ -22814,6 +22821,11 @@
           "text": "辛毗为辛评之弟，已事曹操",
           "chapter": "第33章",
           "place": "nan-pi"
+        },
+        {
+          "text": "郭图举辛评之弟辛毗为使",
+          "chapter": "第32章",
+          "place": "ping-yuan"
         }
       ]
     },
@@ -22895,20 +22907,6 @@
       "events": [
         {
           "text": "韩珩掷剑拒降，被推出",
-          "chapter": "第33章",
-          "place": ""
-        }
-      ]
-    },
-    {
-      "from": "gao-gan",
-      "to": "yuan-shao",
-      "type": "舅甥",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "高干为袁绍外甥，守并州",
           "chapter": "第33章",
           "place": ""
         }
@@ -23109,9 +23107,13 @@
           "text": "蔡夫人出，哭求免蔡瑁一死",
           "chapter": "第35章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "蔡夫人怒刘表欲立刘琦，闭门把守",
+          "chapter": "第40章",
+          "place": "jing-zhou"
         }
-      ],
-      "fromCh": 34
+      ]
     },
     {
       "from": "cai-furen",
@@ -23240,6 +23242,11 @@
           "text": "蔡瑁连夜点军，欲就馆舍杀刘备。",
           "chapter": "第34章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "蔡瑁设谋相害，玄德赖跃马檀溪得脱",
+          "chapter": "第35章",
+          "place": ""
         }
       ],
       "fromCh": 34
@@ -23271,30 +23278,6 @@
       ],
       "fromCh": 34,
       "toCh": 40
-    },
-    {
-      "from": "zhang-fei",
-      "to": "liu-bei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞谏刘备勿赴襄阳之会。",
-          "chapter": "第34章",
-          "place": "xin-ye"
-        },
-        {
-          "text": "张飞长坂桥退敌后回见刘备",
-          "chapter": "第42章",
-          "place": "chang-ban-qiao"
-        },
-        {
-          "text": "张飞江上护阿斗，斥嫂嫂无礼",
-          "chapter": "第61章",
-          "place": "youjiang-jia-kou"
-        }
-      ]
     },
     {
       "from": "zhao-yun",
@@ -23435,8 +23418,8 @@
       ]
     },
     {
-      "from": "liu-qi",
-      "to": "liu-bei",
+      "from": "liu-bei",
+      "to": "liu-qi",
       "type": "叔侄",
       "style": "solid",
       "events": [
@@ -23444,6 +23427,16 @@
           "text": "刘琦告刘备父亲气疾，请叔父待客。",
           "chapter": "第34章",
           "place": "xiang-yang"
+        },
+        {
+          "text": "刘琦赴新野请罪，向叔父求教免祸",
+          "chapter": "第35章",
+          "place": ""
+        },
+        {
+          "text": "刘备遣关羽孔明往江夏求刘琦",
+          "chapter": "第41章",
+          "place": ""
         }
       ],
       "kin": "blood",
@@ -23535,9 +23528,13 @@
           "text": "关羽趁虚取樊城，曹仁败走",
           "chapter": "第36章",
           "place": "fancheng"
+        },
+        {
+          "text": "曹仁令五百弓弩齐射，中关羽右臂。",
+          "chapter": "第74章",
+          "place": "fancheng"
         }
-      ],
-      "fromCh": 36
+      ]
     },
     {
       "from": "cao-ren",
@@ -24181,41 +24178,6 @@
       "fromCh": 35
     },
     {
-      "from": "liu-bei",
-      "to": "liu-qi",
-      "type": "叔侄",
-      "style": "solid",
-      "events": [
-        {
-          "text": "刘琦赴新野请罪，向叔父求教免祸",
-          "chapter": "第35章",
-          "place": ""
-        },
-        {
-          "text": "刘备遣关羽孔明往江夏求刘琦",
-          "chapter": "第41章",
-          "place": ""
-        }
-      ],
-      "kin": "blood",
-      "fromCh": 34,
-      "toCh": 43
-    },
-    {
-      "from": "liu-bei",
-      "to": "cai-mao",
-      "type": "仇敌",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "蔡瑁设谋相害，玄德赖跃马檀溪得脱",
-          "chapter": "第35章",
-          "place": ""
-        }
-      ],
-      "fromCh": 34
-    },
-    {
       "from": "cao-ren",
       "to": "li-dian",
       "type": "上下级",
@@ -24288,20 +24250,6 @@
         }
       ],
       "fromCh": 40
-    },
-    {
-      "from": "cai-furen",
-      "to": "liu-biao",
-      "type": "夫妻",
-      "kin": "marriage",
-      "style": "solid",
-      "events": [
-        {
-          "text": "蔡夫人怒刘表欲立刘琦，闭门把守",
-          "chapter": "第40章",
-          "place": "jing-zhou"
-        }
-      ]
     },
     {
       "from": "cai-mao",
@@ -24727,9 +24675,13 @@
           "text": "孙权赐绢千匹，称甘宁可敌张辽",
           "chapter": "第68章",
           "place": "ruxu-kou"
+        },
+        {
+          "text": "甘宁死后孙权具礼厚葬，立庙祭祀",
+          "chapter": "第83章",
+          "place": "fuchikou"
         }
-      ],
-      "fromCh": 39
+      ]
     },
     {
       "from": "sun-quan",
@@ -24850,31 +24802,6 @@
       ],
       "fromCh": 39,
       "toCh": 40
-    },
-    {
-      "from": "xiahou-dun",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "夏侯惇请为都督，领十万兵攻新野",
-          "chapter": "第39章",
-          "place": "xudu"
-        },
-        {
-          "text": "惇传“鸡肋”号令，被操叱退",
-          "chapter": "第72章",
-          "place": "xie-gu"
-        },
-        {
-          "text": "夏侯惇领兵五万先行击吕布",
-          "chapter": "第18章",
-          "place": "xudu"
-        }
-      ],
-      "fromCh": 18,
-      "toCh": 73
     },
     {
       "from": "xu-shu",
@@ -25028,8 +24955,8 @@
       ]
     },
     {
-      "from": "zhuge-liang",
-      "to": "zhuge-jin",
+      "from": "zhuge-jin",
+      "to": "zhuge-liang",
       "type": "兄弟",
       "kin": "blood",
       "style": "solid",
@@ -25048,9 +24975,28 @@
           "text": "诸葛瑾劝弟归吴，孔明以大义相驳",
           "chapter": "第44章",
           "place": "chaisang"
+        },
+        {
+          "text": "伊籍言诸葛瑾取长沙等三郡当还",
+          "chapter": "第67章",
+          "place": "moling"
+        },
+        {
+          "text": "瑾入川向亮哭诉老小被拘",
+          "chapter": "第66章",
+          "place": "chengdu"
+        },
+        {
+          "text": "关羽念孔明之情，不杀诸葛瑾",
+          "chapter": "第76章",
+          "place": "mai-cheng"
+        },
+        {
+          "text": "孙权令诸葛瑾取襄阳。",
+          "chapter": "第102章",
+          "place": "jiang-xia"
         }
-      ],
-      "fromCh": 42
+      ]
     },
     {
       "from": "wu-tai-furen",
@@ -25143,10 +25089,35 @@
           "text": "玄德用孔明计取成都，仍拜为军师",
           "chapter": "第65章",
           "place": "chengdu"
+        },
+        {
+          "text": "孔明言刘豫州孤身江夏仍与操争衡",
+          "chapter": "第44章",
+          "place": ""
+        },
+        {
+          "text": "孔明劝刘备应亲，并定三条锦囊",
+          "chapter": "第54章",
+          "place": "jing-zhou"
+        },
+        {
+          "text": "孔明请刘备引兵接应关羽",
+          "chapter": "第53章",
+          "place": "jing-zhou"
+        },
+        {
+          "text": "孔明谏缓图刘封孟达",
+          "chapter": "第79章",
+          "place": ""
+        },
+        {
+          "text": "孔明祭昭烈庙，誓讨汉贼。",
+          "chapter": "第102章",
+          "place": "zhaolie-miao"
         }
       ],
       "fromCh": 41,
-      "toCh": 82
+      "toCh": 103
     },
     {
       "from": "zhuge-liang",
@@ -25271,34 +25242,6 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "zhou-yu",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "吴国太提亡姐遗言，权将问计周瑜",
-          "chapter": "第43章",
-          "place": "chaisang-jun"
-        },
-        {
-          "text": "孙权差陆逊为先锋接应周瑜",
-          "chapter": "第49章",
-          "place": ""
-        },
-        {
-          "text": "周瑜收军点将，申报吴侯",
-          "chapter": "第51章",
-          "place": ""
-        },
-        {
-          "text": "周瑜上书请兴兵取荆州雪恨",
-          "chapter": "第56章",
-          "place": ""
-        }
-      ]
-    },
-    {
       "from": "liu-bei",
       "to": "liu-qi",
       "type": "同宗相倚",
@@ -25312,26 +25255,6 @@
       ],
       "fromCh": 43,
       "toCh": 49
-    },
-    {
-      "from": "zhao-yun",
-      "to": "liu-bei",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "赵云怀阿斗归，伏地泣拜刘备",
-          "chapter": "第42章",
-          "place": "chang-ban-po"
-        },
-        {
-          "text": "赵云谏以田宅还民，玄德从之",
-          "chapter": "第65章",
-          "place": "chengdu"
-        }
-      ],
-      "fromCh": 31,
-      "toCh": 85
     },
     {
       "from": "zhao-yun",
@@ -25465,26 +25388,6 @@
           "place": "chang-ban-po"
         }
       ]
-    },
-    {
-      "from": "xu-chu",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "许褚与张辽同往长坂桥探听",
-          "chapter": "第42章",
-          "place": "chang-ban-qiao"
-        },
-        {
-          "text": "许褚应声出马，一刀斩尹楷",
-          "chapter": "第32章",
-          "place": "han-dan"
-        }
-      ],
-      "fromCh": 32,
-      "toCh": 59
     },
     {
       "from": "han-song",
@@ -25711,25 +25614,6 @@
           "text": "刘备呼刘琮开门，琮惧不敢出",
           "chapter": "第41章",
           "place": ""
-        }
-      ]
-    },
-    {
-      "from": "guan-yu",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞接应，与关羽同上流会合",
-          "chapter": "第41章",
-          "place": "bai-he"
-        },
-        {
-          "text": "关张同居一帐，随刘备同起同去",
-          "chapter": "第2章",
-          "place": "anxi-xian"
         }
       ]
     },
@@ -26101,20 +25985,6 @@
     },
     {
       "from": "guan-yu",
-      "to": "guan-ping",
-      "type": "养父子（关羽收关平为义子）",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关羽引关平、周仓投华容道埋伏",
-          "chapter": "第49章",
-          "place": ""
-        }
-      ],
-      "kin": "sworn"
-    },
-    {
-      "from": "guan-yu",
       "to": "zhou-cang",
       "type": "部将",
       "style": "solid",
@@ -26208,34 +26078,6 @@
     },
     {
       "from": "zhou-yu",
-      "to": "xiao-qiao",
-      "type": "夫妻",
-      "kin": "marriage",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孔明言小乔乃周瑜之妻，瑜大怒",
-          "chapter": "第44章",
-          "place": "chaisang"
-        }
-      ]
-    },
-    {
-      "from": "sun-ce",
-      "to": "da-qiao",
-      "type": "夫妻",
-      "kin": "marriage",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孔明称大乔是孙伯符将军主妇",
-          "chapter": "第44章",
-          "place": "chaisang"
-        }
-      ]
-    },
-    {
-      "from": "zhou-yu",
       "to": "sun-ce",
       "type": "连襟",
       "kin": "inlaw",
@@ -26248,20 +26090,6 @@
         }
       ],
       "fromCh": 44
-    },
-    {
-      "from": "da-qiao",
-      "to": "xiao-qiao",
-      "type": "姐妹",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孔明言江东乔公二女为姊妹",
-          "chapter": "第44章",
-          "place": "chaisang"
-        }
-      ]
     },
     {
       "from": "qiao-guo-lao",
@@ -26293,25 +26121,6 @@
           "text": "乔国老乃二乔之父，居于南徐",
           "chapter": "第54章",
           "place": "nan-xu"
-        }
-      ]
-    },
-    {
-      "from": "sun-quan",
-      "to": "sun-ce",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "国太引伯符遗言定内外问计",
-          "chapter": "第44章",
-          "place": "chaisang"
-        },
-        {
-          "text": "孙权谥兄孙策为长沙桓王",
-          "chapter": "第98章",
-          "place": ""
         }
       ]
     },
@@ -26386,41 +26195,6 @@
           "place": "chaisang"
         }
       ]
-    },
-    {
-      "from": "zhuge-liang",
-      "to": "liu-bei",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孔明言刘豫州孤身江夏仍与操争衡",
-          "chapter": "第44章",
-          "place": ""
-        },
-        {
-          "text": "孔明劝刘备应亲，并定三条锦囊",
-          "chapter": "第54章",
-          "place": "jing-zhou"
-        },
-        {
-          "text": "孔明请刘备引兵接应关羽",
-          "chapter": "第53章",
-          "place": "jing-zhou"
-        },
-        {
-          "text": "孔明谏缓图刘封孟达",
-          "chapter": "第79章",
-          "place": ""
-        },
-        {
-          "text": "孔明祭昭烈庙，誓讨汉贼。",
-          "chapter": "第102章",
-          "place": "zhaolie-miao"
-        }
-      ],
-      "fromCh": 44,
-      "toCh": 103
     },
     {
       "from": "pang-tong",
@@ -26995,6 +26769,11 @@
           "text": "徐盛舍命救周瑜出城",
           "chapter": "第51章",
           "place": "nanjun"
+        },
+        {
+          "text": "徐盛丁奉奉周瑜令屯兵守候",
+          "chapter": "第55章",
+          "place": ""
         }
       ],
       "fromCh": 51
@@ -27009,6 +26788,11 @@
           "text": "丁奉诈败，围牛金于阵中",
           "chapter": "第51章",
           "place": "nanjun"
+        },
+        {
+          "text": "丁奉随徐盛截路，被夫人叱退",
+          "chapter": "第55章",
+          "place": ""
         }
       ],
       "fromCh": 51
@@ -27036,6 +26820,11 @@
           "text": "韩当出马与曹洪交锋",
           "chapter": "第51章",
           "place": "nanjun"
+        },
+        {
+          "text": "韩当随周瑜上岸追袭，力阻再战",
+          "chapter": "第55章",
+          "place": "huang-zhou"
         }
       ],
       "fromCh": 51
@@ -27318,34 +27107,6 @@
       ]
     },
     {
-      "from": "xu-sheng",
-      "to": "zhou-yu",
-      "type": "部将",
-      "style": "solid",
-      "events": [
-        {
-          "text": "徐盛丁奉奉周瑜令屯兵守候",
-          "chapter": "第55章",
-          "place": ""
-        }
-      ],
-      "fromCh": 51
-    },
-    {
-      "from": "ding-feng",
-      "to": "zhou-yu",
-      "type": "部将",
-      "style": "solid",
-      "events": [
-        {
-          "text": "丁奉随徐盛截路，被夫人叱退",
-          "chapter": "第55章",
-          "place": ""
-        }
-      ],
-      "fromCh": 51
-    },
-    {
       "from": "jiang-qin",
       "to": "sun-quan",
       "type": "部将",
@@ -27414,20 +27175,6 @@
         }
       ],
       "fromCh": 55
-    },
-    {
-      "from": "han-dang",
-      "to": "zhou-yu",
-      "type": "部将",
-      "style": "solid",
-      "events": [
-        {
-          "text": "韩当随周瑜上岸追袭，力阻再战",
-          "chapter": "第55章",
-          "place": "huang-zhou"
-        }
-      ],
-      "fromCh": 51
     },
     {
       "from": "huang-zhong",
@@ -27582,9 +27329,13 @@
           "text": "赵云奉军师令伏击曹操，操冒火而走",
           "chapter": "第50章",
           "place": "yidu"
+        },
+        {
+          "text": "曹操惊赵云之勇，传令勿轻敌",
+          "chapter": "第71章",
+          "place": "han-jiang"
         }
-      ],
-      "fromCh": 50
+      ]
     },
     {
       "from": "zhou-yu",
@@ -27639,9 +27390,18 @@
           "text": "拜逊辅国将军、领荆州牧，军权皆归之",
           "chapter": "第86章",
           "place": "jing-zhou"
+        },
+        {
+          "text": "陆逊引十万兵射退曹兵解围",
+          "chapter": "第68章",
+          "place": "ruxu-kou"
+        },
+        {
+          "text": "陆逊修笺奏孙权，权大喜起兵接应。",
+          "chapter": "第84章",
+          "place": "xiaoting"
         }
-      ],
-      "fromCh": 50
+      ]
     },
     {
       "from": "taishi-ci",
@@ -27689,9 +27449,13 @@
           "text": "吕范卜卦言关羽亥时被擒。",
           "chapter": "第77章",
           "place": ""
+        },
+        {
+          "text": "吕范卜得地水师卦献孙权",
+          "chapter": "第76章",
+          "place": "mai-cheng"
         }
-      ],
-      "fromCh": 54
+      ]
     },
     {
       "from": "lv-fan",
@@ -27760,34 +27524,6 @@
         }
       ],
       "fromCh": 54
-    },
-    {
-      "from": "sun-quan",
-      "to": "lu-su",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "鲁肃呈借荆州文书，孙权责备其糊涂",
-          "chapter": "第54章",
-          "place": "nan-xu"
-        },
-        {
-          "text": "孙权下马迎鲁肃，并辔而行",
-          "chapter": "第53章",
-          "place": "hefei"
-        },
-        {
-          "text": "孙权责鲁肃讨还荆州",
-          "chapter": "第56章",
-          "place": ""
-        },
-        {
-          "text": "权怒责鲁肃作保借荆州不还",
-          "chapter": "第66章",
-          "place": "jiang-dong"
-        }
-      ]
     },
     {
       "from": "lu-su",
@@ -27997,10 +27733,19 @@
           "text": "先主命黄忠为前部先锋伐吴",
           "chapter": "第81章",
           "place": "chengdu"
+        },
+        {
+          "text": "黄忠献夏侯渊首级，刘备加封",
+          "chapter": "第71章",
+          "place": ""
+        },
+        {
+          "text": "黄忠随先主伐吴，中箭后先主亲临抚视",
+          "chapter": "第83章",
+          "place": "yiling"
         }
       ],
-      "fromCh": 53,
-      "toCh": 82
+      "fromCh": 53
     },
     {
       "from": "sun-quan",
@@ -28228,9 +27973,13 @@
           "text": "劝权修书孔明出兵分魏之势",
           "chapter": "第86章",
           "place": ""
+        },
+        {
+          "text": "顾雍谏孙权勿受魏帝封爵",
+          "chapter": "第82章",
+          "place": "jiang-dong"
         }
-      ],
-      "fromCh": 56
+      ]
     },
     {
       "from": "lu-su",
@@ -28287,44 +28036,6 @@
           "place": "jing-zhou"
         }
       ]
-    },
-    {
-      "from": "liu-bei",
-      "to": "guan-yu",
-      "type": "结义兄弟",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关羽从江陵杀来围困周瑜",
-          "chapter": "第56章",
-          "place": "jiang-ling"
-        },
-        {
-          "text": "关羽守荆州，拒襄阳要路。",
-          "chapter": "第60章",
-          "place": "jing-zhou"
-        }
-      ],
-      "kin": "sworn"
-    },
-    {
-      "from": "liu-bei",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞从秭归杀来围困周瑜",
-          "chapter": "第56章",
-          "place": "zi-gui"
-        },
-        {
-          "text": "张飞奉命领四郡巡江，守荆州。",
-          "chapter": "第60章",
-          "place": "jing-zhou"
-        }
-      ],
-      "kin": "sworn"
     },
     {
       "from": "cao-cao",
@@ -28453,8 +28164,8 @@
       "fromCh": 61
     },
     {
-      "from": "liu-zhang",
-      "to": "liu-bei",
+      "from": "liu-bei",
+      "to": "liu-zhang",
       "type": "同宗兄弟",
       "kin": "blood",
       "style": "solid",
@@ -28463,9 +28174,19 @@
           "text": "涪城宴上刘备掷剑止舞，刘璋执手泣谢",
           "chapter": "第61章",
           "place": ""
+        },
+        {
+          "text": "刘备怒扯刘璋回书，大骂而起",
+          "chapter": "第62章",
+          "place": "jiameng-guan"
+        },
+        {
+          "text": "二刘涪城相会，各叙兄弟之情。",
+          "chapter": "第60章",
+          "place": "fu-cheng"
         }
       ],
-      "fromCh": 61,
+      "fromCh": 60,
       "toCh": 65
     },
     {
@@ -28478,48 +28199,6 @@
           "text": "周善奉命扮商人潜入荆州接郡主",
           "chapter": "第61章",
           "place": "jing-zhou"
-        }
-      ]
-    },
-    {
-      "from": "sun-quan",
-      "to": "zhang-zhao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张昭献计诳郡主取阿斗",
-          "chapter": "第61章",
-          "place": ""
-        },
-        {
-          "text": "张昭献计拘诸葛瑾老小索荆州",
-          "chapter": "第66章",
-          "place": "jiang-dong"
-        },
-        {
-          "text": "张昭献计送关羽首级与曹操。",
-          "chapter": "第77章",
-          "place": "jianye"
-        },
-        {
-          "text": "从张昭之谋立油鼎威慑邓芝",
-          "chapter": "第86章",
-          "place": ""
-        }
-      ],
-      "fromCh": 61
-    },
-    {
-      "from": "sun-quan",
-      "to": "zhang-hong",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张纮遗书劝迁秣陵，孙权览书大哭",
-          "chapter": "第61章",
-          "place": "moling"
         }
       ]
     },
@@ -28553,9 +28232,13 @@
           "text": "吕蒙献计分伏麦城与临沮。",
           "chapter": "第77章",
           "place": ""
+        },
+        {
+          "text": "王甫言吕蒙屯兵陆口常有吞并荆州之意",
+          "chapter": "第73章",
+          "place": ""
         }
-      ],
-      "fromCh": 61
+      ]
     },
     {
       "from": "xun-yu",
@@ -28957,6 +28640,11 @@
           "text": "张任守雒城拒刘备，宁死不降",
           "chapter": "第64章",
           "place": ""
+        },
+        {
+          "text": "张任等劝刘璋防刘备。",
+          "chapter": "第60章",
+          "place": "fu-cheng"
         }
       ]
     },
@@ -29212,27 +28900,6 @@
       ]
     },
     {
-      "from": "liu-bei",
-      "to": "liu-zhang",
-      "type": "同宗兄弟",
-      "kin": "blood",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "刘备怒扯刘璋回书，大骂而起",
-          "chapter": "第62章",
-          "place": "jiameng-guan"
-        },
-        {
-          "text": "二刘涪城相会，各叙兄弟之情。",
-          "chapter": "第60章",
-          "place": "fu-cheng"
-        }
-      ],
-      "fromCh": 60,
-      "toCh": 63
-    },
-    {
       "from": "liu-zhang",
       "to": "huang-quan",
       "type": "君臣",
@@ -29260,9 +28927,13 @@
           "text": "刘巴谏阻，刘璋仅拨老弱四千",
           "chapter": "第62章",
           "place": "chengdu"
+        },
+        {
+          "text": "刘璋降后刘巴闭门不出，玄德亲请",
+          "chapter": "第65章",
+          "place": "chengdu"
         }
-      ],
-      "fromCh": 62
+      ]
     },
     {
       "from": "liu-bei",
@@ -29336,6 +29007,11 @@
           "text": "关平与刘封同出，各捉住一人",
           "chapter": "第62章",
           "place": "fushui-guan"
+        },
+        {
+          "text": "关平随刘备中军入川。",
+          "chapter": "第60章",
+          "place": "jing-zhou"
         }
       ],
       "fromCh": 60,
@@ -29657,25 +29333,6 @@
         }
       ],
       "fromCh": 63
-    },
-    {
-      "from": "guan-yu",
-      "to": "guan-ping",
-      "type": "养父子（关羽收关平为义子）",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关平赍书往荆州，后随关羽同守荆州",
-          "chapter": "第63章",
-          "place": "jing-zhou"
-        },
-        {
-          "text": "关平奉命赴川送书谢赐金帛",
-          "chapter": "第65章",
-          "place": "jing-zhou"
-        }
-      ]
     },
     {
       "from": "liu-bei",
@@ -30026,35 +29683,6 @@
       ]
     },
     {
-      "from": "zhuge-jin",
-      "to": "zhuge-liang",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "伊籍言诸葛瑾取长沙等三郡当还",
-          "chapter": "第67章",
-          "place": "moling"
-        },
-        {
-          "text": "瑾入川向亮哭诉老小被拘",
-          "chapter": "第66章",
-          "place": "chengdu"
-        },
-        {
-          "text": "关羽念孔明之情，不杀诸葛瑾",
-          "chapter": "第76章",
-          "place": "mai-cheng"
-        },
-        {
-          "text": "孙权令诸葛瑾取襄阳。",
-          "chapter": "第102章",
-          "place": "jiang-xia"
-        }
-      ]
-    },
-    {
       "from": "liu-bei",
       "to": "sun-quan",
       "type": "姻亲（妹夫与内兄）",
@@ -30069,34 +29697,6 @@
       ],
       "fromCh": 66,
       "toCh": 73
-    },
-    {
-      "from": "sun-quan",
-      "to": "zhuge-jin",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "权遣瑾入川索荆州，瑾奔走无功",
-          "chapter": "第66章",
-          "place": "jiang-dong"
-        },
-        {
-          "text": "诸葛瑾愿往荆州为世子求婚，孙权用之",
-          "chapter": "第73章",
-          "place": "jiang-dong"
-        },
-        {
-          "text": "孙权以生死之盟信诸葛瑾不叛",
-          "chapter": "第82章",
-          "place": "jiang-dong"
-        },
-        {
-          "text": "诸葛瑾愿舍残生为使，去见蜀主说之",
-          "chapter": "第81章",
-          "place": "jiang-dong"
-        }
-      ]
     },
     {
       "from": "sun-quan",
@@ -30433,6 +30033,11 @@
           "text": "贾诩谏勿废良医，操不听",
           "chapter": "第78章",
           "place": "luo-yang"
+        },
+        {
+          "text": "诩以袁绍刘表父子之事答立嗣",
+          "chapter": "第68章",
+          "place": "ye-jun"
         }
       ],
       "fromCh": 66
@@ -30620,8 +30225,8 @@
       "toCh": 71
     },
     {
-      "from": "fa-zheng",
-      "to": "liu-bei",
+      "from": "liu-bei",
+      "to": "fa-zheng",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -30634,9 +30239,24 @@
           "text": "法正劝玄德勿忧郑度之计",
           "chapter": "第65章",
           "place": "luo-cheng"
+        },
+        {
+          "text": "法正请刘备登坛，进冠冕玺绶",
+          "chapter": "第73章",
+          "place": "mian-yang"
+        },
+        {
+          "text": "法正奏请纳王妃以襄内政。",
+          "chapter": "第77章",
+          "place": "chengdu"
+        },
+        {
+          "text": "法正使荆州，劝刘备取西川。",
+          "chapter": "第60章",
+          "place": "jing-zhou"
         }
       ],
-      "fromCh": 65
+      "fromCh": 60
     },
     {
       "from": "zhao-yun",
@@ -30706,24 +30326,6 @@
           "text": "董袭死守楼船，风覆溺死江口",
           "chapter": "第68章",
           "place": "ruxu-kou"
-        }
-      ]
-    },
-    {
-      "from": "lu-xun",
-      "to": "sun-quan",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "陆逊引十万兵射退曹兵解围",
-          "chapter": "第68章",
-          "place": "ruxu-kou"
-        },
-        {
-          "text": "陆逊修笺奏孙权，权大喜起兵接应。",
-          "chapter": "第84章",
-          "place": "xiaoting"
         }
       ]
     },
@@ -30841,20 +30443,6 @@
       "toCh": 80
     },
     {
-      "from": "jia-xu",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "诩以袁绍刘表父子之事答立嗣",
-          "chapter": "第68章",
-          "place": "ye-jun"
-        }
-      ],
-      "fromCh": 66
-    },
-    {
       "from": "cui-yan",
       "to": "cao-cao",
       "type": "对立",
@@ -30945,31 +30533,6 @@
           "place": "ruxu-kou"
         }
       ]
-    },
-    {
-      "from": "liu-bei",
-      "to": "fa-zheng",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "法正请刘备登坛，进冠冕玺绶",
-          "chapter": "第73章",
-          "place": "mian-yang"
-        },
-        {
-          "text": "法正奏请纳王妃以襄内政。",
-          "chapter": "第77章",
-          "place": "chengdu"
-        },
-        {
-          "text": "法正使荆州，劝刘备取西川。",
-          "chapter": "第60章",
-          "place": "jing-zhou"
-        }
-      ],
-      "fromCh": 60,
-      "toCh": 78
     },
     {
       "from": "liu-bei",
@@ -31177,19 +30740,6 @@
           "text": "夏侯存力主迎战，被关羽一合砍死",
           "chapter": "第73章",
           "place": "xiang-yang"
-        }
-      ]
-    },
-    {
-      "from": "lv-meng",
-      "to": "sun-quan",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "王甫言吕蒙屯兵陆口常有吞并荆州之意",
-          "chapter": "第73章",
-          "place": ""
         }
       ]
     },
@@ -31605,19 +31155,6 @@
       ]
     },
     {
-      "from": "lv-fan",
-      "to": "sun-quan",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "吕范卜得地水师卦献孙权",
-          "chapter": "第76章",
-          "place": "mai-cheng"
-        }
-      ]
-    },
-    {
       "from": "guan-yu",
       "to": "sun-quan",
       "type": "劝降被拒",
@@ -32021,25 +31558,6 @@
       "fromCh": 71
     },
     {
-      "from": "huang-zhong",
-      "to": "liu-bei",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "黄忠献夏侯渊首级，刘备加封",
-          "chapter": "第71章",
-          "place": ""
-        },
-        {
-          "text": "黄忠随先主伐吴，中箭后先主亲临抚视",
-          "chapter": "第83章",
-          "place": "yiling"
-        }
-      ],
-      "fromCh": 71
-    },
-    {
       "from": "zhuge-liang",
       "to": "huang-zhong",
       "type": "调遣",
@@ -32091,19 +31609,6 @@
           "text": "杜袭弃对山逃回见夏侯渊",
           "chapter": "第71章",
           "place": "dui-shan"
-        }
-      ]
-    },
-    {
-      "from": "cao-cao",
-      "to": "zhao-yun",
-      "type": "敌对",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "曹操惊赵云之勇，传令勿轻敌",
-          "chapter": "第71章",
-          "place": "han-jiang"
         }
       ]
     },
@@ -32399,6 +31904,11 @@
           "text": "廖化哭请诛刘封孟达",
           "chapter": "第79章",
           "place": ""
+        },
+        {
+          "text": "廖化哭拜细奏不救关羽之事。",
+          "chapter": "第77章",
+          "place": "chengdu"
         }
       ],
       "fromCh": 77
@@ -32790,19 +32300,6 @@
       "fromCh": 74
     },
     {
-      "from": "cao-ren",
-      "to": "guan-yu",
-      "type": "敌对",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "曹仁令五百弓弩齐射，中关羽右臂。",
-          "chapter": "第74章",
-          "place": "fancheng"
-        }
-      ]
-    },
-    {
       "from": "liu-bei",
       "to": "zhuge-jin",
       "type": "敌对交涉",
@@ -32895,19 +32392,6 @@
           "text": "封徐盛安东将军，总镇南徐军马",
           "chapter": "第86章",
           "place": "nan-xu"
-        }
-      ]
-    },
-    {
-      "from": "sun-quan",
-      "to": "gu-yong",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "顾雍谏孙权勿受魏帝封爵",
-          "chapter": "第82章",
-          "place": "jiang-dong"
         }
       ]
     },
@@ -33011,9 +32495,13 @@
           "text": "关兴救张苞，二人并肩立功",
           "chapter": "第82章",
           "place": "yidu"
+        },
+        {
+          "text": "二人分兵三路同战羌兵，共归寨",
+          "chapter": "第94章",
+          "place": ""
         }
-      ],
-      "fromCh": 82
+      ]
     },
     {
       "from": "liu-bei",
@@ -33341,34 +32829,6 @@
       ]
     },
     {
-      "from": "liu-bei",
-      "to": "liao-hua",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "廖化哭拜细奏不救关羽之事。",
-          "chapter": "第77章",
-          "place": "chengdu"
-        }
-      ],
-      "fromCh": 77
-    },
-    {
-      "from": "liu-bei",
-      "to": "zhang-fei",
-      "type": "结义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张飞赴成都抱先主足而哭，陈桃园之誓，誓死为二兄报仇",
-          "chapter": "第81章",
-          "place": "chengdu"
-        }
-      ]
-    },
-    {
       "from": "zhang-fei",
       "to": "zhang-shao",
       "type": "兄弟",
@@ -33565,9 +33025,13 @@
           "text": "先主令马良将图本送与孔明观看。",
           "chapter": "第84章",
           "place": "xiaoting"
+        },
+        {
+          "text": "马良谏先主勿轻敌，并画图本问丞相",
+          "chapter": "第83章",
+          "place": "xiaoting"
         }
-      ],
-      "fromCh": 81
+      ]
     },
     {
       "from": "lu-xun",
@@ -33657,6 +33121,11 @@
         {
           "text": "黄权谏先主勿轻进，愿为前驱。",
           "chapter": "第84章",
+          "place": "xiaoting"
+        },
+        {
+          "text": "先主令黄权领水路兵进发",
+          "chapter": "第83章",
           "place": "xiaoting"
         }
       ]
@@ -34055,8 +33524,8 @@
       "fromCh": 80
     },
     {
-      "from": "zhuge-liang",
-      "to": "liu-shan",
+      "from": "liu-shan",
+      "to": "zhuge-liang",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -34079,6 +33548,31 @@
           "text": "孔明拜辞后主，再出祁山。",
           "chapter": "第102章",
           "place": ""
+        },
+        {
+          "text": "后主贬孔明为右将军",
+          "chapter": "第96章",
+          "place": "chengdu"
+        },
+        {
+          "text": "后主听信流言下诏召孔明班师。",
+          "chapter": "第100章",
+          "place": "chengdu"
+        },
+        {
+          "text": "后主挂孝迎灵柩，谥孔明忠武侯",
+          "chapter": "第105章",
+          "place": "chengdu"
+        },
+        {
+          "text": "遣尚书李福赴军问安并询后事",
+          "chapter": "第104章",
+          "place": "wuzhang-yuan"
+        },
+        {
+          "text": "孔明奏后主通吴之策，后主然之",
+          "chapter": "第86章",
+          "place": "chengdu"
         }
       ]
     },
@@ -34773,19 +34267,6 @@
       ]
     },
     {
-      "from": "gan-ning",
-      "to": "sun-quan",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "甘宁死后孙权具礼厚葬，立庙祭祀",
-          "chapter": "第83章",
-          "place": "fuchikou"
-        }
-      ]
-    },
-    {
       "from": "zhou-ping",
       "to": "zhou-tai",
       "type": "兄弟",
@@ -34862,33 +34343,6 @@
       "events": [
         {
           "text": "程秉为使，赍国书赴猇亭求和",
-          "chapter": "第83章",
-          "place": "xiaoting"
-        }
-      ]
-    },
-    {
-      "from": "huang-quan",
-      "to": "liu-bei",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "先主令黄权领水路兵进发",
-          "chapter": "第83章",
-          "place": "xiaoting"
-        }
-      ],
-      "fromCh": 83
-    },
-    {
-      "from": "ma-liang",
-      "to": "liu-bei",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "马良谏先主勿轻敌，并画图本问丞相",
           "chapter": "第83章",
           "place": "xiaoting"
         }
@@ -35007,8 +34461,8 @@
       "toCh": 93
     },
     {
-      "from": "si-ma-yi",
-      "to": "cao-rui",
+      "from": "cao-rui",
+      "to": "si-ma-yi",
       "type": "君臣",
       "style": "dashed",
       "events": [
@@ -35021,10 +34475,35 @@
           "text": "曹睿命司马懿为大都督御蜀。",
           "chapter": "第102章",
           "place": "luo-yang"
+        },
+        {
+          "text": "曹睿降诏复司马懿官职，命赴长安",
+          "chapter": "第94章",
+          "place": "chang-an"
+        },
+        {
+          "text": "曹睿从司马懿议分守险要",
+          "chapter": "第96章",
+          "place": "luo-yang"
+        },
+        {
+          "text": "曹睿嘉司马懿复得陇西之功",
+          "chapter": "第95章",
+          "place": "chang-an"
+        },
+        {
+          "text": "曹睿诏令司马懿坚守勿战",
+          "chapter": "第103章",
+          "place": "weibei"
+        },
+        {
+          "text": "魏主封司马懿为太尉总督军马",
+          "chapter": "第105章",
+          "place": "luo-yang"
         }
       ],
       "fromCh": 91,
-      "toCh": 103
+      "toCh": 106
     },
     {
       "from": "cao-zhen",
@@ -35360,8 +34839,8 @@
       ]
     },
     {
-      "from": "guo-huai",
-      "to": "cao-zhen",
+      "from": "cao-zhen",
+      "to": "guo-huai",
       "type": "同僚",
       "style": "solid",
       "events": [
@@ -35369,9 +34848,18 @@
           "text": "郭淮为副都督，献策劫蜀寨",
           "chapter": "第93章",
           "place": "qi-shan"
+        },
+        {
+          "text": "郭淮献求救西羌、首尾夹攻之计",
+          "chapter": "第94章",
+          "place": ""
+        },
+        {
+          "text": "二人恐司马懿独得全功，分兵取街亭",
+          "chapter": "第95章",
+          "place": ""
         }
-      ],
-      "fromCh": 93
+      ]
     },
     {
       "from": "zhuge-liang",
@@ -35408,20 +34896,6 @@
       "events": [
         {
           "text": "张苞见伯父显圣指路去救关兴",
-          "chapter": "第94章",
-          "place": ""
-        }
-      ]
-    },
-    {
-      "from": "zhang-bao-zhangfei",
-      "to": "guan-xing",
-      "type": "义兄弟",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "二人分兵三路同战羌兵，共归寨",
           "chapter": "第94章",
           "place": ""
         }
@@ -35636,24 +35110,6 @@
       "toCh": 95
     },
     {
-      "from": "cao-zhen",
-      "to": "guo-huai",
-      "type": "同僚",
-      "style": "solid",
-      "events": [
-        {
-          "text": "郭淮献求救西羌、首尾夹攻之计",
-          "chapter": "第94章",
-          "place": ""
-        },
-        {
-          "text": "二人恐司马懿独得全功，分兵取街亭",
-          "chapter": "第95章",
-          "place": ""
-        }
-      ]
-    },
-    {
       "from": "yue-ji",
       "to": "ya-dan",
       "type": "同僚",
@@ -35720,41 +35176,6 @@
       ],
       "fromCh": 94,
       "toCh": 95
-    },
-    {
-      "from": "cao-rui",
-      "to": "si-ma-yi",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "曹睿降诏复司马懿官职，命赴长安",
-          "chapter": "第94章",
-          "place": "chang-an"
-        },
-        {
-          "text": "曹睿从司马懿议分守险要",
-          "chapter": "第96章",
-          "place": "luo-yang"
-        },
-        {
-          "text": "曹睿嘉司马懿复得陇西之功",
-          "chapter": "第95章",
-          "place": "chang-an"
-        },
-        {
-          "text": "曹睿诏令司马懿坚守勿战",
-          "chapter": "第103章",
-          "place": "weibei"
-        },
-        {
-          "text": "魏主封司马懿为太尉总督军马",
-          "chapter": "第105章",
-          "place": "luo-yang"
-        }
-      ],
-      "fromCh": 94,
-      "toCh": 106
     },
     {
       "from": "guan-xing",
@@ -36192,40 +35613,6 @@
       "fromCh": 96
     },
     {
-      "from": "liu-shan",
-      "to": "zhuge-liang",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "后主贬孔明为右将军",
-          "chapter": "第96章",
-          "place": "chengdu"
-        },
-        {
-          "text": "后主听信流言下诏召孔明班师。",
-          "chapter": "第100章",
-          "place": "chengdu"
-        },
-        {
-          "text": "后主挂孝迎灵柩，谥孔明忠武侯",
-          "chapter": "第105章",
-          "place": "chengdu"
-        },
-        {
-          "text": "遣尚书李福赴军问安并询后事",
-          "chapter": "第104章",
-          "place": "wuzhang-yuan"
-        },
-        {
-          "text": "孔明奏后主通吴之策，后主然之",
-          "chapter": "第86章",
-          "place": "chengdu"
-        }
-      ],
-      "fromCh": 86
-    },
-    {
       "from": "fei-yi",
       "to": "zhuge-liang",
       "type": "同僚",
@@ -36354,9 +35741,13 @@
           "text": "诸葛瑾守江陵拒司马懿",
           "chapter": "第96章",
           "place": ""
+        },
+        {
+          "text": "陆逊教诸葛瑾诈为拒敌再退",
+          "chapter": "第103章",
+          "place": "chaohu-kou"
         }
-      ],
-      "fromCh": 96
+      ]
     },
     {
       "from": "jia-kui",
@@ -37342,19 +36733,6 @@
       "events": [
         {
           "text": "张球、满宠分路劫吴水寨",
-          "chapter": "第103章",
-          "place": "chaohu-kou"
-        }
-      ]
-    },
-    {
-      "from": "lu-xun",
-      "to": "zhuge-jin",
-      "type": "上下级",
-      "style": "solid",
-      "events": [
-        {
-          "text": "陆逊教诸葛瑾诈为拒敌再退",
           "chapter": "第103章",
           "place": "chaohu-kou"
         }
@@ -38351,8 +37729,8 @@
       ]
     },
     {
-      "from": "liu-shan",
-      "to": "jiang-wei",
+      "from": "jiang-wei",
+      "to": "liu-shan",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -38375,6 +37753,36 @@
           "text": "后主听信流言，诏姜维回朝",
           "chapter": "第113章",
           "place": ""
+        },
+        {
+          "text": "姜维奏请乘间伐魏，后主从之",
+          "chapter": "第110章",
+          "place": "chengdu"
+        },
+        {
+          "text": "姜维上表请战，后主览表犹豫",
+          "chapter": "第115章",
+          "place": ""
+        },
+        {
+          "text": "蒋显传敕命，姜维闻降大惊失语",
+          "chapter": "第118章",
+          "place": ""
+        },
+        {
+          "text": "姜维上表请后主发兵守阳安、阴平",
+          "chapter": "第116章",
+          "place": "ta-zhong"
+        },
+        {
+          "text": "姜维入见后主请伐魏",
+          "chapter": "第107章",
+          "place": "chengdu"
+        },
+        {
+          "text": "姜维密书后主，誓使汉室不灭",
+          "chapter": "第119章",
+          "place": "chengdu"
         }
       ]
     },
@@ -38674,6 +38082,16 @@
           "text": "斗阵法，姜维长蛇卷地阵困邓艾",
           "chapter": "第113章",
           "place": "qi-shan"
+        },
+        {
+          "text": "邓艾夜袭蜀寨，姜维死战得脱",
+          "chapter": "第115章",
+          "place": "hou-he"
+        },
+        {
+          "text": "邓艾与姜维混战十馀合，不分胜负",
+          "chapter": "第116章",
+          "place": "ta-zhong"
         }
       ],
       "fromCh": 111,
@@ -39288,45 +38706,6 @@
           "place": "le-jia-cheng"
         }
       ]
-    },
-    {
-      "from": "jiang-wei",
-      "to": "liu-shan",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "姜维奏请乘间伐魏，后主从之",
-          "chapter": "第110章",
-          "place": "chengdu"
-        },
-        {
-          "text": "姜维上表请战，后主览表犹豫",
-          "chapter": "第115章",
-          "place": ""
-        },
-        {
-          "text": "蒋显传敕命，姜维闻降大惊失语",
-          "chapter": "第118章",
-          "place": ""
-        },
-        {
-          "text": "姜维上表请后主发兵守阳安、阴平",
-          "chapter": "第116章",
-          "place": "ta-zhong"
-        },
-        {
-          "text": "姜维入见后主请伐魏",
-          "chapter": "第107章",
-          "place": "chengdu"
-        },
-        {
-          "text": "姜维密书后主，誓使汉室不灭",
-          "chapter": "第119章",
-          "place": "chengdu"
-        }
-      ],
-      "fromCh": 107
     },
     {
       "from": "jiang-wei",
@@ -39981,6 +39360,11 @@
           "text": "休令丁奉总督沿江诸营",
           "chapter": "第119章",
           "place": "jiang-dong"
+        },
+        {
+          "text": "丁奉献计为国除害",
+          "chapter": "第113章",
+          "place": ""
         }
       ]
     },
@@ -40109,26 +39493,6 @@
       "fromCh": 115
     },
     {
-      "from": "deng-ai",
-      "to": "jiang-wei",
-      "type": "敌手",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "邓艾夜袭蜀寨，姜维死战得脱",
-          "chapter": "第115章",
-          "place": "hou-he"
-        },
-        {
-          "text": "邓艾与姜维混战十馀合，不分胜负",
-          "chapter": "第116章",
-          "place": "ta-zhong"
-        }
-      ],
-      "fromCh": 111,
-      "toCh": 119
-    },
-    {
       "from": "sima-wang",
       "to": "xiahou-ba",
       "type": "敌对",
@@ -40220,20 +39584,6 @@
           "place": ""
         }
       ]
-    },
-    {
-      "from": "ding-feng",
-      "to": "sun-xiu",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "丁奉献计为国除害",
-          "chapter": "第113章",
-          "place": ""
-        }
-      ],
-      "fromCh": 113
     },
     {
       "from": "zhang-bu",
@@ -41088,21 +40438,6 @@
     },
     {
       "from": "yuan-shu",
-      "to": "yuan-shao",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "袁术求马不得，自此兄弟不睦",
-          "chapter": "第7章",
-          "place": "nanyang"
-        }
-      ],
-      "fromCh": 7
-    },
-    {
-      "from": "yuan-shu",
       "to": "sun-jian",
       "type": "同盟",
       "style": "solid",
@@ -41353,20 +40688,6 @@
       "events": [
         {
           "text": "贼势危急，严政刺杀张宝献首投降",
-          "chapter": "第2章",
-          "place": "yangcheng"
-        }
-      ]
-    },
-    {
-      "from": "zhang-bao",
-      "to": "zhang-jue",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "兄弟同起黄巾，张角死后张宝仍统众",
           "chapter": "第2章",
           "place": "yangcheng"
         }
@@ -41917,21 +41238,6 @@
       ]
     },
     {
-      "from": "yuan-shao",
-      "to": "yuan-kui",
-      "type": "叔侄",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "袁绍为袁隗之侄，现为司隶校尉",
-          "chapter": "第2章",
-          "place": "luo-yang"
-        }
-      ],
-      "fromCh": 2
-    },
-    {
       "from": "he-jin",
       "to": "cao-cao",
       "type": "谏言",
@@ -42192,6 +41498,11 @@
           "text": "操密告刘备屯小沛为掘坑待虎计。",
           "chapter": "第17章",
           "place": "xiaopei"
+        },
+        {
+          "text": "刘备回书愿为前驱共图吕布",
+          "chapter": "第18章",
+          "place": "xiaopei"
         }
       ],
       "fromCh": 17,
@@ -42252,21 +41563,6 @@
         }
       ],
       "fromCh": 18,
-      "toCh": 19
-    },
-    {
-      "from": "liu-bei",
-      "to": "cao-cao",
-      "type": "同盟",
-      "style": "solid",
-      "events": [
-        {
-          "text": "刘备回书愿为前驱共图吕布",
-          "chapter": "第18章",
-          "place": "xiaopei"
-        }
-      ],
-      "fromCh": 17,
       "toCh": 19
     },
     {
@@ -42355,19 +41651,6 @@
       ]
     },
     {
-      "from": "cao-xing",
-      "to": "lv-bu",
-      "type": "主从",
-      "style": "solid",
-      "events": [
-        {
-          "text": "曹性随侯成、郝萌接应高顺",
-          "chapter": "第18章",
-          "place": "xiaopei"
-        }
-      ]
-    },
-    {
       "from": "gao-shun",
       "to": "xiahou-dun",
       "type": "交战",
@@ -42437,21 +41720,6 @@
         }
       ],
       "fromCh": 18,
-      "toCh": 19
-    },
-    {
-      "from": "sun-qian",
-      "to": "liu-bei",
-      "type": "主从",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孙乾劝刘备速告急于曹操",
-          "chapter": "第18章",
-          "place": "xiaopei"
-        }
-      ],
-      "fromCh": 16,
       "toCh": 19
     },
     {
@@ -43335,21 +42603,6 @@
       "fromCh": 60
     },
     {
-      "from": "liu-bei",
-      "to": "guan-ping",
-      "type": "部属",
-      "style": "solid",
-      "events": [
-        {
-          "text": "关平随刘备中军入川。",
-          "chapter": "第60章",
-          "place": "jing-zhou"
-        }
-      ],
-      "fromCh": 60,
-      "toCh": 63
-    },
-    {
       "from": "liu-zhang",
       "to": "ling-bao",
       "type": "君臣",
@@ -43361,20 +42614,6 @@
           "place": "fu-cheng"
         }
       ]
-    },
-    {
-      "from": "liu-zhang",
-      "to": "zhang-ren",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "张任等劝刘璋防刘备。",
-          "chapter": "第60章",
-          "place": "fu-cheng"
-        }
-      ],
-      "fromCh": 60
     },
     {
       "from": "liu-zhang",
@@ -43560,21 +42799,6 @@
     },
     {
       "from": "xin-pi",
-      "to": "xin-ping",
-      "type": "兄弟",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "郭图举辛评之弟辛毗为使",
-          "chapter": "第32章",
-          "place": "ping-yuan"
-        }
-      ],
-      "fromCh": 32
-    },
-    {
-      "from": "xin-pi",
       "to": "yuan-tan",
       "type": "君臣",
       "style": "solid",
@@ -43697,21 +42921,6 @@
           "place": "jizhou"
         }
       ]
-    },
-    {
-      "from": "guo-jia",
-      "to": "cao-cao",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "郭嘉献缓攻待变之策",
-          "chapter": "第32章",
-          "place": "li-yang"
-        }
-      ],
-      "fromCh": 32,
-      "toCh": 33
     },
     {
       "from": "liu-biao",
@@ -44370,19 +43579,6 @@
       "events": [
         {
           "text": "黄权、刘巴闻言大怒欲斩谯周",
-          "chapter": "第65章",
-          "place": "chengdu"
-        }
-      ]
-    },
-    {
-      "from": "liu-ba",
-      "to": "liu-zhang",
-      "type": "君臣",
-      "style": "solid",
-      "events": [
-        {
-          "text": "刘璋降后刘巴闭门不出，玄德亲请",
           "chapter": "第65章",
           "place": "chengdu"
         }
@@ -47204,6 +46400,10 @@
         {
           "text": "由「孙策 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙登」推导（原文没有直接互动）",
           "chapter": ""
+        },
+        {
+          "text": "由「孙登 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
+          "chapter": ""
         }
       ]
     },
@@ -47217,6 +46417,10 @@
       "events": [
         {
           "text": "由「孙策 与 孙权 同为 吴太夫人 的子女」＋「孙权 有子女 孙亮」推导（原文没有直接互动）",
+          "chapter": ""
+        },
+        {
+          "text": "由「孙坚 与 孙亮 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
           "chapter": ""
         }
       ]
@@ -47461,20 +46665,6 @@
     },
     {
       "from": "sun-deng",
-      "to": "sun-ce",
-      "type": "伯叔侄（推导）",
-      "kin": "blood",
-      "style": "dotted",
-      "derived": true,
-      "events": [
-        {
-          "text": "由「孙登 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
-          "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "sun-deng",
       "to": "sun-shao",
       "type": "伯叔侄（推导）",
       "kin": "blood",
@@ -47553,20 +46743,6 @@
       "events": [
         {
           "text": "由「孙河 与 孙坚 同为 孙权 的子女」＋「孙坚 有子女 孙韶」推导（原文没有直接互动）",
-          "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "sun-liang",
-      "to": "sun-ce",
-      "type": "伯叔侄（推导）",
-      "kin": "blood",
-      "style": "dotted",
-      "derived": true,
-      "events": [
-        {
-          "text": "由「孙坚 与 孙亮 同为 孙权 的子女」＋「孙坚 有子女 孙策」推导（原文没有直接互动）",
           "chapter": ""
         }
       ]

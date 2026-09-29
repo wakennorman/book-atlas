@@ -118,6 +118,26 @@ function validate(file) {
     }
   }
 
+  // ---------- 重复关系（同一对人物 + 同一类型画多条线，图上会扇开成重复线）----------
+  {
+    const groups = new Map();
+    for (const r of rels) {
+      const k = `${[r.from, r.to].sort().join('|')}||${(r.type || '').trim()}`;
+      (groups.get(k) || groups.set(k, []).get(k)).push(r);
+    }
+    for (const [k, members] of groups) {
+      if (members.length < 2) continue;
+      // 允许"阶段关系"（区间之间有空档，如同盟→分裂→再同盟）；连续/无区间的重复要合并
+      const periods = members.map((r) => ({ from: r.fromCh || 0, to: r.toCh || Infinity }));
+      const sorted = [...periods].sort((a, b) => a.from - b.from);
+      let reach = sorted[0].from, gap = false;
+      for (const p of sorted) { if (p.from > reach) { gap = true; break; } reach = Math.max(reach, p.to); }
+      if (gap) continue;
+      const [pair, type] = k.split('||');
+      err(`关系重复：${pair.split('|').join(' ↔ ')} 的「${type}」有 ${members.length} 条（区间连续或未标区间）——图上会画出重复线，跑 node scripts/merge-duplicate-relations.mjs 合并`);
+    }
+  }
+
   // ---------- 阵营变化（factionHistory）----------
   for (const c of chars) {
     const h = c.factionHistory;

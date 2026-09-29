@@ -1,0 +1,6 @@
+{
+  "name": "book-atlas-miniprogram",
+  "private": true,
+  "type": "commonjs",
+  "description": "微信小程序运行时就是 CommonJS；根 package.json 是 type:module，没有这份声明时 Node 会把 miniprogram/**/*.js 当 ESM 加载，node miniprogram/test/smoke.mjs 必报 require is not defined"
+}

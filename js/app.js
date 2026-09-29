@@ -577,6 +577,7 @@
     const lim = sizeLimit();
     if (lim === Infinity) return true;
     if (state.focus && state.focus.id === id) return true;              // 聚焦的人永远显示
+    if (state.hlNodes && state.hlNodes.has(id)) return true;            // 高亮的人永远显示（否则选「主要 60 人」时点事件会静默丢人）
     return (degreeRanking().get(id) || 9999) <= lim;
   }
 
@@ -604,7 +605,7 @@
   }
   const passFocus = (id) => {
     const set = focusSet();
-    return !set || set.has(id);
+    return !set || set.has(id) || (state.hlNodes && state.hlNodes.has(id));   // 聚焦模式下点事件，事件人物也要能显示
   };
 
   function buildOption(opts = {}) {
@@ -614,6 +615,9 @@
     const panel = cssVar('--panel') || '#fff';
     const line = cssVar('--line') || '#e5dfd3';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
+    // 高亮人少（点一个人 / 点一个事件）时：给高亮项"最小屏幕尺寸 + 描边 + 强制标签"，
+    // 否则在三国这种 871 人的密集图里，高亮节点只有 2–5px，跟灰点没区别
+    const smallHl = anyDim && state.hlNodes.size > 0 && state.hlNodes.size <= 40;
     const pairSeen = new Map();     // 同一对之间已画了几条边（决定曲率，见下面的 links）
     // 放大补偿：ECharts 的漫游缩放会把符号/字号/线宽一起放大（36× 时一个节点上千像素，屏幕上只剩一块碎片）
     // ⇒ 放大时按 1/zoom 缩回选项值，保证屏幕上的尺寸始终是"节点原始大小"
@@ -626,30 +630,34 @@
     const fxOk = (v) => Math.max(0.06, v * zc);                // 标签字号 / 线宽 / 图注圆点（只补偿缩放，屏幕尺寸恒定）
 
     const data = b.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
-      const dim = anyDim && !state.hlNodes.has(c.id);
+      const hl = anyDim && state.hlNodes.has(c.id);
+      const dim = anyDim && !hl;
       const locked = charLocked(c);
       const mentioned = isMentioned(c);
       const pos = state.pos.get(c.id);
+      let sz = fxSym((mentioned ? 12 : symbolSize(c.id)) * (hl ? 1.15 : 1));
+      if (hl && smallHl) sz = Math.max(sz, 11);        // 高亮节点屏幕直径下限 11px（密集图里也能一眼找到）
       return {
         id: c.id, name: locked ? '🔒' : c.name, value: c.title,
         category: categoryOf(c),
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
-        symbolSize: fxSym((mentioned ? 12 : symbolSize(c.id)) * (state.hlNodes.has(c.id) && anyDim ? 1.15 : 1)),
+        symbolSize: sz,
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
         itemStyle: mentioned
-          ? { color: 'transparent', borderColor: '#8b94a7', borderWidth: 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
+          ? { color: 'transparent', borderColor: hl ? (cssVar('--accent') || '#c99a3f') : '#8b94a7', borderWidth: hl ? 2 : 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
           : {
-              opacity: dim ? 0.16 : (locked ? 0.4 : 1),
+              opacity: dim ? 0.12 : (locked ? 0.4 : 1),
               color: locked ? '#9aa3b0' : factionColorOf(c),
-              borderColor: panel,
-              borderWidth: 1,
+              borderColor: hl ? (cssVar('--accent') || '#c99a3f') : panel,
+              borderWidth: hl ? 2.5 : 1,
+              ...(hl && smallHl ? { shadowBlur: 8, shadowColor: 'rgba(0,0,0,.4)' } : {}),
             },
         label: {
-          color: mentioned ? muted : (dim ? muted : ink),
-          opacity: dim ? 0.35 : 1,
+          color: mentioned && !hl ? muted : (dim ? muted : ink),
+          opacity: dim ? 0.18 : 1,
           textBorderColor: panel,
           textBorderWidth: 3,
-          show: mentioned ? !anyDim || state.hlNodes.has(c.id) : (locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4))),
+          show: hl ? true : (mentioned ? !anyDim : (locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4)))),
         },
       };
     });
@@ -708,13 +716,15 @@
       const n = pairSeen.get(key) || 0;
       pairSeen.set(key, n + 1);
       const curve = (n === 0 ? 0.08 : (n % 2 === 1 ? -1 : 1) * (0.08 + 0.12 * Math.floor(n / 2)));
+      const hlEdge = anyDim && state.hlEdges.has(key);
       return {
         source: r.from, target: r.to, value: r.type,
         lineStyle: {
-          width: fxOk(state.hlEdges.has(key) && anyDim ? 3 : 1.2),
-          opacity: dim ? 0.07 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
+          width: fxOk(hlEdge ? 3 : 1.2),
+          opacity: dim ? 0.05 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: Math.min(0.5, curve),
+          ...(hlEdge && smallHl ? { shadowBlur: 6, shadowColor: 'rgba(0,0,0,.45)' } : {}),
         },
       };
     });
@@ -867,18 +877,18 @@
     const rank = degreeRanking();
     const MAX_LABELS = 400;
     const cands = state.book.characters
-      .filter((c) => state.pos.has(c.id) && passSizeFilter(c.id) && passFocus(c.id))
-      .filter((c) => (isMentioned(c)
-        ? state.hlNodes.has(c.id)
+      .filter((c) => state.pos.has(c.id) && (state.hlNodes.has(c.id) || (passSizeFilter(c.id) && passFocus(c.id))))
+      .filter((c) => state.hlNodes.has(c.id) || (isMentioned(c)
+        ? false
         : (zoomedIn ? eff(c.id) >= 6 : (rank.get(c.id) || 9999) <= 40)))
       .map((c) => {
         const chip = Math.min(Math.max(eff(c.id), 6), 64);
         const w = c.name.length * 11.5 * fontScale() + chip + 6, h = Math.max(chip, 18);
         const p = state.pos.get(c.id);
         const sx = p.x * zoom + chip / 2;
-        return { id: c.id, deg: nodeDegree(c.id), bx: sx - w / 2, by: p.y * zoom - h / 2, w, h };
+        return { id: c.id, hl: state.hlNodes.has(c.id) ? 1 : 0, deg: nodeDegree(c.id), bx: sx - w / 2, by: p.y * zoom - h / 2, w, h };
       })
-      .sort((a, b) => b.deg - a.deg);
+      .sort((a, b) => (b.hl - a.hl) || (b.deg - a.deg));   // 高亮的名字优先占位（否则会被 400 上限或碰撞挤掉）
     const placed = [];
     const keep = new Set();
     for (const n of cands) {
@@ -1046,6 +1056,38 @@
     state.chart.setOption(buildOption(), { notMerge: true });   // 全量重建：zoom/center 与标签一起生效
   }
 
+  /**
+   * 高亮集合较小时，把视野移过去并适当放大。
+   * 为什么：三国 871 人铺满一屏时，点右侧事件高亮的 3–6 个人可能散在画布各处、
+   * 节点只有 2–5px——"高亮生效了但根本看不见"。本函数只放大不缩小：
+   * 收益明显（≥25%）或目标偏离视野中心时才动，避免小图上乱跳。
+   * @returns {boolean} true = 已调用 applyZoom（option 已重建）
+   */
+  function focusViewOn(nodes) {
+    if (!state.chart || !nodes || !nodes.size || nodes.size > 40) return false;
+    const rect = document.getElementById('graph').getBoundingClientRect();
+    const W = rect.width || 800, H = rect.height || 500;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, n = 0;
+    for (const id of nodes) {
+      const p = state.pos.get(id);
+      if (!p) continue;
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      n++;
+    }
+    if (!n) return false;
+    const w = Math.max(maxX - minX, 1), h = Math.max(maxY - minY, 1);
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const cur = state.zoom || 1;
+    const vc = state.viewCenter || [0, 0];
+    const target = Math.min(Math.max(Math.min((W * 0.55) / w, (H * 0.55) / h), cur), 4);   // 只放大、不缩小
+    const improved = target >= cur * 1.25;
+    const moved = Math.hypot((cx - vc[0]) * cur, (cy - vc[1]) * cur) > Math.min(W, H) * 0.2;
+    if (!improved && !moved) return false;
+    applyZoom(target, [cx, cy]);
+    return true;
+  }
+
   /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
   function updateCountHint() {
     const el = document.getElementById('count-hint');
@@ -1096,9 +1138,11 @@
     state.fit = { s: 1, cx: 0, cy: 0 };
     if (state.chart) {
       clearTimeout(state.freezeTimer);
+      state.zoom = 1;                       // 先复位再重建（否则 option 用旧 zoom 建、标签按 1 算，不一致）
+      state.viewCenter = [0, 0];
+      computeLabels(1);
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
-      state.zoom = 1;
       if (state.focus) state.freezeTimer = setTimeout(() => freezeNow(), 2500);
     }
     renderFocusBar();
@@ -1275,7 +1319,8 @@
     });
     document.querySelectorAll('.event-chip').forEach((el) => el.classList.toggle('active', el.dataset.event === state.activeEvent));
     freezeNow();
-    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+    // 大图上点了看不见 ⇒ 把视野移到高亮区域；focusViewOn 内部会重建 option
+    if (!focusViewOn(state.hlNodes) && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
   function clearHighlight(updateVisual = true) {
