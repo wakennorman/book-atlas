@@ -626,8 +626,11 @@
     // 适配视图里间距只有一两像素时，符号缩成小点（否则几百个 15–40px 的圆会糊成一团）
     const spacingScreen = (state.stepWorld || 40) * (state.fitLast || 1) * (state.zoom || 1);
     const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
-    const fxSym = (v) => Math.max(0.04, v * zc * symScale);   // 节点符号（跟着间距缩）
-    const fxOk = (v) => Math.max(0.06, v * zc);                // 标签字号 / 线宽 / 图注圆点（只补偿缩放，屏幕尺寸恒定）
+    const fxSym = (v) => Math.max(0.04, v * zc * symScale);   // 节点符号（世界坐标，跟着 zoom 放大 ⇒ 要缩回）
+    // 线宽：边画在世界坐标，也会随 zoom 变粗 ⇒ 同样缩回。
+    // ⚠ 标签字号**不要**用它：ECharts 把标签画在屏幕坐标，渲染高度＝fontSize 本身（实测 zoom=1/4 同字号同高），
+    //   再除一次 zoom 会把放大后的名字压成 2px（v0.41 曾误把字号一起补偿，点事件聚焦后名字看不清）。
+    const fxOk = (v) => Math.max(0.06, v * zc);
 
     const data = b.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
       const hl = anyDim && state.hlNodes.has(c.id);
@@ -688,7 +691,7 @@
           x: isH ? band : bb.minX - 30,
           y: isH ? bb.minY - 26 : band,
           label: {
-            show: true, color: muted, fontSize: fxOk(11.5), fontWeight: 'bold',
+            show: true, color: muted, fontSize: 11.5, fontWeight: 'bold',   // 标签画在屏幕坐标，不随 zoom 变 ⇒不能除以 zoom（否则一放大就剩 2px）
             position: isH ? 'top' : 'left', distance: 4,
           },
           itemStyle: { color: 'transparent' },
@@ -770,7 +773,7 @@
         label: {
           show: true,
           position: state.view === 'force' ? 'right' : 'bottom',
-          distance: 4, fontSize: fxOk(10.5 * fontScale()), color: ink, formatter: '{b}',
+          distance: 4, fontSize: 10.5 * fontScale(), color: ink, formatter: '{b}',   // 同上：字号是屏幕像素，去掉 1/zoom 补偿
         },
         labelLayout: { hideOverlap: false },
         lineStyle: { color: 'source' },
@@ -945,7 +948,13 @@
     for (const c of state.book.characters) counts.set(groupKeyOf(c), (counts.get(groupKeyOf(c)) || 0) + 1);
     const groupCount = counts.size || 1;
     const base = state.view === 'gen-v' ? (groupCount <= 6 ? 640 : 720) : 700;
-    el.style.height = base + 'px';
+    // 矮窗口（800 高的笔记本/录屏视口）放不下 720px 的图：图的中心会落到屏幕下缘之外，
+    // 表现为"时间旅行拨完图、或缩小窗口后，图看着不见了/缩在一角"。
+    // 用元素在文档里的绝对位置算实际可用高度（不受滚动影响），让画布中心始终留在视口内；
+    // 高窗口仍按 base 走，布局不变。
+    const docTop = el.getBoundingClientRect().top + (window.scrollY || 0);
+    const avail = Math.max(300, window.innerHeight - docTop - 24);
+    el.style.height = Math.min(base, avail) + 'px';
   }
 
   function buildGenerationPositions(view) {
@@ -1722,6 +1731,30 @@
     fillMissingPositions();
     computeLabels(state.zoom);
     state.chart.setOption(buildOption({ keepView: true }));
+    // 时间旅行会换掉一大半可见节点：老的视野中心是给旧集合算的，
+    // 新子集的包围盒中心往往不在那 —— 不重新居中，内容就会被推出画面
+    // （第 43 章最明显：193 人集中在布局左侧，图被裁掉左边一截）。
+    // 只重新居中、不动缩放：缩放是用户滚出来的，倍率有意义。
+    const data = state.chart.getOption().series[0].data;
+    if (!data || !data.length) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const d of data) {
+      if (d.id && d.id.startsWith('__gen_')) continue;   // 排除代际虚拟节点（在全图边缘，会拉偏包围盒）
+      if (d.x < minX) minX = d.x;
+      if (d.x > maxX) maxX = d.x;
+      if (d.y < minY) minY = d.y;
+      if (d.y > maxY) maxY = d.y;
+    }
+    if (minX === Infinity) return;   // 只有虚拟节点（极端情况）
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const vc = state.viewCenter || [0, 0];
+    const rect = document.getElementById('graph').getBoundingClientRect();
+    // 偏离超过视野短边的 20% 才动：避免拖滑块时图一直轻微跳动
+    const threshold = Math.min(rect.width, rect.height) * 0.2;
+    if (Math.hypot(cx - vc[0], cy - vc[1]) > threshold) {
+      state.viewCenter = [cx, cy];
+      state.chart.setOption({ series: [{ center: [cx, cy] }] });
+    }
   }
   function applyTimeTravel() {
     try { localStorage.setItem('ba-timetravel', state.timeTravel ? '1' : '0'); } catch (e) { /* 隐私模式忽略 */ }
