@@ -386,7 +386,11 @@ main {
   font-size: 13.5px;
 }
 
-.footer { padding: 4px 16px 18px; color: var(--muted); font-size: 12px; }
+.footer { padding: 4px 16px 18px; color: var(--muted); font-size: 12px; line-height: 1.75; }
+.foot-row { display: block; }
+.foot-row b { display: inline-block; min-width: 3.4em; margin-right: 2px; color: var(--ink); font-weight: 600; }
+.foot-link { color: inherit; text-decoration: underline dotted; }
+.foot-link:hover { color: var(--accent); }
 
 /* ---------- 章节视图（第 N 章的世界） ---------- */
 /* 关键：长关系行必须能被压缩，否则会把栅格列的最小宽度撑出手机屏幕（见 ch-list 的 nowrap） */

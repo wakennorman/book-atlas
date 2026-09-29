@@ -488,8 +488,49 @@
       esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`) +
       (links ? ` <span class="meta-links">${links}</span>` : '');
     document.title = `《${m.title || '书脉'}》· 书脉 BookAtlas`;
-    $('#footer-note').textContent = `${m.note || ''} ${m.prophecy ? '「' + m.prophecy + '」' : ''}`.trim();
+    renderFooter();
     updateSearchPlaceholder();
+  }
+
+  /* ---------------- 页脚（三本书统一四行：一句话 / 结构 / 数据 / 来源） ---------------- */
+  // 代际跨度文案：0 与负数并入「前史」，正代际压缩成「第 1–N 代」
+  function genSpanText(gens) {
+    const out = [];
+    if (gens.some((g) => g <= 0)) out.push('前史');
+    const pos = gens.filter((g) => g > 0);
+    if (pos.length === 1) out.push(genText(pos[0]));
+    else if (pos.length > 1) out.push(`第 ${pos[0]}–${pos[pos.length - 1]} 代`);
+    return out.join('、') || '—';
+  }
+  function renderFooter() {
+    const b = state.book, m = b.meta || {};
+    const rows = [];
+    // ① 一句话：最能概括这本书的一句 + 出处
+    if (m.prophecy) rows.push(['一句话', `「${esc(m.prophecy)}」${m.prophecySrc ? `（${esc(m.prophecySrc)}）` : ''}`]);
+    // ② 结构：当前分组视图怎么排 + 剧透/章节尺度 + 该书专属说明
+    const gens = [...new Set(b.characters.map((c) => Number(c.generation)))].sort((a, z) => a - z);
+    const facs = (b.factions || []).map((f) => f.name);
+    const parts = [];
+    if (state.groupMode === 'generation') {
+      parts.push(`「分组视图」按代际排列（${genSpanText(gens)}）`);
+    } else if (gens.length <= 1) {
+      parts.push(`本书没有代际差异：所有人物同属一代（generation 一律为 1），「分组视图」按阵营（${facs.join('／')}）排列`);
+    } else {
+      parts.push(`「分组视图」按阵营（${facs.join('／')}）排列，数据另标代际（${genSpanText(gens)}）`);
+    }
+    if (m.chapters) parts.push(`剧透保护按章节顺序解锁（全书 ${m.chapters} 章）`);
+    if (m.note) parts.push(esc(m.note));
+    rows.push(['结构', parts.join('；').replace(/[。；;]?$/, '') + '。']);
+    // ③ 数据：固定免责声明
+    rows.push(['数据', '本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。']);
+    // ④ 来源：出处 · 授权 · 更新时间
+    const src = (m.sources || []).map((s) => (s.url
+      ? `<a class="foot-link" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`
+      : esc(s.name))).join(' · ');
+    const bits = [src, m.license && esc(m.license), m.updated && `更新 ${esc(m.updated)}`].filter(Boolean);
+    if (bits.length) rows.push(['来源', bits.join(' · ')]);
+    const el = $('#footer-note');
+    if (el) el.innerHTML = rows.map(([k, v]) => `<span class="foot-row"><b>${k}</b>${v}</span>`).join('');
   }
 
   // 搜索框 placeholder：取当前书关系数最多的前 3 个人，拼成提示
@@ -1889,8 +1930,8 @@
     html = html.replace(/<script src="vendor\/echarts\.min\.js"><\/script>/, () => `<script>${jsSafe(echarts)}<\/script>`);
     html = html.replace(/<script src="js\/app\.js\?v=\d+"><\/script>/,
       () => `<script>window.__BA_STANDALONE = true;\nwindow.__BA_STANDALONE_BOOK = ${data};<\/script>\n<script>${jsSafe(app)}<\/script>`);
-    html = html.replace(/<span id="footer-note">[^<]*<\/span>/,
-      (m) => `${m}\n      <span>· 本文件由《书脉 BookAtlas》导出（${esc(SITE_URL)}）</span>`);
+    html = html.replace('</footer>',
+      `  <span class="foot-row"><b>导出</b>本文件由《书脉 BookAtlas》导出（${esc(SITE_URL)}）</span>\n</footer>`);
     return html;
   }
 

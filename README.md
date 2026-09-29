@@ -158,7 +158,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 ```jsonc
 {
-  "meta":       { "slug": "", "title": "", "author": "", "chapters": 20, "schemaVersion": 2, "groupMode": "", "note": "", "license": "CC BY-SA 4.0", "sources": [] },
+  "meta":       { "slug": "", "title": "", "author": "", "chapters": 20, "schemaVersion": 2, "groupMode": "", "prophecy": "", "prophecySrc": "", "note": "", "license": "CC BY-SA 4.0", "sources": [] },
   "factions":   [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "pinyin-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f",
                    "firstCh": 1, "faction": "", "tier": "main|minor|mentioned", "title": "", "desc": "", "fate": "", "note": "" }],

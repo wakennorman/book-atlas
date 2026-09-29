@@ -88,6 +88,8 @@ function validate(file) {
   if (sv === undefined) warn('meta.schemaVersion 缺失（当前格式建议写 2）');
   else if (typeof sv !== 'number' || sv < 1) warn(`meta.schemaVersion「${sv}」不合法（应为正整数）`);
   else if (sv > SCHEMA) warn(`meta.schemaVersion=${sv} 比本工具支持的 ${SCHEMA} 新——升级脚本再跑`);
+  const metaNow = book.meta || {};
+  if (metaNow.prophecy && !metaNow.prophecySrc) warn('meta.prophecy 写了「一句话」但缺 prophecySrc（页脚会没有出处）');
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     if (!ids.has(r.from)) err(`${where} 的 from 不存在`);

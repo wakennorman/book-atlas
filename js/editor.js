@@ -154,7 +154,7 @@
 
   function normalize(book) {
     const b = book || {};
-    b.meta = { slug: '', title: '未命名', author: '', translator: '', chapters: 20, prophecy: '', note: '', license: 'CC BY-SA 4.0', updated: '', sources: [], ...(b.meta || {}) };
+    b.meta = { slug: '', title: '未命名', author: '', translator: '', chapters: 20, prophecy: '', prophecySrc: '', note: '', license: 'CC BY-SA 4.0', updated: '', sources: [], ...(b.meta || {}) };
     b.factions = Array.isArray(b.factions) ? b.factions : [];
     b.characters = Array.isArray(b.characters) ? b.characters : [];
     b.relations = Array.isArray(b.relations) ? b.relations : [];
@@ -545,7 +545,8 @@
             <option value="faction" ${m.groupMode === 'faction' ? 'selected' : ''}>按阵营</option>
           </select></label>
           <label>license<input data-field="license" value="${esc(m.license)}"></label>
-          <label class="wide">题记/预言<input data-field="prophecy" value="${esc(m.prophecy)}"></label>
+          <label class="wide">一句话（最能概括这本书）<input data-field="prophecy" value="${esc(m.prophecy)}"></label>
+          <label class="wide">一句话出处<input data-field="prophecySrc" value="${esc(m.prophecySrc || '')}"></label>
           <label class="wide">说明<textarea data-field="note">${esc(m.note)}</textarea></label>
         </div>
       </form>
@@ -1020,7 +1021,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=75';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=76';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {

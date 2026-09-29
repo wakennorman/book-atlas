@@ -5,11 +5,16 @@
     "author": "罗贯中",
     "translator": "",
     "chapters": 120,
-    "prophecy": "临江仙·滚滚长江东逝水",
-    "note": "阵营轴（魏/蜀/吴/汉室/群雄/司马·晋）；剧透尺度＝顺序回目（120 回）；前 5 回为试跑样本",
-    "license": "CC BY-SA 4.0",
-    "updated": "2026-09-21",
-    "sources": [],
+    "prophecy": "天下大势，分久必合，合久必分",
+    "prophecySrc": "第一回开篇",
+    "note": "剧透尺度＝顺序回目（120 回＝界面「第 N 章」）",
+    "license": "本数据：CC BY-SA 4.0；原著已进入公有领域",
+    "updated": "2026-09-30",
+    "sources": [
+      {
+        "name": "原著《三国演义》（罗贯中，120 回本）"
+      }
+    ],
     "groupMode": "faction",
     "schemaVersion": 2
   },

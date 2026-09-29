@@ -45,7 +45,7 @@ const baseUrl = (process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1').repl
 const model = process.env.LLM_MODEL || 'deepseek-chat';
 
 const SCHEMA = `{
-  "meta": { "slug": "", "title": "", "author": "", "translator": "", "prophecy": "", "note": "", "license": "CC BY-SA 4.0", "updated": "YYYY-MM-DD", "sources": [{ "name": "" }] },
+  "meta": { "slug": "", "title": "", "author": "", "translator": "", "prophecy": "", "prophecySrc": "", "note": "", "license": "CC BY-SA 4.0", "updated": "YYYY-MM-DD", "sources": [{ "name": "" }] },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
   "relations": [{ "from": "id", "to": "id", "type": "关系名", "style": "solid|dashed|dotted", "events": [{ "text": "定义这段关系的小事件", "chapter": "第X章", "place": "地点 id 或空" }] }],
