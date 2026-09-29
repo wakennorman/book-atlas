@@ -216,6 +216,16 @@ main {
 
 /* ---------- 侧栏 ---------- */
 .side { display: flex; flex-direction: column; gap: 16px; }
+/* 桌面双栏：右栏最多一屏高、内部滚动。
+   否则右栏内容（提示卡＋第 N 章＋事件轴）有多高，网格行就按它对齐，
+   左栏（工具行＋图＋两人关系）下方到页脚就空出多少——那块空白正是
+   「关系图和尾注之间凭空少了一截」的来源。左栏以图高（≈视口可用高）为准，
+   右栏一屏封顶后行高＝左栏，页脚紧跟两人关系栏，空白归零。
+   手机（≤900px）是单栏堆叠，不存在此问题，故只在双栏断点生效。 */
+@media (min-width: 901px) {
+  .side { max-height: calc(100vh - 60px); overflow-y: auto; scrollbar-width: thin; }
+  .side > * { flex: none; }   /* 子面板保持自然高度，超高时整栏滚动（别被 flex 压缩） */
+}
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -283,19 +293,9 @@ main {
 .help-text b { display: block; font-size: 14px; margin-bottom: 4px; }
 .help-text span { display: block; font-size: 13px; color: var(--muted); line-height: 1.65; }
 .help-text .ghost, .help-text .icon-btn { margin: 8px 6px 0 0; display: inline-block; text-decoration: none; }
-/* 演示 GIF（打开「怎么用」时由 app.js 注入 src，首屏不加载） */
-.help-item.has-gif { grid-template-columns: 248px minmax(0, 1fr); }
-.help-fig.gifs { flex-direction: column; gap: 8px; }
-.help-fig img.help-gif {
-  display: block; width: 100%; height: auto;
-  border: 1px solid var(--line); border-radius: var(--radius-s);
-  background: var(--soft);
-}
 @media (max-width: 700px) {
   .help-item { grid-template-columns: 1fr; }
-  .help-item.has-gif { grid-template-columns: 1fr; }
   .help-fig svg { width: 100%; max-width: 200px; }
-  .help-fig img.help-gif { max-width: 340px; }
 }
 
 /* 示意动画（纯 CSS，不依赖录屏） */
@@ -579,7 +579,8 @@ button.spoiler-opt:hover {
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
   #graph { height: 52vh; min-height: 340px; }
-  .timeline { max-height: none; }
+  /* 事件轴沿用基础样式的 46vh 封顶内滚（不要 none：三国 702 个事件铺开是 4.8 万像素，
+     整页会被事件轴撑到没法用） */
   .meta { max-width: 52vw; }
   .brand-text h1 { font-size: 16px; }
   .pathbar select { max-width: 45%; flex: 1 1 40%; }
@@ -634,7 +635,5 @@ button.spoiler-opt:hover {
   .pathbar select { max-width: 100%; flex: 1 1 100%; }
   .modal { padding: 16px; max-height: 86vh; }
   .help-item { grid-template-columns: 1fr; }
-  .help-item.has-gif { grid-template-columns: 1fr; }
   .help-fig svg { width: 100%; max-width: 200px; }
-  .help-fig img.help-gif { max-width: 340px; }
 }

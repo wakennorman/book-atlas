@@ -985,17 +985,13 @@
       el.style.height = Math.max(300, Math.round(window.innerHeight * 0.46)) + 'px';
       return;
     }
-    const counts = new Map();
-    for (const c of state.book.characters) counts.set(groupKeyOf(c), (counts.get(groupKeyOf(c)) || 0) + 1);
-    const groupCount = counts.size || 1;
-    const base = state.view === 'gen-v' ? (groupCount <= 6 ? 640 : 720) : 700;
-    // 矮窗口（800 高的笔记本/录屏视口）放不下 720px 的图：图的中心会落到屏幕下缘之外，
-    // 表现为"时间旅行拨完图、或缩小窗口后，图看着不见了/缩在一角"。
-    // 用元素在文档里的绝对位置算实际可用高度（不受滚动影响），让画布中心始终留在视口内；
-    // 高窗口仍按 base 走，布局不变。
+    // 桌面：图高＝首屏可用高度（图心必在首屏内，见下面 avail 的算法）。
+    // 不再按布局/人数设 700px 上限：图吃满首屏 → 左栏高≈视口高，配合 css 里
+    // 「右栏一屏封顶内滚」，行高恒等于左栏，页脚紧跟图下方，双栏空白归零；
+    // 同时大屏上图也更大（这正是"图与尾注之间空一大截"的修复）。
     const docTop = el.getBoundingClientRect().top + (window.scrollY || 0);
     const avail = Math.max(300, window.innerHeight - docTop - 24);
-    el.style.height = Math.min(base, avail) + 'px';
+    el.style.height = avail + 'px';
   }
 
   function buildGenerationPositions(view) {
@@ -2931,11 +2927,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const helpModal = document.getElementById('help-modal');
     const closeHelp = () => { if (helpModal) helpModal.hidden = true; };
     const helpBtn = document.getElementById('help-btn');
-    if (helpBtn && helpModal) helpBtn.addEventListener('click', () => {
-      helpModal.hidden = false; helpModal.querySelector('.modal').scrollTop = 0;
-      // 演示 GIF 首次打开才加载（合计约 2MB，别拖慢首屏）
-      helpModal.querySelectorAll('img[data-gif]').forEach((img) => { img.src = img.dataset.gif; img.removeAttribute('data-gif'); });
-    });
+    if (helpBtn && helpModal) helpBtn.addEventListener('click', () => { helpModal.hidden = false; helpModal.querySelector('.modal').scrollTop = 0; });
     if (helpModal) {
       helpModal.addEventListener('click', (ev) => {
         if (ev.target === helpModal || ev.target.closest('[data-help-close]')) closeHelp();
