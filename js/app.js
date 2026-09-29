@@ -1016,6 +1016,10 @@
   function setView(view) {
     state.view = view;
     state.zoom = 1;
+    // 切换布局时清除聚焦状态：聚焦是在旧布局下算的，新布局下位置会变，
+    // 不清除会导致节点跑到视野外（图显示空白）
+    state.focus = null;
+    state.focusCache = null;
     try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();

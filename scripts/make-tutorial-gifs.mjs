@@ -91,6 +91,80 @@ const SCENES = {
       { hold: 14 },                     // 看：只画第 60 章之前已发生的关系
     ],
   },
+  // —— 百年孤独：覆盖「怎么用」第 1-6 点 ——
+  'solitude-open': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#graph', hold: 2 },
+      { click: '#graph', hold: 3 },       // 点击一个节点
+      { hold: 14 },                       // 看：人物档案面板打开
+    ],
+  },
+  'solitude-search': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#search-input' },
+      { click: '#search-input', hold: 3 },
+      { type: '乌苏拉', hold: 3 },
+      { key: 'Enter' },
+      { wait: 500, hold: 4 },
+      { hold: 14 },                       // 看：面板打开 + 图聚焦到乌苏拉
+    ],
+  },
+  'solitude-size': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#size-filter', hold: 2 },
+      { click: '#size-filter', hold: 3 },
+      { key: 'ArrowDown' },               // 切换到「主要」
+      { key: 'Enter' },
+      { hold: 14 },                       // 看：图只显示主要人物
+    ],
+  },
+  'solitude-focus': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#help-btn', hold: 2 },
+      { click: '#help-btn', hold: 4 },   // 打开「怎么用」
+      { move: '[data-help-act="focus"]', hold: 2 },
+      { click: '[data-help-act="focus"]', hold: 5 },  // 聚焦一个人的圈子
+      { hold: 18 },                       // 看：聚焦到一个人，图放大
+    ],
+  },
+  'solitude-drag': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#drag-btn', hold: 2 },
+      { click: '#drag-btn', hold: 4 },   // 打开拖动开关
+      { dragNode: { sel: '#graph', dx: 120, dy: -60 }, hold: 6 },  // 拖动一个节点
+      { hold: 14 },                       // 看：节点被拉出来，线散开
+    ],
+  },
+  'solitude-place': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#place-filter', hold: 2 },
+      { click: '#place-filter', hold: 3 },
+      { key: 'ArrowDown' },               // 选择第一个地点
+      { key: 'Enter' },
+      { hold: 14 },                       // 看：图只显示该地点相关的人
+    ],
+  },
+  'solitude-spoiler': {
+    url: '?book=one-hundred-years-of-solitude',
+    steps: [
+      { wait: 400, hold: 3 },
+      { move: '#spoiler-btn', hold: 2 },
+      { click: '#spoiler-btn', hold: 4 },  // 打开剧透设置
+      { hold: 14 },                       // 看：剧透设置面板
+    ],
+  },
 };
 const scenes = (sceneArgs.length ? sceneArgs : Object.keys(SCENES));
 for (const s of scenes) if (!SCENES[s]) { console.error(`未知场景「${s}」，可选：${Object.keys(SCENES).join(' / ')}`); process.exit(1); }
@@ -332,6 +406,57 @@ async function runScene(name, def) {
       await sleep(120);
     }
     if (step.drag) await dragRange(step.drag.from, step.drag.to);
+    if (step.dragXY) {
+      // 从 (x0,y0) 拖到 (x1,y1)：用于拖动节点
+      const { from, to } = step.dragXY;
+      const [x0, y0] = await resolve(from);
+      const [x1, y1] = await resolve(to);
+      await moveTo([x0, y0], 5);
+      await cursorTo(x0, y0, true);
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: x0, y: y0, button: 'left', buttons: 1, clickCount: 1 });
+      await sleep(80);
+      const N = 10;
+      for (let i = 1; i <= N; i++) {
+        const px = x0 + (x1 - x0) * (i / N);
+        const py = y0 + (y1 - y0) * (i / N);
+        await cursorTo(px, py, true);
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: px, y: py, button: 'left', buttons: 1 });
+        await sleep(60);
+        await shot();
+      }
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x1, y: y1, button: 'left', buttons: 0, clickCount: 1 });
+      await cursorTo(x1, y1, false);
+    }
+    if (step.dragNode) {
+      // 拖动一个节点：自动找到节点位置，拖到偏移处
+      const { sel, dx, dy } = step.dragNode;
+      const pos = await js(`(() => {
+        const chart = __ba.chart();
+        const data = chart.getOption().series[0].data;
+        if (!data || !data.length) return null;
+        const d = data[0];
+        const p = chart.convertToPixel({seriesIndex:0}, [d.x, d.y]);
+        return p ? [p[0], p[1]] : null;
+      })()`);
+      if (!pos) throw new Error('找不到节点位置');
+      const [x0, y0] = pos;
+      const [x1, y1] = [x0 + dx, y0 + dy];
+      await moveTo([x0, y0], 5);
+      await cursorTo(x0, y0, true);
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: x0, y: y0, button: 'left', buttons: 1, clickCount: 1 });
+      await sleep(80);
+      const N = 10;
+      for (let i = 1; i <= N; i++) {
+        const px = x0 + (x1 - x0) * (i / N);
+        const py = y0 + (y1 - y0) * (i / N);
+        await cursorTo(px, py, true);
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: px, y: py, button: 'left', buttons: 1 });
+        await sleep(60);
+        await shot();
+      }
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x1, y: y1, button: 'left', buttons: 0, clickCount: 1 });
+      await cursorTo(x1, y1, false);
+    }
     } catch (e) {
       console.error('  ✗ 步骤失败 ' + JSON.stringify(step) + ' → ' + e.message);
       throw e;
