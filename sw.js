@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v73';
+const CACHE = 'bookatlas-v74';
 const SHELL = [
   './',
   './index.html',
@@ -22,20 +22,25 @@ const SHELL = [
   './editor.html',
   './css/editor.css',
   './js/editor.js',
-  './editor.html?v=73',
-  './css/editor.css?v=73',
-  './js/editor.js?v=73',
-  './css/style.css?v=73',
-  './js/app.js?v=73',
-  './js/export.js?v=73',
-  './js/ai.js?v=73',
-  './vendor/fflate.min.js?v=73',
-  './vendor/pdf.min.js?v=73',
-  './vendor/pdf.worker.min.js?v=73'
+  './editor.html?v=74',
+  './css/editor.css?v=74',
+  './js/editor.js?v=74',
+  './css/style.css?v=74',
+  './js/app.js?v=74',
+  './js/export.js?v=74',
+  './js/ai.js?v=74',
+  './vendor/fflate.min.js?v=74',
+  './vendor/pdf.min.js?v=74',
+  './vendor/pdf.worker.min.js?v=74'
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // 容错预缓存：单个资源失败不阻塞整个安装
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(SHELL.map((url) => c.add(url).catch(() => null)))
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -64,8 +69,18 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 其余：缓存优先，失败回退缓存
+  // HTML/JS/CSS：网络优先，失败回退缓存
+  // 保证部署后用户总能拿到最新版本，离线时用缓存兜底
   e.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).catch(() => caches.match('./index.html')))
+    fetch(req).then((res) => {
+      if (res && res.ok) {
+        const clone = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, clone));
+        return res;
+      }
+      throw new Error('Network response not ok');
+    }).catch(() =>
+      caches.match(req).then((cached) => cached || caches.match('./index.html'))
+    )
   );
 });

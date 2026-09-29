@@ -337,6 +337,7 @@ book-atlas/
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改
 - 发布：改完数据后跑 `tools\push-via-api.ps1`（从 Git 凭据管理器取 token，走 GitHub API 建 blob/tree/commit，再更新分支）
 - **改前端资源后要同步三处**：`index.html` / `editor.html` 里资源引用的 `?v=NN`、`sw.js` 里的 `CACHE = 'bookatlas-vNN'`，以及 `sw.js` 的 `SHELL` 预缓存清单里对应的 `?v=NN`，否则老访客会一直看到旧代码
+  > 推荐用 `node scripts/bump-version.mjs <新版本号>` 自动同步（如 `node scripts/bump-version.mjs 74`）
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；对外公告草稿：[docs/发布公告-2026-09-28.md](docs/发布公告-2026-09-28.md)
 
 ---
@@ -349,7 +350,7 @@ book-atlas/
 
 **AI 报 CORS / 失败？** 浏览器直连需要端点允许跨域（DeepSeek 官方可以）；不行就用命令行 `draft.mjs`。Key 只存本机，永远不会上传到本项目。
 
-**改了代码/数据没生效？** 是 Service Worker 缓存：刷新一次；改代码时记得按上面"两处版本号"同步。
+**改了代码/数据没生效？** 是 Service Worker 缓存。本项目 SW 已采用 **Network-First** 策略（HTML/JS/CSS 优先从网络拿最新版本，离线时才用缓存），正常情况下刷新一次即可拿到最新版。如果仍遇到"白屏/壳子"（旧版本残留），按 `Ctrl+Shift+R` 强制刷新一次即可。改代码时记得用 `node scripts/bump-version.mjs <新版本号>` 同步版本号。
 
 **会不会剧透？** 开「剧透保护」并选好进度；也可以先把「标签」切成"主要"减少信息量。
 
