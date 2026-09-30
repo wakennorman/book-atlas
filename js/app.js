@@ -1297,6 +1297,21 @@
      点击/搜索的瞬间鼠标正悬停在节点上（tooltip 显示中），随后的 setOption 重建会让
      ECharts 在已销毁的内容容器上 setContent 抛 null 引用（v80 起即可复现的既有竞争，本轮一并修） */
   function hideTipNow() { if (state.chart) state.chart.dispatchAction({ type: 'hideTip' }); }
+  /* —— v84 导航提示：搜到人 / 点节点 / 点关系线 / 跑两人关系之后，把右栏面板滚进视野并闪 2 下，
+        告诉用户"你要的信息在这儿"。关系类动作分两步走：先闪关系卡·关系链，隔一拍再滚到事件轴
+        （两个平滑滚动同时打会互相盖掉，第一段闪烁根本看不见）。新动作进来会取消上一次没走到的
+        第二步，所以连点不同的线不会串台。 */
+  let navTimer = 0;
+  /** block 默认 'start'（不是 'nearest'）：档案/关系链面板动辄 2000px 高，'nearest' 会把它的**底边**
+   *  对齐视口、让人落在面板末尾；'start' 才是"导航到这个条目的开头"。事件卡小，另传 'center'。 */
+  function flashTo(el, block = 'start') {
+    if (!el) return;
+    clearTimeout(navTimer);
+    try { el.scrollIntoView({ behavior: 'smooth', block }); } catch (e) { el.scrollIntoView({ block }); }
+    el.classList.remove('nav-flash'); void el.offsetWidth; el.classList.add('nav-flash');
+    setTimeout(() => el.classList.remove('nav-flash'), 2400);
+  }
+  function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, 550); }
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
   function lockFromHighlight(label, origin) {
     if (!state.hlNodes.size) return;
@@ -1425,9 +1440,11 @@
         const rel = findRel(p.data.source, p.data.target, p.data.value);
         if (rel) selectRelation(rel);
         if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
-        if (rel) navigateToRelEvent(rel);       // v82：滚到事件轴上定义这段关系的事件并闪烁（找不到就不导航）
+        // v82→v84：两步走——先闪右栏关系卡，隔一拍再滚到事件轴上定义这段关系的事件并闪烁
+        if (rel) navigateToEvent([rel.from, rel.to], true);
       } else if (p.dataType === 'node') {
         if (lock && !lock.nodes.has(p.data.id)) { blockLockClick(); return; }
+        // v84：右栏档案闪一下提示"信息在这儿"。正常点击**不建锁**——锁只来自主动搜索 / 两人关系查询
         selectCharacter(p.data.id);
         if (lock) restoreLock(lock);
       }
@@ -1511,7 +1528,7 @@
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
     }
-    selectCharacter(id);                           // 面板 + 高亮（读屏读的是面板里的文字）
+    selectCharacter(id, false);                 // 面板 + 高亮（读屏读的是面板里的文字）；方向键浏览不闪
     updateAria();
     const c = state.byId.get(id);
     if (c) announce(`${c.name}，关系 ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章出场${c.title ? `，${c.title}` : ''}`);
@@ -1588,9 +1605,12 @@
       <p style="margin-top:10px"><button class="primary" type="button" id="panel-open-spoiler">调整进度</button></p>`;
     const btn = document.getElementById('panel-open-spoiler');
     if (btn) btn.addEventListener('click', () => openSpoilerModal());
+    flashTo(document.getElementById('panel'));   // v84：点到被剧透保护挡着的人/事件，也让用户看见面板换了内容
   }
 
-  function selectCharacter(id) {
+  /** nav=true（默认）：把右栏档案滚进视野并闪烁提示。键盘方向键浏览（focusNode）传 false，
+   *  否则连按方向键会一路狂闪 —— 浏览是连续的，只有"打开"动作才值得提示一次。 */
+  function selectCharacter(id, nav = true) {
     const c = state.byId.get(id);
     if (!c) return;
     if (charLocked(c)) { renderLockedPanel('character', c); return; }
@@ -1611,6 +1631,7 @@
         }
         setHighlight(nodes, edges, id, null);
         renderCharacterPanel(c);
+        if (nav) flashTo(document.getElementById('panel'));
         return;
       }
     }
@@ -1625,37 +1646,54 @@
     state.activeRel = null;
     setHighlight(nodes, edges, id, null);
     renderCharacterPanel(c);
+    if (nav) flashTo(document.getElementById('panel'));
   }
 
-  function selectRelation(rel) {
+  function selectRelation(rel, nav = true) {
     const nodes = new Set([rel.from, rel.to]);
     const edges = new Set([edgeKey(rel.from, rel.to)]);
     state.panelKind = 'rel';
     state.activeRel = rel;
     setHighlight(nodes, edges, null, null);
     renderRelationPanel(rel);
+    if (nav) flashTo(document.getElementById('panel'));
   }
 
-  /** v82：点关系线 → 滚到事件轴上「定义这段关系」的事件（同时涉及两人的第一个未锁定事件）并闪烁定位。
-   *  关系自带的事件只有文字+章节（无 id），只能按「两人都在场」匹配；找不到就不导航（点击反馈已在图上）。 */
-  function navigateToRelEvent(rel) {
+  /** v82→v84：在事件轴上找"给定这几个人都在场"的第一个未锁定事件（关系自带的事件只有文字+章节，
+   *  没有 id，只能按"两人都在场"匹配）。找不到返回 null，点击反馈已经在图上，不硬导航。 */
+  function pickRelEvent(chars) {
     try {
       const phases = [...state.book.phases].sort((a, b) => a.order - b.order);
       const pOrder = new Map(phases.map((p, i) => [p.id, i]));
       const cand = state.book.events
-        .filter((e) => (e.chars || []).includes(rel.from) && (e.chars || []).includes(rel.to))
+        .filter((e) => chars.every((id) => (e.chars || []).includes(id)))
         .filter((e) => !eventLocked(e) && eventVisibleAt(e))
         .filter((e) => !state.placeFilter || e.place === state.placeFilter)
         .sort((a, b) => (pOrder.get(a.phase) ?? 99) - (pOrder.get(b.phase) ?? 99) || (a.order || 0) - (b.order || 0));
-      const ev = cand[0];
-      if (!ev) return false;
+      return cand[0] || null;
+    } catch (e) { return null; }
+  }
+
+  /** 滚到事件轴上那张事件卡并闪烁。delay＝隔一拍再走，让上一步（关系卡/关系链）的闪烁先被看见。
+   *  卡片在这里才去查 DOM：延后期间时间轴可能被章节/筛选重画过，早拿引用会闪到已经摘掉的节点上。 */
+  function navigateToEvent(chars, delay) {
+    const ev = pickRelEvent(chars);
+    if (!ev) return false;
+    const go = () => {
       const chip = document.querySelector(`#timeline .event-chip[data-event="${CSS.escape(ev.id)}"]`);
-      if (!chip) return false;                     // 被章节/时间旅行筛掉了 → 不导航
-      chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      chip.classList.remove('nav-flash'); void chip.offsetWidth; chip.classList.add('nav-flash');
-      setTimeout(() => chip.classList.remove('nav-flash'), 2400);
-      return true;
-    } catch (e) { return false; }
+      if (!chip) return;                     // 被章节/时间旅行筛掉了 → 不导航
+      flashTo(chip, 'center');
+    };
+    if (delay) navSecondStep(go); else go();
+    return true;
+  }
+
+  /** v84：跑完两人关系后的事件轴落点——优先"两人都在场"的事件（最能代表这两个人），找不到就
+   *  沿链退回每一跳的定义事件，保证长链也总有个着落点。 */
+  function navigateToPathEvent(a, b, steps) {
+    const pairs = [[a, b], ...steps.map((s) => [s.from, s.to])];
+    for (const pair of pairs) if (navigateToEvent(pair, true)) return true;
+    return false;
   }
 
   // 折叠/过滤开关变了以后，右侧面板要跟着重画（否则内容还是旧的）
@@ -1916,6 +1954,9 @@
       </p>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
+    // v84：两步走——先闪关系链面板，隔一拍再滚到事件轴（优先"两人都在场"的事件，否则退回链上每一跳）
+    flashTo(document.getElementById('panel'));
+    navigateToPathEvent(a, b, steps);
   }
 
   /* ---------------- 事件轴 ---------------- */

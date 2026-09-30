@@ -1,5 +1,5 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v83';
+const CACHE = 'bookatlas-v84';
 const SHELL = [
   './',
   './index.html',
@@ -22,16 +22,16 @@ const SHELL = [
   './editor.html',
   './css/editor.css',
   './js/editor.js',
-  './editor.html?v=83',
-  './css/editor.css?v=83',
-  './js/editor.js?v=83',
-  './css/style.css?v=83',
-  './js/app.js?v=83',
-  './js/export.js?v=83',
-  './js/ai.js?v=83',
-  './vendor/fflate.min.js?v=83',
-  './vendor/pdf.min.js?v=83',
-  './vendor/pdf.worker.min.js?v=83'
+  './editor.html?v=84',
+  './css/editor.css?v=84',
+  './js/editor.js?v=84',
+  './css/style.css?v=84',
+  './js/app.js?v=84',
+  './js/export.js?v=84',
+  './js/ai.js?v=84',
+  './vendor/fflate.min.js?v=84',
+  './vendor/pdf.min.js?v=84',
+  './vendor/pdf.worker.min.js?v=84'
 ];
 
 self.addEventListener('install', (e) => {

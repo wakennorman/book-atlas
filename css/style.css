@@ -430,6 +430,14 @@ main {
   0%, 100% { box-shadow: none; border-color: var(--line); }
   50% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); transform: translateX(4px) scale(1.01); }
 }
+/* v84 导航闪烁（右栏）：搜到人 / 点节点 / 点关系线 / 跑两人关系后，面板滚进视野并闪 2 下提示"信息在这儿"。
+   scroll-margin-top 避开 sticky 顶栏（只在页面滚动时生效；桌面右栏自己是滚动容器、上方无可滚内容，不会白留空隙） */
+#panel { scroll-margin-top: 110px; }
+#panel.nav-flash { animation: panel-flash 0.9s ease-in-out 2; }
+@keyframes panel-flash {
+  0%, 100% { box-shadow: var(--shadow); border-color: var(--line); }
+  50% { box-shadow: 0 0 0 4px var(--accent), var(--shadow-md); border-color: var(--accent); }
+}
 .quote {
   margin-top: 8px; padding: 10px 12px;
   border-left: 3px solid var(--accent);
