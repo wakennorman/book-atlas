@@ -343,6 +343,9 @@ main {
   border: 1px solid var(--line); box-shadow: var(--shadow-md); color: var(--ink);
   backdrop-filter: blur(6px);
 }
+/* 作者样式 display:flex 会盖掉 UA 的 [hidden]{display:none}：不写这条，两个空条
+   （初始 <div hidden>）会以 30×18 半透明白胶囊常驻图区顶端居中（v83「白色透明框」） */
+.focus-bar[hidden] { display: none; }
 .focus-bar .lock-hint { color: var(--muted); }
 
 /* ---------- combobox：输入即过滤 + 下拉选人（搜单个人物 / 两人关系 A、B 共用） ---------- */

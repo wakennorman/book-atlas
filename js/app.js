@@ -1297,9 +1297,10 @@
      点击/搜索的瞬间鼠标正悬停在节点上（tooltip 显示中），随后的 setOption 重建会让
      ECharts 在已销毁的内容容器上 setContent 抛 null 引用（v80 起即可复现的既有竞争，本轮一并修） */
   function hideTipNow() { if (state.chart) state.chart.dispatchAction({ type: 'hideTip' }); }
-  function lockFromHighlight(label) {
+  /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
+  function lockFromHighlight(label, origin) {
     if (!state.hlNodes.size) return;
-    state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '' };
+    state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '', origin: origin || 'search' };
     renderLockBar();
     // v82 悬停策略（锁外 emphasis.disabled / 锁内恢复动效）烤在 option 里：上锁后必须重建一次才生效
     hideTipNow();
@@ -1893,7 +1894,7 @@
     const nodes = new Set([a, ...steps.map((s) => s.to)]);
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
     setHighlight(nodes, edges, null, null);
-    lockFromHighlight(`${charName(a)} → ${charName(b)}`);   // 点击锁定：只能点这条链的点和线
+    lockFromHighlight(`${charName(a)} → ${charName(b)}`, 'path');   // 点击锁定：只能点这条链的点和线
 
     const stepItems = steps.map((s, i) => {
       const vis = visibleRelEvents(s.rel);
@@ -3000,6 +3001,15 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       onEnter: () => doSearch(),
     });
     search.addEventListener('change', () => { searchCombo.close(); doSearch(); });
+    // v83：手动清空搜索框（点原生 ✕ / 全选删除都触发 input；WebKit 的 ✕ 只发 search）＝
+    // 用户想解除搜索建的锁；两人关系链的锁（origin='path'）不清搜索框也在，保持原样
+    const onSearchCleared = () => {
+      if (search.value.trim()) return;
+      delete search.dataset.id;
+      if (state.clickLock && state.clickLock.origin !== 'path') clearHighlight();
+    };
+    search.addEventListener('input', onSearchCleared);
+    search.addEventListener('search', onSearchCleared);
     $('#search-go').addEventListener('click', () => doSearch());
     $('#search-clear').addEventListener('click', () => { search.value = ''; delete search.dataset.id; searchCombo.close(); clearHighlight(); });
 
