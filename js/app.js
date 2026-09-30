@@ -883,6 +883,12 @@
         textStyle: { color: ink, fontSize: 12.5 },
         extraCssText: 'max-width:340px;white-space:normal;line-height:1.55;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)',
         formatter: (p) => {
+          // v81 悬停锁定：锁外的人/线悬停不显示任何内容（返回 '' → ECharts 不渲染容器，无幽灵框）
+          const hoverLock = state.clickLock;
+          if (hoverLock) {
+            if (p.dataType === 'node' && !hoverLock.nodes.has(p.data.id)) return '';
+            if (p.dataType === 'edge' && !hoverLock.edges.has(edgeKey(p.data.source, p.data.target))) return '';
+          }
           if (p.dataType === 'edge') {
             const rel = findRel(p.data.source, p.data.target, p.data.value);
             if (!rel) return '';
@@ -922,6 +928,10 @@
         lineStyle: { color: 'source' },
         scaleLimit: { min: 0.02, max: 40 },   // 无限画布：从"看全貌"一路放大到"看清单个人"
         emphasis: {
+          // v81 悬停锁定：锁定期间整体关掉聚光/blur——锁外 hover 不点亮任何东西、
+          // 也不会把锁内亮着的人打暗（blur 0.15）；锁内 hover 只出 tooltip。
+          // 始终显式写这个键：setOption 是合并语义，解锁时不写会把 disabled:true 残留下来
+          disabled: !!state.clickLock,
           focus: 'adjacency',
           label: { show: true, fontWeight: 'bold' },
           lineStyle: { width: fxOk(3), opacity: 0.9 },
@@ -1276,17 +1286,31 @@
   /* —— 点击锁定：搜单个人物 / 两人关系查询成功后进入；可点集合＝当前高亮集合（亮=能点、灰=点不动） ——
      解除路径：「重置」「复位视图」（双击空白同款）；或右栏人名等任何换上下文的选择——
      setHighlight / clearHighlight 起手清锁，图上点击在选中后用 restoreLock 回填（锁不随点击漂移） */
+  /* v81 悬停锁定 —— 重建前先收掉 tooltip：
+     点击/搜索的瞬间鼠标正悬停在节点上（tooltip 显示中），随后的 setOption 重建会让
+     ECharts 在已销毁的内容容器上 setContent 抛 null 引用（v80 起即可复现的既有竞争，本轮一并修） */
+  function hideTipNow() { if (state.chart) state.chart.dispatchAction({ type: 'hideTip' }); }
   function lockFromHighlight(label) {
     if (!state.hlNodes.size) return;
     state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '' };
     renderLockBar();
+    // v81 悬停抑制（emphasis.disabled）烤在 option 里：上锁后必须重建一次才生效
+    hideTipNow();
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
   function unlockClick() {
     if (!state.clickLock) return;
     state.clickLock = null;
     renderLockBar();
+    // 解锁后悬停恢复（各解锁路径本就重建，这里不重复建）
   }
-  function restoreLock(lock) { state.clickLock = lock; renderLockBar(); }
+  function restoreLock(lock) {
+    state.clickLock = lock;
+    renderLockBar();
+    // selectCharacter 起手 setHighlight 会清锁重建：回填锁后再建一次，悬停抑制才回到图上
+    hideTipNow();
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+  }
   function blockLockClick() {
     const lock = state.clickLock;
     if (!lock) return;
@@ -1386,6 +1410,7 @@
     // ⚠️ 事件绑定必须在任何 return 之前（之前手动模式提前 return，导致拖动/点击处理器根本没注册）
     state.chart.on('click', (p) => {
       if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
+      hideTipNow();                              // 点击时 tooltip 正显示：先收，避免接下来的重建撞上已销毁的内容容器
       const lock = state.clickLock;
       if (p.dataType === 'edge') {
         if (lock && !lock.edges.has(edgeKey(p.data.source, p.data.target))) { blockLockClick(); return; }
@@ -3232,6 +3257,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
           if (state.kbCursor) {
             const lock = state.clickLock;
             if (lock && !lock.nodes.has(state.kbCursor)) { blockLockClick(); return; }
+            hideTipNow();                        // 同点击路径：先收 tooltip 再重建
             selectCharacter(state.kbCursor);
             if (lock) restoreLock(lock);
           }
