@@ -420,6 +420,13 @@ main {
 }
 .event-chip .ev-name { font-weight: 700; font-size: 13.5px; }
 .event-chip .ev-sum { color: var(--muted); font-size: 12.5px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+/* v82 关系线导航：点线后滚到事件轴，目标事件卡闪 2 下提示"就是它" */
+.event-chip { scroll-margin-top: 110px; }
+.event-chip.nav-flash { animation: ev-flash 0.9s ease-in-out 2; }
+@keyframes ev-flash {
+  0%, 100% { box-shadow: none; border-color: var(--line); }
+  50% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); transform: translateX(4px) scale(1.01); }
+}
 .quote {
   margin-top: 8px; padding: 10px 12px;
   border-left: 3px solid var(--accent);

@@ -805,6 +805,9 @@
           textBorderWidth: 3,
           show: hl ? true : (mentioned ? !anyDim : (locked ? false : (state.allLabels || (state.labels ? state.labels.has(c.id) : nodeDegree(c.id) >= 4)))),
         },
+        // v82 锁内动效：锁外节点 hover 完全无反应（聚光/加粗全关）；锁内节点恢复 hover 动效。
+        // 每轮都显式写这个键：setOption 是合并语义，解锁时不写会把 disabled:true 残留下来
+        emphasis: { disabled: !!(state.clickLock && !state.clickLock.nodes.has(c.id)) },
       };
     });
 
@@ -865,12 +868,15 @@
       const hlEdge = anyDim && state.hlEdges.has(key);
       return {
         source: r.from, target: r.to, value: r.type,
+        // v82：锁外的线 hover 完全无反应；锁内恢复 hover 动效（线加粗）。每轮显式写，防合并残留
+        emphasis: { disabled: !!(state.clickLock && !state.clickLock.edges.has(key)) },
         lineStyle: {
           width: fxOk(hlEdge ? 3 : 1.2),
           opacity: dim ? 0.05 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
           curveness: Math.min(0.5, curve),
-          ...(hlEdge && smallHl ? { shadowBlur: 6, shadowColor: 'rgba(0,0,0,.45)' } : {}),
+          // 点中的线：桌面端也给描边光晕（原先只有小屏有），点击反馈更明显
+          ...(hlEdge ? { shadowBlur: 6, shadowColor: 'rgba(0,0,0,.45)' } : {}),
         },
       };
     });
@@ -928,11 +934,12 @@
         lineStyle: { color: 'source' },
         scaleLimit: { min: 0.02, max: 40 },   // 无限画布：从"看全貌"一路放大到"看清单个人"
         emphasis: {
-          // v81 悬停锁定：锁定期间整体关掉聚光/blur——锁外 hover 不点亮任何东西、
-          // 也不会把锁内亮着的人打暗（blur 0.15）；锁内 hover 只出 tooltip。
-          // 始终显式写这个键：setOption 是合并语义，解锁时不写会把 disabled:true 残留下来
-          disabled: !!state.clickLock,
-          focus: 'adjacency',
+          // v82 锁内动效恢复：锁定期间 focus 改 'none'——hover 只点亮自己（加粗/变粗），
+          // 不点亮邻居（邻居可能在锁外）；锁外项由 data/link 上逐项 emphasis.disabled 关死。
+          // 锁外 hover 既无聚光也无 tooltip（formatter 守卫），锁内 hover/click 动效齐全。
+          // disabled / focus 两个键每轮都显式写：setOption 合并语义，缺键会残留旧值
+          disabled: false,
+          focus: state.clickLock ? 'none' : 'adjacency',
           label: { show: true, fontWeight: 'bold' },
           lineStyle: { width: fxOk(3), opacity: 0.9 },
         },
@@ -1284,9 +1291,9 @@
   }
 
   /* —— 点击锁定：搜单个人物 / 两人关系查询成功后进入；可点集合＝当前高亮集合（亮=能点、灰=点不动） ——
-     解除路径：「重置」「复位视图」（双击空白同款）；或右栏人名等任何换上下文的选择——
-     setHighlight / clearHighlight 起手清锁，图上点击在选中后用 restoreLock 回填（锁不随点击漂移） */
-  /* v81 悬停锁定 —— 重建前先收掉 tooltip：
+     解除路径：「重置」「复位视图」（双击空白同款，同时清空查询词）、「清除」、双击空白；
+     v82：锁定中点右栏人名＝把锁切换到该人（不解除），无锁点人名只看档案不建锁 */
+  /* 悬停锁定 —— 重建前先收掉 tooltip：
      点击/搜索的瞬间鼠标正悬停在节点上（tooltip 显示中），随后的 setOption 重建会让
      ECharts 在已销毁的内容容器上 setContent 抛 null 引用（v80 起即可复现的既有竞争，本轮一并修） */
   function hideTipNow() { if (state.chart) state.chart.dispatchAction({ type: 'hideTip' }); }
@@ -1294,7 +1301,7 @@
     if (!state.hlNodes.size) return;
     state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '' };
     renderLockBar();
-    // v81 悬停抑制（emphasis.disabled）烤在 option 里：上锁后必须重建一次才生效
+    // v82 悬停策略（锁外 emphasis.disabled / 锁内恢复动效）烤在 option 里：上锁后必须重建一次才生效
     hideTipNow();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
@@ -1307,14 +1314,14 @@
   function restoreLock(lock) {
     state.clickLock = lock;
     renderLockBar();
-    // selectCharacter 起手 setHighlight 会清锁重建：回填锁后再建一次，悬停抑制才回到图上
+    // selectCharacter 起手 setHighlight 会清锁重建：回填锁后再建一次，锁外抑制/锁内动效才回到图上
     hideTipNow();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
   function blockLockClick() {
     const lock = state.clickLock;
     if (!lock) return;
-    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置 / 复位视图」或右栏人名可解除）`;
+    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置 / 复位视图」或右栏人名后点击「清除」可解除）`;
     toast(msg);
     announce(msg);
   }
@@ -1324,7 +1331,7 @@
     const lock = state.clickLock;
     if (!lock) { bar.hidden = true; stackBars(); return; }
     bar.hidden = false;
-    bar.innerHTML = `🔒 聚焦「${esc(lock.label)}」· 只能点图上亮着的人和线 <span class="lock-hint">「重置 / 复位视图」或右栏人名可解除</span>`;
+    bar.innerHTML = `🔒 聚焦「${esc(lock.label)}」· 只能点图上亮着的人和线 <span class="lock-hint">「重置 / 复位视图」或右栏人名后点击「清除」可解除</span>`;
     stackBars();
   }
   /** 聚焦条/锁定条：fixed 悬浮，按「顶栏下沿、图区顶端」定位；两条同时可见时上下叠放 */
@@ -1417,13 +1424,14 @@
         const rel = findRel(p.data.source, p.data.target, p.data.value);
         if (rel) selectRelation(rel);
         if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
+        if (rel) navigateToRelEvent(rel);       // v82：滚到事件轴上定义这段关系的事件并闪烁（找不到就不导航）
       } else if (p.dataType === 'node') {
         if (lock && !lock.nodes.has(p.data.id)) { blockLockClick(); return; }
         selectCharacter(p.data.id);
         if (lock) restoreLock(lock);
       }
     });
-    // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 复位视图 / 右栏人名」）
+    // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 复位视图 / 右栏人名后点清除」）
     state.chart.getZr().on('click', (e) => { if (!e.target && !state.clickLock) clearHighlight(); });
     // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
     state.chart.getZr().on('dblclick', (e) => { if (!e.target) { unlockClick(); resetRoam(); } });
@@ -1627,6 +1635,28 @@
     renderRelationPanel(rel);
   }
 
+  /** v82：点关系线 → 滚到事件轴上「定义这段关系」的事件（同时涉及两人的第一个未锁定事件）并闪烁定位。
+   *  关系自带的事件只有文字+章节（无 id），只能按「两人都在场」匹配；找不到就不导航（点击反馈已在图上）。 */
+  function navigateToRelEvent(rel) {
+    try {
+      const phases = [...state.book.phases].sort((a, b) => a.order - b.order);
+      const pOrder = new Map(phases.map((p, i) => [p.id, i]));
+      const cand = state.book.events
+        .filter((e) => (e.chars || []).includes(rel.from) && (e.chars || []).includes(rel.to))
+        .filter((e) => !eventLocked(e) && eventVisibleAt(e))
+        .filter((e) => !state.placeFilter || e.place === state.placeFilter)
+        .sort((a, b) => (pOrder.get(a.phase) ?? 99) - (pOrder.get(b.phase) ?? 99) || (a.order || 0) - (b.order || 0));
+      const ev = cand[0];
+      if (!ev) return false;
+      const chip = document.querySelector(`#timeline .event-chip[data-event="${CSS.escape(ev.id)}"]`);
+      if (!chip) return false;                     // 被章节/时间旅行筛掉了 → 不导航
+      chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      chip.classList.remove('nav-flash'); void chip.offsetWidth; chip.classList.add('nav-flash');
+      setTimeout(() => chip.classList.remove('nav-flash'), 2400);
+      return true;
+    } catch (e) { return false; }
+  }
+
   // 折叠/过滤开关变了以后，右侧面板要跟着重画（否则内容还是旧的）
   function refreshPanel() {
     if (state.panelKind === 'rel' && state.activeRel) { renderRelationPanel(state.activeRel); return; }
@@ -1657,7 +1687,12 @@
 
   function charLink(id) { return `<button class="linkbtn" data-goto="${esc(id)}">${esc(charName(id))}</button>`; }
   function bindGoto(root) {
-    root.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => selectCharacter(el.dataset.goto)));
+    root.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => {
+      // v82 决策：锁定中点右栏人名＝把锁切换到该人（之后点「清除」才解除）；
+      // 没有锁时点人名只看档案、不建锁（锁条只在查询后出现）
+      if (state.clickLock) chooseCharById(el.dataset.goto);
+      else selectCharacter(el.dataset.goto);
+    }));
     root.querySelectorAll('[data-event]').forEach((el) => el.addEventListener('click', () => selectEvent(el.dataset.event)));
     root.querySelectorAll('[data-place-filter]').forEach((el) => el.addEventListener('click', () => applyPlaceFilter(el.dataset.placeFilter || null)));
     root.querySelectorAll('[data-focus-rel]').forEach((el) => el.addEventListener('click', (ev) => {
@@ -2965,12 +3000,21 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       onEnter: () => doSearch(),
     });
     search.addEventListener('change', () => { searchCombo.close(); doSearch(); });
+    $('#search-go').addEventListener('click', () => doSearch());
     $('#search-clear').addEventListener('click', () => { search.value = ''; delete search.dataset.id; searchCombo.close(); clearHighlight(); });
 
     // 两人关系 A、B：同样可直接输入名字，下拉可选（选中 id 记在 dataset）
     const pathA = $('#path-a'), pathB = $('#path-b');
     attachCombo(pathA, { kind: 'path', onEnter: () => runPath() });
     attachCombo(pathB, { kind: 'path', onEnter: () => runPath() });
+
+    // v82：「重置 / 复位视图」把查询词一起清掉——残留的查询词只要一按回车就会立刻重新上锁、锁条又回来
+    const clearQueryInputs = () => {
+      search.value = ''; delete search.dataset.id; searchCombo.close();
+      pathA.value = ''; delete pathA.dataset.id;
+      pathB.value = ''; delete pathB.dataset.id;
+      $('#path-hint').textContent = '';
+    };
 
     const labelBtn = $('#label-btn');
     labelBtn.addEventListener('click', () => {
@@ -3116,8 +3160,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
-    $('#reset-btn').addEventListener('click', () => setView(state.view));
-    $('#view-reset-btn').addEventListener('click', () => { unlockClick(); resetRoam(); });
+    $('#reset-btn').addEventListener('click', () => { clearQueryInputs(); setView(state.view); });
+    $('#view-reset-btn').addEventListener('click', () => { clearQueryInputs(); unlockClick(); resetRoam(); });
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
       if (!state.chart) return;
