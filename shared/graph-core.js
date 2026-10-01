@@ -69,10 +69,8 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
   /* ---------------- 分组 / 阵营 ---------------- */
   const isGen = (pack.meta.groupMode || 'generation') === 'generation';
   const factionOrder = new Map((pack.factions || []).map((f, i) => [f.key, i]));
-  const groupKeyOf = (c) => (isGen ? `g${c.generation}` : `f${c.faction || 'other'}`);
-  const groupLabelOf = (c) => {
-    if (isGen) return c.generation === 0 ? '前史' : `第 ${c.generation} 代`;
-    const f = (pack.factions || []).find((x) => x.key === c.faction);
+  const factionNameByKey = (key) => {
+    const f = (pack.factions || []).find((x) => x.key === key);
     return (f && f.name) || '其他';
   };
   const effectiveFactionKey = (c) => {
@@ -84,6 +82,11 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
     for (const seg of h) if (typeof seg.fromCh === 'number' && seg.fromCh <= ch) pick = seg;
     return pick.faction || (c && c.faction) || '';
   };
+  // ⚠ 分组键与图注都要走 effectiveFactionKey（"按进度的当前归属"），不能读原始 c.faction。
+  // 三国 groupMode=faction 且 11 个人物有 factionHistory（贾诩 faction=wei，但 history 起点是 qunxiong@9），
+  // 用原始 faction 分组会把"此刻还在群雄"的人画进"曹魏"组，图注也会和节点颜色对不上。
+  const groupKeyOf = (c) => (isGen ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
+  const groupLabelOf = (c) => (isGen ? (c.generation === 0 ? '前史' : `第 ${c.generation} 代`) : factionNameByKey(effectiveFactionKey(c)));
 
   /* ---------------- BFS 最短路 ---------------- */
   function bfs(fromId, toId) {
@@ -163,6 +166,29 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
     };
   }
 
+  /* ---------------- 聚焦：某人 N 跳以内 ----------------
+   * v85 补齐：这份参考实现原本没有 focusSet，导致 app.js 与小程序的两份都没法跟它对拍 ——
+   * 而恰恰是 focusSet 在 v85 之前漏查了 relVisible（关掉「族谱补全」聚焦时出现大批悬空节点）。
+   * 口径与另两份一致：relLocked / relVisibleAt / relVisible 三个都要查。 */
+  const focusSet = () => {
+    if (!state.focus) return null;
+    const set = new Set([state.focus.id]);
+    let frontier = [state.focus.id];
+    for (let d = 0; d < state.focus.depth; d++) {
+      const next = [];
+      for (const id of frontier) {
+        for (const e of adj.get(id) || []) {
+          if (relLocked(e.rel) || !relVisibleAt(e.rel) || !relVisible(e.rel)) continue;
+          if (set.has(e.to)) continue;
+          set.add(e.to);
+          next.push(e.to);
+        }
+      }
+      frontier = next;
+    }
+    return set;
+  };
+
   return {
     chOf, STYLE_OF, KIN_BUCKET,
     charCh, relCh, relFrom, maxChapter, timeCeiling, asOf, beforeAsOf,
@@ -171,5 +197,6 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
     isMinor, isMentioned, isHidden, symbolSize,
     isGen, factionOrder, groupKeyOf, groupLabelOf, effectiveFactionKey,
     bfs, visibleRelEvents, charLastCh, fateLocked, periodText, chapterDigest,
+    focusSet,
   };
 }

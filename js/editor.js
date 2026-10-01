@@ -886,6 +886,13 @@
       if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
       else if (ch === '}' || ch === ']') { stack.pop(); marks.push(i); }
     }
+    /* v85 补一个分支：max_tokens 把输出**拦腰截断**时，正文末尾往往一个括号都没合上
+     * （marks 为空 ⇒ 下面那个"往前退一格"的循环一次都跑不到），此前只能直接抛错。
+     * 而这恰恰是最常见的截断形态。现在把未闭合的括号补齐再试一次。
+     * 只在栈非空、且没停在字符串中间时补，避免把半截内容拼成看似合法的脏数据。 */
+    if (stack.length && !inStr) {
+      try { return JSON.parse(body + stack.reverse().join('')); } catch (e) { /* 补不齐就算了，走下面的老路 */ }
+    }
     for (let k = marks.length - 1; k >= 0; k--) {
       const cand = body.slice(0, marks[k] + 1);
       const s = [];
@@ -1021,7 +1028,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=84';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=86';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1699,5 +1706,24 @@
     report: () => healthReportText(),
     jump: (sec, idx) => jumpTo(sec, idx),
     variants: () => applyVariantFixes(),
+    /* v85：把纯逻辑暴露出来给 test/editor.mjs 断言。
+     * 这些是编辑器里最容易出错、又最难手测的部分：
+     *   parseLooseJson —— 修 LLM 返回的截断/带尾随文字的 JSON（整本生成的成败全靠它）
+     *   hanToNum / headingNo / splitChapters / pageToLines —— 从 EPUB/PDF 里切章节
+     *   normalize / guessKin / validate / mergeDraft —— 数据规整与合并
+     * 全部是纯函数或只依赖 ed.state，不碰 DOM。 */
+    parseLooseJson: (raw) => parseLooseJson(raw),
+    hanToNum: (s) => hanToNum(s),
+    headingNo: (line) => headingNo(line),
+    splitChapters: (text) => splitChapters(text),
+    pageToLines: (items) => pageToLines(items),
+    normalize: (book) => normalize(book),
+    guessKin: (type) => guessKin(type),
+    cleanHtml: (html) => cleanHtml(html),
+    mergeDraft: (draft) => mergeDraft(draft),
+    undo: () => undo(),
+    redo: () => redo(),
+    /** 撤销栈深度（供测试断言；ed.history 是快照数组，hIndex 是当前指针） */
+    historyDepth: () => ({ total: (ed.history || []).length, index: ed.hIndex, limit: ed.histLimit }),
   };
 })();

@@ -306,8 +306,13 @@ function validate(file) {
 
 const args = process.argv.slice(2);
 if (!args.length || args[0] === '--all') {
+  // 只校验 data/books.json 里登记的那些整本数据。
+  // v85 起 data/ 里多了 <slug>.graph.json / <slug>.text.json 两份**生成物**
+  // （由 scripts/make-slim-packs.mjs 从整本拆出来），它们本来就缺 text/summary 这类字段，
+  // 拿它们当整本校验会报一堆假错误。以 books.json 为准，不扫目录。
   const dir = path.join(process.cwd(), 'data');
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(dir, f));
+  const idx = JSON.parse(fs.readFileSync(path.join(dir, 'books.json'), 'utf8'));
+  const files = (idx.books || []).map((b) => path.join(dir, `${b.slug}.json`)).filter((f) => fs.existsSync(f));
   files.forEach(validate);
 } else {
   args.filter((a) => !a.startsWith('--')).forEach((a) => validate(a));

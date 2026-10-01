@@ -1,10 +1,15 @@
 {
+  "note": "graphFile/textFile 是 v85 拆出来的「图包 / 文案包」，由 `node scripts/make-slim-packs.mjs` 从 file 生成。首屏只下 graphFile（画图与剧透判定所需），文案在图渲染完后浏览器空闲时预取。file 保留为整份原始数据（编辑器、校验脚本、小程序打包用），也是 graphFile 缺失时的回退。",
+  "noteAddBook": "加一本书的步骤：① 在 books 数组里加一条（file / graphFile / textFile 三个路径）；② 放好 data/<slug>.json（可用 scripts/wholebook.mjs 生成，或手写）；③ 跑 `npm run build:packs` 生成图包与文案包；④ 往 sw.js 的 SHELL 里加一行 `./data/<slug>.graph.json`；⑤ 跑 `node scripts/bump-version.mjs <版本>` 同步版本号。第 ④ 步忘了不会白屏（/data/ 走 stale-while-revalidate），但离线首访会多等一次网络 —— `npm run check:sw` 会替你查这一步有没有漏。",
+  "noteScope": "网站（GitHub Pages）会持续加书；小程序是引流位、书固定这几本（单包 2MB 上限，加不动了）。所以 books.json 里可能有书只上网站、不进小程序 —— 那本就不用跑 scripts/make-miniprogram-packs.mjs。",
   "books": [
     {
       "slug": "one-hundred-years-of-solitude",
       "title": "百年孤独",
       "author": "加西亚·马尔克斯",
       "file": "data/one-hundred-years-of-solitude.json",
+      "graphFile": "data/one-hundred-years-of-solitude.graph.json",
+      "textFile": "data/one-hundred-years-of-solitude.text.json",
       "links": [
         { "label": "微信读书", "url": "https://weread.qq.com/web/bookDetail/05432e30811e7f701g016a4b" },
         { "label": "豆瓣", "url": "https://book.douban.com/subject/6082808/" },
@@ -16,6 +21,8 @@
       "title": "罪与罚",
       "author": "陀思妥耶夫斯基",
       "file": "data/crime-and-punishment.json",
+      "graphFile": "data/crime-and-punishment.graph.json",
+      "textFile": "data/crime-and-punishment.text.json",
       "links": [
         { "label": "微信读书", "url": "https://weread.qq.com/web/bookDetail/c5232670813ab8e46g011d19" },
         { "label": "豆瓣", "url": "https://book.douban.com/subject/35406615/" },
@@ -27,6 +34,8 @@
       "title": "三国演义",
       "author": "罗贯中",
       "file": "data/three-kingdoms.json",
+      "graphFile": "data/three-kingdoms.graph.json",
+      "textFile": "data/three-kingdoms.text.json",
       "links": [
         { "label": "微信读书", "url": "https://weread.qq.com/web/search/books?keyword=三国演义" },
         { "label": "豆瓣", "url": "https://book.douban.com/subject/1019568/" },

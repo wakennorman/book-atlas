@@ -1,18 +1,28 @@
 {
   "name": "book-atlas",
-  "version": "0.73",
+  "version": "0.86",
   "private": true,
   "type": "module",
   "description": "书脉 BookAtlas · 人物关系与事件图谱",
   "scripts": {
     "lint": "eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs",
-    "test": "node test/smoke.mjs && node test/core.mjs",
+    "test": "node test/smoke.mjs && node test/core.mjs && node test/e2e.mjs && node miniprogram/test/smoke.mjs",
+    "test:browser": "node test/browser.mjs",
+    "test:parity": "node test/parity.mjs",
+    "test:editor": "node test/editor.mjs",
+    "test:races": "node test/races.mjs",
     "test:e2e": "node test/e2e.mjs",
-    "build": "esbuild js/app.js js/editor.js js/export.js js/ai.js --minify --outdir=dist/js --out-extension:.js=.min.js",
-    "build:css": "esbuild css/style.css css/editor.css --minify --outdir=dist/css"
+    "check:version": "node scripts/check-version.mjs",
+    "build:packs": "node scripts/make-slim-packs.mjs",
+    "check:packs": "node scripts/make-slim-packs.mjs --check",
+    "check:sw": "node scripts/check-sw-precache.mjs",
+    "validate": "node scripts/validate.mjs --all",
+    "check": "npm run lint && npm run test && npm run check:version && npm run check:packs && npm run check:sw && npm run validate && npm run test:browser && npm run test:parity && npm run test:editor && npm run test:races"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "esbuild": "^0.24.0",
-    "eslint": "^9.0.0"
+    "eslint": "^9.0.0",
+    "globals": "^15.15.0"
   }
 }

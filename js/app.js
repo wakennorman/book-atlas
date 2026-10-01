@@ -50,13 +50,79 @@
     viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
     labelTimer: null,
     fold: {},                // 长列表折叠：key -> 当前显示条数（缺省＝默认收起）
+    relChMap: null,          // 关系对象 -> 解锁章（loadBook 时一次算好；relCh() 查它）
+    charLastChMap: null,     // 人物 id -> 最后出场章（同上；charLastCh() 查它）
+    chartObserver: null,     // 当前 chart 的 ResizeObserver（v85：initChart 重跑时要解绑上一个）
+    chartResizeHandler: null,// 对应的 window resize 回调（同上）
+    legendEls: null,         // .legend-item 的缓存 NodeList（v85：见 legendItems()）
+    chipEls: null,           // .event-chip 的缓存 NodeList（同上）
+    loadSeq: 0,              // v85：loadBook 的请求序号，快速切书时用来丢弃过期响应
+    textStatus: null,        // v85：文案包状态 { slug, status: 'idle'|'done'|'failed' }，**按书记**
   };
 
   /* ---------------- 工具 ---------------- */
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-  /* ---- 长列表「展开/收起」（规范：docs/superpowers/specs/2026-09-28-panel-fold-design.md）---- */
+  /* ---------------- 文案包：图画完之后空闲时预取，回来再贴回 state.book ----------------
+   * v85。刻意**不**在点开人物时才去拉 —— 那会让第一次点击的面板先空一下。
+   * 空闲预取的话，多数情况下用户还没点，文案就已经在本地了。
+   * 贴回之后只刷新当前可见的东西（面板 / 事件轴 / tooltip 文案），不重建图。 */
+  function attachText(slug, text) {
+    if (!state.book || state.book.meta?.slug !== slug) return;
+    if (state.textStatus && state.textStatus.slug === slug && state.textStatus.status !== 'idle') return;
+    state.textStatus = { slug, status: 'done' };
+    const b = state.book;
+    for (const c of b.characters) Object.assign(c, text.characters?.[c.id] || {});
+    for (const e of b.events) Object.assign(e, text.events?.[e.id] || {});
+    b.relations.forEach((r, i) => {
+      const src = text.relEvents?.[i];
+      if (!src || !r.events) return;
+      for (const t of src) {
+        const j = t.i;
+        if (j < 0 || j >= r.events.length) continue;
+        if (t.t) r.events[j].text = t.t;
+        if (t.q) r.events[j].quote = t.q;
+      }
+    });
+    // 文案影响的是面板里的文字与 tooltip，不影响节点/连线 ⇒ 不需要重画整张图
+    try {
+      refreshPanel();
+      renderTimeline();
+      updateCountHint();
+      if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+    } catch (e) { /* 文案刷新失败不影响图本身 */ }
+  }
+
+  /* v85：文案状态**按书记**，不能是全局一个标志。
+   * 原来是 state.textLoaded（true / 'failed' 两个值），问题在于：
+   *   ① 'failed' 是 truthy ⇒ 前一本书的文案拉取失败后，新一本书的文案会被 attachText
+   *      的 `|| state.textLoaded` 直接挡掉，整本书的描述/结局/摘要**永远空白**，
+   *      而且没有任何提示，用户只看到一个"描述都是空的"的应用。
+   *   ② 失败时没有 slug 校验 ⇒ 书 A 的失败会写到当前已经是书 B 的状态上。
+   * 现在是 { slug, status }：状态跟着书走，A 的失败碰不到 B。
+   * 顺带把 seq 也带上，这样"切走之前那次请求的结果"也不会回头污染当前书。 */
+  function prefetchText(slug, meta, seq) {
+    if (!meta.textFile) return;
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    idle(async () => {
+      if (typeof seq === 'number' && seq !== state.loadSeq) return;   // 已经切走了
+      try {
+        const r = await fetch(meta.textFile, { cache: 'no-cache' });
+        if (!r.ok) throw new Error(String(r.status));
+        attachText(slug, await r.json());
+      } catch (e) {
+        // 文案包拿不到就退化成"只有图、没有描述"：图和剧透判定都不受影响。
+        // ⚠ 只在"还停在同一本书"时才记失败 —— 否则一次 A 的网络抖动会连累 B。
+        if (typeof seq === 'number' && seq !== state.loadSeq) return;
+        if (state.book && state.book.meta?.slug !== slug) return;
+        state.textStatus = { slug, status: 'failed' };
+        console.warn(`《${slug}》的文案包没拿到（${(e && e.message) || e}）—— 人物描述与结局会缺失，图与剧透判定不受影响。`);
+      }
+    });
+  }
+
+  /* ---------------- 长列表「展开/收起」（规范：docs/superpowers/specs/2026-09-28-panel-fold-design.md）---- */
   const FOLD_BATCH = 20;     // 超长列表每次「再显示」的条数
   const FOLD_ONESTEP = 40;   // 总数 ≤ 此值时一键展开（不分批）
 
@@ -148,7 +214,13 @@
   const charName = (id) => state.byId.get(id)?.name || id;
 
   /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
-  const factionNameOf = (c) => (state.book?.factions.find((f) => f.key === c.faction) || {}).name || '其他';
+  /** 按 key 取阵营名 */
+  const factionNameByKey = (key) => (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
+  /** ⚠ v85：这里的口径必须和 groupKeyOf 一致，都走 effectiveFactionKey。
+   *  原来 groupLabelOf 用的是「原始 c.faction」，而分组键/节点颜色用的是「按进度的当前归属」，
+   *  两者在有 factionHistory 的角色上会不一致 —— 实测三国读到第 5 回时，
+   *  「蜀汉」分组的图注会写成「曹魏」、「群雄」写成「曹魏」（图注和颜色对不上）。 */
+  const factionNameOf = (c) => factionNameByKey(effectiveFactionKey(c));
   /**
    * 阵营变化的"当前归属"：characters[].factionHistory = [{ faction, fromCh, label }]
    * · 剧透保护开着时，按"你读到的那一回"算（读者不该在第 3 回就看到他后来投了谁）
@@ -190,14 +262,9 @@
     if (state.chart) { computeLabels(state.zoom); state.chart.clear(); state.chart.setOption(buildOption(), { notMerge: true }); }
   }
 
-  const factionColorOf = (c) => {
-    const key = effectiveFactionKey(c);
-    return factionColorByKey(key);
-  };
-  const factionTextOf = (c) => {
-    const key = effectiveFactionKey(c);
-    return (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
-  };
+  const factionColorOf = (c) => factionColorByKey(effectiveFactionKey(c));
+  /** v85：和 factionNameOf 现在是同一个东西了（都走 effectiveFactionKey），保留这个名字是因为调用点多、语义更清楚 */
+  const factionTextOf = (c) => factionNameOf(c);
   const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
@@ -268,10 +335,27 @@
   /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
   const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
   const charCh = (c) => (typeof c?.firstCh === 'number' ? c.firstCh : (chOf(c?.chapter) || 0));
-  const relCh = (r) => {
+  /* 关系/人物的最后出场章：随书确定、整个会话内不变 ⇒ 在 loadBook 里一次算好存成 Map。
+   * 原来是每次调用都全扫 events + relations（三国 ≈ 2900 次迭代），而它被 tooltip 的
+   * formatter（鼠标划过节点）、buildOption 的过滤、EPUB 导出反复调用 ⇒ 悬停即卡。
+   * 查不到就退回原算法，保证任何临时构造的对象也安全。 */
+  const relChCalc = (r) => {
     const list = (r.events || []).map((e) => chOf(e.chapter)).filter((n) => n !== null);
     if (list.length) return Math.min(...list);
     return Math.min(charCh(state.byId.get(r.from)), charCh(state.byId.get(r.to)));
+  };
+  const charLastChCalc = (c) => {
+    let last = charCh(c);
+    for (const e of state.book.events) if ((e.chars || []).includes(c.id)) last = Math.max(last, e.ch || 0);
+    for (const r of state.book.relations) {
+      if (r.from !== c.id && r.to !== c.id) continue;
+      for (const ev of r.events || []) last = Math.max(last, eventChOf(ev));
+    }
+    return last;
+  };
+  const relCh = (r) => {
+    const hit = state.relChMap && state.relChMap.get(r);
+    return hit === undefined ? relChCalc(r) : hit;
   };
   const lockedCh = (ch) => state.progress !== null && ch > state.progress;
   const charLocked = (c) => !!c && lockedCh(charCh(c));
@@ -312,17 +396,14 @@
   // 人物的「最后出场章」＝本人出场章、相关事件章、相关关系事件章的最大值（用来决定结局能不能显示）
   const charLastCh = (c) => {
     if (!c || !state.book) return 0;
-    let last = charCh(c);
-    for (const e of state.book.events) if ((e.chars || []).includes(c.id)) last = Math.max(last, e.ch || 0);
-    for (const r of state.book.relations) {
-      if (r.from !== c.id && r.to !== c.id) continue;
-      for (const ev of r.events || []) last = Math.max(last, eventChOf(ev));
-    }
-    return last;
+    const hit = state.charLastChMap && state.charLastChMap.get(c.id);
+    return hit === undefined ? charLastChCalc(c) : hit;
   };
   const fateLocked = (c) => state.progress !== null && charLastCh(c) > state.progress;
+  // 下限取 1 而不是 0：章号从 1 开始，取 0 会让"没有 meta.chapters 的书"（编辑器新建的草稿）
+  // 打开剧透面板时得到 0 个可选项。与 shared/graph-core.js / miniprogram 保持一致。
   const maxChapter = () => state.book?.meta?.chapters || Math.max(
-    0,
+    1,
     ...state.book.characters.map(charCh),
     ...state.book.events.map((e) => e.ch || 0)
   );
@@ -393,16 +474,41 @@
   async function loadBook(slug) {
     const perf = (window.__baPerf = window.__baPerf || {});
     const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    /* v85：竞态守卫。loadBook 有好几个 await，快速切书时后发先至很常见 ——
+     * 选了三国（79 KB、被网络拖慢）再选罪与罚（3 KB、秒回），结果罪与罚先 commit，
+     * 三国的响应后到又把它覆盖掉：下拉框显示罪与罚、state.book 却是三国，
+     * 而且 initChart 会 dispose 掉刚建好的 chart，顺带把新 handler 的 observer 也解绑。
+     * 每次 await 之后都检查"我还是最后一次请求吗"，不是就直接放弃。 */
+    const seq = ++state.loadSeq;
+    const stale = () => seq !== state.loadSeq;
     const meta = state.books.find((b) => b.slug === slug);
     let book;
     if (meta && meta.inline) {
       book = window.__BA_STANDALONE_BOOK;
     } else if (meta && meta.local) {
       book = JSON.parse(localStorage.getItem('ba-draft-' + slug));
+    } else if (meta && meta.graphFile) {
+      /* v85：分两步取数据。
+       * 先只下「图包」（画图与剧透判定要的全在里面），图能画出来的快得多 ——
+       * 三国 gzip 79.4 KB，而整份是 230.4 KB。文案包在图渲染完、浏览器空闲时后台预取，
+       * 所以用户点开人物/事件时通常已经就绪。
+       * 拿不到 graphFile（老缓存 / 生成文件没部署）就退回整份，功能不受影响。 */
+      try {
+        const g = await fetch(meta.graphFile, { cache: 'no-cache' });
+        if (!g.ok) throw new Error(String(g.status));
+        book = await g.json();
+      } catch (e) {
+        const res = await fetch(meta.file, { cache: 'no-cache' });
+        book = await res.json();
+      }
+      // ★ 必须在所有 await 之后再发起预取：那时 state.book 才是这本书，
+      //   否则 idle 回调可能在 state.book 提交前就跑，attachText 会拿旧书做校验而拒绝。
+      prefetchText(slug, meta, seq);
     } else {
       const res = await fetch(meta.file, { cache: 'no-cache' });
       book = await res.json();
     }
+    if (stale()) return;          // 等待期间用户又切了书 ⇒ 这次的响应已经过期，直接丢掉
     perf.fetchParse = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0));
     state.book = book;
     state.byId = new Map(book.characters.map((c) => [c.id, c]));
@@ -412,6 +518,12 @@
       state.adj.get(r.from).push({ to: r.to, rel: r });
       state.adj.get(r.to).push({ to: r.from, rel: r });
     }
+    // 预计算章节索引：relCh / charLastCh 会被 tooltip、过滤、导出反复调用，
+    // 每次重算要全扫 events+relations（v85，见这两处函数的注释）。
+    state.relChMap = new Map();
+    for (const r of book.relations) state.relChMap.set(r, relChCalc(r));
+    state.charLastChMap = new Map();
+    for (const c of book.characters) state.charLastChMap.set(c.id, charLastChCalc(c));
     const savedView = localStorage.getItem('ba-view');
     state.view = ['force', 'gen-h', 'gen-v'].includes(savedView) ? savedView : 'gen-v';
     state.bands = new Map();
@@ -429,6 +541,7 @@
     state.hubId = null;
     state.kbCursor = null;                 // 换书后键盘光标重置
     state.symCache = null;                 // 换书后要重算节点尺寸缓存
+    state.textStatus = { slug, status: 'idle' };  // v85：文案状态按书记，换书即重置（见 attachText）
     state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
@@ -569,6 +682,7 @@
     el.innerHTML = state.book.factions.map((f) =>
       `<button type="button" class="legend-item" data-faction="${esc(f.key)}"><span class="dot" style="background:${esc(factionColorByKey(f.key))}"></span>${esc(f.name)}</button>`
     ).join('');
+    refreshHighlightCaches();          // v85：图例重渲染 ⇒ 缓存的 NodeList 失效
     el.querySelectorAll('.legend-item').forEach((btn) => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.faction;
@@ -727,7 +841,9 @@
   /* —— 聚焦：只看某人 N 跳以内 —— */
   function focusSet() {
     if (!state.focus) return null;
-    const key = `${state.focus.id}|${state.focus.depth}`;
+    // v85：缓存键要带上 showDerived —— 它现在参与集合计算了（见下面的 relVisible 判断），
+    // 但「族谱补全」开关和边过滤开关都不会清 focusCache，于是切换后聚焦集合是上一次算的旧值。
+    const key = `${state.focus.id}|${state.focus.depth}|${state.showDerived ? 1 : 0}`;
     if (state.focusCache && state.focusCache.key === key) return state.focusCache.set;
     const set = new Set([state.focus.id]);
     let frontier = [state.focus.id];
@@ -735,7 +851,12 @@
       const next = [];
       for (const id of frontier) {
         for (const { to, rel } of state.adj.get(id) || []) {
-          if (relLocked(rel) || !relVisibleAt(rel)) continue;
+          // ⚠ v85：必须一起查 relVisible（"族谱补全"开关）。原来只查了 relLocked/relVisibleAt，
+          // 于是关掉族谱补全后聚焦某人时，只能通过推导边连到的人仍会被算进聚焦集合 ——
+          // 但图上不会画那些边（buildOption 过滤掉了），结果是一大堆没有连线的悬空节点
+          // （实测三国聚焦刘备 2 跳、全书共 50999 个悬空节点）。
+          // 小程序那份 miniprogram/utils/graph.js:166 本来就有这个判断，这里是补齐。
+          if (relLocked(rel) || !relVisibleAt(rel) || !relVisible(rel)) continue;
           if (set.has(to)) continue;
           set.add(to);
           next.push(to);
@@ -757,6 +878,10 @@
     const muted = cssVar('--muted') || '#6c7482';
     const panel = cssVar('--panel') || '#fff';
     const line = cssVar('--line') || '#e5dfd3';
+    // v85：accent 也提到循环外。cssVar() 走 getComputedStyle()，样式脏时每次调用都会触发一次
+    // 强制样式重算 —— 原来它在下面那个逐节点 map 里，三国开「提及」时一次 buildOption
+    // 要同步重算几百次样式。
+    const accent = cssVar('--accent') || '#c99a3f';
     const anyDim = state.hlNodes.size > 0 || state.hlEdges.size > 0;
     // 高亮人少（点一个人 / 点一个事件）时：给高亮项"最小屏幕尺寸 + 描边 + 强制标签"，
     // 否则在三国这种 871 人的密集图里，高亮节点只有 2–5px，跟灰点没区别
@@ -790,11 +915,11 @@
         symbolSize: sz,
         x: pos ? pos.x : undefined, y: pos ? pos.y : undefined,
         itemStyle: mentioned
-          ? { color: 'transparent', borderColor: hl ? (cssVar('--accent') || '#c99a3f') : '#8b94a7', borderWidth: hl ? 2 : 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
+          ? { color: 'transparent', borderColor: hl ? accent : '#8b94a7', borderWidth: hl ? 2 : 1.5, borderType: 'dashed', opacity: dim ? 0.2 : 0.85 }
           : {
               opacity: dim ? 0.12 : (locked ? 0.4 : 1),
               color: locked ? '#9aa3b0' : factionColorOf(c),
-              borderColor: hl ? (cssVar('--accent') || '#c99a3f') : panel,
+              borderColor: hl ? accent : panel,
               borderWidth: hl ? 2.5 : 1,
               ...(hl && smallHl ? { shadowBlur: 8, shadowColor: 'rgba(0,0,0,.4)' } : {}),
             },
@@ -960,11 +1085,17 @@
     for (const [id, p] of state.pos) nodes.push({ id, x: p.x, y: p.y, size: symbolSize(id) });
     const pad = 12;
     const cell = 60;                       // 网格边长（> 最大节点直径 + pad，保证 3×3 邻域够用）
+    // 网格键用整数而不是 `${gx}:${gy}`：每节点每轮要查 9 次，三国 ×140 轮 ≈ 110 万次
+    // 模板字符串分配，是这个函数最大的开销。
+    // 打包 (gx,gy) → (gx+OFF)*SPAN + (gy+OFF)：
+    //   SPAN=2^24 限定 gy ∈ [-2^23, 2^23) ⇒ 坐标 |y| < 5×10^8（cell=60，即 5 亿像素，实际远小于此）
+    //   乘积落在 Number 的安全整数范围内 ⇒ 键唯一，且比字符串 key 快得多
+    const KEY_OFF = 0x800000, KEY_SPAN = 0x1000000;
     for (let it = 0; it < iterations; it++) {
       const grid = new Map();
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i];
-        const key = `${Math.floor(n.x / cell)}:${Math.floor(n.y / cell)}`;
+        const key = (Math.floor(n.x / cell) + KEY_OFF) * KEY_SPAN + Math.floor(n.y / cell) + KEY_OFF;
         let arr = grid.get(key);
         if (!arr) { arr = []; grid.set(key, arr); }
         arr.push(i);
@@ -973,7 +1104,7 @@
         const a = nodes[i];
         const gx = Math.floor(a.x / cell), gy = Math.floor(a.y / cell);
         for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
-          const arr = grid.get(`${gx + ox}:${gy + oy}`);
+          const arr = grid.get((gx + ox + KEY_OFF) * KEY_SPAN + gy + oy + KEY_OFF);
           if (!arr) continue;
           for (const j of arr) {
             if (j <= i) continue;                     // 每对只处理一次
@@ -1424,6 +1555,11 @@
   function initChart() {
     const el = $('#graph');
     if (state.chart) { state.chart.dispose(); }
+    // v85：initChart 每次换书 / 每次开关剧透保护都会重跑（见 loadBook 与 applySpoiler），
+    // 而 chart.dispose() 只销毁 ECharts 实例、不动我们挂在 window / ResizeObserver 上的回调。
+    // 以前每次重建都新加一个 ResizeObserver + 一个 resize 监听且从不解绑 ⇒ 切 5 次书后
+    // 一次窗口 resize 会把「重排 + 全量 setOption」跑 5 遍。先解绑上一次的。
+    teardownChartListeners();
     clearTimeout(state.freezeTimer);
     state.chart = echarts.init(el, null, { renderer: 'canvas' });
     state.frozen = false;
@@ -1480,10 +1616,34 @@
         resetRoam();
       }
     };
-    new ResizeObserver(onResize).observe(el);
-    window.addEventListener('resize', onResize);
+    // v85：把回调记进 state，好让下一次 initChart 能解绑（见 initChart 开头与 teardownChartListeners）。
+    // 另外 onResize 里 applyViewHeight() 会写 el.style.height，也就是在被观察的元素上改样式 ——
+    // ResizeObserver 本来就会因为这个再触发一轮。这不是死循环（高度算出来是稳定的），
+    // 但会多跑一轮，所以这里加一个重入守卫。
+    let resizing = false;
+    const guardedResize = () => {
+      if (resizing) return;
+      resizing = true;
+      try { onResize(); } finally { resizing = false; }
+    };
+    state.chartObserver = new ResizeObserver(guardedResize);
+    state.chartObserver.observe(el);
+    state.chartResizeHandler = guardedResize;
+    window.addEventListener('resize', guardedResize);
 
     setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
+  }
+
+  /** 解绑上一次 initChart 挂的 ResizeObserver 与 resize 监听（v85：见 initChart 开头） */
+  function teardownChartListeners() {
+    if (state.chartObserver) {
+      try { state.chartObserver.disconnect(); } catch (e) { /* 忽略 */ }
+      state.chartObserver = null;
+    }
+    if (state.chartResizeHandler) {
+      window.removeEventListener('resize', state.chartResizeHandler);
+      state.chartResizeHandler = null;
+    }
   }
 
   /** 找关系：同一对人可能有多条（阶段关系）——优先按"边上写的类型 + 当前时间可见"匹配 */
@@ -1567,6 +1727,19 @@
   }
 
   /* ---------------- 高亮 ---------------- */
+  /** v85：图例项 / 事件芯片的集合缓存。
+   *  这两处每次高亮变化都要全量遍历一遍（点节点、点事件、点阵营、点地点都会走到），
+   *  而它们的列表只有 renderLegend / renderTimeline 才会变。改完渲染时刷新缓存即可。 */
+  function legendItems() {
+    if (!state.legendEls || !state.legendEls.length) state.legendEls = document.querySelectorAll('.legend-item');
+    return state.legendEls;
+  }
+  function eventChips() {
+    if (!state.chipEls || !state.chipEls.length) state.chipEls = document.querySelectorAll('.event-chip');
+    return state.chipEls;
+  }
+  function refreshHighlightCaches() { state.legendEls = null; state.chipEls = null; }
+
   function setHighlight(nodes, edges, activeCharId, eventId) {
     unlockClick();                              // 换上下文（图外选择）＝解除点击锁定
     state.hlNodes = nodes || new Set();
@@ -1574,11 +1747,11 @@
     state.activeChar = activeCharId || null;
     state.activeEvent = eventId || null;
     if (state.activeChar) state.activeFaction = null;
-    document.querySelectorAll('.legend-item').forEach((el) => {
+    for (const el of legendItems()) {
       el.classList.toggle('active', el.dataset.faction === state.activeFaction);
       el.classList.toggle('dim', !!state.activeFaction && el.dataset.faction !== state.activeFaction);
-    });
-    document.querySelectorAll('.event-chip').forEach((el) => el.classList.toggle('active', el.dataset.event === state.activeEvent));
+    }
+    for (const el of eventChips()) el.classList.toggle('active', el.dataset.event === state.activeEvent);
     freezeNow();
     // 大图上点了看不见 ⇒ 把视野移到高亮区域；focusViewOn 内部会重建 option
     if (!focusViewOn(state.hlNodes) && state.chart) state.chart.setOption(buildOption({ keepView: true }));
@@ -1591,8 +1764,8 @@
     state.activeChar = null;
     state.activeEvent = null;
     state.activeFaction = null;
-    document.querySelectorAll('.legend-item').forEach((el) => el.classList.remove('active', 'dim'));
-    document.querySelectorAll('.event-chip').forEach((el) => el.classList.remove('active'));
+    for (const el of legendItems()) el.classList.remove('active', 'dim');
+    for (const el of eventChips()) el.classList.remove('active');
     if (updateVisual && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
@@ -1699,7 +1872,13 @@
   // 折叠/过滤开关变了以后，右侧面板要跟着重画（否则内容还是旧的）
   function refreshPanel() {
     if (state.panelKind === 'rel' && state.activeRel) { renderRelationPanel(state.activeRel); return; }
-    if (state.panelKind === 'char' && state.panelId) { const c = state.byId.get(state.panelId); if (c) renderCharacterPanel(c); }
+    if (state.panelKind === 'char' && state.panelId) { const c = state.byId.get(state.panelId); if (c) renderCharacterPanel(c); return; }
+    // v85：事件面板也要能被刷新 —— 文案包贴回来后，事件摘要/影响还没显示出来。
+    // 之前这条路径不存在，所以 refreshPanel 从不重画事件面板（对旧逻辑无影响）。
+    if (state.panelKind === 'event' && state.activeEvent) {
+      const ev = state.book.events.find((e) => e.id === state.activeEvent) || state.book.events.find((e) => e.id === state.panelId);
+      if (ev) renderEventPanel(ev);
+    }
   }
 
   function selectEvent(id) {
@@ -1725,21 +1904,34 @@
   }
 
   function charLink(id) { return `<button class="linkbtn" data-goto="${esc(id)}">${esc(charName(id))}</button>`; }
-  function bindGoto(root) {
-    root.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => {
+  /* v85：右栏/章节面板里的 data-goto / data-event / data-place-filter / data-focus-rel
+   * 以前是「每渲染一次，给每个元素挂一个新 listener」——而面板内容是整体 innerHTML 重建的，
+   * 曹操这种 261 条关系的枢纽人物，一次点击就产生几百个闭包；时间轴一次挂 702 个（事件数）。
+   * 这些节点每次重渲染都被丢弃，listener 却只增不减。
+   * 现在统一走 document 级委托（见 bindUI 里的 handlePanelClick），
+   * 与本文件已有的 data-fold / data-export 等委托保持一致。保留这个函数是为了不改调用点。 */
+  function bindGoto(root) { /* 委托已全局注册，这里无需再绑 */ void root; }
+
+  /** 右栏/章节面板的委托点击处理（在 bindUI 里注册一次） */
+  function handlePanelClick(ev) {
+    const goto = ev.target.closest('[data-goto]');
+    if (goto) {
       // v82 决策：锁定中点右栏人名＝把锁切换到该人（之后点「清除」才解除）；
       // 没有锁时点人名只看档案、不建锁（锁条只在查询后出现）
-      if (state.clickLock) chooseCharById(el.dataset.goto);
-      else selectCharacter(el.dataset.goto);
-    }));
-    root.querySelectorAll('[data-event]').forEach((el) => el.addEventListener('click', () => selectEvent(el.dataset.event)));
-    root.querySelectorAll('[data-place-filter]').forEach((el) => el.addEventListener('click', () => applyPlaceFilter(el.dataset.placeFilter || null)));
-    root.querySelectorAll('[data-focus-rel]').forEach((el) => el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const [a, b] = String(el.dataset.focusRel).split('|');
+      if (state.clickLock) chooseCharById(goto.dataset.goto);
+      else selectCharacter(goto.dataset.goto);
+      return;
+    }
+    const evt = ev.target.closest('[data-event]');
+    if (evt) { selectEvent(evt.dataset.event); return; }
+    const pf = ev.target.closest('[data-place-filter]');
+    if (pf) { applyPlaceFilter(pf.dataset.placeFilter || null); return; }
+    const fr = ev.target.closest('[data-focus-rel]');
+    if (fr) {
+      const [a, b] = String(fr.dataset.focusRel).split('|');
       const rel = findRel(a, b);
       if (rel) selectRelation(rel);
-    }));
+    }
   }
 
   /* ---------------- 地点筛选 ---------------- */
@@ -1878,6 +2070,9 @@
   }
 
   function renderEventPanel(ev) {
+    // v85：记下当前面板是哪个事件，这样文案包贴回来后 refreshPanel 能把它重画一遍。
+    state.panelKind = 'event';
+    state.panelId = ev.id;
     const chain = (ev.chars || []).map(charLink).join('、');
     panel().innerHTML = `
       <div class="card-title">${esc(ev.name)}</div>
@@ -1902,6 +2097,9 @@
         if (!relVisible(e.rel)) continue;
         if (!passEdgeFilter(e.rel)) continue;
         if (!relVisibleAt(e.rel)) continue;
+        // relLocked 必须查：state.adj 收录全部关系，不过滤。漏掉它会让 BFS 穿过读者还没读到的边，
+        // runPath 再把 rel.type 原样印出来（实测三国读到第 10 章时有 201 条边可穿）。口径与 shared/graph-core.js 保持一致。
+        if (relLocked(e.rel)) continue;
         if (!prev.has(e.to)) { prev.set(e.to, { from: cur, rel: e.rel }); queue.push(e.to); }
       }
     }
@@ -1983,7 +2181,9 @@
              </button>`).join('')}
       </div>`;
     }).join('');
-    el.querySelectorAll('.event-chip').forEach((btn) => btn.addEventListener('click', () => selectEvent(btn.dataset.event)));
+    refreshHighlightCaches();          // v85：时间轴重渲染 ⇒ 缓存的 NodeList 失效
+    // v85：事件芯片上的 data-event 由 document 级委托处理（handlePanelClick），
+    // 这里不再逐个挂 listener —— 三国一次就是 702 个。
   }
 
   /* ---------------- 章节视图：第 N 章的世界 ---------------- */
@@ -2178,6 +2378,45 @@
     return { nodes, links };
   }
 
+  /**
+   * 单文件导出要内联的那份数据：跟随当前剧透进度裁剪过的一份"干净"副本。
+   *
+   * v85 修复：原来这里直接内联整个 state.book，于是"单文件 HTML"是唯一无视剧透过滤的导出格式 ——
+   * 明明 index.html 的导出面板写着「导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、
+   * 地点、聚焦都会生效」，但把文件发给别人后，对方一搜就能看到所有结局和还没发生的关系。
+   *
+   * 只按"剧透进度 + 时间旅行"裁剪（这是唯一会造成剧透的两个维度）；人数/次要人物/地点/聚焦
+   * 属于视图筛选，内联完整数据让对方能自己筛，反而更有用。
+   */
+  function standaloneBook() {
+    const b = state.book;
+    const keepChars = b.characters.filter((c) => !charLocked(c) && charVisibleAt(c));
+    const keepIds = new Set(keepChars.map((c) => c.id));
+    const keepRels = b.relations.filter((r) =>
+      keepIds.has(r.from) && keepIds.has(r.to) && !relLocked(r) && relVisible(r) && relVisibleAt(r));
+    const keepEvents = (b.events || []).filter((e) => !eventLocked(e) && eventVisibleAt(e));
+    // 关系上挂的小事件也按进度裁；地点只留下还发生过的
+    const usedPlaces = new Set();
+    for (const e of keepEvents) if (e.place) usedPlaces.add(e.place);
+    const relsOut = keepRels.map((r) => {
+      const evs = visibleRelEvents(r);
+      for (const ev of evs) if (ev.place) usedPlaces.add(ev.place);
+      // 裁完后一个事件都不剩 ⇒ 事件数组留空，避免对方看到"这里曾经发生过什么"的结构线索
+      return evs.length === (r.events || []).length ? r : { ...r, events: evs };
+    });
+    const progNote = state.progress === null
+      ? '（导出时：未开启剧透保护，含全书信息）'
+      : `（导出时：剧透保护开到第 ${state.progress} 章，之后的人物与事件没有写进来）`;
+    return {
+      ...b,
+      characters: keepChars,
+      relations: relsOut,
+      events: keepEvents,
+      places: (b.places || []).filter((p) => usedPlaces.has(p.id)),
+      __BA_STANDALONE_NOTE: progNote,
+    };
+  }
+
   /** 单文件 HTML：外壳取自 index.html，把 CSS/JS/数据全部内联 ⇒ 双击即看 */
   async function buildStandaloneHtml() {
     const grab = (url) => fetch(url, { cache: 'no-cache' }).then((r) => {
@@ -2187,7 +2426,7 @@
     const [shell, css, echarts, app, logo] = await Promise.all([
       grab('index.html'), grab('css/style.css'), grab('vendor/echarts.min.js'), grab('js/app.js'), grab('assets/logo-mark.svg'),
     ]);
-    const data = jsSafe(JSON.stringify(state.book));
+    const data = jsSafe(JSON.stringify(standaloneBook()));
     let html = shell;
     html = html.replace(/<link rel="stylesheet" href="css\/style\.css\?v=\d+">/, () => `<style>\n${css}\n</style>`);
     html = html.replace(/\s*<link rel="manifest"[^>]*>/, '');
@@ -2196,8 +2435,13 @@
     html = html.replace(/<img class="logo"[^>]*>/, () => `<img class="logo" alt="书脉" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(logo)}">`);
     html = html.replace(/\s*<a class="icon-btn" href="editor\.html"[\s\S]*?<\/a>/, '');
     html = html.replace(/<a class="ghost tiny" href="editor\.html">打开编辑器<\/a>/, '<span class="hint">（单文件版不含编辑器；在线版可以自己整理一本书）</span>');
+    // `<\/script>` 是必要的转义（不是无用转义）：单文件导出把 app.js 原文内联进 HTML 的
+    // <script> 块，字面量 `</script>` 会让浏览器提前截断脚本。
+    // eslint-disable-next-line no-useless-escape
     html = html.replace(/<script src="vendor\/echarts\.min\.js"><\/script>/, () => `<script>${jsSafe(echarts)}<\/script>`);
     html = html.replace(/<script src="js\/app\.js\?v=\d+"><\/script>/,
+      // 同上：这里的 `<\/script>` 同样是为了内联时不截断。
+      // eslint-disable-next-line no-useless-escape
       () => `<script>window.__BA_STANDALONE = true;\nwindow.__BA_STANDALONE_BOOK = ${data};<\/script>\n<script>${jsSafe(app)}<\/script>`);
     html = html.replace('</footer>',
       `  <span class="foot-row"><b>导出</b>本文件由《书脉 BookAtlas》导出（${esc(SITE_URL)}）</span>\n</footer>`);
@@ -2280,11 +2524,22 @@
     const inv = 1 / (Math.abs(state.fitLast) || 1);
     let base = state.pos;
     if (!nodes.every((c) => base.has(c.id)) && state.view !== 'force') {
+      /* v85：buildGenerationPositions 除了 pos/bands 还会**重建** bandLabels 和 stepWorld
+       * （它 new Map() 一份新的 bandLabels、按当前容器尺寸重算 stepWorld）。
+       * 原来只把 pos/bands 存回来，于是导一次图（PNG/SVG/EPUB 都会走到这里）之后：
+       *   · bandLabels 是按"未 fit 过的 bands 坐标"算的，而 bands 已经换回 fit 过的 ——
+       *     屏幕上的「第 N 代 / 阵营」图注会漂到别的列上；
+       *   · stepWorld 变了，于是 buildOption 里算出的 spacingScreen 与 state.pos 实际
+       *     适配出来的间距对不上，节点符号大小跟着变。
+       * 这三样都得一起存回。 */
       const backupPos = state.pos, backupBands = state.bands;
+      const backupBandLabels = state.bandLabels, backupStepWorld = state.stepWorld;
       buildGenerationPositions(state.view);
       const computed = state.pos;
       state.pos = backupPos;
       state.bands = backupBands;
+      state.bandLabels = backupBandLabels;
+      state.stepWorld = backupStepWorld;
       base = new Map(backupPos);
       for (const c of nodes) if (!base.has(c.id) && computed.has(c.id)) base.set(c.id, computed.get(c.id));
     }
@@ -2809,6 +3064,36 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     return { bytes, pages: Object.keys(pages).length, chars: chars.length, imgW: img.width, imgH: img.height };
   }
 
+  /* v85：导出前确保文案已就位。
+   *
+   * 为什么要专门挡一下：state.book 里的 desc/fate/summary/quote 与关系小事件 text
+   * 都来自**文案包**，是图渲染完之后空闲时异步预取进来的。用户在图刚画出来的一两秒内
+   * 点「导出 JSON」，拿到的是一份**所有文案都被剥掉**的 JSON —— 而 README 正是让贡献者
+   * 把这个文件放进 data/ 再登记进 books.json 的。于是这份残缺的文件会被提交，
+   * make-slim-packs.mjs 再从它生成文案包，散文就永久没了（而且 check:packs 会"通过"，
+   * 因为它比对的正是这份已被剥掉的文件）。
+   *
+   * 所以这里等一下再导，而不是导出一个残缺版本。
+   * @returns {boolean} true = 文案已就位，可以导出
+   */
+  async function ensureTextForExport() {
+    const ts = state.textStatus;
+    if (!ts || ts.status === 'done' || ts.status === 'idle' && !state.books.find((b) => b.slug === slugOf())?.textFile) return true;
+    if (!ts || ts.status === 'idle' || ts.status === 'failed') {
+      // 还没贴或拉失败了：重新拉一次（失败就如实告知，不导出残缺文件）
+      const meta = state.books.find((b) => b.slug === slugOf());
+      if (!meta || !meta.textFile) return true;
+      try {
+        const r = await fetch(meta.textFile, { cache: 'no-cache' });
+        if (!r.ok) throw new Error(String(r.status));
+        attachText(slugOf(), await r.json());
+      } catch (e) {
+        return false;
+      }
+    }
+    return state.textStatus && state.textStatus.status === 'done';
+  }
+
   async function runExport(kind) {
     if (!state.book) return;
     const hint = document.getElementById('export-hint');
@@ -2816,6 +3101,13 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const btn = document.querySelector(`[data-export="${kind}"]`);
     if (btn) btn.disabled = true;
     try {
+      // ★ 所有导出都要文案：JSON 会被提交回 data/（缺了就是永久数据丢失），
+      //   而单文件 HTML / EPUB / 人物卡里全是描述、结局、摘要，空着等于废掉。
+      if (!await ensureTextForExport()) {
+        say('文案还没加载出来（网络问题），现在导出会缺人物描述与结局。等几秒再试一次。');
+        toast('文案还没加载完，稍等一下再导出');
+        return;
+      }
       if (kind === 'json') {
         downloadText(`${slugOf()}.json`, JSON.stringify(state.book, null, 2), 'application/json');
         say('已导出数据 JSON。');
@@ -3094,6 +3386,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       if (ev.target.closest('[data-focus-exit]')) applyFocus(null, 1);
     });
 
+    // v85：右栏 / 章节面板 / 时间轴的动态按钮统一委托（替代原先每次 innerHTML 重建后
+    // 由 bindGoto、renderTimeline 逐元素挂 listener 的做法）
+    document.addEventListener('click', handlePanelClick);
+
     const mentionBtn = document.getElementById('mentioned-btn');
     const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏'; };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
@@ -3368,49 +3664,31 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const graphEl = document.getElementById('graph');
     if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ } });
 
-    // 动态加载模块（按需加载，减少首屏体积）
-    const _moduleCache = {};
-    async function loadModule(name) {
-      if (_moduleCache[name]) return _moduleCache[name];
-      const url = `js/${name}.js?v=${window.__BA_VERSION || '1'}`;
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = url;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error(`加载 ${name} 失败`));
-        document.head.appendChild(s);
-      });
-      _moduleCache[name] = true;
-      return true;
-    }
-
     // 导出 / 分享
+    // v85：导出与 AI 的逻辑本来就内联在本文件里，原先 js/export.js / js/ai.js 是同一套逻辑的第二份手抄
+    // （且那份把 buildCompanionEpub() 的返回对象当字节数组塞进 Blob，EPUB 直接坏掉），已删除。
+    // 这里直接调本文件的实现，少一次网络往返，也少一份会漂移的副本。
     const exportModal = document.getElementById('export-modal');
     const closeExport = () => { if (exportModal) exportModal.hidden = true; };
     if (exportModal) {
       document.addEventListener('click', (ev) => {
         if (ev.target.closest('#export-btn')) {
-          loadModule('export').catch(() => {});
           exportModal.hidden = false;
           const h = document.getElementById('export-hint'); if (h) h.textContent = '';
           return;
         }
         if (ev.target.closest('[data-export-close]') || ev.target === exportModal) { closeExport(); return; }
         const opt = ev.target.closest('[data-export]');
-        if (opt && !opt.disabled) {
-          loadModule('export').then(() => {
-            if (window.__BA_EXPORT__?.runExport) window.__BA_EXPORT__.runExport(opt.dataset.export);
-          }).catch(() => runExport(opt.dataset.export));
-        }
+        if (opt && !opt.disabled) runExport(opt.dataset.export);
       });
       document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
     }
 
     // AI 讲解（不剧透）
     document.addEventListener('click', (ev) => {
-      if (ev.target.closest('[data-ai-settings]')) { loadModule('ai').then(() => window.__BA_AI__?.openAiModal()).catch(() => openAiModal()); return; }
+      if (ev.target.closest('[data-ai-settings]')) { openAiModal(); return; }
       if (ev.target.closest('[data-ai-close]')) { const m = document.getElementById('ai-modal'); if (m) m.hidden = true; return; }
-      if (ev.target.closest('#ai-save')) { loadModule('ai').then(() => window.__BA_AI__?.saveAiConfig()).catch(() => saveAiConfig()); return; }
+      if (ev.target.closest('#ai-save')) { saveAiConfig(); return; }
       const btn = ev.target.closest('[data-ai]');
       if (!btn) return;
       if (btn.dataset.ai === 'chain') {
@@ -3451,6 +3729,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     state,
     chart: () => state.chart,
     applyFocus: (id, depth) => applyFocus(id, depth),
+    /** 聚焦集合（v85：供 test/parity.mjs 做三份实现对拍；只读，不改状态） */
+    focusSet: () => { const s = focusSet(); return s ? [...s] : null; },
     applySizeFilter: (v) => applySizeFilter(v),
     computeLabels: (z) => computeLabels(z),
     selectCharacter: (id) => selectCharacter(id),
@@ -3467,6 +3747,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       return { on: state.timeTravel, chapter: state.chapter };
     },
     exportSelection: () => exportSelection(),
+    standaloneBook: () => standaloneBook(),
     buildStandaloneHtml: () => buildStandaloneHtml(),
     buildSharePng: () => buildSharePng(),
     buildPrintSvg: () => buildPrintSvg(),
@@ -3476,6 +3757,22 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     aiPrompt: (kind, payload) => aiPrompt(kind, payload),
     aiExplain: (kind, payload) => aiExplain(kind, payload),
     bfs: (a, b) => bfs(a, b),
+    /** v85：计数提示与 aria 文案（供 test/browser.mjs 断言两者一致） */
+    countHint: () => {
+      const el = document.getElementById('count-hint');
+      return el ? el.textContent : null;
+    },
+    /* v85：把纯判定谓词也暴露出来，供 test/browser.mjs 做「三份实现一致性」对拍。
+     * 起因：同一套过滤逻辑在 js/app.js、miniprogram/utils/graph.js、shared/graph-core.js
+     * 各手抄一份，三国分组口径就漂移过一次（app.js 修了两份没修），
+     * 而 test/core.mjs 只测 graph-core 那份、且只断言 typeof，从来看不见。
+     * 全部是纯函数、无副作用，不改变任何现有行为。 */
+    _predicates: () => ({
+      chOf, charCh, relCh, relFrom, lockedCh, charLocked, relLocked, eventLocked,
+      eventChOf, eventVisibleAt, charVisibleAt, relVisibleAt, relVisible,
+      passEdgeFilter, symbolSize, groupKeyOf, groupLabelOf, effectiveFactionKey,
+      visibleRelEvents, charLastCh, fateLocked, periodText, maxChapter, asOf, timeCeiling,
+    }),
     applyEdgeFilter: (styles, kins) => {
       state.edgeStyles = new Set(styles || []);
       state.edgeKins = new Set(kins || []);

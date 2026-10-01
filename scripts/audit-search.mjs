@@ -21,7 +21,13 @@ const write = argv.includes('--write');
 const candIdx = argv.indexOf('--cand');
 const candLimit = candIdx >= 0 ? Number(argv[candIdx + 1] || 60) : 60;
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(process.cwd(), 'data')).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(process.cwd(), 'data', f))
+  // 同 validate.mjs：只审计 books.json 登记的整本数据，别把 v85 新增的
+  // <slug>.graph.json / <slug>.text.json 生成物也算进来（它们没有 aliases 等字段）。
+  ? (() => {
+    const dir = path.join(process.cwd(), 'data');
+    const idx = JSON.parse(fs.readFileSync(path.join(dir, 'books.json'), 'utf8'));
+    return (idx.books || []).map((b) => path.join(dir, `${b.slug}.json`)).filter((f) => fs.existsSync(f));
+  })()
   : argv.filter((a) => !a.startsWith('--') && !/^\d+$/.test(a));
 
 if (!files.length) { console.error('用法：node scripts/audit-search.mjs --all [--write]  |  data/xx.json'); process.exit(1); }

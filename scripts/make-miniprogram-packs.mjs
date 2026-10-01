@@ -192,4 +192,31 @@ for (const entry of catalog.books) {
 fs.writeFileSync(path.join(OUT_DIR, 'books.js'), `module.exports = ${JSON.stringify({ books: index }, null, 2)};\n`, 'utf8');
 console.log(`✓ books.js（${index.length} 本）→ ${path.relative(ROOT, OUT_DIR)}`);
 const total = index.reduce((s, x) => s + x.kb, 0);
-console.log(`合计约 ${total} KB —— 主包只放代码，数据按分包/按需加载（单包上限 2MB）`);
+/* v85：主包余量检查。
+ *
+ * 重要：小程序是**引流位**，不是主要分发渠道 ——
+ * 2026-09-30 与作者确认：网站（GitHub Pages）会持续加书，小程序就固定这几本，
+ * 目的是让人看到后去网站看更多。所以这里**只警告、不失败**。
+ * 早先写成 headroom < 1000 就 exit 1，结果"余量 951 KB"直接卡死了
+ * 数据包重新生成 —— 而这个仓库根本不往小程序加书，那道门槛只会挡路。
+ *
+ * 另外要说清楚：以前那句「数据按分包/按需加载（单包上限 2MB）」描述的是
+ * 一个**并不存在**的机制 —— app.json 没有 subpackages、project.config.json
+ * 没有 packOptions，所有 miniprogram/data/*.js 都在主包里。
+ * 真要加书到小程序才必须先分包；不打算加的话就别把这句话留着误导人。
+ */
+const LIMIT_KB = 2 * 1024;
+const headroom = LIMIT_KB - total;
+console.log('');
+console.log(`主包内数据合计 ${total} KB / 上限 ${LIMIT_KB} KB（余量 ${headroom} KB）`);
+const NEED_PER_BOOK = 1000;   // 三国规模（现有最大的一本）约需这么多
+if (headroom < NEED_PER_BOOK) {
+  console.warn(`⚠ 余量 ${headroom} KB 放不下又一本同规模的书（三国约需 ${NEED_PER_BOOK} KB）。`);
+  console.warn('  小程序当前定位是引流位、书固定这几本，所以**这不是错误**，脚本照常完成。');
+  console.warn('  万一以后真要往小程序加书，必须先做分包：');
+  console.warn('    · miniprogram/app.json 加 subpackages');
+  console.warn('    · miniprogram/project.config.json 加 packOptions');
+  console.warn('  否则要到点"上传"那一刻才会失败（2 MB 单包硬上限，微信侧的规则，改不了）。');
+} else {
+  console.log(`✓ 余量 ${headroom} KB，够再放约 ${Math.floor(headroom / NEED_PER_BOOK)} 本同规模的书`);
+}

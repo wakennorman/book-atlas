@@ -90,13 +90,9 @@ function createGraph(pack) {
   };
   const symbolSize = (id) => Math.max(13, Math.min(40, 13 + 27 * Math.sqrt((deg.get(id) || 0) / maxDeg)));
 
-  /** 分组（有代际按代，无代际按阵营） */
   const isGen = (pack.meta.groupMode || 'generation') === 'generation';
-  const factionOrder = new Map((pack.factions || []).map((f, i) => [f.key, i]));
-  const groupKeyOf = (c) => (isGen ? `g${c.generation}` : `f${c.faction || 'other'}`);
-  const groupLabelOf = (c) => {
-    if (isGen) return c.generation === 0 ? '前史' : `第 ${c.generation} 代`;
-    const f = (pack.factions || []).find((x) => x.key === c.faction);
+  const factionNameByKey = (key) => {
+    const f = (pack.factions || []).find((x) => x.key === key);
     return (f && f.name) || '其他';
   };
 
@@ -110,6 +106,13 @@ function createGraph(pack) {
     for (const seg of h) if (typeof seg.fromCh === 'number' && seg.fromCh <= ch) pick = seg;
     return pick.faction || (c && c.faction) || '';
   };
+
+  /** 分组（有代际按代，无代际按阵营）
+   *  ⚠ 分组键与图注都要走 effectiveFactionKey（"按进度的当前归属"），不能读原始 c.faction。
+   *  三国 groupMode=faction 且 11 个人物有 factionHistory（贾诩 faction=wei，但 history 起点是 qunxiong@9），
+   *  用原始 faction 分组会把"此刻还在群雄"的人画进"曹魏"组，图注也会和节点颜色对不上。 */
+  const groupKeyOf = (c) => (isGen ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
+  const groupLabelOf = (c) => (isGen ? (c.generation === 0 ? '前史' : `第 ${c.generation} 代`) : factionNameByKey(effectiveFactionKey(c)));
   const factionColorOf = (c) => {
     const key = effectiveFactionKey(c);
     if (state.a11yPalette) {

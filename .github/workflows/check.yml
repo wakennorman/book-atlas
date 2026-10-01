@@ -16,20 +16,44 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+
+      - name: 安装依赖
+        run: npm install
 
       - name: JS 语法检查
         run: |
-          for f in js/app.js js/editor.js js/export.js js/ai.js \
+          for f in js/app.js js/editor.js \
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
-                   shared/graph-core.js scripts/bump-version.mjs test/smoke.mjs test/e2e.mjs; do
+                   shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
+                   scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
+                   test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
+                   test/races.mjs \
+                   miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
 
+      - name: 版本号一致性
+        # v85：以前 v0.69–v0.71 连着三轮改前端却漏 bump CACHE（CHANGELOG 有记录），
+        # 没有任何检查能发现。这里比对 sw.js / index.html / editor.html / js/editor.js / package.json。
+        run: node scripts/check-version.mjs
+
+      - name: 拆分数据包与 data/*.json 同步
+        # v85 新增。首屏只下 <slug>.graph.json，文案在空闲时后台预取。
+        # 改了 data/*.json 忘了重跑生成脚本 ⇒ 首屏会拿到过期（甚至缺文案）的数据。
+        # 这一步同时校验"两份合起来 == 源文件"，剧透判定依赖的字段少一个都会失败。
+        run: node scripts/make-slim-packs.mjs --check
+
+      - name: sw.js 预缓存清单与 books.json 一致
+        # 网站会持续加书，而 sw.js 的 SHELL 里是硬编码每个图包的路径。
+        # 忘了加不会白屏（/data/ 走 stale-while-revalidate），但会静默不一致。
+        run: node scripts/check-sw-precache.mjs
+
       - name: ESLint 代码检查
-        run: |
-          npm install
-          npx eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs --ignore-pattern vendor/ --ignore-pattern miniprogram/data/ --ignore-pattern node_modules/ --ignore-pattern research/ --ignore-pattern docs/ || true
+        # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
+        # 又被 || true 吞掉，门禁是"假绿"的。现在改用 eslint.config.js，并且不再吞错误。
+        run: npx eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs
 
       - name: 网页版核心逻辑冒烟测试
         run: node test/smoke.mjs
@@ -39,6 +63,35 @@ jobs:
 
       - name: Web E2E 冒烟测试
         run: node test/e2e.mjs
+
+      - name: 浏览器行为测试（无头 Edge 真点一遍）
+        # v85 新增。node 冒烟测不到"委托写错了但没抛错"这类问题 ——
+        # 右栏/时间轴的按钮从逐元素 listener 改成 document 级委托后，必须真在浏览器里点一遍。
+        # 脚本找不到 Edge/Chrome 时会自行跳过（不阻塞其它检查）。
+        run: node test/browser.mjs
+
+      - name: 编辑器逻辑测试（无头 Edge）
+        # v85 新增。js/editor.js 有 1700 行，此前零覆盖；里面 parseLooseJson（修模型返回的
+        # 截断 JSON，整本生成的成败全靠它）、hanToNum/splitChapters（切章节）这些纯逻辑
+        # 坏了的表现是"某一章老是失败"，不是任何明显报错，只能靠断言守住。
+        run: node test/editor.mjs
+
+      - name: 三份实现对拍（app.js / graph-core / 小程序）
+        # v85 新增。同一套过滤逻辑在三处手抄，已经漂移过一次：分组口径只改了 app.js，
+        # 小程序至今按最终阵营分组（三国里"此刻还在群雄"的 11 人被画进"曹魏"组），
+        # 而 test/core.mjs 只测 graph-core 且只断言 typeof，一直看不出来。
+        run: node test/parity.mjs
+
+      - name: 竞态与导出守卫（无头 Edge，人为制造交错返回）
+        # v86 新增。三类只有"真在浏览器里按快一点"才会暴露的问题：
+        #   ① 快速切书时 loadBook 没有过期响应守卫 ⇒ 三国的响应后到，把下拉框里
+        #      已经选好的百年孤独顶掉（state.book 与下拉框不一致，图也是错的）
+        #   ② 前一本书的文案包拉取失败 ⇒ 旧的全局 state.textLoaded='failed' 是 truthy，
+        #      把**下一本**的文案永久挡掉，整本书描述空白且无任何提示
+        #   ③ 文案还没到就点「导出 JSON」⇒ 导出的是被剥掉全部散文的文件，
+        #      而 README 正是让贡献者把它提交回 data/ 的 ⇒ 散文永久丢失
+        # 自带的服务器会给三国图包加 800ms 延迟、让别的文案包返回 500 来制造条件。
+        run: node test/races.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

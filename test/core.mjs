@@ -164,6 +164,67 @@ for (const slug of books) {
   assert(typeof lastCh === 'number' && lastCh > 0, `最后出场章：${book.characters[0].name} = ${lastCh}`);
 }
 
+/* ---------------- 剧透守卫：app.js 的 bfs 与 graph-core 对齐 ----------------
+ *
+ * 历史：app.js 的 bfs() 漏了 relLocked 判断，而 shared/graph-core.js 的有。
+ * state.adj 收录全部关系不过滤，于是 BFS 会穿过"读者还没读到的边"，
+ * runPath 再把 rel.type 原样印出来（实测三国读到第 10 章有 201 条边可穿）。
+ *
+ * 以前这里只测 graph-core（它有 relLocked，天然通过），测不到 app.js 那份，
+ * 于是这个漏洞能在"51 项断言全绿"的情况下存在。这里直接读 app.js 源码比对守卫。
+ */
+function testSpoilerGuardParity() {
+  section('剧透守卫：app.js 的 bfs 与 graph-core 对齐');
+
+  const appSrc = fs.readFileSync(path.join(ROOT, 'js', 'app.js'), 'utf8');
+  const m = appSrc.match(/function bfs\(fromId, toId\) \{[\s\S]*?\n {2}\}/);
+  assert(!!m, 'app.js 里能找到 bfs()');
+  if (!m) return;
+
+  for (const g of ['relVisible', 'passEdgeFilter', 'relVisibleAt', 'relLocked']) {
+    assert(new RegExp(`if\\s*\\([^)]*${g}\\(`).test(m[0]), `app.js 的 bfs() 检查了 ${g}()`);
+  }
+}
+
+/* ---------------- 剧透泄漏的真实数据断言 ----------------
+ *
+ * 不只看源码里有没有关键字：用真实数据确认「读到第 N 章时，两端人物都能在
+ * 输入框里选中、但这条边本身仍被锁住」的边确实走不通。
+ */
+function testSpoilerNoLockedEdgeTraversable() {
+  section('剧透泄漏（真实数据）：锁住的边走不通');
+
+  const PROGRESS = 10;
+  for (const slug of books) {
+    const { book, core, state } = loadCore(slug, { progress: PROGRESS });
+    const byId = new Map(book.characters.map((c) => [c.id, c]));
+    const nameOf = (id) => (byId.get(id) || {}).name || id;
+
+    const lockedReachable = book.relations.filter((r) => {
+      const a = byId.get(r.from), b = byId.get(r.to);
+      if (!a || !b) return false;
+      if (core.charLocked(a) || core.charLocked(b)) return false;  // 两端都能选 ⇒ 用户能发起查询
+      return core.relLocked(r);                                      // 但边本身还没发生
+    });
+
+    // 这批边必须真的存在，否则下面的断言一条都跑不到、测试会"假绿"
+    assert(lockedReachable.length > 0, `${slug}：存在"两端可选但边被锁住"的关系（${lockedReachable.length} 条）`);
+
+    for (const r of lockedReachable.slice(0, 5)) {
+      const steps = core.bfs(r.from, r.to);
+      const crossed = (steps || []).some((s) => s.rel === r);
+      assert(
+        !crossed,
+        `${slug}：${nameOf(r.from)}→${nameOf(r.to)}` +
+        `（${r.type}，第 ${core.relCh(r)} 章才成立）在读到第 ${PROGRESS} 章时不可达`,
+      );
+    }
+  }
+}
+
+testSpoilerGuardParity();
+testSpoilerNoLockedEdgeTraversable();
+
 /* ---------------- 结果 ---------------- */
 console.log(`\n${'='.repeat(40)}`);
 console.log(`通过：${passed}  失败：${failed}`);
