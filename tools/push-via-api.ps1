@@ -2,12 +2,18 @@
 # v2：改用 curl.exe 发请求（PowerShell 的 Invoke-RestMethod 在本机会因 IPv6/代理超时）
 # 用法：powershell -ExecutionPolicy Bypass -File tools\push-via-api.ps1
 param(
-  [string]$RepoRoot = "D:\Claude Code+DeepSeekV4\book-atlas",
+  [string]$RepoRoot = "",
   [string]$Owner = "wakennorman",
   [string]$Repo = "book-atlas",
   [string]$Branch = "main",
-  [string]$Message = "书脉 BookAtlas v0.18：修地点筛选漏洞（点人物不再绕过筛选）+ 关系小事件补地点（27 条）+ 关系小事件显示📍地点标签"
+  [string]$Message = ""
 )
+
+# 默认仓库根 = 本脚本所在目录的上一级（tools/ 的父目录），这样脚本跟着仓库走，换机器不用改
+if (-not $RepoRoot) { $RepoRoot = Split-Path -Parent $PSScriptRoot }
+# 默认提交说明 = 带时间戳的通用文案（不猜版本号、不留旧 release note）；
+# 要写正式的 release note 就显式传 -Message "..."
+if (-not $Message) { $Message = "书脉 BookAtlas 更新（$(Get-Date -Format 'yyyy-MM-dd HH:mm')）" }
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

@@ -36,8 +36,12 @@
 
 | 书 | 人物 | 关系 | 事件 | 剧透尺度 |
 |---|---|---|---|---|
-| 《百年孤独》（范晔 译） | 39 | 96 | 31 | 第 1–20 章 |
+| 《百年孤独》（范晔 译） | 49 | 163 | 31 | 第 1–20 章 |
 | 《罪与罚》（汝龙 译） | 24 | 30 | 21 | 41 个顺序章（6 部 + 尾声） |
+| 《三国演义》（罗贯中 120 回本） | 871 | 2232 | 702 | 120 个顺序回目 |
+
+> 数字直接来自 `data/*.json`（`characters` / `relations` / `events` 的条数），改数据后记得同步这张表。
+> 《三国演义》开箱只显示 **326 / 871 人**——只跟一两个人有关系的次要人物（`tier:"minor"`）默认收起，见下面的「人物太多」四招。
 
 ![三种布局](docs/img/views.svg)
 
@@ -55,6 +59,10 @@
 或手动：python -m http.server 8765   # 然后访问 http://localhost:8765/
 ```
 > 直接双击 `index.html` 打不开是正常的：浏览器不允许 `file://` 页面读取数据文件，必须有本地服务。
+
+### 看断点效果
+服务起来后，还可以直接开这两个壳，把真页面按固定宽度摆进「设备外框」里看排版：
+`docs/desktop-preview.html`（1280×800）、`docs/mobile-preview.html`（390×780）。
 
 ### 打开编辑器
 图谱右上角「✏️ 编辑」，或直接访问 `/editor.html`。
@@ -115,8 +123,10 @@
 给项目加一本新书（三步）：
 
 1. 先把「错误」清零 → 点顶栏「**导出 JSON**」
+   > 人物描述 / 结局 / 事件摘要在后台空闲时异步加载。**文案没就位时导出会被拦下并提示** —— 导出的是"剥掉了全部文案"的 JSON，提交回 `data/` 会让散文永久丢失，所以宁可让你等几秒。
 2. 命令行再跑一遍：`node scripts/validate.mjs data/<slug>.json` 与 `node scripts/audit-search.mjs --all`（命令行比网页多几项高噪音的文案 lint）
 3. 把 JSON 放进 `data/`、在 `data/books.json` 登记一行，然后提 Issue / PR —— 写清**这本书的来源**（哪个译本 / 哪个电子版）与**校对方式**
+4. 跑 `npm run build:packs` 生成拆分包（首屏只下 `<slug>.graph.json`，文案包空闲时预取）。改了 `data/*.json` 忘了这步，CI 的 `check:packs` 会拦下
 
 ### 测试与代码检查
 
@@ -124,17 +134,26 @@
 # 网页版核心逻辑冒烟（Node 跑，不需要浏览器）
 node test/smoke.mjs
 
+# 共享核心逻辑单元测试
+node test/core.mjs
+
 # Web E2E 冒烟（启动本地服务，验证页面和资源加载）
 node test/e2e.mjs
 
 # 小程序页面逻辑冒烟（不需要微信开发者工具）
 node miniprogram/test/smoke.mjs
 
+# 下面三个用无头 Edge（CDP）真在浏览器里跑；找不到 Edge/Chrome 会自行跳过
+npm run test:browser    # 页面行为：悬停/点击/筛选/剧透开关真的点一遍
+npm run test:editor     # js/editor.js 的纯逻辑（parseLooseJson、切章节、撤销重做）
+npm run test:parity     # app.js / shared/graph-core.js / 小程序 三份实现对拍
+npm run test:races      # 竞态与导出守卫（自带服务器人为制造交错返回）
+
 # ESLint 代码检查（需要先 npm install）
 npm run lint
 ```
 
-CI（`.github/workflows/check.yml`）会自动跑：JS 语法检查、ESLint、网页版冒烟、E2E 冒烟、数据校验、搜索审计、小程序包同步检查、小程序冒烟。
+CI（`.github/workflows/check.yml`）会自动跑上面全部 20 项。一把跑完：`npm run check`。
 
 ### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
 
@@ -174,7 +193,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 要点：
 - `data/books.json` 里每本书可以带 `links: [{ label, url }]` —— 图谱页书名旁会显示（已配：微信读书 / 豆瓣 / 维基百科）；没有链接的书不受影响
 - `style`：`solid`＝亲缘/同盟；`dashed`＝对立/伤害；`dotted`＝情人/过去/间接
-- **`fromCh` / `toCh`（可选）＝关系的时间区间**（`toCh` 独占：第 `toCh` 章起不再存在）：同一对人如果关系变了（同盟→反目、主从→仇敌），**拆成多条**并各给区间——「时间旅行」会按章只画当时那一段；同一条关系的多条依据事件不用拆（写同一条里即可）。`node scripts/_patch-relation-periods.mjs` 可以按"关系名+线型"自动分段（干跑默认，`--write` 落盘）
+- **`fromCh` / `toCh`（可选）＝关系的时间区间**（`toCh` 独占：第 `toCh` 章起不再存在）：同一对人如果关系变了（同盟→反目、主从→仇敌），**拆成多条**并各给区间——「时间旅行」会按章只画当时那一段；同一条关系的多条依据事件不用拆（写同一条里即可）。`node scripts/archive/_patch-relation-periods.mjs` 可以按"关系名+线型"自动分段（干跑默认，`--write` 落盘）
 - **没有明确年份的书不要编年份**，用 `phase + order` 排序
 - `relations[].events` 优先收录"看着不起眼、却定义了两人关系"的小事件
 - **地点是"筛选器"，不是图上的节点**：`places[]` 是地点清单，`events[].place` / `relations[].events[].place` 把事件挂到地点上。别把地点画进关系图（会变成异构图、边语义混乱）；只有当地点**本身参与推理**（密室、列车时刻、地图动线）时才值得另做「地点页 / 地图视图」
@@ -289,24 +308,31 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 ## 脚本
 
-> 需要 Node 18+；本机 Node 不在 PATH 时，用绝对路径，例如
-> `& "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" scripts\validate.mjs`
+> 需要 Node 18+。Node 不在 PATH 时，装一个即可（<https://nodejs.org/>），
+> 或临时用它的绝对路径跑：`& "C:\path\to\node.exe" scripts\validate.mjs`。
 
 | 脚本 | 用途 |
 |---|---|
 | `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）+ **别名覆盖** + **亲子成环**。`node scripts/validate.mjs --all` 一把过 |
 | `scripts/audit-search.mjs` | **搜索命中率审计**：别名覆盖 / 译名变体（`--write` 自动补）/ 疑似漏人 / 同名重复：`node scripts/audit-search.mjs --all [--write]` |
 | `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
+| `scripts/kin.mjs` | **不是命令行脚本**，是 `kin` 规范的唯一来源（7 类取值 + 中文标签），被编辑器 / `validate.mjs` / `annotate-kin.mjs` 共同 import；改 kin 口径只改这里（见上面的「亲属关系规范」） |
 | `scripts/fix-parent-cycles.mjs` | 修亲子关系方向（人工核对表）+ 报告可疑方向 + 亲子环检测：`node scripts/fix-parent-cycles.mjs --all [--write]` |
 | `scripts/derive-kin.mjs` | 族谱补全：从亲子边推导祖孙/曾祖孙/叔侄等（`derived: true`，图上虚线+「推导」标）：`node scripts/derive-kin.mjs --all [--write]` |
 | `scripts/assign-phases.mjs` | 按 `phases[].from/to` 的章区间把事件归到阶段（逐章生成只有第 1 章输出 phase）：`node scripts/assign-phases.mjs data/xx.json [--write]` |
 | `scripts/make-miniprogram-packs.mjs` | 生成微信小程序的数据包（含预计算布局）：`node scripts/make-miniprogram-packs.mjs` |
+| `scripts/check-packs-sync.mjs` | **发布门禁**：检查 `miniprogram/data/*.js` 是否与 `data/*.json` 同步。做**语义比对**（逐字段深比较 + 校验三套布局坐标是有限数），不比字节——生成时用了 `localeCompare`，Windows 与 Ubuntu 排出来的同度数角色顺序不同，字节比对会天天误报。CI 里跑：`node scripts/check-packs-sync.mjs` |
+| `scripts/prune.mjs` | **剪枝**：清掉整本生成后的碎数据——A 孤儿人物（没任何关系、也没被事件引用）、B 孤儿地点（没事件挂到它）；`--demote N` 还能把关系数 ≤ N 的人标成 `tier:"minor"`：`node scripts/prune.mjs data/xx.json [--write --demote 2]` |
 | `scripts/wholebook.mjs` | **整本生成（命令行版）**：逐章抽取 → 合并去重 → 写出数据；可 `--jobs` 并发、可断点续跑 |
 | `scripts/dedupe-chars.mjs` | 同名/别名人物合并（整本生成后必跑一遍）：`node scripts/dedupe-chars.mjs data/xx.json [--write]` |
+| `scripts/link-mentions.mjs` | **文案反挂**：事件 `summary` / 关系小事件里提到、却没进 `events[].chars` 的人，自动补上（图上就不会漏高亮）。只认全书唯一的名字/别名、重名人物不挂、只补不删：`node scripts/link-mentions.mjs data/xx.json [--write]` |
 | `scripts/merge-duplicate-relations.mjs` | **重复关系线合并**：同一对人物 + 同一类型的多条记录会扇开成多根一样的线（三国曾有 87 组），合并时并入小事件、统一方向、取区间并集；区间有空档的阶段关系（同盟→分裂→再同盟）自动跳过。`node scripts/merge-duplicate-relations.mjs [--write]`；`validate.mjs` 会拦住新出现的重复 |
 | `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
 | `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 73 [--dry-run]` |
+| `scripts/make-tutorial-gifs.mjs` | 动图教程生成器：用无头 Edge（CDP）**真实点击页面**逐帧截图（`docs/tutorial/frames/`），因为教程要展示的正是悬停提示、点事件聚焦、拖时间滑块这类真实交互，静态图拼不出来。场景见文件里的 `SCENES`：`node scripts/make-tutorial-gifs.mjs [--width 1024 --height 640 --fps 10]` |
+| `scripts/assemble-gif.py` | 把上一条截下的帧合成 GIF（可选 MP4）。用**全局共享调色板**量化，否则同一种颜色在不同帧取到不同索引、整块 UI 会「闪」：`python scripts/assemble-gif.py --frames docs/tutorial/frames/search --out docs/tutorial/search.gif [--colors 128 --mp4]`（依赖 pillow） |
+| `scripts/make-icons.py` | 把 logo 的矢量源文件渲染成站点用的位图资源（Pillow + 本机 Edge 无头截图）：`python scripts/make-icons.py` |
 | `tools/local-sink.mjs` | 本地小接收器：编辑器「导出 JSON」直接写进 `data/`（无头浏览器里下载会落到别处）：`node tools/local-sink.mjs` |
 | `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），自动遵守 `.gitignore`，同时开/查 Pages |
 
@@ -325,7 +351,7 @@ book-atlas/
 ├── scripts/                                     # validate / kin / annotate-kin / assign-phases / wholebook / draft / extract-epub
 ├── tools/push-via-api.ps1                       # 发布脚本
 ├── tools/local-sink.mjs                         # 本地接收器（把编辑器导出写进 data/）
-├── docs/                                        # 方案评估、示意图、预览页
+├── docs/                                        # 方案评估、设计规范、示意图；无引用的历史设计稿见 docs/_wip-ignore.md
 └── sw.js / manifest.webmanifest                 # PWA 离线
 ```
 
@@ -334,7 +360,8 @@ book-atlas/
 ## 部署与发布
 
 - 部署：GitHub 仓库 → Settings → Pages → `main` / `/ (root)`
-- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑 JS 语法、`validate --all`、`audit-search --all`、**小程序数据包是否与 `data/*.json` 同步**、小程序页面冒烟（都不需要网络，几十秒出结果）
+- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑 20 步：JS 语法、版本号一致性、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
+  > 本地一次跑完：`npm run check`
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改
 - 发布：改完数据后跑 `tools\push-via-api.ps1`（从 Git 凭据管理器取 token，走 GitHub API 建 blob/tree/commit，再更新分支）
 - **改前端资源后要同步三处**：`index.html` / `editor.html` 里资源引用的 `?v=NN`、`sw.js` 里的 `CACHE = 'bookatlas-vNN'`，以及 `sw.js` 的 `SHELL` 预缓存清单里对应的 `?v=NN`，否则老访客会一直看到旧代码
@@ -355,8 +382,19 @@ book-atlas/
 
 **会不会剧透？** 开「剧透保护」并选好进度；也可以先把「标签」切成"主要"减少信息量。
 
-**三国 871 人打开慢吗？** 首屏已经优化过：防重叠松弛从 O(n²) 改成**网格邻域**、节点尺寸做了缓存，
-三国首屏从 **2.9 秒降到 0.4–0.9 秒**（浏览器控制台里 `__baPerf` 能看到 fetch/解析/图表三段耗时）。
+**三国 871 人打开慢吗？** 不慢。数据拆成了两个包：首屏只下 `<slug>.graph.json`（三国 gzip **78.9 KB**，原本整份 230.4 KB，**−66%**），文案包在图渲染完、浏览器空闲时后台预取，所以点开人物/事件时通常已经就绪。图表渲染 1118ms → **267ms**（防重叠松弛从 O(n²) 改成网格邻域、章节索引预计算成 Map 查表，节点尺寸缓存）。控制台里 `__baPerf` 能看到 fetch/解析/图表三段耗时。
+
+交互也很宽裕（实测三国 871 人 / 2232 关系，含 `buildOption` + `setOption` 全程）：
+
+| 操作 | 每次耗时 |
+|---|---|
+| 选人 / 点关系线 | ≈ 6.7 ms |
+| 关系类型筛选 | 13.1 ms |
+| 聚焦某人 1 跳 | 19.5 ms |
+
+60fps 的预算是 16.7 ms/帧 ⇒ 最贵的点击类操作还有约 2.5 倍余量。所以交互路径不需要再做增量更新优化。
+
+**导出时提示"文案还没加载完"？** 人物描述 / 结局 / 事件摘要在后台异步加载，几秒后重试即可。这是有意拦下的：导出会产出一份被剥掉全部文案的 JSON，而它正是被提交回 `data/` 的文件，缺了散文就永久没了。
 
 **人物太多、密密麻麻看不清？**（比如《三国演义》871 人）四招，从大到小：
 1. **次要人物默认收起**：只跟一两个人有关系的（`tier:"minor"`）默认不画，《三国演义》开箱是 **326 / 871 人**；要全看就点工具栏「次要人物：显示」（搜索会自动展开并定位）；
