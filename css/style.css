@@ -368,6 +368,13 @@ main {
 
 /* 锁定条是纯提示（无按钮）：不吃指针事件，压在图上也不挡节点点击 */
 #lock-bar { pointer-events: none; }
+/* v89：锁定条现在带了「−跳 / ＋跳」控件。只给控件本身开指针事件，
+   条目的其余部分（文字、内边距）仍然穿透到图上 —— 否则整条胶囊会变成一块"点击黑洞"，
+   压在它下面的节点就点不到了。 */
+#lock-bar .lock-depth { pointer-events: auto; display: inline-flex; align-items: center; gap: 4px; }
+#lock-bar .lock-depth button { pointer-events: auto; cursor: pointer; }
+#lock-bar .lock-depth button[disabled] { opacity: .4; cursor: default; }
+#lock-bar .lock-depth-n { font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: center; }
 .kin-badge {
   display: inline-block; padding: 2px 8px; border-radius: 24px;
   font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;

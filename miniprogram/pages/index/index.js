@@ -24,7 +24,7 @@ const KIN_OPTIONS = [
 const STYLE_OPTIONS = [
   { v: 'solid', t: '实线 · 亲缘/同盟' }, { v: 'dashed', t: '虚线 · 对立/伤害' }, { v: 'dotted', t: '点线 · 情人/过去/间接' },
 ];
-const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+// v89：edgeKey 改用 utils/graph.js 导出的那一份（原来这里有一份手抄，会和 graph.js 漂移）
 
 Page({
   data: {
@@ -124,7 +124,11 @@ Page({
     const pos = (this.g.pack.layouts[this.g.state.layout] || this.g.pack.layouts['gen-v']).pos;
     // 适配"当前画出来的人"（大书里被折叠的人会把包围盒撑得很大，图就会缩成一小团）
     const ids = this.g.visible().nodes.map((c) => c.id).filter((id) => pos[id]);
-    const use = ids.length ? ids : Object.keys(pos);
+    /* v89：高亮（＝锁定）时图上只画高亮集合内的人，包围盒要按**他们**算 ——
+       否则适配的是全图，锁定后那两三个人会缩成中间一个点。 */
+    const hl = this.highlight;
+    const lockedIds = hl && hl.nodes && hl.nodes.size ? [...hl.nodes].filter((id) => pos[id]) : null;
+    const use = (lockedIds && lockedIds.length) ? lockedIds : (ids.length ? ids : Object.keys(pos));
     const xs = [], ys = [];
     for (const id of use) { xs.push(pos[id][0]); ys.push(pos[id][1]); }
     if (!xs.length) return;
@@ -200,7 +204,7 @@ Page({
     if (this.lastTap && now - this.lastTap < 300) { this.lastTap = 0; this.highlight = null; this.fitView(); this.render(); return; }
     this.lastTap = now;
     const w = screenToWorld(this.view, t.x, t.y);
-    const hit = this.g.hitTest(w[0], w[1], this.view.scale);
+    const hit = this.g.hitTest(w[0], w[1], this.view.scale, this.highlight);
     if (hit && hit.kind === 'node') this.openChar(hit.id);
     else if (hit && hit.kind === 'edge') this.openRel(hit.rel);
     else { this.highlight = null; this.setData({ panel: null }); this.render(); }
@@ -249,8 +253,9 @@ Page({
     this.setData({ pathHint: `最短 ${steps.length} 跳` });
     const nodes = new Set([pathAId]);
     const edges = new Set();
-    for (const s of steps) { nodes.add(s.to); edges.add(edgeKey(s.from, s.to)); }
+    for (const s of steps) { nodes.add(s.to); edges.add(g.edgeKey(s.from, s.to)); }
     this.highlight = { nodes, edges };
+    this.fitView();          // v89：图上只剩这条链了，视野要跟着适配过去
     this.render();
     const html = steps.map((s, i) => {
       const evs = g.visibleRelEvents(s.rel);

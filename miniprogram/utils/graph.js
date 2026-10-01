@@ -174,6 +174,43 @@ function createGraph(pack) {
   };
   const passFocus = (id) => { const s = focusSet(); return !s || s.has(id); };
 
+  /* ---------------- 锁定时的可见集合（口径见 shared/graph-core.js 同名函数） ----------------
+   * v89。高亮（＝锁定）时图上**只画**集合内的点和线，其余不画、也不参与命中测试。
+   * 与网页版 js/app.js buildOption / 本文件 hitTest 同一口径，test/parity.mjs 对拍。 */
+
+  /** 无向边的 key：同一对人物不论 from/to 谁在前，都是同一个 key */
+  const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+  /** 某人 depth 跳以内的邻域。relLocked / relVisibleAt / relVisible 三个都要查（与 focusSet 同口径）。 */
+  function neighborhoodNodes(startId, depth) {
+    const set = new Set([startId]);
+    let frontier = [startId];
+    for (let d = 0; d < depth; d++) {
+      const next = [];
+      for (const id of frontier) {
+        for (const e of adj.get(id) || []) {
+          if (relLocked(e.rel) || !relVisibleAt(e.rel) || !relVisible(e.rel)) continue;
+          if (set.has(e.to)) continue;
+          set.add(e.to); next.push(e.to);
+        }
+      }
+      frontier = next;
+    }
+    return set;
+  }
+
+  /** 两端都在 nodes 里、且关系本身可见的边 key 集合。
+   *  刻意不查关系类型过滤 —— 那由 visible() 画图时自己过滤，在这儿重复只会让两处口径漂移。 */
+  function edgesWithin(nodes) {
+    const out = new Set();
+    for (const r of pack.relations) {
+      if (!nodes.has(r.from) || !nodes.has(r.to)) continue;
+      if (relLocked(r) || !relVisibleAt(r) || !relVisible(r)) continue;
+      out.add(edgeKey(r.from, r.to));
+    }
+    return out;
+  }
+
   /** 当前该画什么（节点 / 连线） */
   function visible() {
     const nodes = pack.characters.filter((c) => !isHidden(c) && charVisibleAt(c) && passSize(c.id) && passFocus(c.id));
@@ -241,11 +278,22 @@ function createGraph(pack) {
   }
 
   /** 命中测试：先节点后连线（世界坐标） */
-  function hitTest(wx, wy, scale) {
+  function hitTest(wx, wy, scale, hl) {
     const { nodes, links } = visible();
     const pos = (pack.layouts[state.layout] || pack.layouts['gen-v']).pos;
+    /* v89：高亮（＝锁定）时只对集合内的元素做命中。
+     * 原来这里遍历**全部** links 取离点击点最近的那条，而画的时候集合外的边只是
+     * globalAlpha 调到 0.08 照样画着 —— 淡线离得近就赢，于是点一条亮线会打开旁边那条
+     * 无关关系（网页版那边更严重：淡线后画、直接吃掉事件，"大多数线点不动"）。
+     * 与 render.js 的 drawGraph、网页版 buildOption 同一口径。 */
+    const lockActive = !!(hl && hl.nodes && hl.nodes.size);
+    const keepNode = (id) => !lockActive || hl.nodes.has(id);
+    const keyOf = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const keepEdge = (r) => !lockActive || (hl.edges && hl.edges.has(keyOf(r.from, r.to)));
+
     let best = null;
     for (const c of nodes) {
+      if (!keepNode(c.id)) continue;
       const p = pos[c.id];
       if (!p) continue;
       const r = Math.max(8, symbolSize(c.id) / 2) + 6 / Math.max(scale, 0.2);
@@ -255,9 +303,10 @@ function createGraph(pack) {
     if (best) return best;
     const seen = new Map();
     for (const r of links) {
+      if (!keepEdge(r)) continue;
       const a = pos[r.from], b = pos[r.to];
       if (!a || !b) continue;
-      const key = r.from < r.to ? `${r.from}|${r.to}` : `${r.to}|${r.from}`;
+      const key = keyOf(r.from, r.to);
       const n = seen.get(key) || 0;
       seen.set(key, n + 1);
       // 与网页版一致：同一对之间的多条边按序号扇开
@@ -386,6 +435,7 @@ function createGraph(pack) {
     isMinor, isMentioned, isHidden, symbolSize, groupKeyOf, groupLabelOf,
     effectiveFactionKey, factionColorOf, factionTextOf, isGen,
     rank, passSize, focusSet, passFocus,
+    edgeKey, neighborhoodNodes, edgesWithin,
     visible, labels, hitTest, bfs, visibleRelEvents, fateLocked, periodText,
     chapterDigest, charName, placeName, findChar, selectable, factionColorByKey, fontScale,
   };

@@ -869,6 +869,49 @@
     state.focusCache = { key, set };
     return set;
   }
+
+  /* ---------------- 锁定时的可见集合（口径见 shared/graph-core.js 同名函数） ----------------
+   * v89。锁定时图上**只画**锁定集合内的点与线。
+   *
+   * 为什么不再"灰掉"：淡掉的线只是 opacity 调到 0.05，仍然留在系列里、也没有 silent，
+   * 而 zrender 的命中测试不看 opacity —— 后画的淡线会把鼠标事件吃掉。刘备—诸葛亮那 9 条线
+   * 在 links 数组里的下标是 472…1438，散落在 1545 条中间，于是瞄准一条亮线却点不动
+   * （用户实测："大多数线点不动，偶尔能点"）。不画 = 不存在遮挡。
+   *
+   * 这两个函数与 shared/graph-core.js 的同名函数逐行对应，test/parity.mjs 会对拍。 */
+
+  /** 某人 depth 跳以内的邻域。relLocked / relVisibleAt / relVisible 三个都要查（与 focusSet 同口径）。 */
+  function neighborhoodNodes(startId, depth) {
+    const set = new Set([startId]);
+    let frontier = [startId];
+    for (let d = 0; d < depth; d++) {
+      const next = [];
+      for (const id of frontier) {
+        for (const { to, rel } of state.adj.get(id) || []) {
+          if (relLocked(rel) || !relVisibleAt(rel) || !relVisible(rel)) continue;
+          if (set.has(to)) continue;
+          set.add(to);
+          next.push(to);
+        }
+      }
+      frontier = next;
+    }
+    return set;
+  }
+
+  /** 两端都在 nodes 里、且关系本身可见的边 key 集合。
+   *  刻意不查关系类型过滤 / 人数过滤 —— 那些由 buildOption 画图时自己过滤，
+   *  在这里重复一遍只会让两处口径漂移。被过滤掉的边不会画，也就点不到。 */
+  function edgesWithin(nodes) {
+    const out = new Set();
+    for (const r of state.book.relations) {
+      if (!nodes.has(r.from) || !nodes.has(r.to)) continue;
+      if (relLocked(r) || !relVisibleAt(r) || !relVisible(r)) continue;
+      out.add(edgeKey(r.from, r.to));
+    }
+    return out;
+  }
+
   const passFocus = (id) => {
     const set = focusSet();
     return !set || set.has(id) || (state.hlNodes && state.hlNodes.has(id));   // 聚焦模式下点事件，事件人物也要能显示
@@ -902,7 +945,26 @@
     //   再除一次 zoom 会把放大后的名字压成 2px（v0.41 曾误把字号一起补偿，点事件聚焦后名字看不清）。
     const fxOk = (v) => Math.max(0.06, v * zc);
 
-    const data = b.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
+    /* v89：锁定态**只画**锁定集合内的点与线，其余一律不进系列。
+     *
+     * 原来这里对集合外的元素只是把 opacity 调低（0.12 / 0.05）继续画着。那样看着是"变暗"，
+     * 但它们仍然**在系列里、也没有 silent**，而 zrender 的命中测试不看 opacity ——
+     * 谁后画谁在上面就吃掉鼠标事件。刘备—诸葛亮那 9 条线在 links 数组里的下标是
+     * 472…1438，散落在 1545 条中间，于是瞄准一条亮线却点不动（实测"大多数点不动、
+     * 偶尔能点"）。不画就没有遮挡。
+     *
+     * 副作用也是想要的：锁定后图元数大降（两人关系直连时 336点+1545线 → 2点+9线），
+     * 而 setOption 的成本是线性的（约 28µs/元素，见 CHANGELOG v0.87 ④）。
+     *
+     * ⚠ 这一层只是**显示**过滤，绝不碰 state.book —— 导出走 standaloneBook()（只按剧透裁）
+     *   与各自的 exportPositions，不经过 buildOption。 */
+    const lockSet = state.clickLock ? state.clickLock.nodes : null;
+    const lockEdgeSet = state.clickLock ? state.clickLock.edges : null;
+    const inLock = (id) => !lockSet || lockSet.has(id);
+
+    const renderedGroups = new Set();     // v89：锁定后只有"真的有节点"的分组才画图注
+    const data = b.characters.filter((c) => inLock(c.id) && !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).map((c) => {
+      renderedGroups.add(groupKeyOf(c));
       const hl = anyDim && state.hlNodes.has(c.id);
       const dim = anyDim && !hl;
       const locked = charLocked(c);
@@ -956,6 +1018,9 @@
         bb = { minX: -((r.width || 900) / 2), minY: -((r.height || 600) / 2) };
       }
       for (const [g, band] of state.bands) {
+        // v89：锁定到只剩几个人时，全书的「第N代」图注会变成一堆指向空气的标签。
+        // 只保留真的有节点落在这一组的图注。
+        if (lockSet && !renderedGroups.has(g)) continue;
         data.push({
           id: `__gen_${g}`,
           name: state.bandLabels.get(g) || String(g),
@@ -990,6 +1055,8 @@
       .filter(relVisible)
       .filter(passEdgeFilter)
       .filter(relVisibleAt)
+      // v89：锁定态只保留锁定集合内的边（同一对人物的多条线会一起保留、一起高亮）
+      .filter((r) => !lockEdgeSet || lockEdgeSet.has(edgeKey(r.from, r.to)))
       .map((r) => {
         const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
         const derived = isDerived(r);
@@ -1411,8 +1478,13 @@
    * 收益明显（≥25%）或目标偏离视野中心时才动，避免小图上乱跳。
    * @returns {boolean} true = 已调用 applyZoom（option 已重建）
    */
-  function focusViewOn(nodes) {
-    if (!state.chart || !nodes || !nodes.size || nodes.size > 40) return false;
+  function focusViewOn(nodes, opts = {}) {
+    // v89：锁定态的集合可能很大（搜曹操 1 跳就是 253 人），原来的 40 人上限会让它完全不生效，
+    // 于是"只显示相关的人"之后画面还是全图的比例、相关的人挤在中间一小块。
+    // 所以上限做成可传；gain 阈值也一起放宽一点，免得大集合因为"提升不足 25%"而不动。
+    const maxNodes = opts.maxNodes || 40;
+    const minGain = opts.minGain || 1.25;
+    if (!state.chart || !nodes || !nodes.size || nodes.size > maxNodes) return false;
     const rect = document.getElementById('graph').getBoundingClientRect();
     const W = rect.width || 800, H = rect.height || 500;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, n = 0;
@@ -1429,11 +1501,21 @@
     const cur = state.zoom || 1;
     const vc = state.viewCenter || [0, 0];
     const target = Math.min(Math.max(Math.min((W * 0.55) / w, (H * 0.55) / h), cur), 4);   // 只放大、不缩小
-    const improved = target >= cur * 1.25;
+    const improved = target >= cur * minGain;
     const moved = Math.hypot((cx - vc[0]) * cur, (cy - vc[1]) * cur) > Math.min(W, H) * 0.2;
     if (!improved && !moved) return false;
     applyZoom(target, [cx, cy]);
     return true;
+  }
+
+  /** v89：锁定后把视野适配到剩下的人/线。
+   *  ⚠ 只调 applyZoom（改 state.zoom / viewCenter），**绝不走 fitPositions** ——
+   *  fitPositions 会把缩放乘回 state.pos，锁定态下调它会让解除锁定后的整张图坐标被改坏。
+   *  集合是"当前已绘制集合"的子集，所以只需放大、不需要缩小，focusViewOn 的语义正合适。 */
+  function fitLockView() {
+    const lock = state.clickLock;
+    if (!lock || !lock.nodes || !lock.nodes.size) return false;
+    return focusViewOn(lock.nodes, { maxNodes: 4000, minGain: 1.08 });
   }
 
   /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
@@ -1491,17 +1573,84 @@
   }
   function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, 550); }
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
-  function lockFromHighlight(label, origin) {
-    if (!state.hlNodes.size) return;
-    state.clickLock = { nodes: new Set(state.hlNodes), edges: new Set(state.hlEdges), label: label || '', origin: origin || 'search' };
+  /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁
+   *  v89：'search' 额外记下 centerId 与 depth，好让锁定条上的「−跳 / ＋跳」重算可见集合。
+   *  depth 记在 localStorage，跨会话保持。'path' 的集合就是那条最短链，**不给跳数** ——
+   *  「只显示他们之间的」和「再往外扩几跳」是互相矛盾的。 */
+  const LOCK_DEPTH_MIN = 1, LOCK_DEPTH_MAX = 3;
+  function savedLockDepth() {
+    const n = Number(localStorage.getItem('ba-lock-depth'));
+    return Number.isFinite(n) ? Math.max(LOCK_DEPTH_MIN, Math.min(LOCK_DEPTH_MAX, n)) : 1;
+  }
+  function lockFromHighlight(label, origin, centerId) {
+    const org = origin || 'search';
+    let nodes = state.hlNodes, edges = state.hlEdges, depth = 0;
+    if (org === 'search' && centerId && state.adj.has(centerId)) {
+      depth = savedLockDepth();
+      nodes = neighborhoodNodes(centerId, depth);
+      edges = edgesWithin(nodes);
+      if (!nodes.size) return;
+      state.hlNodes = new Set(nodes);
+      state.hlEdges = new Set(edges);
+    } else {
+      if (!state.hlNodes.size) return;
+      nodes = new Set(state.hlNodes); edges = new Set(state.hlEdges);
+    }
+    state.clickLock = {
+      nodes, edges, label: label || '', origin: org,
+      centerId: org === 'search' ? (centerId || null) : null,
+      depth,
+    };
     renderLockBar();
     // v82 悬停策略（锁外 emphasis.disabled / 锁内恢复动效）烤在 option 里：上锁后必须重建一次才生效
     hideTipNow();
+    applyLockFilter();
+    updateCountHint();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+    fitLockView();
+  }
+  /** 锁定态把图上收敛到锁定集合，并自动把视野适配到剩下的人/线。
+   *  纯显示：不改 state.pos，只改 state.hlNodes/hlEdges 与视图参数。 */
+  function applyLockFilter() {
+    const lock = state.clickLock;
+    if (!lock) return;
+    state.hlNodes = new Set(lock.nodes);
+    state.hlEdges = new Set(lock.edges);
+    // 集合变大后可能带进还没有坐标的人（时间旅行/折叠让他们先前没画过）
+    fillMissingPositions();
+  }
+  /** 锁定后改跳数：重算集合 → 重新过滤 → 重新适配视野。 */
+  function setLockDepth(d) {
+    const lock = state.clickLock;
+    if (!lock || lock.origin !== 'search' || !lock.centerId) return;
+    const next = Math.max(LOCK_DEPTH_MIN, Math.min(LOCK_DEPTH_MAX, Number(d) || 1));
+    if (next === lock.depth) return;
+    lock.depth = next;
+    try { localStorage.setItem('ba-lock-depth', String(next)); } catch (e) { /* 隐私模式忽略 */ }
+    const nodes = neighborhoodNodes(lock.centerId, next);
+    lock.nodes = nodes;
+    lock.edges = edgesWithin(nodes);
+    applyLockFilter();
+    renderLockBar();
+    hideTipNow();
+    updateCountHint();
+    if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
+    fitLockView();
   }
   function unlockClick() {
     if (!state.clickLock) return;
     state.clickLock = null;
+    /* v89 修：解除锁定要连高亮集合一起清。
+     * 原来只清了 clickLock，hlNodes / hlEdges 留着 —— 而 isCharHidden() 开头就是
+     * `if (state.hlNodes.has(c.id)) return false`，于是锁定集合里那些**本来被折叠的
+     * 次要人物**又冒了出来：解除锁定后图上的人数比锁定前还多（实测三国 326 → 344）。
+     * 两人关系锁看不出来是因为它的集合只有 2 个人、且都在可见集里。
+     *
+     * 在这里清是安全的：setHighlight / clearHighlight 都会紧接着自己重设这两个集合。
+     * 这一处同时修好了三条解除路径（双击空白 /「复位视图」/「重置」）—— 它们都只调
+     * unlockClick 而没调 clearHighlight。 */
+    state.hlNodes = new Set();
+    state.hlEdges = new Set();
     renderLockBar();
     // 解锁后悬停恢复（各解锁路径本就重建，这里不重复建）
   }
@@ -1525,7 +1674,18 @@
     const lock = state.clickLock;
     if (!lock) { bar.hidden = true; stackBars(); return; }
     bar.hidden = false;
-    bar.innerHTML = `🔒 聚焦「${esc(lock.label)}」· 只能点图上亮着的人和线 <span class="lock-hint">「重置 / 复位视图」或右栏人名后点击「清除」可解除</span>`;
+    /* v89：锁定后图上只剩相关的人和线（其余不再画），所以原来的"只能点亮着的"已经变成
+     * 自动成立，那句话反而误导 —— 改成说明"只看相关"并给出解除方式。
+     * 两人关系锁不加跳数控件：集合就是那条最短链，再往外扩跟"只显示他们之间的"矛盾。 */
+    const depthCtl = lock.origin === 'search' && lock.centerId
+      ? `<span class="lock-depth" role="group" aria-label="显示几跳以内的关系">
+           <button class="ghost tiny" type="button" data-lock-depth="dec" ${lock.depth <= LOCK_DEPTH_MIN ? 'disabled' : ''} aria-label="减少显示范围">−跳</button>
+           <span class="lock-depth-n">${lock.depth} 跳</span>
+           <button class="ghost tiny" type="button" data-lock-depth="inc" ${lock.depth >= LOCK_DEPTH_MAX ? 'disabled' : ''} aria-label="扩大显示范围">＋跳</button>
+         </span>`
+      : '';
+    bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的人和线 ${depthCtl}
+      <span class="lock-hint">「重置 / 复位视图」或右栏人名后点击「清除」可解除</span>`;
     stackBars();
   }
   /** 聚焦条/锁定条：fixed 悬浮，按「顶栏下沿、图区顶端」定位；两条同时可见时上下叠放 */
@@ -1661,6 +1821,10 @@
         }
         computeLabels();
         resetRoam();
+        /* v89：上面这套是按**全部** state.pos 重新适配的，而锁定态图上只画锁定集合 ——
+           按全图算出来的缩放会把"只剩几个人"的那一小块推到屏幕外（窗口一变窄就"人不见了"）。
+           所以锁定态改为按锁定集合重新适配一次。 */
+        if (state.clickLock) fitLockView();
       }
     };
     // v85：把回调记进 state，好让下一次 initChart 能解绑（见 initChart 开头与 teardownChartListeners）。
@@ -3360,7 +3524,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (charLocked(c)) { renderLockedPanel('character', c); return; }
     if (isCharHidden(c)) revealChar(c);
     selectCharacter(c.id);
-    lockFromHighlight(c.name);
+    lockFromHighlight(c.name, 'search', c.id);
   }
 
   function bindUI() {
@@ -3374,12 +3538,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       if (pc && pc.name === q) { chooseCharById(pc.id); return; }
       const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
       const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
-      if (c) { selectCharacter(c.id); lockFromHighlight(c.name); return; }
+      if (c) { selectCharacter(c.id); lockFromHighlight(c.name, 'search', c.id); return; }
       const hiddenHit = state.book.characters.find((x) => isCharHidden(x) && match(x));
       if (hiddenHit) {                                  // 被折叠的人：自动展开层级再定位（搜索永远找得到）
         revealChar(hiddenHit);
         selectCharacter(hiddenHit.id);
-        lockFromHighlight(hiddenHit.name);
+        lockFromHighlight(hiddenHit.name, 'search', hiddenHit.id);
         return;
       }
       const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
@@ -3441,6 +3605,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       const nav = ev.target.closest('[data-focus-nav]');
       if (nav && state.focus) { applyFocus(state.focus.id, state.focus.depth + (nav.dataset.focusNav === 'inc' ? 1 : -1)); return; }
       if (ev.target.closest('[data-focus-exit]')) applyFocus(null, 1);
+      // v89：锁定条上的「−跳 / ＋跳」（只搜索锁定有，两人关系锁没有）
+      const ld = ev.target.closest('[data-lock-depth]');
+      if (ld && state.clickLock) {
+        setLockDepth(state.clickLock.depth + (ld.dataset.lockDepth === 'inc' ? 1 : -1));
+        return;
+      }
     });
 
     // v85：右栏 / 章节面板 / 时间轴的动态按钮统一委托（替代原先每次 innerHTML 重建后
@@ -3788,6 +3958,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     applyFocus: (id, depth) => applyFocus(id, depth),
     /** 聚焦集合（v85：供 test/parity.mjs 做三份实现对拍；只读，不改状态） */
     focusSet: () => { const s = focusSet(); return s ? [...s] : null; },
+    // v89：锁定可见集合的两份口径（供 test/parity.mjs 与 graph-core / 小程序对拍）
+    neighborhoodNodes: (id, depth) => [...neighborhoodNodes(id, depth)],
+    edgesWithin: (nodes) => [...edgesWithin(nodes instanceof Set ? nodes : new Set(nodes))],
     applySizeFilter: (v) => applySizeFilter(v),
     computeLabels: (z) => computeLabels(z),
     selectCharacter: (id) => selectCharacter(id),

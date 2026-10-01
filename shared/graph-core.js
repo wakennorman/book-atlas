@@ -166,15 +166,29 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
     };
   }
 
-  /* ---------------- 聚焦：某人 N 跳以内 ----------------
-   * v85 补齐：这份参考实现原本没有 focusSet，导致 app.js 与小程序的两份都没法跟它对拍 ——
-   * 而恰恰是 focusSet 在 v85 之前漏查了 relVisible（关掉「族谱补全」聚焦时出现大批悬空节点）。
-   * 口径与另两份一致：relLocked / relVisibleAt / relVisible 三个都要查。 */
-  const focusSet = () => {
-    if (!state.focus) return null;
-    const set = new Set([state.focus.id]);
-    let frontier = [state.focus.id];
-    for (let d = 0; d < state.focus.depth; d++) {
+  /* ---------------- 锁定时的可见集合 ----------------
+   * v89。锁定（搜索单个人物 / 两人关系）时，图上**只画**锁定集合内的点与线，其余不画。
+   *
+   * 为什么不能继续"灰掉"：淡掉的线只是把 opacity 调到 0.05，**仍然留在系列里，也没有
+   * silent**，而 zrender 的命中测试不看 opacity —— 谁后画谁在上面，就把鼠标事件吃掉。
+   * 刘备—诸葛亮那 9 条线在 links 数组里的下标是 472…1438，散落在 1545 条中间，
+   * 于是瞄准一条亮线却点不动（实测"大多数线点不动、偶尔能点"）。
+   * 不画 = 不存在遮挡，这类问题从根上消失。
+   *
+   * 下面两个纯函数是这套集合计算的唯一口径，三份实现都要跟它一致（test/parity.mjs 守）。 */
+
+  /** 无向边的 key：同一对人物不论 from/to 谁在前，都是同一个 key。
+   *  高亮/锁定都按人物对走（同一对之间的多条线一起亮、一起可点），所以必须是归一的。 */
+  const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+  /** 某人 depth 跳以内的邻域。
+   *  relLocked / relVisibleAt / relVisible 三个都要查 —— 漏一个就会出现"图上不画的边
+   *  却把人算进了集合"，于是冒出一大堆悬空节点（三国曾有 50999 个）。
+   *  与 focusSet 同一口径；刻意不查 passEdge（关系类型过滤），跟聚焦保持一致。 */
+  function neighborhoodNodes(startId, depth) {
+    const set = new Set([startId]);
+    let frontier = [startId];
+    for (let d = 0; d < depth; d++) {
       const next = [];
       for (const id of frontier) {
         for (const e of adj.get(id) || []) {
@@ -187,7 +201,25 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
       frontier = next;
     }
     return set;
-  };
+  }
+
+  /** 两端都在 nodes 里、且关系本身通过可见性判定的边 key 集合。
+   *  刻意**不**查关系类型过滤 / 人数过滤 —— 那些是 buildOption 画图时自己过滤的，
+   *  在这里重复一遍只会造成两处口径漂移。被过滤掉的边不会画，自然也不会被点到。 */
+  function edgesWithin(nodes) {
+    const out = new Set();
+    for (const r of pack.relations) {
+      if (!nodes.has(r.from) || !nodes.has(r.to)) continue;
+      if (relLocked(r) || !relVisibleAt(r) || !relVisible(r)) continue;
+      out.add(edgeKey(r.from, r.to));
+    }
+    return out;
+  }
+
+  /* ---------------- 聚焦：某人 N 跳以内 ----------------
+   * v85 补齐：这份参考实现原本没有 focusSet，导致 app.js 与小程序的两份都没法跟它对拍 ——
+   * 而恰恰是 focusSet 在 v85 之前漏查了 relVisible（关掉「族谱补全」聚焦时出现大批悬空节点）。 */
+  const focusSet = () => (state.focus ? neighborhoodNodes(state.focus.id, state.focus.depth) : null);
 
   return {
     chOf, STYLE_OF, KIN_BUCKET,
@@ -197,6 +229,6 @@ export function createGraphCore({ pack, adj, byId, deg, state }) {
     isMinor, isMentioned, isHidden, symbolSize,
     isGen, factionOrder, groupKeyOf, groupLabelOf, effectiveFactionKey,
     bfs, visibleRelEvents, charLastCh, fateLocked, periodText, chapterDigest,
-    focusSet,
+    focusSet, edgeKey, neighborhoodNodes, edgesWithin,
   };
 }

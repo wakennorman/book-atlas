@@ -301,6 +301,72 @@ try {
       }
     }
 
+    /* ---- v89：锁定可见集合（neighborhoodNodes / edgesWithin）三份对拍。
+     * 这两个是"锁定时图上只画哪些点与线"的唯一口径，网页版 buildOption、参考实现、
+     * 小程序 graph.js 各有一份手抄。任何一份改了而另两份没改，锁定后的图就会不一样。
+     * （锁定本身只画集合内的东西，所以这里错一点点 = 用户看到的人/线就不一样。） ---- */
+    const lockViewOf = async (book, o, side) => {
+      const nodesIn = JSON.stringify(o.nodes);
+      if (side === 'web') {
+        return js(`(() => {
+          const st = window.__ba.state;
+          st.focus = null; st.focusCache = null;
+          st.progress = null; st.timeTravel = false; st.chapter = 1;
+          st.showDerived = ${o.showDerived !== false};
+          st.showMinor = false; st.showMentioned = false;
+          st.sizeFilter = 'all'; st.placeFilter = null; st.activeFaction = null;
+          window.__ba.applyEdgeFilter([], []);
+          const nodes = window.__ba.neighborhoodNodes(${JSON.stringify(o.startId)}, ${o.depth});
+          const edges = window.__ba.edgesWithin(nodes);
+          return { nodes, edges };
+        })()`);
+      }
+      if (side === 'core') {
+        const st = { progress: null, chapter: 1, timeTravel: false, showDerived: o.showDerived !== false, edgeStyles: [], edgeKins: [], focus: null };
+        const core = buildCore(createGraphCore, book, st);
+        const nodes = [...core.neighborhoodNodes(o.startId, o.depth)];
+        return { nodes, edges: [...core.edgesWithin(new Set(nodes))] };
+      }
+      const g = buildMini(o.slug, { showDerived: o.showDerived !== false });
+      const nodes = [...g.neighborhoodNodes(o.startId, o.depth)];
+      return { nodes, edges: [...g.edgesWithin(new Set(nodes))] };
+    };
+
+    // 起点用两个人物对（有并行边）和一个 hub，覆盖"邻域很小"与"邻域很大"两种
+    const starts = [hub];
+    const multiPair = (() => {
+      const key = new Map();
+      for (const r of book.relations) {
+        const k = [r.from, r.to].sort().join('|');
+        key.set(k, (key.get(k) || 0) + 1);
+      }
+      for (const [k, n] of key) {
+        if (n < 2) continue;
+        const id = k.split('|').find((x) => book.characters.some((c) => c.id === x));
+        if (id) { starts.push(book.characters.find((c) => c.id === id)); break; }
+      }
+      return key;
+    })();
+
+    for (const start of starts.filter(Boolean)) {
+      for (const depth of [1, 2]) {
+        for (const derived of [true, false]) {
+          const o = { slug, startId: start.id, depth, showDerived: derived };
+          const webV = await lockViewOf(book, o, 'web');
+          const coreV = await lockViewOf(book, o, 'core');
+          const miniV = await lockViewOf(book, o, 'mini');
+          const sN = (x) => JSON.stringify([...(x.nodes || [])].sort());
+          const sE = (x) => JSON.stringify([...(x.edges || [])].sort());
+          const tag = `${book.meta.title} 锁定「${start.name}」${depth} 跳${derived ? '' : ' + 关族谱补全'}`;
+          const sameN = sN(webV) === sN(coreV) && sN(webV) === sN(miniV);
+          const sameE = sE(webV) === sE(coreV) && sE(webV) === sE(miniV);
+          if (!sameN) mismatches.push(`${tag}: 邻域节点集三份不同（web=${(webV.nodes||[]).length} core=${(coreV.nodes||[]).length} mini=${(miniV.nodes||[]).length}）`);
+          if (!sameE) mismatches.push(`${tag}: 集合内边集三份不同（web=${(webV.edges||[]).length} core=${(coreV.edges||[]).length} mini=${(miniV.edges||[]).length}）`);
+          ok(sameN && sameE, `${tag} · 三份一致（${(webV.nodes || []).length} 人 / ${(webV.edges || []).length} 边）`);
+        }
+      }
+    }
+
     if (mismatches.length) {
       console.error('    ↳ 差异明细：');
       for (const m of mismatches) console.error('      ' + m);

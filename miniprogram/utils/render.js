@@ -43,6 +43,17 @@ function drawGraph(ctx, g, view) {
   const layout = g.pack.layouts[g.state.layout] || g.pack.layouts['gen-v'];
   const pos = layout.pos;
   const hl = view.highlight || {};
+  /* v89：高亮（＝锁定）时**只画**高亮集合内的点和线，其余不画。
+   *
+   * 原来是把集合外的元素 globalAlpha 调到 0.08 / 0.18 继续画着。问题在于命中测试
+   * (graph.js 的 hitTest) 会遍历**全部** links 并取离点击点最近的那条 —— 淡线画得近
+   * 就赢，于是点一条亮着的线可能打开旁边那条无关关系（网页版那边更严重：zrender 按
+   * 数组顺序绘制，淡线后画就吃掉事件，实测"大多数线点不动"）。
+   *
+   * 不画 = 不参与命中 = 这类问题从根上消失。与网页版 js/app.js buildOption 同一口径。 */
+  const lockActive = !!(hl.nodes && hl.nodes.size);
+  const keepNode = (id) => !lockActive || hl.nodes.has(id);
+  const keepEdge = (r) => !lockActive || (hl.edges && hl.edges.has(r.from < r.to ? `${r.from}|${r.to}` : `${r.to}|${r.from}`));
 
   if (!view.noBg) {                     // 分享卡片会自己画底板，所以给个开关
     ctx.fillStyle = th.bg;
@@ -56,6 +67,7 @@ function drawGraph(ctx, g, view) {
   // 连线：同一对之间的多条边（阶段关系）按序号扇开
   const seen = new Map();
   for (const r of links) {
+    if (!keepEdge(r)) continue;                      // v89：锁定时集合外的边不画
     const a = pos[r.from], b = pos[r.to];
     if (!a || !b) continue;
     const key = r.from < r.to ? `${r.from}|${r.to}` : `${r.to}|${r.from}`;
@@ -80,13 +92,13 @@ function drawGraph(ctx, g, view) {
 
   // 节点
   for (const c of nodes) {
+    if (!keepNode(c.id)) continue;                   // v89：锁定时集合外的点不画
     const p = pos[c.id];
     if (!p) continue;
     const locked = g.charLocked(c);
     const mentioned = g.isMentioned(c);
     const r = g.symbolSize(c.id) / 2;
-    const dim = hl.nodes && hl.nodes.size && !hl.nodes.has(c.id);
-    ctx.globalAlpha = dim ? 0.18 : (mentioned ? 0.9 : (locked ? 0.45 : 1));
+    ctx.globalAlpha = mentioned ? 0.9 : (locked ? 0.45 : 1);
     ctx.fillStyle = mentioned ? th.bg : (locked ? th.locked : g.factionColorOf(c));
     ctx.strokeStyle = mentioned ? th.locked : th.panel;
     ctx.lineWidth = (mentioned ? 1.4 : 1) / Math.max(scale, 0.35);
@@ -106,6 +118,7 @@ function drawGraph(ctx, g, view) {
   for (const l of labels) {
     const c = g.byId.get(l.id);
     if (!c || g.charLocked(c)) continue;
+    if (!keepNode(l.id)) continue;                   // v89：集合外的人不该还有名字飘在空白处
     const x = l.dx, y = l.dy;
     const align = l.align || 'center';
     const w = ctx.measureText(l.name).width;
