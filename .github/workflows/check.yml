@@ -29,7 +29,7 @@ jobs:
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
                    scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
-                   test/races.mjs test/relax.mjs \
+                   test/races.mjs test/relax.mjs test/relations.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -99,6 +99,14 @@ jobs:
         # 的那一对无能为力（dx=dy=0，位移永远是 0），所以永远分不开。
         # 同时守住「喂进 871 个完全重合的坐标也不会产生 NaN」这条兜底。
         run: node test/relax.mjs
+
+      - name: 关系线身份（无头 Edge，1545 条线逐条对账）
+        # v88 新增。守住一个真实 bug：同一对人物之间可能有**类型完全相同**的多条关系
+        # （刘备—诸葛亮有两条「君臣军师」，第40章与第49章），图上画成两条不同曲率的线，
+        # 但只靠 (source, target, 类型) 分不开 ⇒ 悬停/点第二条会解析成第一条，
+        # 用户看到的是"这条线点了没反应"（其实有反应，只是响应的是旁边那条线）。
+        # 三国共 14 处这种歧义。
+        run: node test/relations.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

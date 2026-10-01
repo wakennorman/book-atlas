@@ -149,12 +149,13 @@ npm run test:editor     # js/editor.js 的纯逻辑（parseLooseJson、切章节
 npm run test:parity     # app.js / shared/graph-core.js / 小程序 三份实现对拍
 npm run test:races      # 竞态与导出守卫（自带服务器人为制造交错返回）
 npm run test:relax      # 落位与防重叠（零关系人物不能叠在同一点、退化输入不产生 NaN）
+npm run test:relations  # 关系线身份（同一对人物的多条同类关系线，每条都要能解析回自己）
 
 # ESLint 代码检查（需要先 npm install）
 npm run lint
 ```
 
-CI（`.github/workflows/check.yml`）会自动跑上面全部 21 项。一把跑完：`npm run check`。
+CI（`.github/workflows/check.yml`）会自动跑上面全部 22 项。一把跑完：`npm run check`。
 
 ### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
 
@@ -361,7 +362,7 @@ book-atlas/
 ## 部署与发布
 
 - 部署：GitHub 仓库 → Settings → Pages → `main` / `/ (root)`
-- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑 21 步：JS 语法、版本号一致性、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
+- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑 22 步：JS 语法、版本号一致性、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、**关系线身份**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
   > 本地一次跑完：`npm run check`
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改
 - 发布：改完数据后跑 `tools\push-via-api.ps1`（从 Git 凭据管理器取 token，走 GitHub API 建 blob/tree/commit，再更新分支）

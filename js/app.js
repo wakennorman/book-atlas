@@ -58,6 +58,8 @@
     chipEls: null,           // .event-chip 的缓存 NodeList（同上）
     loadSeq: 0,              // v85：loadBook 的请求序号，快速切书时用来丢弃过期响应
     textStatus: null,        // v85：文案包状态 { slug, status: 'idle'|'done'|'failed' }，**按书记**
+    relIndexOf: null,      // v88：关系对象 → relations 下标，给图上每条线做身份标识（见 findRel）
+    relIdxBook: null,      // v88：relIndexOf 是按哪本书建的缓存（换书要重建）
   };
 
   /* ---------------- 工具 ---------------- */
@@ -974,6 +976,13 @@
       }
     }
 
+    /* relations 下标 → 关系对象 的映射，按书缓存一次。
+     * 带上它，图上每条线才能知道自己到底是哪一条关系（见 findRel 的注释）。 */
+    if (state.relIdxBook !== b) {
+      state.relIndexOf = new Map();
+      for (let i = 0; i < b.relations.length; i++) state.relIndexOf.set(b.relations[i], i);
+      state.relIdxBook = b;
+    }
     const links = b.relations
       .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
       .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
@@ -993,6 +1002,10 @@
       const hlEdge = anyDim && state.hlEdges.has(key);
       return {
         source: r.from, target: r.to, value: r.type,
+        // v88：这条线对应 relations 里的第几条。同一对之间可能有类型相同的多条关系
+        // （刘备—诸葛亮有两条「君臣军师」），只靠 (source, target, value) 分不开，
+        // 悬停/点第二条会解析成第一条 ⇒ 看起来"点了没反应"。
+        baRel: state.relIndexOf.get(r),
         // v82：锁外的线 hover 完全无反应；锁内恢复 hover 动效（线加粗）。每轮显式写，防合并残留
         emphasis: { disabled: !!(state.clickLock && !state.clickLock.edges.has(key)) },
         lineStyle: {
@@ -1021,7 +1034,7 @@
             if (p.dataType === 'edge' && !hoverLock.edges.has(edgeKey(p.data.source, p.data.target))) return '';
           }
           if (p.dataType === 'edge') {
-            const rel = findRel(p.data.source, p.data.target, p.data.value);
+            const rel = findRel(p.data.source, p.data.target, p.data.value, p.data.baRel);
             if (!rel) return '';
             const [first, second] = orderPair(rel.from, rel.to);
             const vis = visibleRelEvents(rel);
@@ -1607,7 +1620,7 @@
       const lock = state.clickLock;
       if (p.dataType === 'edge') {
         if (lock && !lock.edges.has(edgeKey(p.data.source, p.data.target))) { blockLockClick(); return; }
-        const rel = findRel(p.data.source, p.data.target, p.data.value);
+        const rel = findRel(p.data.source, p.data.target, p.data.value, p.data.baRel);
         if (rel) selectRelation(rel);
         if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
         // v82→v84：两步走——先闪右栏关系卡，隔一拍再滚到事件轴上定义这段关系的事件并闪烁
@@ -1681,7 +1694,17 @@
   }
 
   /** 找关系：同一对人可能有多条（阶段关系）——优先按"边上写的类型 + 当前时间可见"匹配 */
-  function findRel(a, b, type) {
+  function findRel(a, b, type, idx) {
+    /* 优先按下标精确定位。
+     * 同一对之间可能有**类型完全相同**的多条关系：实测刘备—诸葛亮有两条「君臣军师」
+     * （第40章、第49章）。只按 (pair, type) 找的话，第二条永远会被解析成第一条 ——
+     * 于是悬停第49章那条线，弹出来的是第40章的内容；点它，打开的也是第40章那张卡。
+     * 用户看到的就是"这条线点了没反应"（其实有反应，只是响应的是旁边那条线）。
+     * 图上每条线由 buildOption 一对一生成，所以把 relations 的下标带在线上就能消歧。 */
+    if (typeof idx === 'number' && idx >= 0) {
+      const byIdx = state.book.relations[idx];
+      if (byIdx && ((byIdx.from === a && byIdx.to === b) || (byIdx.from === b && byIdx.to === a))) return byIdx;
+    }
     const cands = state.book.relations.filter((r) => (r.from === a && r.to === b) || (r.from === b && r.to === a));
     if (!cands.length) return null;
     if (type !== undefined && type !== null) {
@@ -3792,6 +3815,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     aiExplain: (kind, payload) => aiExplain(kind, payload),
     bfs: (a, b) => bfs(a, b),
     _buildOption: (o) => buildOption(o),
+    _findRel: (a, b, t, i) => findRel(a, b, t, i),
     _relaxPositions: (n) => relaxPositions(n),
     _fillMissing: () => fillMissingPositions(),
     _gen: (v) => buildGenerationPositions(v || state.view),
