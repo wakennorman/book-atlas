@@ -1,6 +1,6 @@
 {
   "name": "book-atlas",
-  "version": "0.86",
+  "version": "0.87",
   "private": true,
   "type": "module",
   "description": "书脉 BookAtlas · 人物关系与事件图谱",
@@ -17,7 +17,8 @@
     "check:packs": "node scripts/make-slim-packs.mjs --check",
     "check:sw": "node scripts/check-sw-precache.mjs",
     "validate": "node scripts/validate.mjs --all",
-    "check": "npm run lint && npm run test && npm run check:version && npm run check:packs && npm run check:sw && npm run validate && npm run test:browser && npm run test:parity && npm run test:editor && npm run test:races"
+    "check": "npm run lint && npm run test && npm run check:version && npm run check:packs && npm run check:sw && npm run validate && npm run test:browser && npm run test:parity && npm run test:editor && npm run test:races && npm run test:relax",
+    "test:relax": "node test/relax.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

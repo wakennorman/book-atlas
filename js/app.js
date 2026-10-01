@@ -1091,6 +1091,12 @@
     //   SPAN=2^24 限定 gy ∈ [-2^23, 2^23) ⇒ 坐标 |y| < 5×10^8（cell=60，即 5 亿像素，实际远小于此）
     //   乘积落在 Number 的安全整数范围内 ⇒ 键唯一，且比字符串 key 快得多
     const KEY_OFF = 0x800000, KEY_SPAN = 0x1000000;
+    /* ⚠ 这里原本有个「本轮没分开任何一对就提前退出」的早退。它在数学上是逐位等价的
+       * （坐标一个都没动 ⇒ 下一轮必然也找不到违反 d<min 的对），但实测**几乎不触发**：
+       * 松弛是渐近逼近，每轮推一点点、永远差一点到 min，所以 三国 实测跑满 140 轮。
+       * 留着就是一条没人验证过的分支压在布局的关键路径上，已删。
+       * 「总位移小于 epsilon 就停」能再省三成时间，但那是**近似**、会改变输出 ——
+       * 用几十毫秒换布局精确性不划算，也没做。 */
     for (let it = 0; it < iterations; it++) {
       const grid = new Map();
       for (let i = 0; i < nodes.length; i++) {
@@ -1110,14 +1116,30 @@
             if (j <= i) continue;                     // 每对只处理一次
             const b = nodes[j];
             let dx = b.x - a.x, dy = b.y - a.y;
-            const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
             const min = (a.size + b.size) / 2 + pad;
-            if (d < min) {
-              const k = (min - d) / d / 2;
-              dx *= k; dy *= k;
-              a.x -= dx; a.y -= dy;
-              b.x += dx; b.y += dy;
+            /* 先比平方距离再开方：绝大多数对其实是"离得够远"，而开方是这一层最贵的
+             * 算术（每轮 871×9 次，三国 ×140 轮）。min ≥ pad = 12 > 0，所以
+             * d < min ⟺ d² < min²，两种写法结果逐位相同。 */
+            if (dx === 0 && dy === 0) {
+              /* 两个节点坐标**完全相同**。
+               * 原写法 d 兜底成 0.01，但 dx/dy 本来就是 0，乘多大的系数位移都还是 0 ——
+               * 于是这一对是个"解不开的固定点"，不管跑多少轮都叠在一起。
+               * 真实数据会踩到：fillMissingPositions 会把「没有已定位邻居」的人物
+               * 全部放到同一个重心（三国有 35 个零关系人物、罪与罚有 2 个）。
+               * 这里给一个由下标决定的确定方向，把两者直接摆到恰好 min 的距离。 */
+              const ang = ((i * 137) % 360) * Math.PI / 180;   // 黄金角：下标不同 ⇒ 方向不同
+              const hx = Math.cos(ang) * min * 0.5, hy = Math.sin(ang) * min * 0.5;
+              a.x -= hx; a.y -= hy;
+              b.x += hx; b.y += hy;
+              continue;
             }
+            const d2 = dx * dx + dy * dy;
+            if (d2 >= min * min) continue;
+            const d = Math.sqrt(d2) || 0.01;
+            const k = (min - d) / d / 2;
+            dx *= k; dy *= k;
+            a.x -= dx; a.y -= dy;
+            b.x += dx; b.y += dy;
           }
         }
       }
@@ -1201,11 +1223,23 @@
     let cx = 0, cy = 0, n = 0;
     for (const p of state.pos.values()) { cx += p.x; cy += p.y; n++; }
     cx /= (n || 1); cy /= (n || 1);
+    /* 孤立人物（一条关系都没有）没有邻居重心可依。原先一律放到全局重心 (cx, cy) ——
+     * 但那会让**所有**孤立人物落在同一个点上，永远叠成一个。三国有 35 个零关系人物、
+     * 罪与罚有 2 个，所以这不是假想输入。
+     * 而且叠在一起之后 relaxPositions 也救不回来：坐标完全相同时 dx=dy=0，
+     * 位移永远是 0（见 relaxPositions 里那段注释）。
+     * 改成按黄金角在重心周围摊成一个螺旋，第 k 个离中心约 18·√k，铺开又不会太散。 */
+    let orphan = 0;
     for (const id of missing) {
       const nb = (state.adj.get(id) || []).map((e) => state.pos.get(e.to)).filter(Boolean);
-      state.pos.set(id, nb.length
-        ? { x: nb.reduce((s, p) => s + p.x, 0) / nb.length, y: nb.reduce((s, p) => s + p.y, 0) / nb.length }
-        : { x: cx, y: cy });
+      if (nb.length) {
+        state.pos.set(id, { x: nb.reduce((s, p) => s + p.x, 0) / nb.length, y: nb.reduce((s, p) => s + p.y, 0) / nb.length });
+      } else {
+        const ang = orphan * 2.399963;                    // 黄金角（rad）
+        const rad = 18 * Math.sqrt(orphan + 1);
+        orphan++;
+        state.pos.set(id, { x: cx + Math.cos(ang) * rad, y: cy + Math.sin(ang) * rad });
+      }
     }
   }
 
@@ -3757,6 +3791,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     aiPrompt: (kind, payload) => aiPrompt(kind, payload),
     aiExplain: (kind, payload) => aiExplain(kind, payload),
     bfs: (a, b) => bfs(a, b),
+    _buildOption: (o) => buildOption(o),
+    _relaxPositions: (n) => relaxPositions(n),
+    _fillMissing: () => fillMissingPositions(),
+    _gen: (v) => buildGenerationPositions(v || state.view),
+    _labels: (z) => computeLabels(z),
+    _fit: () => fitPositions(),
     /** v85：计数提示与 aria 文案（供 test/browser.mjs 断言两者一致） */
     countHint: () => {
       const el = document.getElementById('count-hint');

@@ -29,7 +29,7 @@ jobs:
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
                    scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
-                   test/races.mjs \
+                   test/races.mjs test/relax.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -92,6 +92,13 @@ jobs:
         #      而 README 正是让贡献者把它提交回 data/ 的 ⇒ 散文永久丢失
         # 自带的服务器会给三国图包加 800ms 延迟、让别的文案包返回 500 来制造条件。
         run: node test/races.mjs
+
+      - name: 落位与防重叠（无头 Edge，三国 871 人）
+        # v87 新增。守住一个真实 bug：零关系人物（三国有 35 个）被 fillMissingPositions
+        # 全部放到同一个重心 ⇒ 35 个节点叠成一个点，而 relaxPositions 对"坐标完全相同"
+        # 的那一对无能为力（dx=dy=0，位移永远是 0），所以永远分不开。
+        # 同时守住「喂进 871 个完全重合的坐标也不会产生 NaN」这条兜底。
+        run: node test/relax.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all
