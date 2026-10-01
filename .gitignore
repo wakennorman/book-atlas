@@ -8,8 +8,14 @@ tmp/
 *.bak
 # 整本生成的进度文件（跑完就删；别把过程数据发上去）
 data/.gen-*.json
+# npm 依赖（CI 用 npm install 装，不需要提交；仓库根原本没有这一条，
+# 任何 contributor 一跑 npm install 就会多出 30MB 未跟踪文件）
+node_modules/
 # 其它工具的本地目录（WorkBuddy / Claude / Codex 等）
 .workbuddy/
 .claude/
 .codex/
 .hermes/
+# OpenCode 的 agent skill 库（vendored 第三方资料：字体/图标/配色 CSV、脚本等，
+# 4MB+ 且与本项目零关系；用的时候工具会自己装，别提交进仓库）
+.opencode/
