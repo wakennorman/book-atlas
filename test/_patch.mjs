@@ -53,6 +53,18 @@ if (which === 'grid') {
   if (gStart === -1 || gEnd === -1) { console.error('✗ 找不到网格那段的起止'); process.exit(1); }
   s = s.slice(0, gStart) + ORIGINAL + s.slice(gEnd);
   console.log('  ✓ 回退 布局：整段网格 → 原来的「一群人一根线」');
+} else if (which === 'roam') {
+  // v90：graphroam 不同步 viewCenter（恢复成只同步 zoom）
+  sub('if (cs && cs.getCenter) state.viewCenter = cs.getCenter().slice();',
+    '/* REVERT: 不同步 viewCenter */', 'roam：不同步 viewCenter');
+} else if (which === 'zoomcap') {
+  // v90：去掉「别把图丢太多」那道闸
+  sub('const target = Math.min(Math.max(wantPx / unitPx, cur), 4, Math.max(cur, zoomCap));',
+    'const target = Math.min(Math.max(wantPx / unitPx, cur), 4);   // REVERT', 'focusViewOn：去掉 zoomCap');
+} else if (which === 'offscreen') {
+  // v90：拖出视野时也不拉回来（恢复成只靠 improved/plentyVisible）
+  sub('if (outside) {\n      const mayZoom = nodes.size <= maxNodes && improved;',
+    "if (false && outside) {   // REVERT\n      const mayZoom = nodes.size <= maxNodes && improved;", 'focusViewOn：出界不拉回来');
 } else if (which === 'focus') {
   sub('const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）',
     'const unitPx = 1;   // REVERT', 'focusViewOn 的尺度换算');

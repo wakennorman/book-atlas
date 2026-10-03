@@ -348,6 +348,23 @@ main {
 .focus-bar[hidden] { display: none; }
 .focus-bar .lock-hint { color: var(--muted); }
 
+/* v90 画布自救出口：整张图被拖出屏幕时浮在图区正中。
+   无限画布没有边界，而空白处没有可点的东西 —— 没有这个按钮，用户只能靠"复位视图"按钮想起来。 */
+.offview-btn {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 45; cursor: pointer;
+  padding: 11px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  color: var(--ink); background: color-mix(in srgb, var(--panel) 94%, transparent);
+  border: 1px solid var(--line); box-shadow: var(--shadow-md); backdrop-filter: blur(6px);
+  animation: offview-pulse 2.2s ease-in-out infinite;
+}
+.offview-btn:hover { border-color: var(--accent); color: var(--accent); }
+.offview-btn[hidden] { display: none; }
+@keyframes offview-pulse {
+  0%, 100% { box-shadow: var(--shadow-md); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent); }
+}
+
 /* ---------- combobox：输入即过滤 + 下拉选人（搜单个人物 / 两人关系 A、B 共用） ---------- */
 .combo { position: relative; display: block; min-width: 0; }
 .combo > input { width: 100%; max-width: none; box-sizing: border-box; }
@@ -438,9 +455,13 @@ main {
   50% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); transform: translateX(4px) scale(1.01); }
 }
 /* v84 导航闪烁（右栏）：搜到人 / 点节点 / 点关系线 / 跑两人关系后，面板滚进视野并闪 2 下提示"信息在这儿"。
-   scroll-margin-top 避开 sticky 顶栏（只在页面滚动时生效；桌面右栏自己是滚动容器、上方无可滚内容，不会白留空隙） */
+   scroll-margin-top 避开 sticky 顶栏（只在页面滚动时生效；桌面右栏自己是滚动容器、上方无可滚内容，不会白留空隙）
+   v90：用户反馈"感觉一下子不知道有什么东西飞过去了，也不会拉上去看了" —— 右栏闪烁承担的是
+   **周边视觉**任务（人正在看中间的图），1.8s 扫一眼就没了，等反应过来提示已结束。
+   所以面板改成 3 下 ×1.2s = 3.6s，class 在 4.2s 才摘（js 的 PANEL_NAV_MS 同步）。
+   事件轴上的事件卡是"我就在看这段列表、目标在附近"，扫一眼就够，不动。 */
 #panel { scroll-margin-top: 110px; }
-#panel.nav-flash { animation: panel-flash 0.9s ease-in-out 2; }
+#panel.nav-flash { animation: panel-flash 1.2s ease-in-out 3; }
 @keyframes panel-flash {
   0%, 100% { box-shadow: var(--shadow); border-color: var(--line); }
   50% { box-shadow: 0 0 0 4px var(--accent), var(--shadow-md); border-color: var(--accent); }

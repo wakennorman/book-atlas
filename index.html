@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=90">
+  <link rel="stylesheet" href="css/style.css?v=91">
 </head>
 <body>
 
@@ -147,6 +147,9 @@
     <div id="focus-bar" class="focus-bar" hidden></div>
     <div id="lock-bar" class="focus-bar" hidden></div>
     <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
+    <!-- v90：画布被拖到视野外时的自救出口。无限画布没有边界，用户很容易把整张图拖出屏幕，
+         而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
+    <button id="offview-btn" class="offview-btn" type="button" hidden>🧭 画布拖到视野外了 · 点这里复位</button>
     <p id="graph-kb-hint" class="sr-only">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
     <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
@@ -542,6 +545,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=90"></script>
+<script src="js/app.js?v=91"></script>
 </body>
 </html>

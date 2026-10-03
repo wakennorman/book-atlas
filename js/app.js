@@ -1538,6 +1538,7 @@
     computeLabels(1);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });
+    updateOffscreenHint();
   }
 
   /** 缩放到指定倍率（1:1 = 节点原始大小），可指定视角中心 */
@@ -1548,6 +1549,31 @@
     computeLabels(state.zoom);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });   // 全量重建：zoom/center 与标签一起生效
+    updateOffscreenHint();
+  }
+
+  /** v90：整张图是否已经被拖到视口外面去了？
+   *  纯算术，不扫 zrender：视口半宽/半高（像素）换算成世界坐标，
+   *  拿它和 state.bbox（已居中于原点）比。 */
+  function isGraphOffscreen() {
+    if (!state.chart || !state.bbox || !state.pos.size) return false;
+    const el = $('#graph');
+    const W = el.clientWidth || 0, H = el.clientHeight || 0;
+    if (!W || !H) return false;
+    const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）
+    const perUnit = unitPx * (state.zoom || 1);
+    if (!(perUnit > 0)) return false;
+    const halfW = (W / 2) / perUnit, halfH = (H / 2) / perUnit;
+    const vc = state.viewCenter || [0, 0];
+    // 完全无交集才算"跑到外面去了"（只要还有一角露着就别来烦用户）
+    return Math.abs(vc[0]) - state.bbox.maxX > halfW || Math.abs(vc[1]) - state.bbox.maxY > halfH;
+  }
+  /** v90：把自救按钮亮出来 / 收起来。roam 每次都调，纯算术够快。 */
+  function updateOffscreenHint() {
+    const btn = $('#offview-btn');
+    if (!btn) return;
+    const off = isGraphOffscreen();
+    if (off !== !btn.hidden) btn.hidden = !off;
   }
 
   /**
@@ -1561,9 +1587,13 @@
     // v89：锁定态的集合可能很大（搜曹操 1 跳就是 253 人），原来的 40 人上限会让它完全不生效，
     // 于是"只显示相关的人"之后画面还是全图的比例、相关的人挤在中间一小块。
     // 所以上限做成可传；gain 阈值也一起放宽一点，免得大集合因为"提升不足 25%"而不动。
+    // v90：⚠ 人数上限**只管"要不要放大"，不管"要不要拉回来"** ——
+    // 点曹操（253 人）时以前会在这一行直接 return false，于是画布被拖到别处以后
+    // 点这种 hub 人物永远拉不回来（实测第五轮只剩 1% 可见）。现在把"在不在视野里"
+    // 提到人数判断之前算：跑出视野就先挪回来，只是不放大。
     const maxNodes = opts.maxNodes || 40;
     const minGain = opts.minGain || 1.25;
-    if (!state.chart || !nodes || !nodes.size || nodes.size > maxNodes) return false;
+    if (!state.chart || !nodes || !nodes.size) return false;
     const rect = document.getElementById('graph').getBoundingClientRect();
     const W = rect.width || 800, H = rect.height || 500;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, n = 0;
@@ -1591,17 +1621,50 @@
      *   target = 想要的像素尺度 ÷ (pxScale/fitLast)
      */
     const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）
-    const wantPx = Math.min((W * 0.55) / w, (H * 0.55) / h);                // 高亮集合该有的像素跨度
-    const target = Math.min(Math.max(wantPx / unitPx, cur), 4);             // 只放大、不缩小
+    const wantPx = Math.min((W * 0.55) / w, (H * 0.55) / h);        // 高亮集合该有的像素跨度
+    const perUnit = unitPx * cur;                                    // 当前 1「适配后」单位 = 多少像素
+    /* v90：加一道「别把图丢太多」的闸。
+     *
+     * 目标倍率原来是纯按「高亮包围盒该占画布 55%」算的，而只有一两个人时包围盒会被
+     * `Math.max(..., 1)` 兜成 1 ⇒ wantPx 直接顶到上限 4 倍。实测（分组·横、三国）：
+     * 点一个零关系人物，zoom 一步从 1 跳到 **4**，可见率 77% → 4.5%；
+     * 连点几个人 + 中间滚轮几次，zoom 一路爬到 **7.84**，可见率只剩 1.8% ——
+     * 这就是用户说的「点若干次、缩放几次后一片空白」：**不是卡住，是被自己点空了**，
+     * 而且因为 zoom 只增不减，滚轮缩回来之前一直空着。
+     *
+     * 闸门：放大之后至少要留下 35% 的图在画面里。cur=1 时实测把目标倍率压到 ~1.8 倍，
+     * 连点也收敛在那儿不会再往上爬；已经在高倍率时 Math.max(cur, …) 保证只压不放，
+     * 不会把用户自己放大的视野强行缩小。 */
+    const graphSpan = Math.max(
+      state.bbox ? state.bbox.maxX * 2 : 0,
+      state.bbox ? state.bbox.maxY * 2 : 0, 1);
+    const zoomCap = (Math.min(W, H) / (graphSpan * perUnit * 0.35)) * cur;
+    const target = Math.min(Math.max(wantPx / unitPx, cur), 4, Math.max(cur, zoomCap));
     const improved = target >= cur * minGain;
-    const moved = Math.hypot((cx - vc[0]) * unitPx * cur, (cy - vc[1]) * unitPx * cur) > Math.min(W, H) * 0.2;
-    if (!improved && !moved) return false;
+    /* v90：把"要不要把视野挪过去"从启发式换成**真的算一遍在不在画布里**。
+     *
+     * 原来是 `moved = 位移 > 短边 × 0.2` 这种"动得够不够大"的启发式；只要 viewCenter 稍有偏差
+     * （用户拖动过、或者高亮中心恰好靠近数据原点），就会算出"没跑出去"而完全不挪 ——
+     * 画布停在空白处，点谁都没反应。
+     *
+     * 现在直接用真实尺度算视野矩形：高亮中心落在视口外 ⇒ 无条件拉回来；在视口内 ⇒ 才考虑放大。 */
+    const halfW = (W / 2) / perUnit, halfH = (H / 2) / perUnit;
+    const outside = Math.abs(cx - vc[0]) > halfW * 0.9 || Math.abs(cy - vc[1]) > halfH * 0.9;
+    /* 跑出视野 ⇒ 无条件拉回来。人多（> maxNodes）时**只挪位置、不放大** ——
+       对着 253 人的集合放大没有意义，但"人在屏幕外"必须救。 */
+    if (outside) {
+      const mayZoom = nodes.size <= maxNodes && improved;
+      applyZoom(mayZoom ? target : cur, [cx, cy]);
+      return true;
+    }
+    // 已经在视野里：集合太大就不动（放大一个 253 人的集合只会糊成一团）
+    if (nodes.size > maxNodes) return false;
+    if (!improved) return false;
     /* 高亮已经占到画布短边的 1/3 以上时，放大带来的清晰度收益远不如"把整张图留在画面里"
-     * 值钱，就不放大（只平移）。 */
-    const onScreen = Math.max(w, h) * unitPx * cur;
-    const plentyVisible = onScreen >= Math.min(W, H) / 3;
-    if (plentyVisible && !moved) return false;
-    applyZoom(plentyVisible ? Math.min(target, cur * 1.6) : target, [cx, cy]);
+     * 值钱，就不放大。 */
+    const onScreen = Math.max(w, h) * perUnit;
+    if (onScreen >= Math.min(W, H) / 3) return false;
+    applyZoom(target, [cx, cy]);
     return true;
   }
 
@@ -1663,13 +1726,24 @@
   let navTimer = 0;
   /** block 默认 'start'（不是 'nearest'）：档案/关系链面板动辄 2000px 高，'nearest' 会把它的**底边**
    *  对齐视口、让人落在面板末尾；'start' 才是"导航到这个条目的开头"。事件卡小，另传 'center'。 */
-  function flashTo(el, block = 'start') {
+  function flashTo(el, block = 'start', ms = 2400) {
     if (!el) return;
     clearTimeout(navTimer);
     try { el.scrollIntoView({ behavior: 'smooth', block }); } catch (e) { el.scrollIntoView({ block }); }
     el.classList.remove('nav-flash'); void el.offsetWidth; el.classList.add('nav-flash');
-    setTimeout(() => el.classList.remove('nav-flash'), 2400);
+    setTimeout(() => el.classList.remove('nav-flash'), ms);
   }
+  /* v90：导航到右栏人物介绍时给更长的停留时间。
+   *
+   * 用户反馈："感觉一下子不知道有什么东西飞过去了，可能也不会拉上去看了"。
+   * 原因是右栏那个闪烁只有 0.9s × 2 = 1.8s，而它承担的是**周边视觉**的任务 ——
+   * 用户正在看中间的图，注意力不在右栏，1.8s 足够扫一眼就过去了，
+   * 等他反应过来"右栏好像动了"时提示已经结束，于是干脆不上去看。
+   *
+   * 事件轴上的事件卡是"我正在看那一段列表、目标就在附近"，扫一眼就够，不改。
+   * 这里只把右栏档案/关系链面板加长到 3.6s（3 闪）＋4.2s 后才摘 class。 */
+  const PANEL_NAV_MS = 4200;
+  function navToPanel() { flashTo(document.getElementById('panel'), 'start', PANEL_NAV_MS); }
   function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, 550); }
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁
@@ -1943,9 +2017,27 @@
       if (e.target) return;
       if (state.clickLock) fitLockView(); else resetRoam();
     });
-    // 缩放联动标签：放大后露出更多名字（节流 200ms）
+    /* 缩放联动标签 + **同步真实视野**（节流 200ms）
+     *
+     * v90 修「分组·横下画布跑到一边去、再也回不来」：
+     * 这里以前**只同步 zoom，从不同步 viewCenter**。而平移事件的载荷里根本没有 zoom
+     * （实测 `{dx:200, dy:0}`），滚轮事件的载荷里根本没有位移（实测 `{zoom:1.4, originX, originY}`），
+     * 两边都只覆盖一半 —— 于是用户把画布拖到别处以后，`state.viewCenter` 永远停在建图时的 [0,0]。
+     *
+     * 后果不是"回到中心"，而是**卡在空白处**：focusViewOn 判断"高亮有没有跑出视野"
+     * 用的是这个陈旧中心，而图谱数据本来就是以原点为中心排的，于是永远算出"没跑出去"
+     * ⇒ 不做任何移动 ⇒ 视野停在空白处不动 ⇒ 只能靠「重置」或双击救回来。
+     * （buildOption 里 !keepView 的重建也会把 center 写回陈旧的 [0,0]，时灵时不灵。）
+     *
+     * 不要靠累加 dx/dy 来补 —— 两类事件各带一半，累加必然漏。View 自己知道真实中心：
+     * 实测 graphroam 触发时 `cs.getCenter()` 已经是拖动之后的位置。
+     */
     state.chart.on('graphroam', (p) => {
+      const cs = state.chart && state.chart.getModel().getSeriesByIndex(0).coordinateSystem;
       if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
+      else if (cs && cs.getZoom) state.zoom = cs.getZoom();
+      if (cs && cs.getCenter) state.viewCenter = cs.getCenter().slice();
+      updateOffscreenHint();
       clearTimeout(state.labelTimer);
       state.labelTimer = setTimeout(() => {
         if (state.allLabels || !state.chart) return;
@@ -2146,7 +2238,7 @@
       <p style="margin-top:10px"><button class="primary" type="button" id="panel-open-spoiler">调整进度</button></p>`;
     const btn = document.getElementById('panel-open-spoiler');
     if (btn) btn.addEventListener('click', () => openSpoilerModal());
-    flashTo(document.getElementById('panel'));   // v84：点到被剧透保护挡着的人/事件，也让用户看见面板换了内容
+    navToPanel();   // v84：点到被剧透保护挡着的人/事件，也让用户看见面板换了内容
   }
 
   /** nav=true（默认）：把右栏档案滚进视野并闪烁提示。键盘方向键浏览（focusNode）传 false，
@@ -2172,7 +2264,7 @@
         }
         setHighlight(nodes, edges, id, null);
         renderCharacterPanel(c);
-        if (nav) flashTo(document.getElementById('panel'));
+        if (nav) navToPanel();
         return;
       }
     }
@@ -2187,7 +2279,7 @@
     state.activeRel = null;
     setHighlight(nodes, edges, id, null);
     renderCharacterPanel(c);
-    if (nav) flashTo(document.getElementById('panel'));
+    if (nav) navToPanel();
   }
 
   function selectRelation(rel, nav = true) {
@@ -2197,7 +2289,7 @@
     state.activeRel = rel;
     setHighlight(nodes, edges, null, null);
     renderRelationPanel(rel);
-    if (nav) flashTo(document.getElementById('panel'));
+    if (nav) navToPanel();
   }
 
   /** v82→v84：在事件轴上找"给定这几个人都在场"的第一个未锁定事件（关系自带的事件只有文字+章节，
@@ -2521,7 +2613,7 @@
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
     // v84：两步走——先闪关系链面板，隔一拍再滚到事件轴（优先"两人都在场"的事件，否则退回链上每一跳）
-    flashTo(document.getElementById('panel'));
+    navToPanel();
     navigateToPathEvent(a, b, steps);
   }
 
@@ -3882,6 +3974,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
+    // v90：画布被拖出视野时的自救出口
+    const offBtn = $('#offview-btn');
+    if (offBtn) offBtn.addEventListener('click', () => { if (state.clickLock) fitLockView(); else resetRoam(); });
     $('#reset-btn').addEventListener('click', () => { clearQueryInputs(); setView(state.view); });
     // v89：「复位视图」只复位视野、不解除锁定（和双击空白一致）。解除锁定走「重置」或「清除」。
     $('#view-reset-btn').addEventListener('click', () => { clearQueryInputs(); if (state.clickLock) fitLockView(); else resetRoam(); });
