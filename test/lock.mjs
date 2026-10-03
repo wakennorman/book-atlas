@@ -73,8 +73,13 @@ const probe = () => js(`(() => {
 
 const click = (sel) => js(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) throw new Error('no ' + ${JSON.stringify(sel)}); e.click(); })()`);
 const fill = (sel, v) => js(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); e.value = ${JSON.stringify(v)}; e.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-/** 走真实的解除路径：双击空白（＝解锁 + 复位视图） */
+/** 走真实的解除路径：**「重置」按钮**（v89 起不再是双击空白 —— 双击只复位视野） */
 const unlockAll = async () => {
+  await js(`(() => { const b = document.getElementById('reset-btn'); if (!b) throw new Error('no reset-btn'); b.click(); })()`);
+  await wait(2600);
+};
+/** 双击空白：只复位视野，不解除锁定（v89） */
+const dblBlank = async () => {
   await js(`(() => {
     const zr = window.__ba.chart().getZr();
     zr.handler.dispatch('dblclick', { zrX: 20, zrY: 20, target: null, offsetX: 20, offsetY: 20 });
@@ -114,9 +119,20 @@ try {
   ok(!(await js(`!!document.querySelector('#lock-bar [data-lock-depth]')`)),
     '两人关系锁不显示跳数控件（集合就是那条链）');
 
+  await dblBlank();
+  const stillLocked = await probe();
+  ok(stillLocked.locked, '双击空白**不再**解除锁定（v89：双击只复位视野）');
+  ok(stillLocked.nNodes === path.nNodes && stillLocked.nLinks === path.nLinks,
+    `双击之后图还是那条链（${stillLocked.nNodes} / ${stillLocked.nLinks}）`);
+
+  await click('#view-reset-btn');
+  await wait(1800);
+  const afterViewReset = await probe();
+  ok(afterViewReset.locked, '「复位视图」也**不**解除锁定（两个动作都只是"找回视野"）');
+
   await unlockAll();
   const pathBack = await probe();
-  ok(!pathBack.locked, '双击空白解除了锁定');
+  ok(!pathBack.locked, '「重置」才解除锁定');
   ok(pathBack.nNodes === baseA.nNodes && pathBack.nLinks === baseA.nLinks,
     `图完整还原：${pathBack.nNodes} / ${pathBack.nLinks}（基线 ${baseA.nNodes} / ${baseA.nLinks}）`);
   ok(pathBack.pos === baseA.pos, '解除后坐标逐位还原（fitPositions 写回坐标的坑没踩到）');
@@ -186,6 +202,50 @@ try {
   ok(back.nNodes === baseB.nNodes && back.nLinks === baseB.nLinks,
     `图完整还原：${back.nNodes} 点 / ${back.nLinks} 线（上锁前 ${baseB.nNodes} / ${baseB.nLinks}）`);
   ok(back.pos === baseB.pos, '坐标逐位还原');
+
+  /* ================= ⑥ 两种锁互斥：换锁时清掉对方的残留输入 ================= */
+  /* 用户报的现象：搜完一个人没点清除就去查两人关系，界面自相矛盾 ——
+   * 搜索框里还写着上一个人，锁条上写的是两人关系；这时在搜索框敲回车还会静悄悄锁回去。
+   * 状态本身不会"撞车"（两条路径都先 unlockClick 再重建），坏掉的是**输入框的残留**。 */
+  console.log('\n▶ 两种锁互斥：换锁时把另一种查询的残留清掉');
+
+  await fill('#search-input', '曹操');
+  await click('#search-go');
+  await wait(2600);
+  ok(await js(`document.getElementById('search-input').value.trim() === '曹操'`), '搜索框里是「曹操」');
+
+  await fill('#path-a', '刘备'); await fill('#path-b', '诸葛亮');
+  await click('#path-go');
+  await wait(2800);
+  const cross1 = await probe();
+  const sv = await js(`document.getElementById('search-input').value`);
+  ok(cross1.locked && cross1.origin === 'path', `锁换成了两人关系（origin=${cross1.origin}）`);
+  ok(sv === '', `搜索框里的「曹操」已被清掉（现在读作 "${sv}"）—— 否则界面自相矛盾、回车还会锁回去`);
+  ok(await js(`document.getElementById('path-a').value.trim() === '刘备'`), '两人关系的输入保持不动');
+
+  await fill('#search-input', '关羽');
+  await click('#search-go');
+  await wait(2800);
+  const cross2 = await probe();
+  const pa = await js(`document.getElementById('path-a').value`);
+  const pb = await js(`document.getElementById('path-b').value`);
+  ok(cross2.locked && cross2.origin === 'search', `锁换成了搜索（origin=${cross2.origin}）`);
+  ok(pa === '' && pb === '', `两人关系输入也被清掉（path-a="${pa}" path-b="${pb}"）`);
+
+  // 同一把锁重复查询不该被自己的清理误伤
+  await fill('#search-input', '张飞');
+  await click('#search-go');
+  await wait(2600);
+  ok(await js(`document.getElementById('search-input').value.trim() === '张飞'`), '又搜一个：输入框保持「张飞」');
+
+  // 锁条上要写清解除路径，且不能再提「复位视图」
+  const hint = await js(`(() => { const e = document.querySelector('#lock-bar .lock-hint'); return e ? e.textContent.trim() : ''; })()`);
+  ok(hint.includes('重置') && hint.includes('清除'), `锁条给出了解除路径：「${hint}」`);
+  ok(!hint.includes('复位视图'), '锁条不再把「复位视图」说成解除路径');
+
+  await unlockAll();
+  const fin = await probe();
+  ok(!fin.locked, '最后「重置」能解除');
 
 } catch (e) {
   failed++;

@@ -29,7 +29,7 @@ jobs:
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
                    scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
-                   test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs \
+                   test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -115,6 +115,16 @@ jobs:
         # 用户瞄准一条亮线却点不动（实测"大多数线点不动、偶尔能点"）。
         # 同时守住跳数控件与「解除后完整还原 + 坐标逐位还原」。
         run: node test/lock.mjs
+
+      - name: 渲染尺度与「分组·横」布局（无头 Edge）
+        # v90 新增。守住一个真实 bug：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上，
+        # 它先把数据包围盒**等比**塞进「容器居中 80%」，再把 zoom 乘在那个适配系数之上。
+        # 于是 fitPositions 里的缩放系数对渲染毫无影响（只有长宽比有意义），而
+        # 「分组·横」的长宽比是 1:5.8（曹魏 250 人排一根 12500 长的竖线、群组轴才 2160），
+        # 对上 2:1 的画布 ⇒ 群组轴被压到 **83px 宽**、十个阵营图注全叠在一起；
+        # 再叠上"拿 zoom 当像素尺度"的 focusViewOn，点谁就把视野怼到空处 ⇒ 一片空白，
+        # 只有重置才回得来。这一步量的是 zrender 里的**真实墨迹**，不是我们自己算的数。
+        run: node test/render-scale.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

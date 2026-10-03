@@ -47,6 +47,9 @@
     focusCache: null,        // 聚焦集合缓存
     rank: null,              // id -> 关系数排名（sizeFilter 用）
     zoom: 1,                 // 当前缩放（标签按缩放分级显示）
+    pxScale: 1,              // 真实尺度：1 个世界单位 = 多少像素（zoom=1）。fitPositions 算。
+                             // ⚠ 不是 state.zoom、也不是 state.fitLast —— ECharts 会把数据包围盒
+                             //   等比塞进画布再乘 zoom，只有这个是真实的（memory/echarts-graph-auto-fits-data-bbox.md）
     viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
     labelTimer: null,
     fold: {},                // 长列表折叠：key -> 当前显示条数（缺省＝默认收起）
@@ -937,9 +940,14 @@
     const zc = (state.zoom || 1) > 1 ? 1 / state.zoom : 1;
     // 符号在**屏幕上**的目标直径：跟当前节点间距挂钩——
     // 适配视图里间距只有一两像素时，符号缩成小点（否则几百个 15–40px 的圆会糊成一团）
-    const spacingScreen = (state.stepWorld || 40) * (state.fitLast || 1) * (state.zoom || 1);
+    // ⚠ 必须用 state.pxScale（真实的 世界单位→像素 尺度），不能用 state.fitLast：
+    //   fitLast 只是本函数乘上去的缩放，ECharts 之后还会再乘一次等比适配系数。
+    const px = state.pxScale || 1;                       // px / 世界单位（zoom=1）
+    const fitK = px / (Math.abs(state.fitLast) || 1);    // px / 「适配后」单位（zoom=1）
+    const spacingScreen = (state.stepWorld || 40) * px * (state.zoom || 1);
     const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
-    const fxSym = (v) => Math.max(0.04, v * zc * symScale);   // 节点符号（世界坐标，跟着 zoom 放大 ⇒ 要缩回）
+    // symbolSize 走的是「适配后」的坐标，所以要把像素目标换算回数据单位
+    const fxSym = (v) => Math.max(0.04, v / fitK * zc * symScale);   // 节点符号（世界坐标，跟着 zoom 放大 ⇒ 要缩回）
     // 线宽：边画在世界坐标，也会随 zoom 变粗 ⇒ 同样缩回。
     // ⚠ 标签字号**不要**用它：ECharts 把标签画在屏幕坐标，渲染高度＝fontSize 本身（实测 zoom=1/4 同字号同高），
     //   再除一次 zoom 会把放大后的名字压成 2px（v0.41 曾误把字号一起补偿，点事件聚焦后名字看不清）。
@@ -1241,9 +1249,11 @@
     }
     const w = Math.max(maxX - minX, 1), h = Math.max(maxY - minY, 1);
     // 无限画布：允许缩到很小（先看全貌），也允许放得很大（看清单个人）
+    // 注意：这个 s **不是**「世界单位→像素」的真实尺度 —— ECharts 之后还会再做一次等比适配，
+    // 真实尺度是下面的 state.pxScale。
     const s = Math.max(0.02, Math.min((W - 2 * padX) / w, (H - 2 * padY) / h, 1.4));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    state.fitLast = s;                       // 最近一次的缩放（"看清 1:1" 按钮要用它换算）
+    state.fitLast = s;                       // fitPositions 自己乘上去的缩放（导出还原坐标时要用）
     const prev = state.fit || { s: 1, cx: 0, cy: 0 };
     state.fit = {
       s: prev.s * s,
@@ -1251,6 +1261,20 @@
       cy: prev.cy + cy / (prev.s || 1),
     };
     for (const [id, p] of state.pos) state.pos.set(id, { x: (p.x - cx) * s, y: (p.y - cy) * s });
+    /* 「世界单位 → 像素」的真实尺度（zoom=1 时），存进 state.pxScale。
+     *
+     * ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上：它先把数据包围盒**等比**
+     * 塞进「容器居中 80%」的 viewRect，再把 zoom 乘在那个适配系数之上。
+     * （实测与 min.js 里的源码位置见 memory/echarts-graph-auto-fits-data-bbox.md；
+     *   test/render-scale.mjs 每次都会把这里的解析式和 ECharts 的 cs.scaleX 对拍。）
+     *
+     * 后果有两个，改之前都被踩到了：
+     *   ① 改上面的 s 对渲染**毫无影响** —— 长宽比不变的话画面逐像素一样；
+     *   ② 凡是拿 s（或 zoom）当「世界→像素」尺度的代码都是错的：
+     *      符号大小、标签取舍、点击后把视野挪过去，全都算错了一个数量级。
+     */
+    const fitK = Math.min((W * 0.8) / (w * s), (H * 0.8) / (h * s));
+    state.pxScale = s * fitK;
     // 节点包围盒（已缩放、居中于 0）——图注按它定位，保证在节点区之外
     state.bbox = { minX: -(w * s) / 2, maxX: (w * s) / 2, minY: -(h * s) / 2, maxY: (h * s) / 2 };
     // 代际参考线同步缩放，保证「前史 / 第 N 代」始终对着对应那一列/行
@@ -1265,7 +1289,9 @@
     if (state.allLabels || !state.pos.size) { state.labels = null; return; }
     // 屏幕上的实际符号直径（含放大补偿 + 间距缩放，和 buildOption 里一致）
     const zc = zoom > 1 ? 1 / zoom : 1;
-    const spacingScreen = (state.stepWorld || 40) * (state.fitLast || 1) * zoom;
+    const px = state.pxScale || 1;                       // 见 fitPositions 的 pxScale 说明
+    const fitK = px / (Math.abs(state.fitLast) || 1);
+    const spacingScreen = (state.stepWorld || 40) * px * zoom;
     const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
     const eff = (id) => symbolSize(id) * zoom * zc * symScale;
     // 间距还不够大时，只给关系最多的前 40 人标名字（免得一屏几百个名字糊在一起）
@@ -1381,27 +1407,80 @@
     state.bands = new Map();
     state.bandLabels = new Map();
     const mainPad = 110, crossPad = 78;
-    // 世界坐标不跟着视口走：一行（组）里有多少人，就铺多长——放大后自然不重叠（无限画布）
     const maxCount = Math.max(1, ...groups.map((g) => byGen.get(g).length));
     const maxSymbol = Math.min(40, 15 + Math.max(...[...state.byId.keys()].map(nodeDegree)) * 2.2);
     const stepCross = Math.max(34, maxSymbol + 10);
-    const stepMain = Math.max(200, 240);
+    state.stepWorld = stepCross;      // 相邻节点的世界间距（buildOption 用它决定符号该画多大）
     const viewMain = (view === 'gen-h' ? W : H) - mainPad * 2;
     const viewCross = (view === 'gen-h' ? H : W) - crossPad * 2;
-    const mainLen = Math.max(viewMain, (groups.length - 1) * stepMain);
-    const crossLen = Math.max(viewCross, (maxCount - 1) * stepCross);
-    state.stepWorld = stepCross;      // 相邻节点的世界间距（buildOption 用它决定符号该画多大）
+
+    /* v89 修「代际·横 / 分组·横」整张图不可用。
+     *
+     * 「竖」视图：一群人排成**一行**，行长＝人数，正好落在宽屏上 —— 一直是对的。
+     * 「横」视图：一群人竖着排进矮边，于是曹魏 250 人就是一根 12500 长、间距 50 的线，
+     * 而群组轴（10 个阵营 × 240）总长才 2160 ⇒ **长宽比 1 : 5.8**，而画布是 2 : 1。
+     *
+     * 为什么这会致命：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上，
+     * 它先把数据包围盒**等比**塞进「容器居中 80%」的 viewRect，再把 zoom 乘在那个
+     * 适配系数之上（实测与源码位置见 memory/echarts-graph-auto-fits-data-bbox.md）。
+     * 于是被压到 0.088 的尺度：群组轴只剩 **83px 宽**，十个阵营的图注全叠在一起，
+     * 整张图退化成中间一条竖线。
+     *
+     * 调 fitPositions 的缩放系数没有任何用 —— 等比适配之后只有**长宽比**有意义
+     * （实测 64×344 与 949×5118 渲染出来同样宽 83px）。
+     * 真正的解法是把每群人**折成网格**，再解一个 stepMain（群组间距），
+     * 让 群组轴长 : 群内轴长 ≈ 可用宽 : 可用高，两根轴都用得上。
+     */
+    const GUT = 26;                   // 「横」视图里相邻群组块之间的间隙
+    let stepMain = Math.max(200, 240);
+    let cols = 1, rows = maxCount;
+    if (view === 'gen-h') {
+      const grid = (sm) => {
+        const c = Math.max(1, Math.floor(Math.max(stepCross, sm - GUT) / stepCross));
+        return { c, r: Math.max(1, Math.ceil(maxCount / c)) };
+      };
+      const want = viewMain / Math.max(1, viewCross);       // 目标长宽比＝画布可用长宽比
+      for (let it = 0; it < 16 && groups.length > 1; it++) {
+        const g = grid(stepMain);
+        cols = g.c; rows = g.r;
+        const crossL = (rows - 1) * stepCross;
+        if (crossL <= 0) break;
+        const ratio = (groups.length - 1) * stepMain / crossL;
+        if (Math.abs(ratio - want) / want < 0.04) break;
+        // 开根号：stepMain 同时决定格宽（cols↑⇒crossL↓）和群组总长，sqrt 收敛最快
+        stepMain = Math.min(5000, Math.max(stepCross * 2, stepMain * Math.sqrt(want / ratio)));
+      }
+      const g = grid(stepMain);
+      cols = g.c; rows = g.r;
+    }
+    const mainLen = view === 'gen-h'
+      ? (groups.length < 2 ? cols * stepCross : (groups.length - 1) * stepMain)
+      : Math.max(viewMain, (groups.length - 1) * stepMain);
+    const crossLen = Math.max(viewCross, (rows - 1) * stepCross);
+
     groups.forEach((g, gi) => {
       const center = groups.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (groups.length - 1);
       state.bands.set(g, center);
       const sample = byGen.get(g)[0];
       state.bandLabels.set(g, sample ? groupLabelOf(sample) : String(g));
       const list = byGen.get(g);
-      const step = list.length > 1 ? crossLen / (list.length - 1) : 0;
-      list.forEach((c, ci) => {
-        const off = list.length === 1 ? 0 : -crossLen / 2 + ci * step;
-        state.pos.set(c.id, view === 'gen-h' ? { x: center, y: off } : { x: off, y: center });
-      });
+      if (view === 'gen-h') {
+        // 群组块：cols 列 × rows 行，块内居中，块与块之间留 GUT 间隙
+        const myCols = Math.max(1, Math.min(cols, list.length));
+        const myRows = Math.max(1, Math.ceil(list.length / myCols));
+        const slot = Math.max(stepCross, stepMain - GUT);
+        const x0 = center - (myCols * stepCross) / 2 + stepCross / 2;
+        const y0 = -crossLen / 2 + ((rows - myRows) / 2) * stepCross;
+        list.forEach((c, ci) => {
+          state.pos.set(c.id, { x: x0 + (ci % myCols) * stepCross, y: y0 + Math.floor(ci / myCols) * stepCross });
+        });
+      } else {
+        const step = list.length > 1 ? crossLen / (list.length - 1) : 0;
+        list.forEach((c, ci) => {
+          const off = list.length === 1 ? 0 : -crossLen / 2 + ci * step;
+          state.pos.set(c.id, { x: off, y: center });
+        });
+      }
     });
   }
 
@@ -1500,11 +1579,29 @@
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     const cur = state.zoom || 1;
     const vc = state.viewCenter || [0, 0];
-    const target = Math.min(Math.max(Math.min((W * 0.55) / w, (H * 0.55) / h), cur), 4);   // 只放大、不缩小
+    /* v89 修「代际·横 / 分组·横下点一个人就一片空白」。
+     *
+     * 这里以前把 state.zoom 直接当成「世界单位→像素」的尺度，于是 `target` 算出来的
+     * 是**像素**，再被当成 zoom 用 —— 差了一个 ECharts 等比适配系数（代际·横实测 11 倍）。
+     * 结果：点一个零关系人物 ⇒ w=h=1 ⇒ target 顶到 4 倍 ⇒ 视野被怼到那一小块上，
+     * 而那一小块里只有他一个人（周围按群组轴隔开上百像素）⇒ 屏幕上一片空白，
+     * 必须「重置」或双击才回得来。
+     *
+     * 换算：屏幕尺度 = pxScale/fitLast（px/适配后单位）× zoom，所以要的是
+     *   target = 想要的像素尺度 ÷ (pxScale/fitLast)
+     */
+    const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）
+    const wantPx = Math.min((W * 0.55) / w, (H * 0.55) / h);                // 高亮集合该有的像素跨度
+    const target = Math.min(Math.max(wantPx / unitPx, cur), 4);             // 只放大、不缩小
     const improved = target >= cur * minGain;
-    const moved = Math.hypot((cx - vc[0]) * cur, (cy - vc[1]) * cur) > Math.min(W, H) * 0.2;
+    const moved = Math.hypot((cx - vc[0]) * unitPx * cur, (cy - vc[1]) * unitPx * cur) > Math.min(W, H) * 0.2;
     if (!improved && !moved) return false;
-    applyZoom(target, [cx, cy]);
+    /* 高亮已经占到画布短边的 1/3 以上时，放大带来的清晰度收益远不如"把整张图留在画面里"
+     * 值钱，就不放大（只平移）。 */
+    const onScreen = Math.max(w, h) * unitPx * cur;
+    const plentyVisible = onScreen >= Math.min(W, H) / 3;
+    if (plentyVisible && !moved) return false;
+    applyZoom(plentyVisible ? Math.min(target, cur * 1.6) : target, [cx, cy]);
     return true;
   }
 
@@ -1551,8 +1648,10 @@
   }
 
   /* —— 点击锁定：搜单个人物 / 两人关系查询成功后进入；可点集合＝当前高亮集合（亮=能点、灰=点不动） ——
-     解除路径：「重置」「复位视图」（双击空白同款，同时清空查询词）、「清除」、双击空白；
-     v82：锁定中点右栏人名＝把锁切换到该人（不解除），无锁点人名只看档案不建锁 */
+     解除路径：「重置」、搜索框旁的「清除」；
+     * v89：「复位视图」和「双击空白」都**只**复位视图、不再解锁 —— 那两个动作的用户意图
+     *   是"找回视野"而不是"放弃筛选"，捆在一起就会出现"双击一下锁就没了"这种怪事；
+     * v82：锁定中点右栏人名＝把锁切换到该人（不解除），无锁点人名只看档案不建锁 */
   /* 悬停锁定 —— 重建前先收掉 tooltip：
      点击/搜索的瞬间鼠标正悬停在节点上（tooltip 显示中），随后的 setOption 重建会让
      ECharts 在已销毁的内容容器上 setContent 抛 null 引用（v80 起即可复现的既有竞争，本轮一并修） */
@@ -1578,12 +1677,52 @@
    *  depth 记在 localStorage，跨会话保持。'path' 的集合就是那条最短链，**不给跳数** ——
    *  「只显示他们之间的」和「再往外扩几跳」是互相矛盾的。 */
   const LOCK_DEPTH_MIN = 1, LOCK_DEPTH_MAX = 3;
+  /** v89：刚被丢掉的那把锁的来源（'search' | 'path'）。unlockClick 写，lockFromHighlight 读。 */
+  let droppedLockOrigin = null;
   function savedLockDepth() {
     const n = Number(localStorage.getItem('ba-lock-depth'));
     return Number.isFinite(n) ? Math.max(LOCK_DEPTH_MIN, Math.min(LOCK_DEPTH_MAX, n)) : 1;
   }
+
+  /* v89：两种锁（搜单个人 origin='search' ／ 两人关系 origin='path'）互斥时的清理。
+   *
+   * 用户的担心是"先查一个人、没点清除又去查两人关系，两者会撞车"。实测两条路径都是
+   * selectCharacter() → setHighlight() → unlockClick() → lockFromHighlight()，
+   * 上一把锁一定被完整换掉 —— **状态层面本来就不会撞车**。
+   * 真正的问题是**查询框留着上一次的词**：搜完曹操去查两人关系，搜索框里还写着「曹操」，
+   * 锁条上写的却是「刘备 → 诸葛亮」，界面自相矛盾；而且这时在搜索框里随手敲一下回车，
+   * 就会静悄悄地把锁又锁回曹操 —— 看起来像"查询失灵了"。
+   *
+   * 用户提的方案是「查了其中一种，必须先点清除才能查另一种」。没有采用：
+   * 那只是多一步、并不多给任何信息；而自动清掉对方那一半同样消除了歧义，
+   * 还不必先去找「清除」按钮在哪。锁条上本来就写着当前是哪一把锁。
+   */
+  let searchComboRef = null;
+  function clearSearchQuery() {
+    const el = $('#search-input');
+    if (!el) return;
+    el.value = '';
+    delete el.dataset.id;
+    if (searchComboRef) searchComboRef.close();
+  }
+  function clearPathQuery() {
+    for (const id of ['#path-a', '#path-b']) {
+      const el = $(id);
+      if (el) { el.value = ''; delete el.dataset.id; }
+    }
+    const h = $('#path-hint');
+    if (h) h.textContent = '';
+  }
+  /** 换锁时，把另一种查询留下的输入清掉（只清输入，不动当前这把锁） */
+  function clearOtherQuery(origin) {
+    if (!droppedLockOrigin || droppedLockOrigin === origin) return;
+    if (origin === 'path') clearSearchQuery(); else clearPathQuery();
+    droppedLockOrigin = null;
+  }
+
   function lockFromHighlight(label, origin, centerId) {
     const org = origin || 'search';
+    clearOtherQuery(org);
     let nodes = state.hlNodes, edges = state.hlEdges, depth = 0;
     if (org === 'search' && centerId && state.adj.has(centerId)) {
       depth = savedLockDepth();
@@ -1639,6 +1778,8 @@
   }
   function unlockClick() {
     if (!state.clickLock) return;
+    // v89：记住"刚被丢掉的那把锁是哪种"，好让下一把锁知道该不该清掉另一种查询的残留
+    droppedLockOrigin = state.clickLock.origin;
     state.clickLock = null;
     /* v89 修：解除锁定要连高亮集合一起清。
      * 原来只清了 clickLock，hlNodes / hlEdges 留着 —— 而 isCharHidden() 开头就是
@@ -1646,9 +1787,7 @@
      * 次要人物**又冒了出来：解除锁定后图上的人数比锁定前还多（实测三国 326 → 344）。
      * 两人关系锁看不出来是因为它的集合只有 2 个人、且都在可见集里。
      *
-     * 在这里清是安全的：setHighlight / clearHighlight 都会紧接着自己重设这两个集合。
-     * 这一处同时修好了三条解除路径（双击空白 /「复位视图」/「重置」）—— 它们都只调
-     * unlockClick 而没调 clearHighlight。 */
+     * 在这里清是安全的：setHighlight / clearHighlight 都会紧接着自己重设这两个集合。 */
     state.hlNodes = new Set();
     state.hlEdges = new Set();
     renderLockBar();
@@ -1664,7 +1803,7 @@
   function blockLockClick() {
     const lock = state.clickLock;
     if (!lock) return;
-    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置 / 复位视图」或右栏人名后点击「清除」可解除）`;
+    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置」或右栏人名后点击「清除」可解除；「复位视图」和双击空白只复位视野，不解除）`;
     toast(msg);
     announce(msg);
   }
@@ -1685,7 +1824,7 @@
          </span>`
       : '';
     bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的人和线 ${depthCtl}
-      <span class="lock-hint">「重置 / 复位视图」或右栏人名后点击「清除」可解除</span>`;
+      <span class="lock-hint">「重置」或右栏人名后点「清除」可解除</span>`;
     stackBars();
   }
   /** 聚焦条/锁定条：fixed 悬浮，按「顶栏下沿、图区顶端」定位；两条同时可见时上下叠放 */
@@ -1792,10 +1931,18 @@
         if (lock) restoreLock(lock);
       }
     });
-    // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 复位视图 / 右栏人名后点清除」）
+    // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 右栏人名后点清除」）
     state.chart.getZr().on('click', (e) => { if (!e.target && !state.clickLock) clearHighlight(); });
-    // 双击空白处＝复位视图（缩放/平移乱掉时最快恢复）
-    state.chart.getZr().on('dblclick', (e) => { if (!e.target) { unlockClick(); resetRoam(); } });
+    /* 双击空白处＝**只**复位视图。
+     * v89：原先这里同时调了 unlockClick()，于是"想找回被缩放弄丢的视野"这个动作
+     * 会顺带把锁定也丢掉 —— 两个完全不同的意图被捆在一起，而且锁定条上没写，
+     * 用户只能自己发现「双击 = 解锁」。（测试 test/lock.mjs 也是靠双击解锁才没发现的。）
+     * 锁定中则回到"锁定视野"（只剩两个人时 resetRoam 的 zoom=1 反而太远）。
+     * 解除锁定请走「重置」或搜索框旁的「清除」，这两处都写在锁定条上。 */
+    state.chart.getZr().on('dblclick', (e) => {
+      if (e.target) return;
+      if (state.clickLock) fitLockView(); else resetRoam();
+    });
     // 缩放联动标签：放大后露出更多名字（节流 200ms）
     state.chart.on('graphroam', (p) => {
       if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
@@ -3434,7 +3581,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       case 'zoom': {
         if (!hubId) break;
         const p = state.pos.get(hubId);
-        applyZoom(Math.min(40, 1 / (Math.abs(state.fitLast) || 1)), p ? [p.x, p.y] : [0, 0]);
+        // 「看清 1:1」＝让 1 个世界单位正好等于 1 像素 ⇒ zoom = 1 / 真实尺度（pxScale）
+        applyZoom(Math.min(40, 1 / (state.pxScale || 1)), p ? [p.x, p.y] : [0, 0]);
         break;
       }
       case 'place': {
@@ -3554,6 +3702,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       onPick: (it) => chooseCharById(it.id),
       onEnter: () => doSearch(),
     });
+    searchComboRef = searchCombo;      // v89：clearSearchQuery() 要用（换锁时清掉残留输入）
     search.addEventListener('change', () => { searchCombo.close(); doSearch(); });
     // v83：手动清空搜索框（点原生 ✕ / 全选删除都触发 input；WebKit 的 ✕ 只发 search）＝
     // 用户想解除搜索建的锁；两人关系链的锁（origin='path'）不清搜索框也在，保持原样
@@ -3573,11 +3722,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     attachCombo(pathB, { kind: 'path', onEnter: () => runPath() });
 
     // v82：「重置 / 复位视图」把查询词一起清掉——残留的查询词只要一按回车就会立刻重新上锁、锁条又回来
+    //      （v89：查询词清掉后锁还在，得再按一次「重置」才真解除 —— 这里只管清词，解锁是各自的事）
     const clearQueryInputs = () => {
-      search.value = ''; delete search.dataset.id; searchCombo.close();
-      pathA.value = ''; delete pathA.dataset.id;
-      pathB.value = ''; delete pathB.dataset.id;
-      $('#path-hint').textContent = '';
+      clearSearchQuery();
+      clearPathQuery();
     };
 
     const labelBtn = $('#label-btn');
@@ -3735,12 +3883,15 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
     $('#reset-btn').addEventListener('click', () => { clearQueryInputs(); setView(state.view); });
-    $('#view-reset-btn').addEventListener('click', () => { clearQueryInputs(); unlockClick(); resetRoam(); });
+    // v89：「复位视图」只复位视野、不解除锁定（和双击空白一致）。解除锁定走「重置」或「清除」。
+    $('#view-reset-btn').addEventListener('click', () => { clearQueryInputs(); if (state.clickLock) fitLockView(); else resetRoam(); });
     const zoomOne = document.getElementById('zoom-one-btn');
     if (zoomOne) zoomOne.addEventListener('click', () => {
       if (!state.chart) return;
-      // 世界坐标是 1:1 的：最近一次 fit 的缩放是 state.fitLast，跳到 1/它 就是"节点原始大小"
-      const target = Math.min(40, 1 / (Math.abs(state.fitLast) || 1));
+      // 世界坐标是 1:1 的：真实尺度是 state.pxScale（见 fitPositions 里的说明），
+      // 跳到 1/它 就是"节点原始大小"。注意不能用 state.fitLast —— 那只是 fitPositions
+      // 自己乘上去的缩放，ECharts 之后还会再乘一次等比适配系数（代际·横里差 11 倍）。
+      const target = Math.min(40, 1 / (state.pxScale || 1));
       const sel = state.panelKind === 'char' && state.panelId ? state.pos.get(state.panelId) : null;
       // 没选人时对准"关系最多的那个人"（hub）——几何中心在大书上往往是空的
       if (!state.hubId) {
@@ -3956,6 +4107,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     state,
     chart: () => state.chart,
     applyFocus: (id, depth) => applyFocus(id, depth),
+    // v89：视野相关的两个入口。复现「代际·横下点若干次节点 + 缩放几次后一片空白」
+    // 需要能脚本化地改 zoom/center 与切换布局（test/lock.mjs、诊断脚本用）。
+    applyZoom: (z, c) => applyZoom(z, c),
+    setView: (v) => setView(v),
     /** 聚焦集合（v85：供 test/parity.mjs 做三份实现对拍；只读，不改状态） */
     focusSet: () => { const s = focusSet(); return s ? [...s] : null; },
     // v89：锁定可见集合的两份口径（供 test/parity.mjs 与 graph-core / 小程序对拍）
