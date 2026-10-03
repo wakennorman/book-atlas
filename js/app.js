@@ -1744,6 +1744,14 @@
    * 这里只把右栏档案/关系链面板加长到 3.6s（3 闪）＋4.2s 后才摘 class。 */
   const PANEL_NAV_MS = 4200;
   function navToPanel() { flashTo(document.getElementById('panel'), 'start', PANEL_NAV_MS); }
+  /* v91：导航到「重大事件轴」上的那张事件卡也要加长。
+   *
+   * 用户反馈：点关系线时导航有两种 —— 一种停在右栏（已修好），一种会**接着**再滚到重大事件轴，
+   * 后者"停留时间还是快了"。它比右栏那个更吃亏：它是**第二步**（`navSecondStep` 延后 550ms 才动），
+   * 等于先看完右栏的闪烁、注意力刚要转开，第二段就开始了，1.8s 根本来不及。
+   * 所以这里给得比右栏还长一点：3.9s 闪 3 下、4.6s 后才摘 class（CSS 同步）。 */
+  const EVENT_NAV_MS = 4600;
+  function navToEventChip(chip) { flashTo(chip, 'center', EVENT_NAV_MS); }
   function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, 550); }
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁
@@ -2017,6 +2025,15 @@
       if (e.target) return;
       if (state.clickLock) fitLockView(); else resetRoam();
     });
+    /* v91：按住时把光标从 grab 切成 grabbing（标准画布手感）。
+       顺带说一句"为什么图的外面拖不动"：漫游只绑在这块画布上是有道理的 ——
+       工具条、「两人关系」、事件轴、右栏各自有滚动与交互，被拖动劫持反而更糟。
+       所以这里不加宽漫游区域，改为把"能拖的那块"明确告诉用户（光标 + 图下常驻提示）。 */
+    const graphEl = $('#graph');
+    const setPanning = (on) => { if (graphEl) graphEl.classList.toggle('is-panning', !!on); };
+    state.chart.getZr().on('mousedown', () => setPanning(true));
+    state.chart.getZr().on('mouseup', () => setPanning(false));
+    state.chart.getZr().on('globalout', () => setPanning(false));
     /* 缩放联动标签 + **同步真实视野**（节流 200ms）
      *
      * v90 修「分组·横下画布跑到一边去、再也回不来」：
@@ -2315,7 +2332,7 @@
     const go = () => {
       const chip = document.querySelector(`#timeline .event-chip[data-event="${CSS.escape(ev.id)}"]`);
       if (!chip) return;                     // 被章节/时间旅行筛掉了 → 不导航
-      flashTo(chip, 'center');
+      navToEventChip(chip);
     };
     if (delay) navSecondStep(go); else go();
     return true;
@@ -2358,7 +2375,9 @@
   function renderPanelWelcome() {
     panel().innerHTML = `
       <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」<br>
-      空白处拖动＝平移画布，滚轮＝缩放，<b>双击空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
+      <b>在图上</b>按住空白处拖动＝平移画布（<b>要按在图的范围里</b>，工具条 / 两人关系 / 事件轴 / 右栏上拖是无效的），
+      滚轮＝缩放，<b>双击图的空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
+      万一把画布拖到看不见了：图中间会浮出「画布拖到视野外了 · 点这里复位」，<b>点任意一个人</b>也会把视野拉回来。<br>
       <b>键盘</b>：Tab 聚焦到图上后，<b>方向键</b>在人物之间移动、<b>回车</b>看档案、<b>Esc</b> 取消选中（读屏会念出当前位置）。<br>
       底部「两人关系」会算出最短关系链，并列出每一跳的依据事件。</p>`;
   }

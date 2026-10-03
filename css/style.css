@@ -207,6 +207,23 @@ main {
 #graph { width: 100%; height: clamp(440px, 62vh, 800px); }
 #graph:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 
+/* v91：让"这块可以拖动"看得出来。
+   可平移的表面用 grab 光标、按住时变 grabbing —— Figma / Miro / Google Maps / Obsidian
+   图谱都是这么做的，以前这里完全没有光标提示，用户根本不知道要在**图的范围内**按住拖动，
+   在图的外面按住当然没反应（漫游只绑在 ECharts 那块画布上）。
+   touch-action: none 也是标准做法：否则触屏上拖动会变成滚动页面，而不是平移画布。
+   悬停在人/线上时 ECharts 自己会把光标改成 pointer，所以这里的 grab 只出现在空白处。 */
+#graph { cursor: grab; touch-action: none; }
+#graph.is-panning { cursor: grabbing; }
+
+/* v91：常驻的一行提示。原来的说明只在「怎么用」和欢迎面板里，而且写的是"空白处拖动" ——
+   读起来像"任何空白处"，用户试了图的外面发现没反应，以为自己操作错了。 */
+.graph-pan-hint {
+  margin: 6px 2px 0; text-align: center;
+  font-size: 12px; color: var(--muted); line-height: 1.6;
+}
+.graph-pan-hint b { color: var(--ink); font-weight: 600; }
+
 .pathbar {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel-2);
@@ -447,9 +464,12 @@ main {
 }
 .event-chip .ev-name { font-weight: 700; font-size: 13.5px; }
 .event-chip .ev-sum { color: var(--muted); font-size: 12.5px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
-/* v82 关系线导航：点线后滚到事件轴，目标事件卡闪 2 下提示"就是它" */
+/* v82 关系线导航：点线后滚到事件轴，目标事件卡闪 2 下提示"就是它"
+   v91：用户反馈"会继续导航重大事件轴的那种还是快了"—— 它是**第二步**（比右栏晚 550ms），
+   等于看完右栏的闪烁、注意力刚要转开就来了，1.8s 根本来不及。
+   改成 1.3s × 3 = 3.9s，class 在 4.6s 才摘（js 的 EVENT_NAV_MS 同步）。 */
 .event-chip { scroll-margin-top: 110px; }
-.event-chip.nav-flash { animation: ev-flash 0.9s ease-in-out 2; }
+.event-chip.nav-flash { animation: ev-flash 1.3s ease-in-out 3; }
 @keyframes ev-flash {
   0%, 100% { box-shadow: none; border-color: var(--line); }
   50% { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); transform: translateX(4px) scale(1.01); }

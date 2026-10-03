@@ -30,6 +30,7 @@ jobs:
                    scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
+                   test/canvas-hint.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -128,7 +129,7 @@ jobs:
 
       - name: 画布漫游与视野自救（无头 Edge，真实拖动/滚轮事件）
         # v90 新增。守住用户报的两个现象：
-        #   ① graphroam 事件**只同步了 zoom、从不��步 viewCenter**。而两类事件载荷各带一半 ——
+        #   ① graphroam 事件**只同步了 zoom、从不同步 viewCenter**。而两类事件载荷各带一半 ——
         #      拖动是 {dx,dy}（没有 zoom）、滚轮是 {zoom,originX,originY}（没有位移），
         #      于是用户把画布拖到别处之后 viewCenter 永远停在 [0,0]，而 focusViewOn 判断
         #      "高亮有没有跑出视野"用的正是这个陈旧中心 ⇒ 永远算出"没跑出去" ⇒ 一点不动，
@@ -138,6 +139,18 @@ jobs:
         # 这一步用 **zrender 的 handler 合成真实 mousedown/mousemove/mouseup/mousewheel**
         # （CDP 的 Input.dispatchMouseEvent 在无头 Edge 里到不了页面），判据一律量 zrender 里的真实墨迹。
         run: node test/roam.mjs
+
+      - name: 画布手感与导航提示（无头 Edge）
+        # v91 新增。用户反馈两件事：
+        #   ① "只有鼠标点击到关系图的部分才能拖回来，点击关系图之外的空白画布就拖不回来"
+        #      —— 这是漫游只绑在 ECharts 那块画布上的正常结果（工具条/两人关系/事件轴/右栏
+        #      各有自己的滚动与交互，被拖动劫持反而更糟；Figma/Google Maps 之所以能"任意处拖"
+        #      是因为画布独占整个视口，那是另一种形态）。所以不加宽漫游区域，改为把
+        #      「能拖的那块」明确说出来：grab/grabbing 光标 + touch-action:none + 图下常驻提示
+        #      + 把原来那句含糊的"空白处拖动"全部改成"在图上…／双击图的空白"。
+        #   ② 点关系线时"会继续导航重大事件轴"的那种，停留时间还是太快（它是第二步，
+        #      比右栏晚 550ms，1.8s 根本来不及）⇒ 事件卡闪烁加长到 3.9s。
+        run: node test/canvas-hint.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

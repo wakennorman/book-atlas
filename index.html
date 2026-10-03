@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=91">
+  <link rel="stylesheet" href="css/style.css?v=92">
 </head>
 <body>
 
@@ -151,6 +151,9 @@
          而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
     <button id="offview-btn" class="offview-btn" type="button" hidden>🧭 画布拖到视野外了 · 点这里复位</button>
     <p id="graph-kb-hint" class="sr-only">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
+    <!-- v91：常驻提示。"空白处拖动"读起来像"任何空白处"，而漫游只绑在图那块画布上，
+         用户试了图的外面发现没反应，以为是自己操作错了。 -->
+    <p class="hint graph-pan-hint">在<b>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b>双击图的空白</b>＝复位视图</p>
     <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
     <div class="pathbar">
@@ -260,7 +263,7 @@
         </div>
         <div class="help-text">
           <b>③ 人太多看不清：三板斧 + 一键看清</b>
-          <span>① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、空白拖动平移、双击空白复位。</span>
+          <span>① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。</span>
           <button type="button" class="ghost tiny" data-help-act="size">试一下：只留主要人物</button>
           <button type="button" class="ghost tiny" data-help-act="focus">试一下：聚焦一个人的圈子</button>
           <button type="button" class="ghost tiny" data-help-act="zoom">试一下：看清（1:1）</button>
@@ -285,7 +288,7 @@
         </div>
         <div class="help-text">
           <b>④ 拖动节点：把一个人拉出来，专门看他的线</b>
-          <span>点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（空白处拖动仍然是平移画布）。<b>松手后先别点别处</b>，位置会留着——这时他身上的线会看得清楚得多；一点空白、缩放或搜索，位置就回到布局（想彻底重排点「重置」）。</span>
+          <span>点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（<b>图上</b>的空白处拖动仍然是平移画布）。<b>松手后先别点别处</b>，位置会留着——这时他身上的线会看得清楚得多；一点空白、缩放或搜索，位置就回到布局（想彻底重排点「重置」）。</span>
           <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来</button>
         </div>
       </div>
@@ -464,7 +467,7 @@
       </div>
     </div>
 
-    <p class="hint" style="margin-top:12px">随时点「复位视图」或双击空白回到全貌；想再打开这份说明，点右上角「📖 怎么用」。</p>
+    <p class="hint" style="margin-top:12px">随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个人</b>也会把视野拉回他身上。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。</p>
   </div>
 </div>
 
@@ -545,6 +548,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=91"></script>
+<script src="js/app.js?v=92"></script>
 </body>
 </html>

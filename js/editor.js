@@ -1028,7 +1028,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=91';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=92';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {

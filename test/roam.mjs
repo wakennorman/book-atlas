@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 // 起因：用户报「分组·横下点若干人 + 中间缩放几次后就一片空白，必须重置或双击才回得来」，
 // 后来又发现画布"跑到右侧了，我是碰运气滑动多次才看到"。
 //
-// 真凶：graphroam 事件**只同步了 zoom、从不��步 viewCenter**。而两类事件的载荷各带一半 ——
+// 真凶：graphroam 事件**只同步了 zoom、从不同步 viewCenter**。而两类事件的载荷各带一半 ——
 //   拖动 → `{dx, dy}`（没有 zoom）    滚轮 → `{zoom, originX, originY}`（没有位移）
 // 于是用户把画布拖到别处以后，state.viewCenter 永远停在建图时的 [0,0]。
 // 后果不是"回到中心"，而是**卡在空白处**：focusViewOn 判断"高亮有没有跑出视野"用的是这个
@@ -113,7 +113,7 @@ const probe = async () => { await settle(); return js(`(() => {
 })()`); };
 
 /** 真实的拖动平移（走 zrender 的 handler，ECharts 会真的发出 graphroam）。
- *  ⚠ 分多步走且终点不越出画布 —— 之前一���拖到 x=1900（窗口才 1600），被 zrender 丢掉了，
+ *  ⚠ 分多步走且终点不越出画布 —— 之前一次拖到 x=1900（窗口才 1600），被 zrender 丢掉了，
  *  测试却以为拖成功了，害我以为按钮逻辑坏了。 */
 const dragBy = async (dx, dy) => {
   const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 150));
