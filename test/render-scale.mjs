@@ -4,6 +4,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 // v89：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上 —— 它先把数据包围盒
 // **等比**塞进「容器居中 80%」的 viewRect，再把 zoom 乘在那个适配系数之上。
@@ -46,6 +47,7 @@ const server = http.createServer((req, rep) => {
 });
 await new Promise((r) => server.listen(PORT, r));
 
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-scale-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -234,6 +236,6 @@ try {
   try { ws.close(); } catch { }
   try { proc.kill(); } catch { }
   try { server.close(); } catch { }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+  releaseProfile(profile);
 }
 process.exit(failed ? 1 : 0);

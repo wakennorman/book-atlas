@@ -312,15 +312,21 @@ try {
      *
      * 为什么这里重试而别的断言不重试：④ 的**被测行为**是"拖远之后按钮出现"，
      * 而"这一下拖动有没有生效"是**输入**是否可靠。重试输入不改断言的力度 ——
-     * 按钮要是真坏了，重试 3 次照样不亮，断言照样红。
+     * 按钮要是真坏了，重试 8 次照样不亮，断言照样红。
      * （我一度想去改 dragBy 让它自己找空白起点，结果更糟：findHover 永远返回对象，
      *  又踩了一次"看似修好其实更脆"的坑，最后把整个 dragBy 改动撤了。） */
+  /* ⚠ 重试次数 3 → 8：只放宽「输入」，不放宽断言。
+   * 单独跑 3 次全绿（71–73s），但在 npm run gate 的串行负载下（前面已连续跑过
+   * 十几个开浏览器的步骤）同一测试耗时涨到 175s 并失败 —— 负载越重，
+   * 合成拖动越容易被 zrender 的命中测试丢掉。8 次之后仍失败就仍然是断言红。
+   * 顺带把每次拖完的等待从 700ms 提到 1000ms（重负载下渲染帧更慢）。 */
+  const DRAG_TRIES = 8;
   let off = null, tries = 0;
-  for (tries = 1; tries <= 3; tries++) {
-    await dragBy(1400, 0); await wait(700);
+  for (tries = 1; tries <= DRAG_TRIES; tries++) {
+    await dragBy(1400, 0); await wait(1000);
     off = await probe();
     if (off.hintShown) break;
-    console.log(`    第 ${tries} 次拖动没生效（viewCenter=${JSON.stringify(off.stVC)}），重试`);
+    console.log(`    第 ${tries}/${DRAG_TRIES} 次拖动没生效（viewCenter=${JSON.stringify(off.stVC)}），重试`);
   }
   console.log(`    拖 1400px 后（第 ${tries} 次）：墨迹 x=${JSON.stringify(off.inkX)} / 视口 0..${off.W}，可见 ${(off.frac * 100).toFixed(0)}%`);
   console.log(`    viewCenter=${JSON.stringify(off.stVC)}（ECharts 说 ${JSON.stringify(off.csCenter)}）一致=${off.vcAgrees} zoom=${off.zoom}`);

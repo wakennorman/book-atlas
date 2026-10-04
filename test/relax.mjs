@@ -4,6 +4,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 // 「没有坐标的人怎么落位」的两条性质（v87 加）：
 //   ① 孤立人物（一条关系都没有）不能叠在同一个点上
@@ -32,6 +33,7 @@ const server = http.createServer((req, rep) => {
 });
 await new Promise((r) => server.listen(PORT, r));
 
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-relax3-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -145,7 +147,7 @@ try {
   try { ws.close(); } catch { /* 忽略 */ }
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* 忽略 */ }
+  releaseProfile(profile);
 }
 
 console.log(`\n${'='.repeat(40)}`);

@@ -4,6 +4,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 // v89：锁定（搜索单个人物 / 两人关系）时图上**只画**锁定集合内的点与线。
 // 起因：原先集合外的元素只是 opacity 调低继续画着，也没有 silent，而 zrender 的命中测试
@@ -30,6 +31,7 @@ const server = http.createServer((req, rep) => {
 });
 await new Promise((r) => server.listen(PORT, r));
 
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-lock-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -400,7 +402,7 @@ try {
   try { ws.close(); } catch { /* 忽略 */ }
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* 忽略 */ }
+  releaseProfile(profile);
 }
 
 console.log(`\n${'='.repeat(40)}`);

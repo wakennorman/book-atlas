@@ -666,6 +666,22 @@ body[data-fontsize="l"] .fold-btn { font-size: 14px; }
   color: var(--ink); font-size: 13px;
 }
 .ai-answer .ai-a { margin: 0 0 4px; color: var(--ink); font-size: 13.5px; }
+/* v0.96 方案 A：「补充」块。
+ * 视觉上必须和正文**一眼分得开** —— 它的内容是模型自己的记忆，没跟本书核对过，
+ * 而且**可能含剧透**。所以用虚线框 + 警示底色 + 常驻标题，而不是靠一句括号说明。
+ * 颜色用项目已有的 --note-bg / --note-border / --note-ink（两套主题都定义好了），
+ * 不要自己造 --warn：造出来的变量在暗色主题下必然对不上。
+ * 注意 role="note"（HTML 里 role 只有 note 是合法的，别手滑写成 region）。 */
+.ai-answer .ai-extra {
+  margin: 8px 0 0; padding: 7px 9px;
+  border: 1px dashed var(--note-border); border-radius: var(--radius-s);
+  background: var(--note-bg); color: var(--ink);
+  font-size: 12.5px; line-height: 1.6;
+}
+.ai-answer .ai-extra-head {
+  font-weight: 600; color: var(--note-ink); margin-bottom: 4px; font-size: 12px;
+}
+.ai-answer .ai-a-main { white-space: pre-wrap; }
 .ai-answer .ai-ask { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .ai-answer .ai-ask-input {
   flex: 1 1 180px; min-width: 0; padding: 6px 9px; font-size: 13px;

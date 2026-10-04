@@ -11,6 +11,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon' };
@@ -28,6 +29,7 @@ const PORT = server.address().port;
 const EDGE = ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find((p) => fs.existsSync(p));
 if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
 const CDP_PORT = 19480;
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-ai-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -136,7 +138,12 @@ try {
   ok(/\/chat\/completions$/.test(c1[0].url), `打到 chat/completions（${c1[0].url}）`);
   ok(c1[0].model === 'deepseek-flash', `用的模型是 deepseek-flash（实际 ${c1[0].model}）`);
   ok(JSON.stringify(c1[0].roles) === JSON.stringify(['system', 'user']), `第一次只有 system + user（实际 ${JSON.stringify(c1[0].roles)}）`);
-  ok(/不要使用你自己的记忆/.test(c1[0].texts[0]), 'system 里带「只用给定资料、不用自己的记忆」');
+  /* v0.96 方案 A 把这条从"绝对禁止用记忆"改成"第一段不许用记忆"。
+   * 断言必须跟着改，否则它会变成一条**钉死旧契约**的假绿 ——
+   * 措辞从「不要使用你自己的记忆」改成「不要用你自己的记忆」之后，
+   * 旧正则匹配不上，整条测试红，而产品并没有坏。 */
+  ok(/不要用你自己的记忆/.test(c1[0].texts[0]),
+    'system 里仍然禁止在**第一段**用模型自己的记忆（v0.96：不再是绝对禁止，而是分段标注）');
   ok(/不要提任何更后面的情节/.test(c1[0].texts[0]), 'system 里带「不提前面章节」的剧透硬约束');
 
   let p = await panelState();
@@ -209,13 +216,114 @@ try {
   ok(p.hidden && p.answers.length === 0, 'AI 区域收起来了');
   ok((await calls()).length === 1, '清空不发请求（纯本地）');
 
+  console.log('\n▶ ⑧ v0.96 方案 A：提示词要求分两段，且**补充段同样受剧透限制**');
+  /* 这几条是本轮的核心安全属性。改提示词前先看这儿：
+   * 整个项目的剧透保护（进度上限 / 关系锁 / 章节折叠）都是围着"不提前面章节"建的，
+   * 方案 A 允许模型用自己的知识补充，但**补充不等于可以剧透** —— 这一条必须写在提示词里，
+   * 而且要有断言钉住，否则哪天为了"让回答更有用"把它删了，没人发现。 */
+  const sys0 = c1[0].texts[0];
+  ok(/【据本书资料】/.test(sys0), '提示词里有「据本书资料」这一段的标签');
+  ok(/【补充】/.test(sys0), '提示词里有「补充」这一段的标签');
+  ok(/不要提任何更后面的情节/.test(sys0), '不提前面章节的硬约束还在（没被新提示词挤掉）');
+  ok(/第二段也一样/.test(sys0), '⚠ 补充段也被剧透约束（提示词里明写"第二段也一样"）');
+  ok(/只写第一段/.test(sys0), '资料够用时不要加第二段（避免无事也补）');
+  ok(/不确定/.test(sys0), '要求补充段不确定就说不确定，不要编');
+  ok(sys0.includes('\n'), 'system 是分行的（第一版用 join("") 拼成一大坨，模型对分行编号遵循度更高）');
+
+  console.log('\n▶ ⑨ 分段拆分器：容错才是关键（模型不一定照格式来）');
+  const CASES = [
+    ['两段齐全', '【据本书资料】\n曹操是东汉末年的政治家。\n【补充】\n他善用兵法。'],
+    ['只有第一段', '【据本书资料】\n曹操是东汉末年的政治家。'],
+    ['完全没有标签', '曹操是东汉末年的政治家，军事家。'],
+    ['标签不带书名号', '据本书资料\n第一段。\n补充\n第二段。'],
+    ['标签带冒号', '【据本书资料】：第一段。\n【补充】：第二段。'],
+    ['正文里出现补充两字', '据本书资料\n这里要补充一句，但不是新的一段。'],
+    ['只有补充段', '【补充】\n只有补充没有正文。'],
+    ['空字符串', ''],
+  ];
+  const sp = await js(`(() => {
+    const f = window.__ba.splitAiAnswer;
+    const cases = ${JSON.stringify(CASES)};
+    return cases.map(([name, input]) => { const r = f(input); return { name, main: r.main, extra: r.extra }; });
+  })()`);
+  const by = Object.fromEntries(sp.map((x) => [x.name, x]));
+  for (const [n] of CASES) console.log(`    ${n.padEnd(12)} main=${JSON.stringify(by[n].main)} extra=${JSON.stringify(by[n].extra)}`);
+  ok(by['两段齐全'].main === '曹操是东汉末年的政治家。', '两段齐全 ⇒ 正文正确');
+  ok(by['两段齐全'].extra === '他善用兵法。', '两段齐全 ⇒ 补充正确');
+  ok(by['只有第一段'].main === '曹操是东汉末年的政治家。' && by['只有第一段'].extra === '',
+    '模型只写一段时，补充段为空（不是把正文当补充）');
+  ok(by['完全没有标签'].main === '曹操是东汉末年的政治家，军事家。' && by['完全没有标签'].extra === '',
+    '模型完全没按格式 ⇒ 整段当正文显示，**一个字都不能丢**');
+  ok(by['标签不带书名号'].extra === '第二段。', '标签不带【】也认');
+  ok(by['标签带冒号'].extra === '第二段。', '标签带冒号也认');
+  ok(by['正文里出现补充两字'].extra === '' && /要补充一句/.test(by['正文里出现补充两字'].main),
+    '正文中间的"补充"两个字不会被误当成标签');
+  ok(by['只有补充段'].extra === '只有补充没有正文。', '只有补充段也能拆出来');
+  ok(by['空字符串'].main === '' && by['空字符串'].extra === '', '空输入不炸');
+
+  console.log('\n▶ ⑩ 渲染：补充块独立、醒目，且不增加 .ai-a 的个数');
+  /* ⚠ .ai-a 的个数是"第 N 段回答"的编号依据（前面几条断言就靠它），
+   *   所以补充必须**嵌在同一个 .ai-a 内**。第一版图省事多给了一个 .ai-a，
+   *   结果前面所有「第 N 段」断言全部错位。 */
+  await installFetch(['【据本书资料】\n曹操是东汉末年的政治家、军事家，洛阳人。\n【补充】\n他早年举孝廉，任洛阳北部尉。']);
+  await js(`(() => { const b = [...document.querySelectorAll('#panel [data-ai="char"]')][0]; if (b) b.click(); })()`);
+  await wait(1100);
+  const rp = await js(`(() => {
+    const b = document.getElementById('ai-answer');
+    const extras = [...b.querySelectorAll('.ai-extra')];
+    const first = b.querySelector('.ai-a');
+    return {
+      aCount: b.querySelectorAll('.ai-a').length,
+      extraCount: extras.length,
+      extraHead: extras[0] ? extras[0].querySelector('.ai-extra-head').textContent.trim() : '',
+      extraBody: extras[0] ? extras[0].querySelector('.ai-extra-body').textContent.trim() : '',
+      mainText: b.querySelector('.ai-a-main') ? b.querySelector('.ai-a-main').textContent.trim() : '',
+      allText: first ? first.textContent : '',
+      role: extras[0] ? extras[0].getAttribute('role') : '',
+      dashed: extras[0] ? getComputedStyle(extras[0]).borderTopStyle : '',
+    };
+  })()`);
+  console.log(`    .ai-a ${rp.aCount} 个 / .ai-extra ${rp.extraCount} 个`);
+  console.log(`    补充标题：${rp.extraHead}`);
+  console.log(`    正文：${rp.mainText}`);
+  ok(rp.aCount === 1, `补充块**没有**多出一个 .ai-a（实际 ${rp.aCount}）`);
+  ok(rp.extraCount === 1, `有一个补充块（实际 ${rp.extraCount}）`);
+  ok(/模型自身知识/.test(rp.extraHead), '补充块标题写明「模型自身知识」');
+  ok(/未经本书核对/.test(rp.extraHead), '补充块标题写明「未经本书核对」');
+  ok(/含剧透/.test(rp.extraHead), '补充块标题写明「可能含剧透」');
+  ok(/洛阳北部尉/.test(rp.extraBody), '补充内容渲染出来了');
+  ok(/洛阳人/.test(rp.mainText), '正文内容渲染出来了');
+  ok(!/据本书资料】/.test(rp.allText) && !/【补充/.test(rp.allText),
+    '标签行本身**没有**漏到页面上（吃掉，不是显示）');
+  ok(rp.role === 'note', `role="note"（实际 "${rp.role}"）`);
+  ok(rp.dashed === 'dashed', `补充块是虚线框（border-style=${rp.dashed}）—— 一眼能分出不是正文`);
+
+  console.log('\n▶ ⑪ 模型不按格式来时，页面照常显示（不许白屏、不许丢内容）');
+  await installFetch(['曹操就是曹操。']);   // 完全无标签
+  await js(`(() => { const b = [...document.querySelectorAll('#panel [data-ai="char"]')][0]; if (b) b.click(); })()`);
+  await wait(1100);
+  const rp2 = await js(`(() => {
+    const b = document.getElementById('ai-answer');
+    const all = [...b.querySelectorAll('.ai-a')];
+    const last = all[all.length - 1];
+    return { aCount: all.length,
+             extraCount: b.querySelectorAll('.ai-extra').length,
+             text: last ? last.textContent.trim() : '' };
+  })()`);
+  /* ⚠ 期望 1 个 .ai-a 而不是 2 个：点「讲一遍」是**重开一段新对话**（旧的丢掉），
+   *   所以上一条无标签格式的回答已经被整段丢掉，页面上只剩这一条。
+   *   我第一版写 2，结果红 —— 看着像渲染有 bug，其实是我忘了"重开"这个既有语义。 */
+  ok(rp2.aCount === 1, `无标签的回答照样渲染（.ai-a 共 ${rp2.aCount} 个，上一段已被「讲一遍」丢掉）`);
+  ok(rp2.extraCount === 0, '没有补充块（不该凭空造一个）');
+  ok(rp2.text === '曹操就是曹操。', `内容一字不差（${JSON.stringify(rp2.text)}）`);
+
   console.log(`\n${failed ? '✗' : '✓'} AI 继续追问：${passed} 通过，${failed} 失败`);
 } catch (e) { failed++; console.error('异常：' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 3).join('\n')); }
 finally {
   try { ws.close(); } catch { }
   try { proc.kill(); } catch { }
   try { server.close(); } catch { }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+  releaseProfile(profile);
 }
 if (passed + failed === 0) { console.error('✗ 一条断言都没跑到（中途崩了？）'); process.exit(1); }
 process.exit(failed ? 1 : 0);

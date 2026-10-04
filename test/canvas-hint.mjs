@@ -7,6 +7,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 19241, CDP_PORT = 19242;
@@ -26,6 +27,7 @@ const server = http.createServer((req, rep) => {
   fs.createReadStream(fp).pipe(rep);
 });
 await new Promise((r) => server.listen(PORT, r));
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-cur-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -164,5 +166,5 @@ try {
 
   console.log(`\n${failed ? '✗' : '✓'} 画布手感与导航提示：${passed} 通过，${failed} 失败`);
 } catch (e) { failed++; console.error('异常：' + e.message); }
-finally { try { ws.close(); } catch {} try { proc.kill(); } catch {} try { server.close(); } catch {} try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }
+releaseProfile(profile);
 process.exit(failed ? 1 : 0);

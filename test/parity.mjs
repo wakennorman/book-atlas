@@ -27,6 +27,7 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createGraphCore } from '../shared/graph-core.js';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -108,6 +109,7 @@ function buildMini(slug, stateOverrides) {
 }
 
 /* ---------------- 起浏览器 ---------------- */
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-parity-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -391,7 +393,7 @@ try {
   try { ws && ws.close(); } catch { /* 忽略 */ }
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* 忽略 */ }
+  releaseProfile(profile);
 }
 
 console.log(`\n${'='.repeat(40)}`);

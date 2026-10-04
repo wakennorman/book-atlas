@@ -24,6 +24,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from '../test/_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EDGE_CANDIDATES = [
@@ -474,6 +475,7 @@ async function main() {
   if (!edge) throw new Error('找不到 Edge/Chrome');
   const server = await ensureServer();
 
+  sweepStaleProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-tut-'));
   const proc = spawn(edge, [
     `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`,
@@ -523,7 +525,7 @@ async function main() {
     try { ws && ws.close(); } catch { /* ignore */ }
     proc.kill();
     await sleep(600);
-    try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* Edge 退出慢，忽略 */ }
+    releaseProfile(profile);
     if (server) { try { server.kill(); } catch { /* ignore */ } }
   }
 

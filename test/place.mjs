@@ -9,6 +9,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon' };
@@ -30,6 +31,7 @@ const EDGE = [
 ].find((p) => fs.existsSync(p));
 if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
 const CDP_PORT = 19400 + (Number(process.env.BA_CDP_SEQ) || 0) * 2;
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-place-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -218,7 +220,7 @@ finally {
   try { ws.close(); } catch { }
   try { proc.kill(); } catch { }
   try { server.close(); } catch { }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+  releaseProfile(profile);
 }
 if (passed + failed === 0) { console.error('✗ 一条断言都没跑到（中途崩了？）'); process.exit(1); }
 process.exit(failed ? 1 : 0);

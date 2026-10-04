@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs';
 // 要可复现必须 stop() + 固定 tick 次数），冻结时刻落在哪一步取决于帧率 —— 实测两次冷启动
 // 相同视口下也能对上，但**换视口就对不上**，所以这里只断言同视口。
 import { setTimeout as sleep } from 'node:timers/promises';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ 每次冷启动必须用**自己的** CDP 端口。
@@ -68,6 +69,7 @@ const ok = (c, m) => { if (c) { passed++; console.log(`  ✓ ${m}`); } else { fa
 /** 一次独立冷启动：全新 profile（⇒ 全新 localStorage）→ 切视图 → 抓坐标 */
 async function coldStart(label, views) {
   const CDP_PORT = 19300 + (cdpSeq++) * 2;      // 每次冷启动独占一个端口，见上面那段注释
+  sweepStaleProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-det-'));
   const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
   const cdpUrl = () => new Promise((res, rej) => {
@@ -168,7 +170,7 @@ async function coldStart(label, views) {
   } finally {
     try { ws.close(); } catch { }
     try { proc.kill(); } catch { }
-    try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+    releaseProfile(profile);
     await sleep(800);
   }
   return out;
@@ -228,6 +230,7 @@ try {
     })()`;
   const hist = await (async () => {
     const CDP_PORT = 19300 + (cdpSeq++) * 2;
+    sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-hist-'));
     const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
     const cdpUrl = () => new Promise((res, rej) => {
@@ -272,7 +275,7 @@ try {
     } finally {
       try { ws.close(); } catch { }
       try { proc.kill(); } catch { }
-      try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+      releaseProfile(profile);
     }
     return out;
   })();
@@ -292,6 +295,7 @@ try {
   console.log('    （roam / render-scale 两个测试已间接覆盖"点人拉得回来"，这里只确认"重开回到原处"这条链路）');
   const vm = await (async () => {
     const CDP_PORT = 19300 + (cdpSeq++) * 2;
+    sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-vm-'));
     const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
     const PIN = `(() => {
@@ -367,7 +371,7 @@ try {
     } finally {
       try { ws.close(); } catch { }
       try { proc.kill(); } catch { }
-      try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+      releaseProfile(profile);
     }
     return out;
   })();

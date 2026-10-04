@@ -13,6 +13,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8' };
@@ -28,6 +29,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
 const EDGE = ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find((p) => fs.existsSync(p));
 const CDP_PORT = 19800;
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-bv-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -81,7 +83,7 @@ try {
   const keep = await js(`localStorage.getItem('ba-ai-model')`);
   ok(keep === 'deepseek-reasoner', `非弃用名保持原样（${keep}）—— 迁移只针对已公告弃用的名字，不擅自改人配置`);
 } catch (e) { console.error('异常：' + e.message); fail++; }
-finally { try { ws.close(); } catch { } try { proc.kill(); } catch { } try { server.close(); } catch { } try { fs.rmSync(profile, { recursive: true, force: true }); } catch { } }
+releaseProfile(profile);
 
 console.log(`\n通过 ${pass} · 失败 ${fail}`);
 process.exit(fail ? 1 : 0);

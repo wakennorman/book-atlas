@@ -4000,6 +4000,18 @@
     return `${head}\n\n与他/她有关的人（只列你读到的部分）：\n${rels || '（暂无）'}\n\n相关事件（只列你读到的部分）：\n${evs || '（暂无）'}`;
   }
 
+  /* v0.96 方案 A：回答分成两段，各自标注来源。
+   *
+   * 用户选了 A（资料不足时允许模型用自己的知识补充），但**必须分段并标出来**。
+   * 为什么不能直接开：本项目整个剧透保护（进度上限 / 关系锁 / 章节折叠）
+   * 都是围着"不能提前剧透"建的，所以补充段只能在**同样的剧透上限内**补充 ——
+   * 它是"补充出处"，**不是"解除限制"**。这一条写在提示词里，test/ai.mjs 有断言钉住。
+   *
+   * 标签用【】包起来：模型偶尔会在正文里写"补充："，那种不带【】的行不算标签。 */
+  const AI_LABEL_MAIN = '据本书资料';
+  const AI_LABEL_EXTRA = '补充';
+  const AI_LABEL_RE = /^[\s【[]*(据本书资料|补充)[\s】\]]*[：:·・.、]?\s*(.*)$/;
+
   /** 组装提示词（测试也用它，便于断言"资料里没有未来信息"） */
   function aiPrompt(kind, payload) {
     const ceiling = aiCeiling();
@@ -4007,20 +4019,62 @@
     const prog = state.progress === null
       ? `读者没有开启剧透保护（可以看到全书信息，上限第 ${total} 章）`
       : `读者读到第 ${state.progress} 章（共 ${total} 章）`;
+    /* ⚠ 第一版用 .join('') 把 system 拼成一整行，读起来是一大坨；
+     *   模型对分行编号的遵循度明显更高，所以改成 join('\n') 并把两段标签单独成行。 */
     const system = [
       `你是《${titleOf()}》的阅读助手。`,
       prog,
-      `硬性要求：① 只能使用下面提供的资料，不要使用你自己的记忆；② 只描述发生在第 ${ceiling} 章及之前的事；`,
-      `③ 不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；`,
-      `④ 资料里没有的不要编；⑤ 语气平实、口语化，不要小标题、不要列表，不超过 220 字。`,
-    ].join('');
+      `硬性要求：① 只描述发生在第 ${ceiling} 章及之前的事；`,
+      `② 不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；`,
+      `③ 语气平实、口语化，不要小标题、不要列表。`,
+      '',
+      `【回答必须分成下面两段，每段用一行以对应标签开头】`,
+      `【${AI_LABEL_MAIN}】只用上面提供的资料回答，不要用你自己的记忆；资料里没有的不要编。`,
+      `【${AI_LABEL_EXTRA}】只在资料**不足以回答用户的问题**时才写，内容来自你自己的知识。`,
+      '分段规则：',
+      '· 资料够用时**只写第一段**，不要加第二段。',
+      '· 两段都必须遵守第 ①② 条 —— **第二段也一样**；补充出处不等于可以剧透。',
+      '· 不许把补充的内容混进第一段；第一段每一句都要能在资料里找到出处。',
+      '· 第二段不确定的地方直接说"不确定"，不要编。',
+      '· 第一段不超过 180 字，第二段不超过 120 字。',
+    ].join('\n');
     const user = kind === 'chain'
       ? `【任务】用几句话说清这段关系链是怎么一环扣一环的。\n\n【关系链（按跳数）】\n${aiChainContext(payload)}\n\n【读者进度】第 ${ceiling} 章`
       : `【任务】用几句话说清这个人是谁、和他人的关系是怎么来的。\n\n【人物资料】\n${aiCharContext(payload)}\n\n【读者进度】第 ${ceiling} 章`;
     return { system, user, ceiling };
   }
 
-  /* v93：追问线程。
+  /* v0.96：把回答按两段标签拆开。
+   *
+   * 为什么必须容错：模型不一定照格式来。第一版假设"一定有【据本书资料】开头"，
+   * 于是模型只回一段时，标签行被原样显示在页面上，而正文因为"必须在标签之后"
+   * 被**静默丢掉** —— 比不拆更糟。
+   * ⇒ 现在的口径：认得的标签行**吃掉**（不显示），认不出的行都当正文；
+   *   拆不出补充段就是空，页面照常显示。
+   *
+   * ⚠ 标签**后面的同行内容必须留下**（m[2]）。只判断"是不是标签"然后 continue 的话，
+   *   模型写成「【据本书资料】：曹操是东汉末年的政治家。」时整行被吃掉，正文全丢。
+   *   第二道保险：只有"标签 + 短内容"（≤40 字）才当标签 ——
+   *   长得像正文的一行即使碰巧以"补充"开头也照常显示。宁可分错段，不能丢内容。 */
+  function splitAiAnswer(text) {
+    const main = [];
+    const extra = [];
+    let bucket = main;
+    for (const raw of String(text || '').split(/\r?\n/)) {
+      const line = raw.trim();
+      const m = AI_LABEL_RE.exec(line);
+      if (m && (m[2] === '' || line.length <= 40)) {
+        bucket = m[1] === AI_LABEL_EXTRA ? extra : main;
+        if (m[2]) bucket.push(m[2]);
+        continue;
+      }
+      bucket.push(raw);
+    }
+    const clean = (a) => a.join('\n').replace(/^\n+/, '').replace(/\s+$/, '');
+    return { main: clean(main), extra: clean(extra) };
+  }
+
+  /* v0.96 追问线程。
    *
    * 为什么必须放 state 而不是只留在 DOM 里：`#ai-answer` 所在的右栏面板是整体 innerHTML 重建的
    * （renderCharacterPanel / renderRelationPanel 都会把它连同容器一起换掉），
@@ -4030,6 +4084,26 @@
    * 不预示结局）是**每次请求都必须成立**的，不能因为有了历史就省掉 ——
    * 省略一次，模型就会拿上一轮的资料去回答新的追问，越追问越容易剧透。 */
   let aiThread = null;   // { kind, system, ceiling, turns: [{role, content}] }
+
+  /* v0.96：把一条回答渲染成「正文 + 可选补充」。
+   *
+   * 为什么补充块**嵌在同一个 .ai-a 里**而不是另起一个 .ai-a：
+   * test/ai.mjs（以及任何按 .ai-a 数"有几段回答"的东西）都按元素个数数，
+   * 多一个 .ai-a 会让"第 N 段回答"全部错位。所以只换**内部结构**，不动外层元素。
+   *
+   * 标注措辞照用户定的方案 A 原话：「补充（模型自身知识，未经本书核对，可能含剧透）」——
+   * 三个要点（不是模型的知识 / 没跟本书核对 / 可能含剧透）一个都不能省。 */
+  const AI_EXTRA_NOTE = '⚠️ 补充（模型自身知识，未经本书核对，可能含剧透）';
+  function aiAnswerHtml(content) {
+    const { main, extra } = splitAiAnswer(content);
+    const body = esc(main) || '（这一段没有正文）';
+    const extraHtml = extra
+      ? '<div class="ai-extra" role="note" aria-label="模型自身知识的补充">'
+        + `<div class="ai-extra-head">${esc(AI_EXTRA_NOTE)}</div>`
+        + `<div class="ai-extra-body">${esc(extra)}</div></div>`
+      : '';
+    return `<div class="ai-a"><div class="ai-a-main">${body}</div>${extraHtml}</div>`;
+  }
 
   /** 画 AI 区域：整段对话 + 追问输入框 */
   function renderAiThread(status) {
@@ -4043,7 +4117,7 @@
      * 它仍然要照常发给模型 —— 只是不给人看。 */
     const turns = aiThread.turns.map((t) => {
       if (t.task) return '';
-      return t.role === 'user' ? `<div class="ai-q">${esc(t.content)}</div>` : `<div class="ai-a">${esc(t.content)}</div>`;
+      return t.role === 'user' ? `<div class="ai-q">${esc(t.content)}</div>` : aiAnswerHtml(t.content);
     }).join('');
     const busy = status === 'busy';
     box.hidden = false;
@@ -5096,6 +5170,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     buildCompanionEpub: () => buildCompanionEpub(),
     aiConfig: () => aiConfig(),
     aiPrompt: (kind, payload) => aiPrompt(kind, payload),
+    /* v0.96：暴露分段拆分器。提示词和渲染都能在页面上直接验，
+     * 但"模型不按格式来时会不会把正文吃掉"这种容错只能靠这个函数单测 ——
+     * 走渲染层要等真的跑一遍请求，慢且脆。 */
+    splitAiAnswer: (text) => splitAiAnswer(text),
     aiExplain: (kind, payload) => aiExplain(kind, payload),
     bfs: (a, b) => bfs(a, b),
     _buildOption: (o) => buildOption(o),

@@ -14,6 +14,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EDGE = [
@@ -33,6 +34,7 @@ const server = http.createServer((req, rep) => {
 });
 const PORT = await new Promise((r) => server.listen(0, () => r(server.address().port)));
 const CDP_PORT = PORT + 1000;
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-tip-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -41,8 +43,15 @@ const cdpUrl = () => new Promise((res, rej) => {
     r.on('end', () => { try { res(JSON.parse(b).find((x) => x.type === 'page').webSocketDebuggerUrl); } catch (e) { rej(e); } });
   }).on('error', rej);
 });
+/* ⚠ 预算从 40 次 ×250ms（10 秒）提到 150 次（**37 秒**），并在超时时**明确报错**。
+ *   实测：单独跑本测试 exit=0，但在 `npm run gate` 的串行负载下（前面已连续跑过
+ *   十几个开浏览器的步骤）Edge 迟迟不暴露 CDP 端点，10 秒预算耗尽后
+ *   `new WebSocket(null)` 抛错 —— 而门禁只打印含 ✗ 的行，于是这一步只显示
+ *   「exit=1 红 0」，**看不出是超时还是断言失败**，排查很绕。
+ *   （`test/` 里其余测试还是 40 次的旧预算，改它们和端口改造一起做。） */
 let url = null;
-for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+for (let i = 0; i < 150 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+if (!url) { console.error('  ✗ 连不上 Edge 的 CDP 端点（等了 37 秒）—— 这是**环境/负载**问题，不是断言失败'); process.exit(1); }
 const ws = new WebSocket(url);
 await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
 let seq = 0; const pending = new Map();
@@ -236,5 +245,5 @@ try {
 
   console.log(`\n${failed ? '✗' : '✓'} 截断文字的全文浮层：${passed} 通过，${failed} 失败`);
 } catch (e) { failed++; console.error('异常：' + e.message); }
-finally { try { ws.close(); } catch {} try { proc.kill(); } catch {} try { server.close(); } catch {} try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }
+releaseProfile(profile);
 process.exit(failed ? 1 : 0);

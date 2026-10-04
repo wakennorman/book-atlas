@@ -4,6 +4,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 // 复现并守住三个只在真实浏览器里才暴露的问题（v85 修）：
 //  A. 快速切书 ⇒ loadBook 必须丢弃过期响应，否则后到的会把当前书覆盖掉
@@ -39,6 +40,7 @@ const server = http.createServer((req, rep) => {
 });
 await new Promise((r) => server.listen(PORT, r));
 
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-race-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
@@ -173,7 +175,7 @@ try {
   try { ws && ws.close(); } catch { /* 忽略 */ }
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* 忽略 */ }
+  releaseProfile(profile);
 }
 
 console.log(`\n${'='.repeat(40)}`);

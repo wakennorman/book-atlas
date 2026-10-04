@@ -17,6 +17,7 @@ import http from 'node:http';
 import net from 'node:net';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 18931;
@@ -79,6 +80,7 @@ const edge = EDGE_CANDIDATES.find((p) => fs.existsSync(p));
 if (!edge) { console.error('找不到 Edge/Chrome，跳过浏览器测试'); process.exit(0); }
 
 const server = await serve();
+sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-br-'));
 const proc = spawn(edge, [
   `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`,
@@ -408,7 +410,7 @@ try {
   try { ws && ws.close(); } catch { /* 忽略 */ }
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* 忽略 */ }
+  releaseProfile(profile);
 }
 
 console.log(`\n${'='.repeat(40)}`);
