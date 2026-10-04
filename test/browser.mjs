@@ -11,6 +11,7 @@
  * 需要本机有 Edge 或 Chrome（脚本会自己找）。
  */
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -20,8 +21,8 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 18931;
-const CDP_PORT = 18932;
+let PORT = 0;   // v0.97：临时端口，listen 之后回填
+const CDP_PORT = await freePort();
 
 const EDGE_CANDIDATES = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -53,7 +54,7 @@ function serve() {
       rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
       fs.createReadStream(fp).pipe(rep);
     });
-    s.listen(PORT, () => res(s));
+    s.listen(0, '127.0.0.1', () => { PORT = s.address().port; res(s); });
   });
 }
 

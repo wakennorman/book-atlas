@@ -2,6 +2,7 @@
 //  ① #graph 的 grab / is-panning 光标真的生效，且不会被 ECharts 覆盖成别的
 //  ② 事件轴导航的闪烁时长（右栏 3.6s / 事件卡 3.9s）
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -10,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 19241, CDP_PORT = 19242;
+let PORT = 0;   // v0.97：临时端口，listen 之后回填
+const CDP_PORT = await freePort();
 const EDGE = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -26,7 +28,8 @@ const server = http.createServer((req, rep) => {
   rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
-await new Promise((r) => server.listen(PORT, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
+PORT = server.address().port;   // v0.97：临时端口
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-cur-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

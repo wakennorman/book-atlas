@@ -32,9 +32,14 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  *      带到了"这一次"。
  *   ② 同一个测试没法并行跑两次。
  *
- * `test/` 里已有 7 个用 `listen(0)`（layout-stable / place / place-visible / build / ai /
- * full-tip / roam），这里跟上；还剩 8 个写死的（parity / browser / e2e / editor / races /
- * relax / lock / render-scale / canvas-hint），改它们要逐个核对 CDP 端口，单独做。
+ * `test/` 里现在**全部**用临时端口了（v0.97 把剩下 15 个也改了，HTTP 与 CDP 都改）。
+ * 辅助函数在 `test/_free-port.mjs`，新写测试直接 `import { freePort } from './_free-port.mjs'`。
+ *
+ * ⚠ v0.97 补记：写死端口的失败形态**不止 EADDRINUSE**，还有更阴的一种 ——
+ *   两份同时跑时，第二只 Edge 绑不上端口就去连第一只，两份测试**静默驱动同一只浏览器**，
+ *   表现是"同一时刻、同一错误、同样耗时"（实测 canvas-hint 两份都 41.4s / 同一个 null 错误），
+ *   而不是报端口冲突。改成临时端口后两份各自 exit=0、10.6s 与 10.7s。
+ *   ⇒ 看到"两份跑出来一模一样地失败"，先怀疑它们连的是同一只浏览器。
  * HTTP 端口从 server.address() 读，CDP 端口先向系统借一个空闲端口再关掉
  * （Edge 要在 spawn 之前就知道端口号）。 */
 const freePort = () => new Promise((res) => {

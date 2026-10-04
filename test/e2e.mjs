@@ -11,12 +11,13 @@
  * 用法：node test/e2e.mjs
  */
 import http from 'node:http';
+import { freePort } from './_free-port.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 18923;
+let PORT = 0;   // v0.97：临时端口，listen 之后回填（get() 是模块级函数，所以用 let 而不是块内 const）
 
 let passed = 0;
 let failed = 0;
@@ -70,7 +71,8 @@ function get(pathname) {
 
 /* ---------------- 测试 ---------------- */
 async function run() {
-  await new Promise((r) => server.listen(PORT, r));
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  PORT = server.address().port;   // v0.97：临时端口
   console.log(`本地服务：http://localhost:${PORT}/\n`);
 
   section('首页加载');

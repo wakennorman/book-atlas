@@ -6,6 +6,7 @@
 //  · 点「讲一遍」重开一段新对话。
 // 顺带核对默认模型名已从 deepseek-chat 换成 deepseek-flash（前者已进入弃用流程）。
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -28,7 +29,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
 const EDGE = ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find((p) => fs.existsSync(p));
 if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
-const CDP_PORT = 19480;
+const CDP_PORT = await freePort();
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-ai-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

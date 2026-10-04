@@ -4,6 +4,7 @@
 //  ③ 页面别处的地点名：悬停/聚焦弹出说明浮层，且满足 WCAG 2.1 SC 1.4.13（可关闭/可悬停/持久/键盘可达）
 //  ④ 每个地点都有介绍（数据完整性）
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -30,7 +31,7 @@ const EDGE = [
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
 ].find((p) => fs.existsSync(p));
 if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
-const CDP_PORT = 19400 + (Number(process.env.BA_CDP_SEQ) || 0) * 2;
+const CDP_PORT = await freePort();   // v0.97：不再需要 BA_CDP_SEQ 错开
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-place-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

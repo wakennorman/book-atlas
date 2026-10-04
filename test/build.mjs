@@ -8,6 +8,7 @@
 //     v0.93 只改了默认值没动已存的值，等于让用户的请求一直发给一个要被下线的模型名。
 //     但**别的名字一律不动**：迁移只针对已公告弃用的那些，不擅自改人配置。
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -28,7 +29,7 @@ const server = http.createServer((req, rep) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
 const EDGE = ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe', 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find((p) => fs.existsSync(p));
-const CDP_PORT = 19800;
+const CDP_PORT = await freePort();
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-bv-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

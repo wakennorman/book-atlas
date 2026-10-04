@@ -9,6 +9,7 @@
 // 端口用 listen(0) 拿临时端口 —— 10 个老测试写死了端口（roam 19135 之类），
 // 那也是用户误开测试服务器的原因，见 tools/preview.mjs 顶部说明。
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -33,7 +34,7 @@ const server = http.createServer((req, rep) => {
   fs.createReadStream(fp).pipe(rep);
 });
 const PORT = await new Promise((r) => server.listen(0, () => r(server.address().port)));
-const CDP_PORT = PORT + 1000;
+const CDP_PORT = await freePort();
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-tip-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

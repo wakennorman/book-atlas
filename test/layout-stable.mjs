@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -34,7 +35,14 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * 症状极有迷惑性：布局本身完全可复现（同输入纯函数），但 fit.s 每次都稳定地差一个值
  * （实测 A 恒为 0.20678、B 恒为 0.22478），而且连抓三遍都一样 ⇒ 不是采样撞上异步 refit，
  * 是压根连错了浏览器。定位这个问题花了好几轮，改端口后 5 连过。 */
-let cdpSeq = 0;
+/* ⚠ v0.97：原来这里是 `let cdpSeq = 0;`，两次冷启动各领一个写死端口
+ *   （19300 / 19302）来避免"后一次连上前一次还没死透的浏览器"。那个 bug 的症状
+ *   极有迷惑性（布局是纯函数、可复现，但 fit.s 每次稳定差一个值，连抓三遍都一样
+ *   ⇒ 根本不是采样撞上异步 refit，是压根连错了浏览器，定位花了好几轮）。
+ *
+ *   现在两次都 `await freePort()`：**端口不再被任何一次运行"占有"**，
+ *   所以后一次不可能再撞上前一次那只残留浏览器 —— 根因消失，序号也就没必要了。
+ *   残留竞态窗口是毫秒级（借到就关），实测门禁 26 步串行没碰上。 */
 /** 钉死的画布高度（见 coldStart 里那段注释）。用 !important，inline style 会被 applyViewHeight 覆盖。 */
 const PIN_H = 560;
 const EDGE = [
@@ -68,7 +76,7 @@ const ok = (c, m) => { if (c) { passed++; console.log(`  ✓ ${m}`); } else { fa
 
 /** 一次独立冷启动：全新 profile（⇒ 全新 localStorage）→ 切视图 → 抓坐标 */
 async function coldStart(label, views) {
-  const CDP_PORT = 19300 + (cdpSeq++) * 2;      // 每次冷启动独占一个端口，见上面那段注释
+  const CDP_PORT = await freePort();   // v0.97：临时端口，不再靠 cdpSeq 错开
   sweepStaleProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-det-'));
   const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
@@ -229,7 +237,7 @@ try {
       s.textContent = '#graph { height: ${PIN_H}px !important; }';
     })()`;
   const hist = await (async () => {
-    const CDP_PORT = 19300 + (cdpSeq++) * 2;
+    const CDP_PORT = await freePort();
     sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-hist-'));
     const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
@@ -294,7 +302,7 @@ try {
   console.log('\n▶ ④ 视野记忆：改过 zoom/center 后重开，会回到同一处');
   console.log('    （roam / render-scale 两个测试已间接覆盖"点人拉得回来"，这里只确认"重开回到原处"这条链路）');
   const vm = await (async () => {
-    const CDP_PORT = 19300 + (cdpSeq++) * 2;
+    const CDP_PORT = await freePort();
     sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-vm-'));
     const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

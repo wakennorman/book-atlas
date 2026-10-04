@@ -7,6 +7,7 @@
 //   这个测试的第一版就是这么写的，测出「10/10 全过」，而真实单点路径是 3/10。
 //   教训和 v93 CHANGELOG §八 里那三条假绿同源：测量方法本身会骗人。
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -33,7 +34,7 @@ const EDGE = [
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
 ].find((p) => fs.existsSync(p));
 if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
-const CDP_PORT = 19600 + (Number(process.env.BA_CDP_SEQ) || 0) * 2;
+const CDP_PORT = await freePort();   // v0.97：不再需要 BA_CDP_SEQ 错开
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-pv-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });

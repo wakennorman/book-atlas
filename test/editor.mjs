@@ -16,6 +16,7 @@
  * 用法：node test/editor.mjs
  */
 import fs from 'node:fs';
+import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -24,7 +25,8 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 18971, CDP_PORT = 18972;
+let PORT = 0;   // v0.97：临时端口，listen 之后回填
+const CDP_PORT = await freePort();
 
 const EDGE = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -50,7 +52,8 @@ const server = http.createServer((req, rep) => {
   rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
-await new Promise((r) => server.listen(PORT, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
+PORT = server.address().port;   // v0.97：临时端口
 
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-ed-'));
