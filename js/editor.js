@@ -779,7 +779,7 @@
   function formAi() {
     const key = localStorage.getItem('ba-ai-key') || '';
     const base = localStorage.getItem('ba-ai-base') || 'https://api.deepseek.com/v1';
-    const model = localStorage.getItem('ba-ai-model') || 'deepseek-chat';
+    const model = localStorage.getItem('ba-ai-model') || 'deepseek-flash';
     return `${head('AI 草稿', '粘贴原文 → AI 按 schema 出草稿 → 人工校对后才算数（Key 只存在这台浏览器里）',
       '<button class="primary" type="button" data-tool="ai-generate">生成草稿</button>')}
       <div class="ed-grid">
@@ -795,7 +795,7 @@
   async function generateDraft() {
     const base = (($('#ai-base') || {}).value || '').trim().replace(/\/$/, '');
     const key = (($('#ai-key') || {}).value || '').trim();
-    const model = (($('#ai-model') || {}).value || '').trim() || 'deepseek-chat';
+    const model = (($('#ai-model') || {}).value || '').trim() || 'deepseek-flash';
     const text = (($('#ai-text') || {}).value || '').trim();
     const out = $('#ai-out');
     if (!out) return;
@@ -857,7 +857,7 @@
     return {
       base: read('ai-base', 'ba-ai-base', 'https://api.deepseek.com/v1').replace(/\/$/, ''),
       key: read('ai-key', 'ba-ai-key'),
-      model: read('ai-model', 'ba-ai-model', 'deepseek-chat'),
+      model: read('ai-model', 'ba-ai-model', 'deepseek-flash'),
     };
   }
 
@@ -1028,7 +1028,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=92';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=93';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1118,7 +1118,7 @@
   function formBatch() {
     const cfgKey = localStorage.getItem('ba-ai-key') || '';
     const cfgBase = localStorage.getItem('ba-ai-base') || 'https://api.deepseek.com/v1';
-    const cfgModel = localStorage.getItem('ba-ai-model') || 'deepseek-chat';
+    const cfgModel = localStorage.getItem('ba-ai-model') || 'deepseek-flash';
     const chapters = ed.chapters || [];
     const results = ed.genResults || [];
     const saved = savedBatch();

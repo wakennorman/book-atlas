@@ -399,6 +399,30 @@ main {
 .combo-sub { margin-left: auto; font-size: 11.5px; color: var(--muted); text-align: right; }
 .combo-item:hover, .combo-item.on { background: var(--soft); }
 .combo-item.combo-empty { color: var(--muted); cursor: default; font-size: 12.5px; }
+/* v93 地点：说明跟着**当前行**走（指针悬停或 ↑↓ 都算），不是浮一个tooltip。
+   理由见 js/app.js placeDesc 处的注释：浮层会被 overflow 裁、指针要够得着、
+   而且触屏根本没有 hover —— 业界（GOV.UK autocomplete、系统 combobox）都是这个做法。
+   说明永远在 DOM 里（只是默认不显示），所以读屏在 listbox 里逐项移动时能念出来。 */
+.combo-desc {
+  flex-basis: 100%; margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted);
+  display: none;
+}
+.combo-item.on .combo-desc, .combo-item:hover .combo-desc { display: block; }
+/* 地点说明浮层（右栏/事件轴/章节摘要里的地点名）
+   ⚠ 必须是 fixed 不是 absolute：定位用的是 target.getBoundingClientRect()，那是**视口**坐标；
+   而 absolute 的 left/top 是相对**文档**的，页面一滚就错位（第一版就是 absolute，
+   测试直接量出浮层跑到视口外）。fixed 让两套坐标一致。 */
+.place-tip {
+  position: fixed; z-index: 90; max-width: 300px; padding: 8px 11px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-lg); font-size: 12.5px; line-height: 1.55; color: var(--ink);
+  pointer-events: auto;              /* WCAG 1.4.13：浮层本身要能被指针移进去 */
+}
+.place-tip[hidden] { display: none; }
+.place-tip .pt-name { font-weight: 600; }
+.place-tip .pt-meta { color: var(--muted); font-size: 11.5px; margin-bottom: 3px; }
+.place-tip .pt-desc { color: var(--ink); }
+.place-ref { cursor: help; border-bottom: 1px dotted var(--line); }
 
 /* 锁定条是纯提示（无按钮）：不吃指针事件，压在图上也不挡节点点击 */
 #lock-bar { pointer-events: none; }
@@ -478,13 +502,19 @@ main {
    scroll-margin-top 避开 sticky 顶栏（只在页面滚动时生效；桌面右栏自己是滚动容器、上方无可滚内容，不会白留空隙）
    v90：用户反馈"感觉一下子不知道有什么东西飞过去了，也不会拉上去看了" —— 右栏闪烁承担的是
    **周边视觉**任务（人正在看中间的图），1.8s 扫一眼就没了，等反应过来提示已结束。
-   所以面板改成 3 下 ×1.2s = 3.6s，class 在 4.2s 才摘（js 的 PANEL_NAV_MS 同步）。
-   事件轴上的事件卡是"我就在看这段列表、目标在附近"，扫一眼就够，不动。 */
+   v92：用户又说"'定义这段关系的事件'还是一下就跳过"。查下来真正的元凶不是时长，而是
+   **两段导航只隔 550ms** —— 右栏刚闪一下，页面就滚去事件轴了（右栏那段根本没机会被看见）。
+   间隔已改成 1800ms（js 的 NAV_STEP2_DELAY）。这里再把闪烁做得更"实"一点：
+   除了描边，加一层底色和左侧色条，避免只有一圈很淡的描边而看不出来。 */
 #panel { scroll-margin-top: 110px; }
 #panel.nav-flash { animation: panel-flash 1.2s ease-in-out 3; }
 @keyframes panel-flash {
-  0%, 100% { box-shadow: var(--shadow); border-color: var(--line); }
-  50% { box-shadow: 0 0 0 4px var(--accent), var(--shadow-md); border-color: var(--accent); }
+  0%, 100% { box-shadow: var(--shadow); border-color: var(--line); background: var(--panel); }
+  50% {
+    box-shadow: 0 0 0 4px var(--accent), var(--shadow-md);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+  }
 }
 .quote {
   margin-top: 8px; padding: 10px 12px;
@@ -615,6 +645,21 @@ body[data-fontsize="l"] .fold-btn { font-size: 14px; }
 .ai-answer .ai-head { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px; }
 .ai-answer .ai-foot { margin-top: 6px; color: var(--muted); font-size: 12px; }
 .ai-answer .ai-err { color: #c0504d; }
+/* v93 继续追问：一问一答纵向排开，问句用左边框+浅底跟回答区分开，
+   免得几轮之后糊成一段看不出谁问谁答。 */
+.ai-answer .ai-q {
+  margin: 8px 0 4px; padding: 5px 9px; border-left: 3px solid var(--accent);
+  background: var(--panel-2); border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  color: var(--ink); font-size: 13px;
+}
+.ai-answer .ai-a { margin: 0 0 4px; color: var(--ink); font-size: 13.5px; }
+.ai-answer .ai-ask { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.ai-answer .ai-ask-input {
+  flex: 1 1 180px; min-width: 0; padding: 6px 9px; font-size: 13px;
+  border: 1px solid var(--line); border-radius: var(--radius-s);
+  background: var(--panel); color: var(--ink);
+}
+.ai-answer .ai-ask-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ---------- 无障碍：色盲友好配色 / 字号 ---------- */
 .display-panel { width: min(330px, 92vw); }

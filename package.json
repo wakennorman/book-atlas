@@ -1,6 +1,6 @@
 {
   "name": "book-atlas",
-  "version": "0.92",
+  "version": "0.93.0",
   "private": true,
   "type": "module",
   "description": "书脉 BookAtlas · 人物关系与事件图谱",
@@ -17,13 +17,16 @@
     "check:packs": "node scripts/make-slim-packs.mjs --check",
     "check:sw": "node scripts/check-sw-precache.mjs",
     "validate": "node scripts/validate.mjs --all",
-    "check": "npm run lint && npm run test && npm run check:version && npm run check:packs && npm run check:sw && npm run validate && npm run test:browser && npm run test:parity && npm run test:editor && npm run test:races && npm run test:relax && npm run test:relations && npm run test:lock && npm run test:render-scale && npm run test:roam && npm run test:canvas-hint",
+    "check": "npm run lint && npm run test && npm run check:version && npm run check:packs && npm run check:sw && npm run validate && npm run test:browser && npm run test:parity && npm run test:editor && npm run test:races && npm run test:relax && npm run test:relations && npm run test:lock && npm run test:render-scale && npm run test:roam && npm run test:canvas-hint && npm run test:layout-stable && npm run test:place && npm run test:ai",
     "test:relax": "node test/relax.mjs",
     "test:relations": "node test/relations.mjs",
     "test:lock": "node test/lock.mjs",
     "test:render-scale": "node test/render-scale.mjs",
     "test:roam": "node test/roam.mjs",
-    "test:canvas-hint": "node test/canvas-hint.mjs"
+    "test:canvas-hint": "node test/canvas-hint.mjs",
+    "test:layout-stable": "node test/layout-stable.mjs",
+    "test:place": "node test/place.mjs",
+    "test:ai": "node test/ai.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

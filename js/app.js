@@ -52,6 +52,8 @@
                              //   等比塞进画布再乘 zoom，只有这个是真实的（memory/echarts-graph-auto-fits-data-bbox.md）
     viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
     labelTimer: null,
+    pendingView: null,   // v93：刚恢复的"上次视野"，用来扛过随后那次 resize 复位
+    viewMemTimer: null,   // v92：拖动后延迟写"上次视野"的定时器
     fold: {},                // 长列表折叠：key -> 当前显示条数（缺省＝默认收起）
     relChMap: null,          // 关系对象 -> 解锁章（loadBook 时一次算好；relCh() 查它）
     charLastChMap: null,     // 人物 id -> 最后出场章（同上；charLastCh() 查它）
@@ -697,6 +699,10 @@
         const edges = new Set();
         for (const r of state.book.relations) if (nodes.has(r.from) || nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
         setHighlight(nodes, edges, null, null);
+        /* v93：点阵营也是导航进画布，一样建锁。grow=false —— 阵营成员本身已经是一整片，
+         * 再扩一跳基本等于整张图（曹魏 250 人的一跳邻域几乎覆盖全书），跳数控件也就没意义了。 */
+        const fname = (state.book.factions.find((f) => f.key === key) || {}).name || key;
+        lockFromHighlight(fname, 'faction', [...nodes], false);
       });
     });
   }
@@ -712,6 +718,26 @@
     return parts.join(' · ');
   }
   function comboItems(kind) {
+    /* v93：新增 kind='place' —— 地点筛选从原生 <select> 换成这个下拉。
+     *
+     * 为什么必须换：原生 select 的 <option> 由操作系统绘制，**不是 DOM 节点**，
+     * 既挂不上 mouseover 也放不进 tooltip —— 用户想要的"悬停就显示介绍"在原生下拉里
+     * 根本做不到（这是平台限制，不是偏好问题）。而本项目已经有这套自建 combobox
+     * （role=combobox/listbox、↑↓ 选择、aria-activedescendant、上下翻转避裁剪），
+     * 直接复用是最省事也最一致的做法。
+     *
+     * 排序沿用"首次出场章节"：地点是按故事走的，按章节排比按名字/热度排更好找。
+     * 剧透口径与原 select 完全一致（进度之后 / 时间旅行之前的地点不出现）。 */
+    if (kind === 'place') {
+      return [...(state.book.places || [])]
+        .filter((p) => (state.progress === null || (p.firstCh ?? 0) <= state.progress) && !beforeAsOf(p.firstCh ?? 0))
+        .sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0) || a.name.localeCompare(b.name))
+        .map((p) => ({
+          id: p.id, name: p.name, aliases: p.aliases || [],
+          sub: `${p.type || '地点'}${p.firstCh != null ? ` · 第 ${p.firstCh} 章` : ''}`,
+          desc: p.desc || '',
+        }));
+    }
     // 关系数多的排前面（三国 871 人，下拉直接看到曹操/刘备比按数据顺序强）
     return state.book.characters
       .filter((c) => !charLocked(c) && charVisibleAt(c) && (kind === 'path' ? !isCharHidden(c) : true))
@@ -748,7 +774,7 @@
     function render() {
       if (filtered.length) {
         list.innerHTML = filtered.map((it, i) =>
-          `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}</div>`
+          `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${esc(it.desc)}</p>` : ''}</div>`
         ).join('') + (all.length > filtered.length
           ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
       } else {
@@ -800,8 +826,27 @@
     });
     list.addEventListener('mousedown', (e) => e.preventDefault());   // 防止点选项前失焦把列表关了
     list.addEventListener('click', (e) => { const el = e.target.closest('.combo-item[data-i]'); if (el) pick(Number(el.dataset.i)); });
+    /* v93：指针悬停也要能"选中"某一行。
+     *
+     * 说明文字是跟着**当前行**走的（.combo-item.on .combo-desc），而当前行原本只有 ↑↓ 能改 ——
+     * 纯键盘用户能看到说明，鼠标用户看不到，那"悬停显示介绍"就没实现。
+     * 所以 mouseenter 把 active 挪过来；mouseleave 不回退，因为指针可能只是横扫列表，
+     * 回退会让说明乱跳。CSS 里 .combo-item:hover 本身也会显示说明，两条路径互为补充。 */
+    list.addEventListener('mouseover', (e) => {
+      const el = e.target.closest('.combo-item[data-i]');
+      if (!el) return;
+      const i = Number(el.dataset.i);
+      if (i === active) return;
+      active = i;
+      list.querySelectorAll('.combo-item').forEach((n) => {
+        const on = Number(n.dataset.i) === active;
+        n.classList.toggle('on', on);
+        n.setAttribute('aria-selected', String(on));
+      });
+      input.setAttribute('aria-activedescendant', `${listId}-i${active}`);
+    });
     document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
-    return { close };
+    return { close, open };
   }
 
   /* ---------------- 图表 ---------------- */
@@ -871,6 +916,101 @@
     }
     state.focusCache = { key, set };
     return set;
+  }
+
+  /* ---------------- 力导向布局（口径见 shared/graph-core.js 的 forceLayout） ----------------
+   * v92。ECharts 自带的力导向是**按帧跑**的，冻结时刻落在第几步取决于帧率 ⇒ 不可复现
+   * （实测两次冷启动最大差 22 个单位）。d3 的文档讲得很直白：帧驱动只适合交互渲染，
+   * 要可复现必须同步跑固定步数。ECharts 没暴露这个接口，所以改用自己那份 ——
+   * 固定种子 + 固定轮数 + 网格近似，与小程序那份同源。
+   * 实测三国 871 人：209–299ms（ECharts 那版要 1096–1151ms），且两次逐位相同。
+   *
+   * ⚠ shared/graph-core.js 里有一份逐行对应的实现，test/parity.mjs 会对拍；
+   *   网页版不是 ES module，graph-core 不会被打进页面，所以这里是手抄的那份。 */
+  function forceLayout(n, links, seed) {
+    const xs = new Float64Array(n), ys = new Float64Array(n);
+    const disp = new Float64Array(n * 2);
+    let s = (seed == null ? 20260927 : seed) >>> 0;
+    const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+    const R = Math.max(400, Math.sqrt(n) * 42);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * R;
+      xs[i] = Math.cos(a) * r; ys[i] = Math.sin(a) * r;
+    }
+    const k = Math.sqrt((R * R * 4) / Math.max(1, n));
+    let t = k * 0.9;
+    const iters = n > 500 ? 90 : n > 200 ? 160 : 320;
+    for (let it = 0; it < iters; it++) {
+      disp.fill(0);
+      if (n <= 400) {
+        for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+          const dx = xs[i] - xs[j], dy = ys[i] - ys[j];
+          const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
+          const f = (k * k) / d, ux = dx / d, uy = dy / d;
+          disp[i * 2] += ux * f; disp[i * 2 + 1] += uy * f;
+          disp[j * 2] -= ux * f; disp[j * 2 + 1] -= uy * f;
+        }
+      } else {
+        const cell = k * 2;
+        const grid = new Map();
+        const key = (x, y) => `${Math.floor(x / cell)}:${Math.floor(y / cell)}`;
+        for (let i = 0; i < n; i++) { const gk = key(xs[i], ys[i]); if (!grid.has(gk)) grid.set(gk, []); grid.get(gk).push(i); }
+        for (let i = 0; i < n; i++) {
+          const gx = Math.floor(xs[i] / cell), gy = Math.floor(ys[i] / cell);
+          for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
+            const arr = grid.get(`${gx + ox}:${gy + oy}`);
+            if (!arr) continue;
+            for (const j of arr) {
+              if (j <= i) continue;
+              const dx = xs[i] - xs[j], dy = ys[i] - ys[j];
+              const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
+              const f = (k * k) / d, ux = dx / d, uy = dy / d;
+              disp[i * 2] += ux * f; disp[i * 2 + 1] += uy * f;
+              disp[j * 2] -= ux * f; disp[j * 2 + 1] -= uy * f;
+            }
+          }
+        }
+      }
+      for (const [a, b] of links) {
+        const dx = xs[a] - xs[b], dy = ys[a] - ys[b];
+        const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
+        const f = (d * d) / k, ux = dx / d, uy = dy / d;
+        disp[a * 2] -= ux * f; disp[a * 2 + 1] -= uy * f;
+        disp[b * 2] += ux * f; disp[b * 2 + 1] += uy * f;
+      }
+      // 按温度限幅移动（不限幅会爆成 Infinity/NaN）+ 轻微向心
+      for (let i = 0; i < n; i++) {
+        const dx = disp[i * 2], dy = disp[i * 2 + 1];
+        const d = Math.max(0.001, Math.sqrt(dx * dx + dy * dy));
+        const lim = Math.min(d, t) / d;
+        xs[i] = (xs[i] + dx * lim) * 0.999;
+        ys[i] = (ys[i] + dy * lim) * 0.999;
+      }
+      t *= 0.94;
+    }
+    for (let i = 0; i < n; i++) {
+      if (!Number.isFinite(xs[i]) || !Number.isFinite(ys[i])) { xs[i] = 0; ys[i] = 0; }
+    }
+    return { xs, ys, iters };
+  }
+
+  /** 把当前可见的人物灌进 state.pos，用确定性力导向排一遍 */
+  function forceLayoutVisible() {
+    const ids = [...state.pos.keys()].filter((id) => !String(id).startsWith('__gen_'));
+    const idx = new Map(ids.map((id, i) => [id, i]));
+    const links = [];
+    for (const e of state.book.relations) {
+      const a = idx.get(e.from), b = idx.get(e.to);
+      if (a === undefined || b === undefined || a === b) continue;
+      links.push([a, b]);
+    }
+    const { xs, ys } = forceLayout(ids.length, links);
+    for (const [id, i] of idx) state.pos.set(id, { x: xs[i], y: ys[i] });
+    // v93：记下这次力导向的**输入规模**。test/layout-stable.mjs 用它定位不稳定性 ——
+    // 只要这个数在两次冷启动之间不一致，就说明是"进了力导向的节点集合"在变，
+    // 而不是求解器本身有随机（求解器是纯函数，同输入必然同输出）。
+    state.forceInput = { n: ids.length, links: links.length };
+    return ids.length;
   }
 
   /* ---------------- 锁定时的可见集合（口径见 shared/graph-core.js 同名函数） ----------------
@@ -1131,12 +1271,16 @@
       },
       series: [{
         type: 'graph',
-        layout: (state.frozen && !state.focus) ? 'none' : 'force',
+        // v92：「自由」视图现在也用 'none' —— 位置由我们自己的 forceLayout() 算好（固定种子/轮数），
+        // 要是这里还让 ECharts 跑它的力导向，会在我们排完之后又覆盖一遍，固定种子的好处全白费。
+        layout: (state.view === 'force' || (state.frozen && !state.focus)) ? 'none' : 'force',
         roam: true, draggable: state.nodeDrag,
         // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
         ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
-        force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], layoutAnimation: true, friction: 0.6, initLayout: 'circular' },
+        // v92：只有 layout==='force' 时才会用到（聚焦态、还没冻结时的老路径）。
+        // 「自由」视图走的是我们自己的 forceLayout()，这里用不到。
+        force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], friction: 0.6, initLayout: 'circular' },
         data, links,
         label: {
           show: true,
@@ -1493,7 +1637,7 @@
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
-  function setView(view) {
+  function setView(view, opts = {}) {
     state.view = view;
     state.zoom = 1;
     // 切换布局时清除聚焦状态：聚焦是在旧布局下算的，新布局下位置会变，
@@ -1508,37 +1652,139 @@
     if (!state.chart) return;
     clearTimeout(state.freezeTimer);
     if (view === 'force') {
-      state.frozen = false;
-      // 人特别多时，保留当前布局坐标当力导向的起点（否则从圆形随机起步，几百个节点要算很久）
-      const many = state.byId.size > 400;
-      if (!many) state.pos = new Map();
+      /* v92：「自由」视图不再用 ECharts 自带的力导向。
+       *
+       * 起因是用户问"为什么每次打开人物位置都不一样"。实测两条：
+       *   ① ECharts 的力导向**按帧跑**，冻结时刻落在第几步取决于帧率 ⇒ 两次冷启动
+       *      实测最大差 22 个单位（structurally same, 但不是同一个东西）；
+       *   ② 以前"人特别多就保留当前布局坐标当热启动"，于是结果**取决于你之前去过哪些视图**。
+       * d3 的文档把结论写得很直白：帧驱动的模拟只适合交互渲染，要可复现就得
+       * `simulation.stop()` 之后按**固定次数** `tick()`。ECharts 没暴露这个接口，
+       * 所以改成自己那份（固定种子 + 固定轮数 + 网格近似，与小程序同源）。
+       * 实测三国 871 人：209–299ms，ECharts 那版要 1096–1151ms —— 快 4 倍还更稳。
+       * 另外 series.force 改成 null：留着它 ECharts 会在我们排完之后又覆盖一遍。 */
+      state.frozen = true;
+      state.pos = new Map();
+      for (const c of state.book.characters) {
+        if (!isCharHidden(c)) state.pos.set(c.id, { x: 0, y: 0 });
+      }
       state.bands = new Map();
       state.fit = { s: 1, cx: 0, cy: 0 };
       state.labels = null;
       state.zoom = 1;
+      forceLayoutVisible();
+      // 折叠起来的人（没出场 / 只跟一两个人有关系）不参与力导向，但仍然要有坐标 ——
+      // 时间旅行、展开折叠、锁定都会让他们重新出现在图上。补法和 freezeNow 里一样。
+      fillMissingPositions();
+      relaxPositions(60);
+      fitPositions();
+      computeLabels();
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
-      state.freezeTimer = setTimeout(() => freezeNow(), many ? 12000 : 6000);
+      if (opts.restoreView) restoreViewMemory();
     } else {
       state.frozen = true;
       buildGenerationPositions(view);
       relaxPositions(60);
       fitPositions();
       computeLabels();
+      // v92：布局排好之后先按"整张图"渲染一次，pxScale/bbox 才是准的，
+      // 然后才谈得上恢复上次的视野（restoreViewMemory 要用 state.bbox 判断合不合理）。
       state.chart.clear();
       state.chart.setOption(buildOption(), { notMerge: true });
+      // v92：只有「打开一本书 / 切书」才回到上次的位置；手动切布局（点「分组·纵」…）
+      // 和点「重置」都是用户明确要一个干净的全貌，这时不该套用旧视野。
+      if (opts.restoreView) restoreViewMemory();
     }
   }
 
-  function resetRoam() {
+  /** v92：记住每本书的视野（zoom + center），下次打开回到原处。
+   *
+   * 用户问"为什么每次打开人物所在的位置都不一样"。实测结论（test/layout-stable.mjs）：
+   * **布局本身完全可复现** —— 两次独立冷启动（全新 profile / localStorage），
+   * 三个视图 871 个坐标逐位相同，代码里也没有任何 Math.random()。
+   * 变的是**视野**：`fitPositions` 会把图适配到当前视口，而视口高度取决于窗口大小、
+   * 页面滚动、以及右栏是否打开，于是同一个人落在屏幕的哪儿就不同。
+   *
+   * 专业做法（Figma / Google Maps / Mapbox 都有"回到上次位置"）就是把这个存下来。
+   * 只存 zoom + center，不存坐标 —— 坐标本来就能重算，存了反而会过期（加人物/改数据后对不上）。
+   * 恢复前会检查一下合不合理：书换了、或者上次那一眼已经离题太远，就老老实实复位。 */
+  function saveViewMemory() {
+    if (!state.book || !state.chart || !state.frozen) return;
+    const el = $('#graph');
+    const W = el.clientWidth || 0, H = el.clientHeight || 0;
+    if (!W || !H) return;
+    const z = state.zoom || 1, vc = state.viewCenter || [0, 0];
+    if (!(z > 0) || !Number.isFinite(vc[0]) || !Number.isFinite(vc[1])) return;
+    try {
+      localStorage.setItem('ba-viewmem:' + state.book.slug,
+        JSON.stringify({ v: 1, view: state.view, z: +z.toFixed(4), c: [+vc[0].toFixed(2), +vc[1].toFixed(2)], w: W, h: H }));
+    } catch (e) { /* 隐私模式忽略 */ }
+  }
+  function loadViewMemory() {
+    if (!state.book || !state.bbox) return null;
+    let raw = null;
+    try { raw = localStorage.getItem('ba-viewmem:' + state.book.slug); } catch (e) { return null; }
+    if (!raw) return null;
+    let m;
+    try { m = JSON.parse(raw); } catch (e) { return null; }
+    if (!m || m.v !== 1 || m.view !== state.view || !(m.z > 0)) return null;
+    // 视口尺寸差太多就别硬套了（换了屏幕/折叠了面板），那时的 zoom 意图已经不成立
+    const el = $('#graph');
+    const W = el.clientWidth || 0, H = el.clientHeight || 0;
+    if (!W || !H || !m.w || !m.h) return null;
+    const ratio = Math.max(m.w / W, W / m.w, m.h / H, H / m.h);
+    if (ratio > 1.6) return null;
+    return { z: m.z, c: m.c };
+  }
+  /** 恢复上次的视野；不合理就复位。返回 true = 已恢复 */
+  function restoreViewMemory() {
+    const m = loadViewMemory();
+    if (!m) { resetRoam(); return false; }
+    // 完全无交集就别套了，直接复位更省事
+    const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);
+    const perUnit = unitPx * m.z;
+    const el = $('#graph');
+    const halfW = (el.clientWidth / 2) / perUnit, halfH = (el.clientHeight / 2) / perUnit;
+    if (Math.abs(m.c[0]) - state.bbox.maxX > halfW || Math.abs(m.c[1]) - state.bbox.maxY > halfH) {
+      resetRoam();
+      return false;
+    }
+    applyZoom(m.z, m.c);
+    // 记下来，好让随后那几轮 resize 触发的 resetRoam() 用回这个视野而不是抹掉它。
+    // until 是个短窗口（3 秒）：首屏 ResizeObserver 的补回调都在这之前跑完，
+    // 过了就恢复正常复位，免得用户之后改窗口大小还被"上次视野"拽回去。
+    state.pendingView = { z: m.z, c: m.c, until: Date.now() + 3000 };
+    return true;
+  }
+
+  function resetRoam(save = true) {
     if (!state.chart) return;
-    // clear + setOption 会把缩放/平移复位，但保留当前布局坐标
-    state.zoom = 1;
-    state.viewCenter = [0, 0];
+    /* v93：pendingView —— "刚恢复好的上次视野"要能扛过**随后那几轮** resize 复位。
+     *
+     * 背景：首屏布局稳定后 ResizeObserver 会补回调 → onResize → resetRoam()，
+     * 于是刚 restoreViewMemory() 恢复的 zoom/center 被抹掉（实测重开必回默认视野）。
+     * 第一版试过"onResize 不再复位视图"，看着更优雅，实际把 onResize 整个废掉了 ——
+     * 上面 fitPositions 重算了世界坐标，保留旧变换等于指向另一片内容，
+     * test/roam.mjs ④ 的红绿因此从 5/6 掉到 2/6。复位是承重的，不能去掉。
+     *
+     * ⚠ 为什么是"一段时间内有效"而不是"用一次就清"（第一版就写错了这里）：
+     * onResize 里 applyViewHeight() 会写 #graph 的高度，于是 ResizeObserver **还会再触发一轮**。
+     * 第一轮消费掉 pendingView 之后，第二轮读到的已是 null ⇒ 又复位成默认视野 ⇒
+     * test/layout-stable.mjs ④「重开后回到同一处」报红（zoom 1 / center [0,0]）。
+     * 所以改成带一个短的有效期：这段时间内不管来几轮 resize，都用那个恢复好的视野；
+     * 过了有效期（或用户自己动过视野）就恢复正常复位。 */
+    const pv = state.pendingView;
+    const pvLive = pv && Date.now() < pv.until;
+    state.pendingView = null;
+    state.zoom = pvLive ? pv.z : 1;
+    state.viewCenter = pvLive ? pv.c : [0, 0];
     computeLabels(1);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });
     updateOffscreenHint();
+    // v92：resize 触发的复位**不要**写进"上次视野"—— 那会把用户上次认真调好的视角擦掉
+    if (save) saveViewMemory();
   }
 
   /** 缩放到指定倍率（1:1 = 节点原始大小），可指定视角中心 */
@@ -1550,6 +1796,7 @@
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });   // 全量重建：zoom/center 与标签一起生效
     updateOffscreenHint();
+    saveViewMemory();
   }
 
   /** v90：整张图是否已经被拖到视口外面去了？
@@ -1752,14 +1999,25 @@
    * 所以这里给得比右栏还长一点：3.9s 闪 3 下、4.6s 后才摘 class（CSS 同步）。 */
   const EVENT_NAV_MS = 4600;
   function navToEventChip(chip) { flashTo(chip, 'center', EVENT_NAV_MS); }
-  function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, 550); }
+  function navSecondStep(fn) { clearTimeout(navTimer); navTimer = setTimeout(fn, NAV_STEP2_DELAY); }
+  /* v92：两段导航之间的间隔从 550ms 拉长到 1800ms。
+   *
+   * 用户反馈"'定义这段关系的事件…'这一部分的停留时间要再长，而不是一下就跳过"。
+   * 查下来**不是闪烁时长不够，而是右栏根本没机会被看见**：
+   * 点关系线时先 `navToPanel()` 开始闪，**550ms 后** `navSecondStep` 就把页面平滑滚到事件轴 ——
+   * 550ms 时右栏的第一次闪烁才刚过完一半，页面已经在往别处滚了。
+   * 原注释里"两个平滑滚动同时打会互相盖掉"的问题是对的，但 550ms 只解决了"打架"，
+   * 代价是"第一段根本来不及看"。1800ms 让右栏那段先被看完，再去事件轴。 */
+  const NAV_STEP2_DELAY = 1800;
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁 */
   /** origin: 'search'（默认，单人搜索/下拉选人）| 'path'（两人关系链）—— 清空搜索框只解除前者的锁
    *  v89：'search' 额外记下 centerId 与 depth，好让锁定条上的「−跳 / ＋跳」重算可见集合。
    *  depth 记在 localStorage，跨会话保持。'path' 的集合就是那条最短链，**不给跳数** ——
    *  「只显示他们之间的」和「再往外扩几跳」是互相矛盾的。 */
   const LOCK_DEPTH_MIN = 1, LOCK_DEPTH_MAX = 3;
-  /** v89：刚被丢掉的那把锁的来源（'search' | 'path'）。unlockClick 写，lockFromHighlight 读。 */
+  /** v93：刚被丢掉的那把锁的来源。unlockClick 写，lockFromHighlight 读。
+   *  取值见 LOCK_ORIGINS —— v93 之前只有 'search' / 'path' 两种，现在所有"从图外导航进画布"的
+   *  入口都会建锁，所以来源多了好几种。 */
   let droppedLockOrigin = null;
   function savedLockDepth() {
     const n = Number(localStorage.getItem('ba-lock-depth'));
@@ -1795,33 +2053,65 @@
     const h = $('#path-hint');
     if (h) h.textContent = '';
   }
-  /** 换锁时，把另一种查询留下的输入清掉（只清输入，不动当前这把锁） */
+  /** 换锁时，把另一种查询留下的输入清掉（只清输入，不动当前这把锁）
+   *
+   *  v93 修一个潜伏 bug：原来按**新锁**的来源决定清哪个框
+   *  （`if (origin === 'path') clearSearchQuery(); else clearPathQuery();`）。
+   *  那时只有两种来源，"新锁不是 path ⇒ 上一次是 search" 恰好成立，所以没暴露。
+   *  v93 加了 rel/event/faction/place 四种来源之后，这个推断就不成立了：
+   *  从搜索锁切到关系锁（origin='rel'）会走进 else 分支去清**两人关系**的输入框，
+   *  而真正该清的是**搜索框**里残留的那个人名 —— 于是又回到 v89 修的那个病：
+   *  框里的旧词留在那儿随手一按回车，就把锁悄悄锁回旧的人。
+   *  正确的判据是**刚被丢掉的那把锁**的来源，不是新锁的。 */
   function clearOtherQuery(origin) {
     if (!droppedLockOrigin || droppedLockOrigin === origin) return;
-    if (origin === 'path') clearSearchQuery(); else clearPathQuery();
+    if (droppedLockOrigin === 'path') clearPathQuery(); else clearSearchQuery();
     droppedLockOrigin = null;
   }
 
-  function lockFromHighlight(label, origin, centerId) {
+  /** v93：一组起点各自的 depth 跳邻域的并集。
+   *  原来只有"人物导航"一种，centerId 是单个 id；现在关系（两端）、事件（在场若干人）
+   *  也要按同样的口径展开，不能各写一份 BFS —— 口径漂移过一次（见上面 neighborhoodNodes 的注释）。 */
+  function neighborhoodOf(seeds, depth) {
+    const set = new Set();
+    for (const id of seeds) {
+      if (!state.adj.has(id)) { set.add(id); continue; }
+      for (const n of neighborhoodNodes(id, depth)) set.add(n);
+    }
+    return set;
+  }
+
+  /** v93：按当前这把锁重算锁定集合（初次上锁与改跳数共用同一条路径，免得两处口径不一致）。
+   *  `grow` 为真的锁才按跳数向外扩；阵营/地点这种"整体一片"的锁不扩 —— 再扩一跳就把整张图吞进来了。 */
+  function expandLock(lock) {
+    const nodes = lock.grow && lock.depth > 0 ? neighborhoodOf(lock.seeds, lock.depth) : new Set(lock.seeds);
+    lock.nodes = nodes;
+    lock.edges = edgesWithin(nodes);
+    return nodes;
+  }
+
+  /** 从图外导航进画布后建锁。
+   *  @param label   锁条上显示的名字
+   *  @param origin  来源，见 renderLockBar（决定跳数控件显不显示、怎么措辞）
+   *  @param seeds   锁的**起点集合**（人物=他自己；关系=两端；事件=在场的人；阵营=全体成员；地点=相关的人）
+   *  @param grow    是否按跳数向外扩。人物/关系/事件 = true；阵营/地点/两人关系链 = false */
+  function lockFromHighlight(label, origin, seeds, grow) {
     const org = origin || 'search';
     clearOtherQuery(org);
-    let nodes = state.hlNodes, edges = state.hlEdges, depth = 0;
-    if (org === 'search' && centerId && state.adj.has(centerId)) {
-      depth = savedLockDepth();
-      nodes = neighborhoodNodes(centerId, depth);
-      edges = edgesWithin(nodes);
-      if (!nodes.size) return;
-      state.hlNodes = new Set(nodes);
-      state.hlEdges = new Set(edges);
-    } else {
-      if (!state.hlNodes.size) return;
-      nodes = new Set(state.hlNodes); edges = new Set(state.hlEdges);
-    }
-    state.clickLock = {
-      nodes, edges, label: label || '', origin: org,
-      centerId: org === 'search' ? (centerId || null) : null,
-      depth,
+    const seed = [...(seeds || [])].filter((id) => state.byId.has(id));
+    if (!seed.length) return;
+    const lock = {
+      seeds: seed,
+      origin: org,
+      label: label || '',
+      grow: !!grow,
+      // 搜索锁沿用上次调好的跳数（原来只有它有记忆）；其余一律从 1 跳起
+      depth: grow ? (org === 'search' ? savedLockDepth() : 1) : 0,
+      nodes: new Set(), edges: new Set(),
+      centerId: org === 'search' ? seed[0] : null,
     };
+    if (!expandLock(lock).size) return;
+    state.clickLock = lock;
     renderLockBar();
     // v82 悬停策略（锁外 emphasis.disabled / 锁内恢复动效）烤在 option 里：上锁后必须重建一次才生效
     hideTipNow();
@@ -1840,17 +2130,17 @@
     // 集合变大后可能带进还没有坐标的人（时间旅行/折叠让他们先前没画过）
     fillMissingPositions();
   }
-  /** 锁定后改跳数：重算集合 → 重新过滤 → 重新适配视野。 */
+  /** 锁定后改跳数：重算集合 → 重新过滤 → 重新适配视野。
+   *  v93：不再只认 origin==='search'。人物、关系、事件三种锁都是"起点集合 + 跳数"，
+   *  跳数控件对它们一律有效（共用 expandLock，和初次上锁同一条口径）。 */
   function setLockDepth(d) {
     const lock = state.clickLock;
-    if (!lock || lock.origin !== 'search' || !lock.centerId) return;
+    if (!lock || !lock.grow) return;
     const next = Math.max(LOCK_DEPTH_MIN, Math.min(LOCK_DEPTH_MAX, Number(d) || 1));
     if (next === lock.depth) return;
     lock.depth = next;
-    try { localStorage.setItem('ba-lock-depth', String(next)); } catch (e) { /* 隐私模式忽略 */ }
-    const nodes = neighborhoodNodes(lock.centerId, next);
-    lock.nodes = nodes;
-    lock.edges = edgesWithin(nodes);
+    if (lock.origin === 'search') { try { localStorage.setItem('ba-lock-depth', String(next)); } catch (e) { /* 隐私模式忽略 */ } }
+    expandLock(lock);
     applyLockFilter();
     renderLockBar();
     hideTipNow();
@@ -1882,6 +2172,34 @@
     hideTipNow();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
+  /** 点图上一个元素（节点 / 连线）的全部处理。
+   *
+   *  v93 把它从 `chart.on('click', 匿名函数)` 里提出来命名，原因是测试需要**驱动这同一个函数**。
+   *  之前测"图内点击保留原锁"只能新写一份等价代码 —— 那是拿自己的副本测自己，绿了也不算数。
+   *  （合成点击事件这条路本身是堵死的：压缩版把 `__ecData` 改名成 `__ec_inner_N`，
+   *    N 每次运行都不同，没有稳定可用的字段；详见 test/lock.mjs 里那段说明。） */
+  function onGraphClick(p) {
+    if (!p || !p.data) return;
+    if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
+    hideTipNow();                              // 点击时 tooltip 正显示：先收，避免接下来的重建撞上已销毁的内容容器
+    const lock = state.clickLock;
+    if (p.dataType === 'edge') {
+      if (lock && !lock.edges.has(edgeKey(p.data.source, p.data.target))) { blockLockClick(); return; }
+      const rel = findRel(p.data.source, p.data.target, p.data.value, p.data.baRel);
+      if (rel) selectRelation(rel, true, false);   // v93：图上点线**不**建锁（要在图里接着走链）
+      if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
+      // v82→v84：两步走——先闪右栏关系卡，隔一拍再滚到事件轴上定义这段关系的事件并闪烁
+      if (rel) navigateToEvent([rel.from, rel.to], true);
+    } else if (p.dataType === 'node') {
+      if (lock && !lock.nodes.has(p.data.id)) { blockLockClick(); return; }
+      /* v84：右栏档案闪一下提示"信息在这儿"。
+       * v93：图上点击**不**建锁 —— 口径是"从图外导航进画布才锁"（用户拍板）。
+       * 图内点击只在已有锁里走，并靠下面这句把原锁原样填回去。 */
+      selectCharacter(p.data.id);
+      if (lock) restoreLock(lock);
+    }
+  }
+
   function blockLockClick() {
     const lock = state.clickLock;
     if (!lock) return;
@@ -1898,7 +2216,10 @@
     /* v89：锁定后图上只剩相关的人和线（其余不再画），所以原来的"只能点亮着的"已经变成
      * 自动成立，那句话反而误导 —— 改成说明"只看相关"并给出解除方式。
      * 两人关系锁不加跳数控件：集合就是那条最短链，再往外扩跟"只显示他们之间的"矛盾。 */
-    const depthCtl = lock.origin === 'search' && lock.centerId
+    /* v93：跳数控件对所有 lock.grow 的锁都显示（人物／关系／事件）。
+     * 两人关系链不加（集合就是那条最短链）；阵营／地点也不加 ——
+     * 它们本身已经是"一整片"，再扩一跳就把整张图吞进来了，所以 grow=false。 */
+    const depthCtl = lock.grow
       ? `<span class="lock-depth" role="group" aria-label="显示几跳以内的关系">
            <button class="ghost tiny" type="button" data-lock-depth="dec" ${lock.depth <= LOCK_DEPTH_MIN ? 'disabled' : ''} aria-label="减少显示范围">−跳</button>
            <span class="lock-depth-n">${lock.depth} 跳</span>
@@ -1995,24 +2316,7 @@
     state.bands = new Map();
     state.fit = { s: 1, cx: 0, cy: 0 };
     // ⚠️ 事件绑定必须在任何 return 之前（之前手动模式提前 return，导致拖动/点击处理器根本没注册）
-    state.chart.on('click', (p) => {
-      if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
-      hideTipNow();                              // 点击时 tooltip 正显示：先收，避免接下来的重建撞上已销毁的内容容器
-      const lock = state.clickLock;
-      if (p.dataType === 'edge') {
-        if (lock && !lock.edges.has(edgeKey(p.data.source, p.data.target))) { blockLockClick(); return; }
-        const rel = findRel(p.data.source, p.data.target, p.data.value, p.data.baRel);
-        if (rel) selectRelation(rel);
-        if (lock) restoreLock(lock);            // setHighlight 里清了锁，图内合法点击原样回填（不漂移）
-        // v82→v84：两步走——先闪右栏关系卡，隔一拍再滚到事件轴上定义这段关系的事件并闪烁
-        if (rel) navigateToEvent([rel.from, rel.to], true);
-      } else if (p.dataType === 'node') {
-        if (lock && !lock.nodes.has(p.data.id)) { blockLockClick(); return; }
-        // v84：右栏档案闪一下提示"信息在这儿"。正常点击**不建锁**——锁只来自主动搜索 / 两人关系查询
-        selectCharacter(p.data.id);
-        if (lock) restoreLock(lock);
-      }
-    });
+    state.chart.on('click', onGraphClick);
     // 单击空白＝清除高亮；锁定期间不响应（保持锁定，解除走「重置 / 右栏人名后点清除」）
     state.chart.getZr().on('click', (e) => { if (!e.target && !state.clickLock) clearHighlight(); });
     /* 双击空白处＝**只**复位视图。
@@ -2055,6 +2359,8 @@
       else if (cs && cs.getZoom) state.zoom = cs.getZoom();
       if (cs && cs.getCenter) state.viewCenter = cs.getCenter().slice();
       updateOffscreenHint();
+      clearTimeout(state.viewMemTimer);
+      state.viewMemTimer = setTimeout(saveViewMemory, 400);   // v92：拖动过程中别每次都写 localStorage
       clearTimeout(state.labelTimer);
       state.labelTimer = setTimeout(() => {
         if (state.allLabels || !state.chart) return;
@@ -2075,8 +2381,20 @@
           buildGenerationPositions(state.view);
           fitPositions();          // 关键：重建位置后必须重算包围盒，图注才不会压到节点
         }
-        computeLabels();
-        resetRoam();
+        computeLabels(state.zoom);
+        /* 这里**必须**复位视图（v92 的写法是对的，v93 我改错过一次）。
+         *
+         * 上面 fitPositions() 会把 state.pos 整体重算一遍缩放 —— 世界坐标变了，
+         * 于是同一个 viewCenter 现在指着另一片内容。这时如果"保留视野"，
+         * ECharts 保留的是一个**已经对不上内容**的变换。
+         * 后果实测得到：test/roam.mjs ④「拖很远之后自救按钮该出现」的红绿随版本翻转 ——
+         * 保留视野 2/6 过，复位视野 5/6 过；两种都还不满 6/6（见 resetRoam 里的说明）。
+         *
+         * v93 真正要解决的是另一个问题：首屏布局稳定时 ResizeObserver 会补一次回调，
+         * 把刚恢复好的"上次视野"擦掉了。那个用 resetRoam 的 pendingView 机制单独解决，
+         * 不该连"复位"本身一起去掉。 */
+        resetRoam(false);
+        updateOffscreenHint();
         /* v89：上面这套是按**全部** state.pos 重新适配的，而锁定态图上只画锁定集合 ——
            按全图算出来的缩放会把"只剩几个人"的那一小块推到屏幕外（窗口一变窄就"人不见了"）。
            所以锁定态改为按锁定集合重新适配一次。 */
@@ -2098,7 +2416,7 @@
     state.chartResizeHandler = guardedResize;
     window.addEventListener('resize', guardedResize);
 
-    setView(state.view);   // 按当前视图初始化（默认＝代际·纵，可在布局里切换，选择会被记住）
+    setView(state.view, { restoreView: true });   // 打开一本书 / 切书：回到上次看的位置（v92）
   }
 
   /** 解绑上一次 initChart 挂的 ResizeObserver 与 resize 监听（v85：见 initChart 开头） */
@@ -2282,6 +2600,11 @@
         setHighlight(nodes, edges, id, null);
         renderCharacterPanel(c);
         if (nav) navToPanel();
+        /* v93：地点筛选开着时选中人，锁必须跟着地点口径走。
+         * 不加这一句的话：setHighlight 已经把锁丢了，而调用方（chooseCharById）接着会按
+         * 「这个人自己的一跳邻域」重新上锁 —— 那个集合**不看地点筛选**，于是图上会冒出
+         * 一堆和这个地点无关的人，比改之前还乱。所以这里按地点范围原地补一把（grow=false）。 */
+        lockFromHighlight(`${c.name}（${placeName(state.placeFilter) || '本地点'}）`, 'place', [...nodes], false);
         return;
       }
     }
@@ -2299,7 +2622,7 @@
     if (nav) navToPanel();
   }
 
-  function selectRelation(rel, nav = true) {
+  function selectRelation(rel, nav = true, lock = true) {
     const nodes = new Set([rel.from, rel.to]);
     const edges = new Set([edgeKey(rel.from, rel.to)]);
     state.panelKind = 'rel';
@@ -2307,6 +2630,10 @@
     setHighlight(nodes, edges, null, null);
     renderRelationPanel(rel);
     if (nav) navToPanel();
+    /* v93：右栏关系列表（data-focus-rel）点进来也要锁。范围＝**两端各自扩一跳**，
+     * 不是就锁这两个人：那条提示"在图上点另一个节点可以顺着关系链继续走"是关系卡上写的，
+     * 锁成两三个点就自相矛盾了。图上点关系线仍走旧路径（lock=false，见 chart click）。 */
+    if (lock) lockFromHighlight(`${charName(rel.from)} → ${charName(rel.to)}`, 'rel', [...nodes], true);
   }
 
   /** v82→v84：在事件轴上找"给定这几个人都在场"的第一个未锁定事件（关系自带的事件只有文字+章节，
@@ -2358,7 +2685,7 @@
     }
   }
 
-  function selectEvent(id) {
+  function selectEvent(id, lock = true) {
     const ev = state.book.events.find((e) => e.id === id);
     if (!ev) return;
     if (eventLocked(ev)) { renderLockedPanel('event', ev); return; }
@@ -2367,6 +2694,11 @@
     for (const r of state.book.relations) if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
     setHighlight(nodes, edges, null, id);
     renderEventPanel(ev);
+    /* v93：事件卡（时间轴 / 右栏事件列表 / 章节摘要）也是"从图外导航进画布"，同样要锁。
+     * 范围＝在场的人各自扩一跳（grow=true），不是"就锁在场那几个"——
+     * 三国 702 个事件的在场人数中位是 4，13% 只有 1~2 人；锁成那样一点，
+     * 图会塌成两三个点，右栏那句"在图上点另一个节点可以顺着关系链继续走"就废了。 */
+    if (lock && nodes.size) lockFromHighlight(ev.name || '这件事', 'event', [...nodes], true);
   }
 
   /* ---------------- 面板 ---------------- */
@@ -2395,10 +2727,14 @@
   function handlePanelClick(ev) {
     const goto = ev.target.closest('[data-goto]');
     if (goto) {
-      // v82 决策：锁定中点右栏人名＝把锁切换到该人（之后点「清除」才解除）；
-      // 没有锁时点人名只看档案、不建锁（锁条只在查询后出现）
-      if (state.clickLock) chooseCharById(goto.dataset.goto);
-      else selectCharacter(goto.dataset.goto);
+      /* v93：**一律**走 chooseCharById（＝选中 + 建搜索锁），不再分支。
+       *
+       * v82 的决策是"锁定中点右栏人名＝换锁；没有锁时只看档案、不建锁"。
+       * 用户 v93 指出这就是漏掉的那一类：右栏、章节摘要里的任何人名都是"从图外导航进画布"，
+       * 不该只有"恰好已经锁着"的时候才锁。现在的口径是：**从图外导航进来的一律建锁**，
+       * 图上点击才不建（那是"在图里接着走"，见 chart click）。
+       * chooseCharById 里还会 revealChar + charLocked 判断，所以比裸 selectCharacter 更稳。 */
+      chooseCharById(goto.dataset.goto);
       return;
     }
     const evt = ev.target.closest('[data-event]');
@@ -2413,16 +2749,103 @@
     }
   }
 
-  /* ---------------- 地点筛选 ---------------- */
+  /* ---------------- 地点说明（悬停／聚焦弹出） ----------------
+   *
+   * 用户要的是"鼠标悬停地点就弹出解释框"。地点筛选那个下拉已经用 combo 的
+   * 「说明跟着当前行走」实现了（那里没法用浮层：浮层会被 .graph-pane 的 overflow 裁掉）。
+   * 但右栏、事件轴、章节摘要里的地点名是普通 DOM，那一带就用这个浮层。
+   *
+   * 按 WCAG 2.1 SC 1.4.13（Content on Hover or Focus）做齐四条，不是只做"鼠标移上去"：
+   *   ① **可关闭**：Esc 能关（移开指针也会关）；
+   *   ② **可悬停**：浮层本身 pointer-events:auto，指针能移进去、字能选中；
+   *   ③ **持久**：指针不移开就一直显示，不会一碰就闪；
+   *   ④ **键盘也能看到**：focus 时同样弹出（触屏没有 hover，纯 hover 方案等于没有）。
+   * 另外**悬停绝不是唯一入口**——点一下地点会打开右栏的地点卡，那里有完整介绍和事件列表。
+   *
+   * 一个委托监听器搞定，不给每个地点挂闭包（v85 已经因此吃过亏：曹操那种枢纽人物
+   * 一次渲染几百个 listener，只增不减）。 */
+  let placeTipEl = null;
+  function placeTip() {
+    if (!placeTipEl) {
+      placeTipEl = document.createElement('div');
+      placeTipEl.className = 'place-tip';
+      placeTipEl.hidden = true;
+      placeTipEl.setAttribute('role', 'tooltip');
+      document.body.appendChild(placeTipEl);
+    }
+    return placeTipEl;
+  }
+  function hidePlaceTip() {
+    if (!placeTipEl) return;
+    placeTipEl.hidden = true;
+    placeTipEl.id = '';
+    // ⚠ aria-describedby 要**跟着浮层一起**出现/消失。
+    // 之前把它写死在 placeRef 生成的 span 上，于是浮层还没建出来时就指向一个不存在的 id
+    // （读屏会忽略，但那是脏引用）；现在显示时挂上、隐藏时摘掉。
+    const cur = placeTipOwner;
+    if (cur) { cur.removeAttribute('aria-describedby'); placeTipOwner = null; }
+  }
+  let placeTipOwner = null;
+  function showPlaceTip(target) {
+    const id = target && target.dataset ? target.dataset.placeId : null;
+    const p = id ? placeOf(id) : null;
+    if (!p) { hidePlaceTip(); return; }
+    const tip = placeTip();
+    tip.id = 'place-tip';
+    tip.innerHTML = `<div class="pt-name">📍 ${esc(p.name)}</div>
+      <div class="pt-meta">${esc(p.type || '地点')}${p.firstCh != null ? ` · 首次出现：第 ${p.firstCh} 章` : ''}${p.aliases && p.aliases.length ? ` · 又称 ${esc(p.aliases.join('、'))}` : ''}</div>
+      ${p.desc ? `<div class="pt-desc">${esc(p.desc)}</div>` : '<div class="pt-desc" style="color:var(--muted)">（暂无介绍）</div>'}`;
+    tip.hidden = false;
+    if (placeTipOwner && placeTipOwner !== target) placeTipOwner.removeAttribute('aria-describedby');
+    placeTipOwner = target;
+    target.setAttribute('aria-describedby', 'place-tip');
+    // 贴着目标显示，并夹在视口内（放不下就翻到目标上方）
+    const r = target.getBoundingClientRect();
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    const left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - w - 8));
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+    /* ⚠ 上面那个"翻到上方"还不够，必须**无条件**再夹一次。
+     * 目标本身可能在视口之外（首屏之下的地点名照样能被 tab 聚焦、也可能被悬停），
+     * 这时 r.top/r.bottom 都是屏幕外的数，翻完还是屏幕外 —— 实测浮层被放到 top=1050，
+     * 而视口只有 907 高，整个浮层看不见。所以最后这一步是兜底，别省。 */
+    top = Math.max(8, Math.min(top, Math.max(8, window.innerHeight - h - 8)));
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
+  }
+
+  /** 页面里的一处地点名。`filter=true` 时点它＝按该地点筛选（原来那些 data-place-filter 按钮）。 */
+  function placeRef(id, { filter = false, cls = '', suffix = '' } = {}) {
+    if (!id) return '';
+    const p = placeOf(id);
+    const name = esc(p ? p.name : id);
+    const inner = `${filter ? '' : '📍'}${name}${suffix}`;
+    return filter
+      ? `<button type="button" class="${cls || 'linkbtn'}" data-place-filter="${esc(id)}" data-place-id="${esc(id)}">${inner}</button>`
+      : `<span class="place-ref ${cls}" data-place-id="${esc(id)}" tabindex="0" role="button">${inner}</span>`;
+  }
+
+  /* ---------------- 地点筛选 ----------------
+   * v93：原来是原生 <select>，现在换成自建 combo（原因见 comboItems('place') 的注释）。
+   * 候选列表由 comboItems('place') 在**打开时**现算，所以这里只剩两件事：
+   *   ① 当前筛选的地点是否还在可见范围里（剧透/时间旅行变了就丢掉），
+   *   ② 把输入框的显示值同步成当前筛选（换书、取消筛选后不会留着上一次的词）。 */
+  let placeComboRef = null;
   function renderPlaceSelect() {
-    const sel = document.getElementById('place-filter');
-    if (!sel) return;
-    const places = [...(state.book.places || [])].sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0));
-    sel.innerHTML = '<option value="">📍 全部地点</option>' + places
-      .filter((p) => (state.progress === null || (p.firstCh ?? 0) <= state.progress) && !beforeAsOf(p.firstCh ?? 0))
-      .map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-    if (state.placeFilter && ![...sel.options].some((o) => o.value === state.placeFilter)) state.placeFilter = null;
-    sel.value = state.placeFilter || '';
+    const input = document.getElementById('place-filter');
+    if (!input) return;
+    if (state.placeFilter) {
+      const still = comboItems('place').some((p) => p.id === state.placeFilter);
+      if (!still) { state.placeFilter = null; if (placeComboRef) placeComboRef.close(); }
+    }
+    if (state.placeFilter) {
+      const p = placeOf(state.placeFilter);
+      input.value = p ? p.name : '';
+      input.dataset.id = state.placeFilter;
+    } else {
+      input.value = '';
+      delete input.dataset.id;
+    }
   }
 
   function renderPlacePanel(id, evs) {
@@ -2443,8 +2866,8 @@
 
   function applyPlaceFilter(id) {
     state.placeFilter = id || null;
-    const sel = document.getElementById('place-filter');
-    if (sel) sel.value = state.placeFilter || '';
+    // v93：输入框的显示值统一交给 renderPlaceSelect（那边还要处理"这个地点已不可见"的情况）
+    renderPlaceSelect();
     renderTimeline();
     if (!state.placeFilter) { clearHighlight(); return; }
     const nodes = placeNodeScope() || new Set();
@@ -2454,6 +2877,10 @@
       if (nodes.has(r.from) && nodes.has(r.to)) edges.add(edgeKey(r.from, r.to));
     }
     setHighlight(nodes, edges, null, null);
+    /* v93：地点筛选同样建锁（grow=false）。placeNodeScope 已经是"在这个地点出现过的所有人"，
+     * 本身就是一个闭合的集合，再扩一跳会把这个地点相关的人的外围全拉进来，没意义。
+     * 取消筛选（id=null）走上面 clearHighlight()，锁自然一起解除。 */
+    lockFromHighlight((placeName(state.placeFilter) || '这个地点'), 'place', [...nodes], false);
     renderPlacePanel(state.placeFilter, state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e)));
   }
 
@@ -2472,7 +2899,7 @@
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
     const lifeItems = lifeShown.map((e) => `
         <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(e.name)}</button>
-          <div class="rel-event">· ${esc(e.summary)}${e.place ? ` <button class="linkbtn" type="button" data-place-filter="${esc(e.place)}">📍${esc(placeName(e.place))}</button>` : ''}</div>
+          <div class="rel-event">· ${esc(e.summary)}${e.place ? ` ${placeRef(e.place, { filter: true })}` : ''}</div>
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
         </li>`);
     const lifeHtml = lifeEvs.length ? `
@@ -2484,7 +2911,7 @@
       const vis = visibleRelEvents(r);
       const hidden = (r.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
@@ -2515,7 +2942,7 @@
       </p>
       ${lifeHtml}
       <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
-      ${state.placeFilter ? `<p class="hint">📍 正在按地点「${esc(placeName(state.placeFilter))}」筛选：图上只高亮该范围内的人与关系。
+      ${state.placeFilter ? `<p class="hint">📍 正在按地点「${placeRef(state.placeFilter)}」筛选：图上只高亮该范围内的人与关系。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
       ${lordHist.length ? `<p class="card-sub">效力变化（旧主 → 新主）：${lordHist.map((s) => {
         const lordName = s.lord && state.byId.has(s.lord) ? esc((state.byId.get(s.lord) || {}).name) : '自立';
@@ -2559,7 +2986,7 @@
       <p class="card-desc">${esc(ev.summary)}</p>
       <p class="card-fate"><b>影响：</b>${esc(ev.impact)}</p>
       ${ev.quote ? `<div class="quote">「${esc(ev.quote)}」</div>` : ''}
-      <p style="margin-top:10px">${ev.place ? `<button class="ghost tiny" type="button" data-place-filter="${esc(ev.place)}">📍 ${esc(placeName(ev.place))}</button>` : ''}
+      <p style="margin-top:10px">${ev.place ? `${placeRef(ev.place, { filter: true, cls: 'ghost tiny', suffix: ' ' })}` : ''}
       <b>涉及：</b>${chain}</p>`;
     bindGoto(panel());
   }
@@ -2609,13 +3036,14 @@
     const nodes = new Set([a, ...steps.map((s) => s.to)]);
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
     setHighlight(nodes, edges, null, null);
-    lockFromHighlight(`${charName(a)} → ${charName(b)}`, 'path');   // 点击锁定：只能点这条链的点和线
+    // v93：传起点集合 + grow=false（这条最短链就是答案本身，不该再往外扩）
+    lockFromHighlight(`${charName(a)} → ${charName(b)}`, 'path', [a, ...steps.map((s) => s.to)], false);
 
     const stepItems = steps.map((s, i) => {
       const vis = visibleRelEvents(s.rel);
       const hidden = (s.rel.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `<span class="chapter">📍${esc(placeName(e.place))}</span> ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
@@ -2655,7 +3083,7 @@
                <span class="ev-sum">剧透保护中 · 读到再解锁</span>
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
-               <span class="ev-name">${esc(e.name)}${e.place ? ` <span class="chapter">📍${esc(placeName(e.place))}</span>` : ''}</span>
+               <span class="ev-name">${esc(e.name)}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
                <span class="ev-sum">${esc(e.summary)}</span>
              </button>`).join('')}
       </div>`;
@@ -2812,7 +3240,7 @@
         ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
         ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
         ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
-        ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `<button class="ch-chip" type="button" data-place-filter="${esc(id)}">${esc(placeName(id))}${d.placesNew.includes(id) ? ' ✨' : ''}</button>`).join('')}</div></div>` : ''}
+        ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
         <div class="ch-teaser">${teaser}</div>
         <div class="ch-foot">${mark}
           ${d.events.length ? '<button class="ghost tiny" type="button" data-ch-timeline="1">在时间轴里看本章事件</button>' : ''}
@@ -3245,15 +3673,21 @@
 
   /* ---------------- AI 讲解（不剧透）：资料先在本地按进度过滤，再交给模型 ---------------- */
   const AI_DEFAULT_BASE = 'https://api.deepseek.com/v1';
+  /* v93：默认模型名 deepseek-chat → deepseek-flash。
+   * 官方已公告 deepseek-chat / deepseek-reasoner 两个名字进入弃用流程
+   * （分别对应 V4-Flash 的非思考模式与思考模式），将来会下线。现在还能调用，
+   * 但新装的用户没理由一上来就用一个要被弃用的名字。
+   * 已存过旧名字的用户**不改**（localStorage 里有的就用用户的），避免擅自改人配置。 */
+  const AI_DEFAULT_MODEL = 'deepseek-flash';
   const aiConfig = () => {
     try {
       return {
         base: localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE,
-        model: localStorage.getItem('ba-ai-model') || 'deepseek-chat',
+        model: localStorage.getItem('ba-ai-model') || AI_DEFAULT_MODEL,
         key: localStorage.getItem('ba-ai-key') || '',
       };
     } catch (e) {
-      return { base: AI_DEFAULT_BASE, model: 'deepseek-chat', key: '' };
+      return { base: AI_DEFAULT_BASE, model: AI_DEFAULT_MODEL, key: '' };
     }
   };
 
@@ -3273,7 +3707,7 @@
   }
   function saveAiConfig() {
     const base = ((document.getElementById('ai-base') || {}).value || '').trim() || AI_DEFAULT_BASE;
-    const model = ((document.getElementById('ai-model') || {}).value || '').trim() || 'deepseek-chat';
+    const model = ((document.getElementById('ai-model') || {}).value || '').trim() || AI_DEFAULT_MODEL;
     const key = ((document.getElementById('ai-key') || {}).value || '').trim();
     try {
       localStorage.setItem('ba-ai-base', base.replace(/\/+$/, ''));
@@ -3346,30 +3780,97 @@
     return { system, user, ceiling };
   }
 
-  async function aiExplain(kind, payload) {
+  /* v93：追问线程。
+   *
+   * 为什么必须放 state 而不是只留在 DOM 里：`#ai-answer` 所在的右栏面板是整体 innerHTML 重建的
+   * （renderCharacterPanel / renderRelationPanel 都会把它连同容器一起换掉），
+   * 追问历史只写在 DOM 里，用户切一下人物就没了。
+   *
+   * 为什么 system 提示词每轮都要重发：那些"不剧透"硬约束（只用给定资料、不提前面章节、
+   * 不预示结局）是**每次请求都必须成立**的，不能因为有了历史就省掉 ——
+   * 省略一次，模型就会拿上一轮的资料去回答新的追问，越追问越容易剧透。 */
+  let aiThread = null;   // { kind, system, ceiling, turns: [{role, content}] }
+
+  /** 画 AI 区域：整段对话 + 追问输入框 */
+  function renderAiThread(status) {
+    const box = document.getElementById('ai-answer');
+    if (!box) return;
+    if (!aiThread) { box.hidden = true; box.innerHTML = ''; return; }
+    const cfg = aiConfig();
+    /* ⚠ 第一轮那条 user 消息是「任务 + 全部资料」，不是用户的问句。
+     * 它同样带 role:'user'，所以第一版直接按 role 渲染，结果**整份人物档案被当成"用户问了什么"贴在页面上**
+     * （实测把曹操的 20 条关系 + 16 条事件全打印出来了）。用 task 标记把它排除掉。
+     * 它仍然要照常发给模型 —— 只是不给人看。 */
+    const turns = aiThread.turns.map((t) => {
+      if (t.task) return '';
+      return t.role === 'user' ? `<div class="ai-q">${esc(t.content)}</div>` : `<div class="ai-a">${esc(t.content)}</div>`;
+    }).join('');
+    const busy = status === 'busy';
+    box.hidden = false;
+    box.innerHTML = `<div class="ai-head">🤖 AI 讲解</div>${turns}
+      ${busy ? '<div class="ai-head">🤖 正在生成…</div>' : ''}
+      ${aiThread.err ? `<div class="ai-err">${esc(aiThread.err)}</div>` : ''}
+      <form class="ai-ask" data-ai-ask>
+        <input class="ai-ask-input" type="text" autocomplete="off" ${busy ? 'disabled' : ''}
+               placeholder="继续追问…（只讲你读到的第 ${aiThread.ceiling} 章之前）"
+               aria-label="继续追问"${busy ? ' disabled' : ''}>
+        <button class="ghost tiny" type="submit" ${busy ? 'disabled' : ''}>追问</button>
+        <button class="linkbtn" type="button" data-ai-ask-clear>清空对话</button>
+      </form>
+      <div class="ai-foot">基于你读到的第 ${aiThread.ceiling} 章 · 资料已在本地按进度过滤 · 模型 ${esc(cfg.model)} · <button class="linkbtn" type="button" data-ai-settings="1">⚙️ 设置</button></div>`;
+  }
+
+  /** 发一轮请求。turns 追加在 aiThread 上；不传 kind/payload 时＝追问上一轮。 */
+  async function aiAsk(kind, payload, question) {
     const cfg = aiConfig();
     if (!cfg.key) { openAiModal('还没有配置 API Key —— 填好之后再点一次「🤖 讲一遍」就行。'); return; }
-    const box = document.getElementById('ai-answer');
-    if (box) {
-      box.hidden = false;
-      box.innerHTML = `<div class="ai-head">🤖 正在生成…</div><div class="hint">只用你读到的部分（第 ${aiCeiling()} 章之前）</div>`;
+    if (!aiThread) {
+      const { system, user, ceiling } = aiPrompt(kind, payload);
+      aiThread = { kind, system, ceiling, turns: [{ role: 'user', content: user, task: true }], err: null };
+    } else {
+      aiThread.turns.push({ role: 'user', content: question });
+      aiThread.err = null;
     }
-    const { system, user } = aiPrompt(kind, payload);
+    renderAiThread('busy');
     try {
       const res = await fetch(`${cfg.base}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
-        body: JSON.stringify({ model: cfg.model, temperature: 0.4, max_tokens: 700, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+        body: JSON.stringify({
+          model: cfg.model, temperature: 0.4, max_tokens: 700,
+          messages: [{ role: 'system', content: aiThread.system }, ...aiThread.turns],
+        }),
       });
       if (!res.ok) throw new Error(`接口返回 ${res.status}：${(await res.text()).slice(0, 140)}`);
       const data = await res.json();
       const text = (((data || {}).choices || [{}])[0].message || {}).content || '';
       if (!String(text).trim()) throw new Error('模型没有返回内容');
-      if (box) box.innerHTML = `<div class="ai-head">🤖 AI 讲解</div>${esc(text)}<div class="ai-foot">基于你读到的第 ${aiCeiling()} 章 · 资料已在本地按进度过滤 · 模型 ${esc(cfg.model)} · <button class="linkbtn" type="button" data-ai-settings="1">⚙️ 设置</button></div>`;
+      aiThread.turns.push({ role: 'assistant', content: String(text) });
+      renderAiThread();
     } catch (e) {
       const msg = String((e && e.message) || e);
-      if (box) box.innerHTML = `<div class="ai-head">🤖 讲解失败</div><div class="ai-err">${esc(msg)}</div><div class="ai-foot">${/Failed to fetch|CORS|NetworkError/i.test(msg) ? '浏览器直连被拦：换一个允许跨域的端点，或用编辑器里的命令行方式。' : '可以再点一次「🤖 讲一遍」重试。'} · <button class="linkbtn" type="button" data-ai-settings="1">⚙️ 设置</button></div>`;
+      // 失败时把这条提问撤掉：留着一条没有回答的问句，下一轮会被当成"用户连着问了两次"，答非所问
+      const lastU = aiThread.turns.map((t) => t.role).lastIndexOf('user');
+      if (lastU >= 0 && aiThread.turns.length - 1 === lastU) aiThread.turns.splice(lastU, 1);
+      aiThread.err = /Failed to fetch|CORS|NetworkError/i.test(msg)
+        ? `${msg}　（浏览器直连被拦：换一个允许跨域的端点，或用编辑器里的命令行方式）`
+        : `${msg}　（可以再发一次重试）`;
+      renderAiThread();
     }
+  }
+
+  /** 点「🤖 讲一遍」：总是从头开始一段新对话（旧的那段丢掉） */
+  function aiExplain(kind, payload) {
+    aiThread = null;
+    return aiAsk(kind, payload);
+  }
+
+  /** 提交追问（表单回车或点「追问」） */
+  function aiFollowUp(input) {
+    const q = String(input.value || '').trim();
+    if (!q || !aiThread) return;
+    input.value = '';
+    aiAsk(null, null, q);
   }
 
   /* ---------------- 阅读伴侣 EPUB（可传进微信读书：只含整理数据，不含原著正文） ---------------- */
@@ -3470,7 +3971,7 @@ ${body}
   <h3>第 ${e.ch ?? '?'} 章 · ${esc(e.name)}</h3>
   <p>${esc(e.summary)}</p>
   ${e.impact ? `<p class="meta">影响：${esc(e.impact)}</p>` : ''}
-  ${e.place ? `<p class="meta">地点：${esc(placeName(e.place))}</p>` : ''}
+  ${e.place ? `<p class="meta">地点：${placeRef(e.place)}</p>` : ''}
   <p class="meta">涉及：${esc((e.chars || []).map(charName).join('、'))}</p>
   ${e.quote ? `<blockquote>「${esc(e.quote)}」</blockquote>` : ''}
 </section>`).join('\n');
@@ -3783,7 +4284,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (charLocked(c)) { renderLockedPanel('character', c); return; }
     if (isCharHidden(c)) revealChar(c);
     selectCharacter(c.id);
-    lockFromHighlight(c.name, 'search', c.id);
+    lockFromHighlight(c.name, 'search', [c.id], true);
   }
 
   function bindUI() {
@@ -3797,12 +4298,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       if (pc && pc.name === q) { chooseCharById(pc.id); return; }
       const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
       const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
-      if (c) { selectCharacter(c.id); lockFromHighlight(c.name, 'search', c.id); return; }
+      if (c) { selectCharacter(c.id); lockFromHighlight(c.name, 'search', [c.id], true); return; }
       const hiddenHit = state.book.characters.find((x) => isCharHidden(x) && match(x));
       if (hiddenHit) {                                  // 被折叠的人：自动展开层级再定位（搜索永远找得到）
         revealChar(hiddenHit);
         selectCharacter(hiddenHit.id);
-        lockFromHighlight(hiddenHit.name, 'search', hiddenHit.id);
+        lockFromHighlight(hiddenHit.name, 'search', [hiddenHit.id], true);
         return;
       }
       const lockedHit = state.book.characters.find((x) => charLocked(x) && match(x));
@@ -3847,8 +4348,50 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     });
 
+    /* v93：地点筛选＝自建 combo（原来是原生 select）。
+     * ① 选中候选 → 立刻按该地点筛选；
+     * ② 框里被清空 → 取消筛选（和搜索框一致的直觉，也免得留着旧词误导）；
+     * ③ 回车：候选列表开着时 attachCombo 会先 pick；没开则按当前文字找一个匹配地点。 */
     const placeSel = document.getElementById('place-filter');
-    if (placeSel) placeSel.addEventListener('change', () => applyPlaceFilter(placeSel.value || null));
+    if (placeSel) {
+      /* 地点说明浮层：委托到 document（v85 的教训：别给每个元素挂闭包） */
+      document.addEventListener('mouseover', (ev) => {
+        const t = ev.target.closest && ev.target.closest('[data-place-id]');
+        if (t) showPlaceTip(t);
+      });
+      document.addEventListener('mouseout', (ev) => {
+        const t = ev.target.closest && ev.target.closest('[data-place-id]');
+        // 移到浮层**内部**不算离开（WCAG 1.4.13 的「可悬停」），指针还能进去选字
+        if (t && !(ev.relatedTarget && placeTipEl && placeTipEl.contains(ev.relatedTarget))) hidePlaceTip();
+      });
+      document.addEventListener('focusin', (ev) => {
+        const t = ev.target.closest && ev.target.closest('[data-place-id]');
+        if (t) showPlaceTip(t);
+      });
+      document.addEventListener('focusout', (ev) => {
+        const t = ev.target.closest && ev.target.closest('[data-place-id]');
+        if (t) hidePlaceTip();
+      });
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') hidePlaceTip();
+      });
+    }
+    if (placeSel) {
+      placeComboRef = attachCombo(placeSel, {
+        kind: 'place',
+        onPick: (it) => applyPlaceFilter(it.id),
+        onEnter: () => {
+          const q = placeSel.value.trim();
+          const hit = comboItems('place').find((p) => p.name === q || (p.aliases || []).includes(q))
+            || comboItems('place').find((p) => p.name.includes(q) || (p.aliases || []).some((a) => a.includes(q)));
+          applyPlaceFilter(hit ? hit.id : null);
+        },
+      });
+      placeSel.addEventListener('input', () => {
+        if (!placeSel.value.trim() && state.placeFilter) applyPlaceFilter(null);
+      });
+      renderPlaceSelect();
+    }
 
     // 人数过滤（大书：只看主要人物）
     const sizeSel = document.getElementById('size-filter');
@@ -4019,7 +4562,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     dragBtn.addEventListener('click', () => {
       state.nodeDrag = !state.nodeDrag;
       dragBtn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
-      resetRoam();
+      resetRoam(false);   // v92：开/关拖动节点是设置切换，别把它顺手造成的复位当成"用户选了这个视野"
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）
@@ -4176,11 +4719,18 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
     }
 
-    // AI 讲解（不剧透）
+    // AI 讲解（不剧透）+ 继续追问（v93）
+    document.addEventListener('submit', (ev) => {
+      const form = ev.target.closest && ev.target.closest('[data-ai-ask]');
+      if (!form) return;
+      ev.preventDefault();
+      aiFollowUp(form.querySelector('.ai-ask-input'));
+    });
     document.addEventListener('click', (ev) => {
       if (ev.target.closest('[data-ai-settings]')) { openAiModal(); return; }
       if (ev.target.closest('[data-ai-close]')) { const m = document.getElementById('ai-modal'); if (m) m.hidden = true; return; }
       if (ev.target.closest('#ai-save')) { saveAiConfig(); return; }
+      if (ev.target.closest('[data-ai-ask-clear]')) { aiThread = null; renderAiThread(); return; }
       const btn = ev.target.closest('[data-ai]');
       if (!btn) return;
       if (btn.dataset.ai === 'chain') {
@@ -4230,10 +4780,23 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     // v89：锁定可见集合的两份口径（供 test/parity.mjs 与 graph-core / 小程序对拍）
     neighborhoodNodes: (id, depth) => [...neighborhoodNodes(id, depth)],
     edgesWithin: (nodes) => [...edgesWithin(nodes instanceof Set ? nodes : new Set(nodes))],
+    // v92：确定性力导向（供 test/layout-stable.mjs 对拍；口径与 shared/graph-core.js 一致）
+    forceLayout: (n, links, seed) => { const r = forceLayout(n, links, seed); return { xs: [...r.xs], ys: [...r.ys], iters: r.iters }; }, // v92：与 shared/graph-core.js 对拍
+    isCharHidden: (c) => isCharHidden(c),
+    // 导航时序：test/canvas-hint.mjs ③b 断言"两段导航的间隔不被压得比右栏闪烁还短"
+    NAV_STEP2_DELAY, PANEL_NAV_MS, EVENT_NAV_MS,
     applySizeFilter: (v) => applySizeFilter(v),
     computeLabels: (z) => computeLabels(z),
     selectCharacter: (id) => selectCharacter(id),
     selectRelation: (a, b) => { const r = findRel(a, b); if (r) selectRelation(r); return !!r; },
+    selectEventForTest: (id) => selectEvent(id),
+    /** v93：把 chart click 的真实处理函数暴露出来（不是它的副本），供 test/lock.mjs 驱动。 */
+    graphClick: (dataType, data) => onGraphClick({ dataType, data }),
+    /** v93：锁定当前集合（供 test/lock.mjs 断言"从图外导航进画布一律建锁"，不走 UI 旁路） */
+    lockInfo: () => (state.clickLock
+      ? { origin: state.clickLock.origin, label: state.clickLock.label, depth: state.clickLock.depth,
+          grow: state.clickLock.grow, nNodes: state.clickLock.nodes.size, nEdges: state.clickLock.edges.size }
+      : null),
     nodeCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => !String(d.id).startsWith('__gen_')).length : 0),
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
     goChapter: (n) => goChapter(n),

@@ -129,6 +129,18 @@ try {
   ok(!!p && p.total >= 3.0, `右栏闪烁 ${p ? p.total : '?'}s（下限 3s）`);
   ok(!!c && c.total >= 3.5, `事件卡闪烁 ${c ? c.total : '?'}s（下限 3.5s，修复前 1.8s）`);
 
+  console.log('\n▶ ③b 两段导航之间的间隔（v93）');
+  console.log('    用户反馈"定义这段关系的事件…还是一下就跳过"。查下来真正的元凶不是闪烁时长，');
+  console.log('    而是点关系线时 navSecondStep 只隔 550ms 就把页面滚去事件轴 —— 右栏那段根本没机会被看见。');
+  const gap = await js(`(() => {
+    const b = window.__ba;
+    return { step2: b.NAV_STEP2_DELAY, panelMs: b.PANEL_NAV_MS, eventMs: b.EVENT_NAV_MS };
+  })()`);
+  console.log(`    navSecondStep 间隔 ${gap.step2}ms（右栏闪 ${((gap.panelMs || 0) / 1000).toFixed(1)}s，事件卡闪 ${((gap.eventMs || 0) / 1000).toFixed(1)}s）`);
+  // 间隔必须够看完右栏闪烁的**第一下**，否则第二段滚动会把第一段顶掉（用户原话：一下就跳过）
+  ok(gap.step2 >= 1200, `两段导航间隔 ${gap.step2}ms（≥1200ms，修复前 550ms）`);
+  ok(gap.step2 > (gap.panelMs || 0) * 0.3, '间隔没有被压到比右栏闪烁本身还短');
+
   console.log('\n▶ ④ 顺手核对：文案不再含糊（"空白处拖动"读起来像"任何空白处"）');
   const txt = await js(`(() => {
     const panel = document.getElementById('panel');

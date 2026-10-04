@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=92">
+  <link rel="stylesheet" href="css/style.css?v=93">
 </head>
 <body>
 
@@ -69,7 +69,10 @@
         </span>
         <button id="search-go" class="primary" type="button">查询</button>
         <button id="search-clear" class="ghost" type="button">清除</button>
-        <select id="place-filter" title="按地点筛选事件与人物"></select>
+        <span class="combo" id="place-combo">
+          <input id="place-filter" type="search" placeholder="按地点筛选…" autocomplete="off"
+                 role="combobox" aria-label="按地点筛选事件与人物" aria-autocomplete="list">
+        </span>
       </div>
       <div class="legend-row">
         <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
@@ -480,7 +483,7 @@
     <p class="hint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
     <div class="ai-form">
       <label>接口地址<input id="ai-base" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
-      <label>模型<input id="ai-model" placeholder="deepseek-chat" autocomplete="off"></label>
+      <label>模型<input id="ai-model" placeholder="deepseek-flash" autocomplete="off"></label>
       <label>API Key<input id="ai-key" type="password" placeholder="sk-…" autocomplete="off"></label>
     </div>
     <p class="hint" id="ai-hint">DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。</p>
@@ -548,6 +551,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=92"></script>
+<script src="js/app.js?v=93"></script>
 </body>
 </html>

@@ -242,9 +242,27 @@ try {
   await goto('three-kingdoms', 500);
   await setView('gen-v');
   await wait(600);
-  await dragBy(1400, 0); await wait(700);
-  const off = await probe();
-  console.log(`    拖 1400px 后：墨迹 x=${JSON.stringify(off.inkX)} / 视口 0..${off.W}，可见 ${(off.frac * 100).toFixed(0)}%`);
+  /* ⚠ 这一次合成拖动**本身就不稳**，所以最多重试 3 次（v93）。
+     *
+     * 现象：拖 1400px 之后 viewCenter 只挪到 -118（几乎没动），墨迹仍 100% 可见，按钮不亮。
+     * 不是应用坏了 —— zrender 的 handler.dispatch 会自己再做一次命中测试，
+     * 事件里写的 `target: null` 只是提示、会被覆盖；中间某一步落在节点/线上时，
+     * ECharts 的漫游控制器就把它当成"拖元素"而不是"拖画布"，整段平移静默失效。
+     * 这个文件早就在注释里记过同类问题（"被 zrender 丢掉了，测试却以为拖成功了"）。
+     *
+     * 为什么这里重试而别的断言不重试：④ 的**被测行为**是"拖远之后按钮出现"，
+     * 而"这一下拖动有没有生效"是**输入**是否可靠。重试输入不改断言的力度 ——
+     * 按钮要是真坏了，重试 3 次照样不亮，断言照样红。
+     * （我一度想去改 dragBy 让它自己找空白起点，结果更糟：findHover 永远返回对象，
+     *  又踩了一次"看似修好其实更脆"的坑，最后把整个 dragBy 改动撤了。） */
+  let off = null, tries = 0;
+  for (tries = 1; tries <= 3; tries++) {
+    await dragBy(1400, 0); await wait(700);
+    off = await probe();
+    if (off.hintShown) break;
+    console.log(`    第 ${tries} 次拖动没生效（viewCenter=${JSON.stringify(off.stVC)}），重试`);
+  }
+  console.log(`    拖 1400px 后（第 ${tries} 次）：墨迹 x=${JSON.stringify(off.inkX)} / 视口 0..${off.W}，可见 ${(off.frac * 100).toFixed(0)}%`);
   console.log(`    viewCenter=${JSON.stringify(off.stVC)}（ECharts 说 ${JSON.stringify(off.csCenter)}）一致=${off.vcAgrees} zoom=${off.zoom}`);
   ok(off.vcAgrees, 'state.viewCenter 与 ECharts 的 cs.getCenter() 一致');
   /* 对账（非断言）：按钮亮着的时候，量出来的墨迹也应该看不见。
@@ -259,7 +277,7 @@ try {
     if (!last.hintShown || last.frac < 0.05) { agree = 1; break; }
   }
   console.log(`    对账：按钮 ${last.hintShown ? '亮' : '暗'} / 可见 ${(last.frac * 100).toFixed(0)}% → ${agree ? '一致' : '不一致（无头渲染时序，非断言）'}`);
-  ok(off.hintShown, `拖得很偏时按钮出现（可见 ${(off.frac * 100).toFixed(0)}%）`);
+  ok(off.hintShown, `拖得很偏时按钮出现（可见 ${(off.frac * 100).toFixed(0)}%，第 ${tries} 次拖动）`);
   if (off.hintShown) {
     await js(`document.getElementById('offview-btn').click()`);
     await wait(1000);

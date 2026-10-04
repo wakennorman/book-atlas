@@ -87,6 +87,17 @@ const dblBlank = async () => {
   await wait(1800);
 };
 
+/* ⚠ 这里**不**做"合成一次画布点击"。
+ *
+ * 试过了，做不到，而且失败方式很隐蔽：headless 下 CDP 的 Input.dispatchMouseEvent 到不了页面，
+ * 只能走 zr.handler.dispatch 造事件；但 graph 系列的节点图元不带 dataIndex，事件映射靠
+ * `el.__ecData`，而压缩版把它改名成了 `__ec_inner_N` —— **N 每次运行都不一样**
+ * （实测一次是 _1/_2/_4，下一次是 _4/_5/_7），没有稳定可用的字段；
+ * findHover 返回的还是 {x,y,topTarget,target} 而不是图元本身。第一版用 findHover 自检，
+ * 命中的是 null 却照样"通过"了 —— 那条断言是空的，白绿一场。
+ *
+ * 所以下面只测 handler 里那两个**函数**的组合（selectCharacter 不建锁 / restoreLock 回填原锁），
+ * 事件接线本身留给人工点一次确认。不拿一个测不到的东西充数。 */
 try {
   await send('Page.enable'); await send('Runtime.enable');
   await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=three-kingdoms` });
@@ -246,6 +257,141 @@ try {
   await unlockAll();
   const fin = await probe();
   ok(!fin.locked, '最后「重置」能解除');
+
+  /* ================= ③ v93：从图外导航进画布，一样要建锁 =================
+   *
+   * 用户 v93 指出：锁定只在「搜单个人物」和「两人关系查询」两条路上有，
+   * 而右栏人名、右栏关系列表、事件卡／事件轴芯片、阵营图例、地点筛选
+   * 这些"从图外把画布带到某个主题"的入口全都不锁 —— 点完就能在图上随便点走，语境丢了。
+   *
+   * 口径（用户拍板）：**从图外导航进来的一律建锁；图上点击不建锁**（那是"在图里接着走"）。 */
+  console.log('\n▶ v93 右栏人名（data-goto）：从图外导航进画布 ⇒ 建锁');
+  // 先在右栏里渲染出一个人名链接（人物档案的关系列表里就有），点它
+  await fill('#search-input', '诸葛亮');
+  await click('#search-go');
+  await wait(2600);
+  await unlockAll();
+  const beforeGoto = await probe();
+  ok(!beforeGoto.locked, '起点：没有锁（好让下面这条断言有意义）');
+
+  const gotoClicked = await js(`(() => {
+    // 找一个真实渲染出来的右栏人名链接，而不是直接调 selectCharacter
+    window.__ba.selectCharacter('liu-bei');            // 先把右栏渲染成刘备的档案
+    const el = [...document.querySelectorAll('#panel [data-goto]')].find((b) => b.dataset.goto && b.dataset.goto !== 'liu-bei');
+    if (!el) return null;
+    const id = el.dataset.goto;
+    el.click();
+    return id;
+  })()`);
+  await wait(2600);
+  const afterGoto = await probe();
+  ok(!!gotoClicked, `右栏人名链接存在并可点（点了 ${gotoClicked}）`);
+  ok(afterGoto.locked, `点右栏人名后建锁了（origin=${afterGoto.origin}）`);
+  ok(afterGoto.origin === 'search', '用的是搜索那套锁（人物 + 可调跳数）');
+  ok(afterGoto.nNodes > 1 && afterGoto.nNodes < beforeGoto.nNodes,
+    `图收敛到这一片的邻域：${beforeGoto.nNodes} → ${afterGoto.nNodes} 点`);
+  ok(await js(`!!document.querySelector('#lock-bar .lock-depth')`), '跳数控件也在（和搜索一致）');
+  // 图上每个点的两端关系都必须在点集内 —— 不许有"看不见但挡路"的边（v89 的老坑）
+  ok(await js(`(() => {
+    const st = window.__ba.state, l = st.clickLock;
+    // 没有锁时直接判失败，别抛异常 —— 抛异常会把后面所有断言都吞掉，
+    // 报错信息还停在测试脚本里，看不出是哪一条行为不对。
+    if (!l) return false;
+    // edges 是 Set，没有 .every（第一版就栽在这，报 l.edges.every is not a function）
+    return [...l.edges].every((k) => { const [a, b] = String(k).split('|'); return l.nodes.has(a) && l.nodes.has(b); });
+  })()`), '锁定集合里的每条线两端都在点集内');
+
+  console.log('\n▶ v93 图上点节点／点线**不**建锁（要在图里接着走关系链）');
+  await unlockAll();
+  const beforeCanvas = await probe();
+  const canvasRes = await js(`(() => {
+    const ch = window.__ba.chart();
+    return ch.getOption().series[0].data.find((d) => !String(d.id).startsWith('__gen_') && d.id !== 'cao-cao')?.id || null;
+  })()`);
+  await js(`window.__ba.graphClick('node', { id: 'cao-cao' })`);
+  await wait(1500);
+  const afterChar = await probe();
+  ok(!!canvasRes, `图上找得到可点的节点（${canvasRes}）`);
+  ok(!afterChar.locked, '图上选人**不**建锁（口径：图外导航才锁）');
+  ok(await js(`document.getElementById('lock-bar').hidden === true`), '锁条也没出现');
+  // ⚠ 故意**不**断言"点数不变"：高亮一个枢纽人物（曹操 261 条关系）会把先前折叠的
+  // 次要人物也点亮（isCharHidden 开头就是 hlNodes.has(c.id) ⇒ 不折叠），
+  // 实测 326 → 371 是既有行为，与锁定无关。第一版把它当回归，断言本身就是错的。
+
+  // 已锁着时在图内点人：原样保留那把锁，不换成"这个人"的新锁。
+  // 驱动的是**真实的** click 处理器（onGraphClick），不是它的副本。
+  await js(`window.__ba.selectRelation('cao-cao', 'liu-bei')`);
+  await wait(2000);
+  const relBefore = await js(`window.__ba.lockInfo()`);
+  await js(`window.__ba.graphClick('node', { id: 'liu-bei' })`);
+  await wait(1500);
+  const relAfter = await js(`window.__ba.lockInfo()`);
+  ok(relBefore && relBefore.origin === 'rel', `起点：关系锁已上（${relBefore && relBefore.label}）`);
+  ok(relAfter && relAfter.origin === relBefore.origin && relAfter.label === relBefore.label,
+    `在图内点人，锁原样保留（仍是「${relAfter && relAfter.label}」/ ${relAfter && relAfter.origin}），没有换成以新点的人为准的锁`);
+  ok(relAfter && relBefore && relAfter.nNodes === relBefore.nNodes,
+    `锁定集合也没被这次点击改动（${relBefore && relBefore.nNodes} → ${relAfter && relAfter.nNodes} 点）`);
+
+  // 反向：锁着时点**锁外**的人要被拦住（这条以前只有 toast，没有断言）
+  const blocked = await js(`(() => {
+    const st = window.__ba.state, l = st.clickLock;
+    if (!l) return { skipped: true };                 // 没有锁就没得"拦"，判失败而不是抛异常
+    const outsider = st.book.characters.map((c) => c.id).find((id) => !l.nodes.has(id));
+    if (!outsider) return { skipped: true };
+    window.__ba.graphClick('node', { id: outsider });
+    return { outsider, stillLocked: !!st.clickLock, label: st.clickLock && st.clickLock.label };
+  })()`);
+  await wait(800);
+  ok(!blocked.skipped && blocked.outsider && blocked.stillLocked && relBefore && blocked.label === relBefore.label,
+    blocked.skipped ? '（跳过：没有锁可拦）' : `锁着时点锁外的人（${blocked.outsider}）被拦住，锁没变`);
+
+  console.log('\n▶ v93 关系／事件／阵营 导航建锁的范围');
+  // 关系：两端各自扩一跳（不是就锁两个人 —— 那样图会塌成两点，
+  // 关系卡上"在图上点另一个节点可以顺着关系链继续走"就自相矛盾了）
+  await js(`window.__ba.selectRelation('cao-cao', 'liu-bei')`);
+  await wait(2000);
+  const relLock = await probe();
+  ok(relLock.locked && relLock.origin === 'rel', `点关系进画布建锁（origin=${relLock.origin}）`);
+  ok(relLock.nNodes > 2, `关系锁是「两端 + 各自一跳」，不是就两个人：${relLock.nNodes} 点`);
+  ok(await js(`!!document.querySelector('#lock-bar .lock-depth')`), '关系锁也有跳数控件');
+
+  // 事件：在场的人各自扩一跳
+  await unlockAll();
+  const evId = await js(`(() => {
+    const st = window.__ba.state;
+    // 挑一个人多的事件，免得"锁成 1~2 个人"这种退化情况被误当成正常
+    const ev = [...st.book.events].filter((e) => (e.chars || []).length >= 4 && !(e.chars || []).some((c) => st.charLockedId && st.charLockedId(c)))[0];
+    return ev ? ev.id : null;
+  })()`);
+  await js(`(() => { const el = document.querySelector('#timeline .event-chip[data-event="' + CSS.escape(${JSON.stringify('')}) + '"]'); })()`).catch(() => {});
+  if (evId) {
+    await js(`window.__ba.selectEventForTest(${JSON.stringify(evId)})`).catch(async () => {
+      // 没有测试入口就点真实芯片
+      await js(`(() => { const el = document.querySelector('#timeline .event-chip[data-event="' + CSS.escape(${JSON.stringify(evId)}) + '"]'); if (!el) throw new Error('no chip'); el.click(); })()`);
+    });
+    await wait(2000);
+    const evLock = await probe();
+    ok(evLock.locked && evLock.origin === 'event', `点事件卡建锁（origin=${evLock.origin}）`);
+    ok(evLock.nNodes > 4, `事件锁是「在场的人 + 各自一跳」：${evLock.nNodes} 点`);
+  } else {
+    ok(false, '找一个在场 ≥4 人的事件失败');
+  }
+
+  console.log('\n▶ v93 换锁时清残留：按**被丢掉那把锁**的来源清，不是按新锁');
+  // 这是 v93 顺手修掉的一个潜伏 bug：原来按新锁来源决定清哪个框，
+  // 只有两种来源时恰好成立，加了 rel/event/faction/place 之后就不成立了 ——
+  // 从搜索锁切到关系锁会去清两人关系的输入框，而真正该清的是搜索框里残留的人名。
+  await unlockAll();
+  await fill('#search-input', '曹操');
+  await click('#search-go');
+  await wait(2600);
+  await js(`window.__ba.selectRelation('cao-cao', 'liu-bei')`);
+  await wait(2000);
+  const cleared = await js(`document.getElementById('search-input').value`);
+  ok(cleared.trim() === '',
+    `搜索锁 → 关系锁：搜索框里残留的「曹操」被清掉（现在读作 "${cleared}"）—— 不然敲一下回车就锁回曹操`);
+
+  await unlockAll();
 
 } catch (e) {
   failed++;
