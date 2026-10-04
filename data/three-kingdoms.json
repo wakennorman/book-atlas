@@ -2500,7 +2500,7 @@
       "title": "陶谦长子",
       "desc": "陶谦言其才不堪任",
       "fate": "不得掌州事",
-      "note": "",
+      "note": "本传只说「老夫年迈，二子不才，不堪国家重任」——原书**从未点名**两个儿子，「商」出自《三国志·陶谦传》。此处保留史书名，方便读者查得到。",
       "tier": "minor"
     },
     {
@@ -2514,7 +2514,7 @@
       "title": "陶谦次子",
       "desc": "陶谦言其才不堪任",
       "fate": "不得掌州事",
-      "note": "",
+      "note": "同陶商：原书只称「二子」，名见《三国志·陶谦传》。",
       "tier": "minor"
     },
     {
@@ -4511,20 +4511,6 @@
       "note": "本章仅被提及"
     },
     {
-      "id": "hua-tuo-tu",
-      "name": "华佗弟子",
-      "aliases": [],
-      "generation": 1,
-      "gender": "m",
-      "firstCh": 29,
-      "faction": "other",
-      "title": "",
-      "desc": "为孙策治箭伤，嘱静养百日",
-      "fate": "",
-      "note": "",
-      "tier": "minor"
-    },
-    {
       "id": "xin-ping",
       "name": "辛评",
       "aliases": [],
@@ -4774,14 +4760,16 @@
     {
       "id": "ta-dun",
       "name": "蹋顿",
-      "aliases": [],
+      "aliases": [
+        "冒顿"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 33,
       "faction": "qunxiong",
       "title": "乌桓首领",
       "desc": "合袁氏兄弟迎战，兵败。",
-      "fate": "被张辽斩于马下",
+      "fate": "被张辽斩于马下（本书作「冒顿」）",
       "note": "",
       "tier": "minor"
     },
@@ -5197,7 +5185,9 @@
       "id": "zhuge-gui",
       "name": "诸葛珪",
       "aliases": [
-        "子贡"
+        "子贡",
+        "名珪",
+        "君贡"
       ],
       "generation": 3,
       "gender": "m",
@@ -5212,7 +5202,10 @@
     {
       "id": "zhuge-xuan",
       "name": "诸葛玄",
-      "aliases": [],
+      "aliases": [
+        "其叔玄",
+        "叔玄"
+      ],
       "generation": 3,
       "gender": "m",
       "firstCh": 36,
@@ -6793,15 +6786,18 @@
     },
     {
       "id": "lei-tong",
-      "name": "雷铜",
-      "aliases": [],
+      "name": "雷同（雒城）",
+      "aliases": [
+        "雷同",
+        "雷铜"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 64,
       "faction": "qunxiong",
       "title": "川将",
-      "desc": "张任部下",
-      "fate": "随吴兰降刘备",
+      "desc": "刘璋部将，与吴兰同为吴懿所保的副将，屯雒城。",
+      "fate": "与吴兰一同被黄忠、魏延杀退。",
       "note": "",
       "tier": "minor"
     },
@@ -7878,7 +7874,7 @@
       "title": "",
       "desc": "焚毁《青囊书》",
       "fate": "使华佗医术不传",
-      "note": "",
+      "note": "原书只称「其妻」：吴押狱回家取书，「只见其妻正将书在那里焚烧」。⚠ 她与「佗之妻」（华佗的妻子，在金城交出《青囊书》）是**两个不同的人**——原书「吴押狱直至金城，问佗之妻取了《青囊书》」，一个是狱卒的妻，一个是华佗的妻。",
       "tier": "minor"
     },
     {
@@ -8120,7 +8116,9 @@
       "id": "sun-he",
       "name": "孙河",
       "aliases": [
-        "俞河"
+        "俞河",
+        "名河",
+        "其父名河"
       ],
       "generation": 1,
       "gender": "m",
@@ -8256,8 +8254,10 @@
     },
     {
       "id": "fan-jiang",
-      "name": "范疆",
-      "aliases": [],
+      "name": "范强",
+      "aliases": [
+        "范疆"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 81,
@@ -9444,7 +9444,7 @@
       "title": "魏将",
       "desc": "魏将，张郃副将。",
       "fate": "劫寨被围，得张郃救回。",
-      "note": "",
+      "note": "原书**未出现**此人（0 次）；见《三国志·张郃传》。⚠ 原有关系事件写「懿令戴陵等打阵，被擒受辱」，而原书里「打阵」0 次 —— 那句不是引文。",
       "tier": "minor"
     },
     {
@@ -9839,7 +9839,7 @@
       "title": "",
       "desc": "公孙康长子，公孙渊之兄",
       "fate": "渊败后宗族被诛",
-      "note": "",
+      "note": "原书写公孙康其人（12 次），但**全篇未提他的两个儿子**；「晃」见《三国志·公孙渊传》。本条 4 条关系里 3 条是推导边（原文没有直接互动）。",
       "tier": "minor"
     },
     {
@@ -10108,7 +10108,7 @@
       "title": "",
       "desc": "惊辂犯权贵，骂其狂子",
       "fate": "大骂而去",
-      "note": "",
+      "note": "原书只称「舅」，**从头到尾没点名**：「辂到家与舅言之。舅大惊曰…其舅大骂辂为狂子而去。」⚠ 另注意：书里「昭令泰之舅尚书荀顗召之」那位舅父是**陈泰**的，不是管辂的，两人别混。",
       "tier": "minor"
     },
     {
@@ -10274,14 +10274,16 @@
       "firstCh": 108,
       "faction": "wu",
       "title": "吴将",
-      "desc": "守东兴左城",
+      "desc": "孙綝部将，与弟全怿同为大将出降魏。",
       "fate": "死守不下",
       "note": ""
     },
     {
       "id": "liu-lue",
-      "name": "留略",
-      "aliases": [],
+      "name": "刘略",
+      "aliases": [
+        "留略"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 108,
@@ -10903,8 +10905,11 @@
     },
     {
       "id": "xun-yi",
-      "name": "荀（尚书）",
-      "aliases": [],
+      "name": "荀顗",
+      "aliases": [
+        "荀（尚书）",
+        "尚书"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 114,
@@ -11635,8 +11640,10 @@
     },
     {
       "id": "liu-shi",
-      "name": "刘寔",
-      "aliases": [],
+      "name": "刘实",
+      "aliases": [
+        "刘寔"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 116,
@@ -12690,7 +12697,10 @@
     {
       "id": "zhong-yu",
       "name": "钟毓",
-      "aliases": [],
+      "aliases": [
+        "其兄毓",
+        "毓"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 107,
@@ -13204,6 +13214,19 @@
       "fate": "仕晋，哭吴亡。",
       "note": "与吴主孙休同名，此孙秀。",
       "tier": "minor"
+    },
+    {
+      "id": "lei-tong-basi",
+      "name": "雷同（巴西）",
+      "aliases": [
+        "雷同"
+      ],
+      "gender": "m",
+      "faction": "qunxiong",
+      "title": "张飞部将",
+      "desc": "与张飞一同守巴西，献计夹击张郃。",
+      "fate": "中张郃埋伏，被刺于马下。",
+      "generation": 1
     }
   ],
   "relations": [
@@ -22156,19 +22179,6 @@
       ]
     },
     {
-      "from": "hua-tuo-tu",
-      "to": "sun-ce",
-      "type": "医治",
-      "style": "solid",
-      "events": [
-        {
-          "text": "华佗弟子为孙策疗箭伤",
-          "chapter": "第29章",
-          "place": "wu-jun"
-        }
-      ]
-    },
-    {
       "from": "zhang-hong",
       "to": "sun-quan",
       "type": "君臣",
@@ -22992,7 +23002,7 @@
       "style": "dashed",
       "events": [
         {
-          "text": "张辽拍马斩蹋顿于马下",
+          "text": "张辽拍马斩冒顿于马下",
           "chapter": "第33章",
           "place": "bai-lang-shan"
         }
@@ -23005,7 +23015,7 @@
       "style": "solid",
       "events": [
         {
-          "text": "蹋顿合袁氏兄弟迎战曹军",
+          "text": "冒顿合袁氏兄弟迎战曹军",
           "chapter": "第33章",
           "place": "bai-lang-shan"
         }
@@ -30073,19 +30083,6 @@
           "text": "张飞与张郃相拒五十余日，智取瓦口隘",
           "chapter": "第70章",
           "place": "wakou-guan"
-        }
-      ]
-    },
-    {
-      "from": "zhang-fei",
-      "to": "lei-tong",
-      "type": "主将与部将",
-      "style": "solid",
-      "events": [
-        {
-          "text": "雷铜献计出奇兵夹攻张郃",
-          "chapter": "第70章",
-          "place": "langzhong"
         }
       ]
     },
@@ -37711,15 +37708,14 @@
       ]
     },
     {
-      "from": "quan-duan",
-      "to": "liu-lue",
+      "from": "liu-lue",
+      "to": "quan-yi",
       "type": "同守",
       "style": "solid",
       "events": [
         {
-          "text": "全端、留略各守一城，死守不出",
-          "chapter": "第108章",
-          "place": "dong-xing"
+          "text": "东兴之战：「左城中乃吴将全怿守把，右城中乃吴将刘略守把……此二城高峻坚固，急切攻打不下。」",
+          "chapter": "第108章"
         }
       ]
     },
@@ -46835,6 +46831,30 @@
         {
           "text": "由「公孙晃 与 公孙渊 同为 公孙康 的子女」＋「公孙渊 有子女 公孙修」推导（原文没有直接互动）",
           "chapter": ""
+        }
+      ]
+    },
+    {
+      "from": "hua-tuo",
+      "to": "zhou-tai",
+      "type": "医治",
+      "style": "solid",
+      "events": [
+        {
+          "text": "孙策请华佗为周泰看疮，佗曰「此易事耳」，投之以药，一月而愈。",
+          "chapter": "第15回"
+        }
+      ]
+    },
+    {
+      "from": "zhang-fei",
+      "to": "lei-tong-basi",
+      "type": "主将与部将",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "「时张飞自与雷同守把巴西」；张飞令雷同引兵五千去诈败奇兵夹攻张郃，「张郃复回，刺雷同于马下」。",
+          "chapter": "第70回"
         }
       ]
     }

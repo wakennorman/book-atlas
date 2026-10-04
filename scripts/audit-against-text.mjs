@@ -194,13 +194,37 @@ function checkNames(bookFile, textFile) {
   const slug = (book.meta || {}).slug || path.basename(bookFile, '.json');
   /* 去掉「（第二代）」这类括注：那是给读者消歧的标记，原文里当然不会有 */
   const bare = (n) => String(n || '').replace(/（[^）]*）/g, '').trim();
+  /* 「主名不是原书原样字」的申报名单（v0.97）。
+   *
+   * 为什么需要它 —— 中文史传体写「姓娄名子伯」「其父名河」「其叔玄」，
+   * **全名从不连着出现**；加上演义里有一批人从头到尾没被点名
+   * （陶谦的两个儿子只叫「二子」、管辂的舅父只叫「舅」）。
+   * 所以"主名必须逐字出现在原文"这条规矩对它们**永远不成立**，
+   * 而一条永远不成立的规矩等于没有规矩 —— 只会让人学会无视它。
+   *
+   * 口径改成：**每个人物要么在原文里逐字出现，要么在这份名单里写明理由。**
+   * 和 missing-ok.json 同一个纪律：只申报"确实如此"，
+   * 不许把"还没查清楚"塞进来。名单里没写的人物，照样当错误报。 */
+  const okFile = bookFile.replace(/\.json$/, '.name-form-ok.json');
+  const okJson = fs.existsSync(okFile) ? JSON.parse(fs.readFileSync(okFile, 'utf8')) : [];
+  /* ⚠ 名单文件两种形状都要收：纯数组，或者 `{_说明…, 明细:[...]}`。
+   *   我第一版只写死了数组形状，结果脚本对着 `{明细:…}` 直接
+   *   `okRaw.filter is not a function` 崩掉 —— 而崩掉的红和"检查不通过"的红
+   *   在门禁里长得一样，都是 exit=1，极容易误判成"名单没生效"。 */
+  const okList = Array.isArray(okJson) ? okJson : (Array.isArray(okJson.明细) ? okJson.明细 : []);
+  const declared = new Map(okList
+    .filter((e) => e && typeof e === 'object' && !String(e.name || '').startsWith('_'))
+    .map((e) => [String(e.name), String(e.why || '')]));
   const rows = [];
   for (const c of book.characters || []) {
     const forms = [...new Set([c.name, ...(c.aliases || []), ...(c.altNames || [])].map(bare))]
       .filter((s) => s.length >= 2);
     const hits = [];
     for (const f of forms) { const n = raw.split(f).length - 1; if (n > 0) hits.push([f, n]); }
-    rows.push({ name: c.name, hits, alt: (c.altNames || []).length, id: c.id, title: c.title || '' });
+    rows.push({
+      name: c.name, hits, alt: (c.altNames || []).length, id: c.id, title: c.title || '',
+      declared: declared.get(c.name) || '',
+    });
   }
 
   /* v0.97：对"一个形式都命中不到"的人物给**分诊**，否则这份清单没法处理。
@@ -258,8 +282,9 @@ function checkNames(bookFile, textFile) {
   return {
     slug,
     total: rows.length,
-    dead: rows.filter((r) => !r.hits.length),
-    offName: rows.filter((r) => r.hits.length && !r.hits.some(([f]) => f === bare(r.name))),
+    declared: rows.filter((r) => r.declared),
+    dead: rows.filter((r) => !r.hits.length && !r.declared),
+    offName: rows.filter((r) => r.hits.length && !r.declared && !r.hits.some(([f]) => f === bare(r.name))),
     triage: rows.filter((r) => !r.hits.length).map(triage),
   };
 }
@@ -297,7 +322,9 @@ if (nameMode) {
     console.log(`\n=== ${r.slug}（--names：原文里能不能搜到）===`);
     console.log(`  共 ${r.total} 个人物；书里那个写法一个都不命中的 ${r.dead.length} 个`);
     console.log(`  主名不是本书用字、靠别名才搜得到的 ${r.offName.length} 个`
-      + (strict ? '（--strict：这是错误）' : '（这是正常的译名差异，不算错）') + '\n');
+      + (strict ? '（--strict：这是错误）' : '（这是正常的译名差异，不算错）'));
+    console.log(`  已申报"主名不可能是原书原样字"的 ${r.declared.length} 个`
+      + '（依据见 ' + r.slug.replace(/\.json$/, '') + '.name-form-ok.json）\n');
     for (const d of r.dead) {
       console.log(`  ✗ 搜不到：${d.name}`);
       const t = (r.triage || []).find((x) => x.id === d.id);
@@ -324,6 +351,13 @@ if (nameMode) {
     }
     for (const o of r.offName) {
       console.log(`  ${strict ? '✗' : '·'} ${o.name}  →  原文用的是「${o.hits.map(([f, n]) => `${f}（${n} 次）`).join('、')}」`);
+    }
+    if (r.declared.length) {
+      console.log('  ── 以下已申报，不再当错误（每条都有理由，可点开名单文件核对）──');
+      for (const d of r.declared) {
+        const brief = d.declared.length > 62 ? d.declared.slice(0, 62) + '…' : d.declared;
+        console.log(`  · ${d.name}：${brief}`);
+      }
     }
   }
   /* 有搜不到的人就非零退出：这样它能当手动门禁用（"修完再跑一次"），
