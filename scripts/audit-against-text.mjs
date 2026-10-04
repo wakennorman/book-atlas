@@ -222,18 +222,20 @@ if (all) {
 
 if (nameMode) {
   let bad = 0;
+  const strict = argv.includes('--strict');
   const rep = pairs.map(([bf, tf]) => checkNames(bf, tf));
   if (asJson) { console.log(JSON.stringify(rep, null, 1)); process.exit(0); }
   for (const r of rep) {
     console.log(`\n=== ${r.slug}（--names：原文里能不能搜到）===`);
     console.log(`  共 ${r.total} 个人物；书里那个写法一个都不命中的 ${r.dead.length} 个`);
-    console.log(`  主名不是本书用字、靠别名才搜得到的 ${r.offName.length} 个（这是正常的译名差异，不算错）\n`);
+    console.log(`  主名不是本书用字、靠别名才搜得到的 ${r.offName.length} 个`
+      + (strict ? '（--strict：这是错误）' : '（这是正常的译名差异，不算错）') + '\n');
     for (const d of r.dead) {
       console.log(`  ✗ 搜不到：${d.name}`);
       console.log('      主名、aliases、altNames 在原文里全是 0 次 ⇒ 读者拿着书上的名字点不进来');
     }
     for (const o of r.offName) {
-      console.log(`  · ${o.name}  →  原文用的是「${o.hits.map(([f, n]) => `${f}（${n} 次）`).join('、')}」`);
+      console.log(`  ${strict ? '✗' : '·'} ${o.name}  →  原文用的是「${o.hits.map(([f, n]) => `${f}（${n} 次）`).join('、')}」`);
     }
   }
   /* 有搜不到的人就非零退出：这样它能当手动门禁用（"修完再跑一次"），
@@ -242,7 +244,17 @@ if (nameMode) {
     console.error('\n✗ 有已建档的人物在原文里搜不到 —— 名字写错了，或别名漏了书上的写法。');
     process.exit(1);
   }
-  console.log('\n✓ 全部人物都能在原文里搜到。');
+  /* --strict：主名也必须是本书用字。
+   *
+   * 为什么加这个：用户 2026-10-04 明确"人名一律按他发的那本书的版本定"。
+   * 而"主名不是本书用字、靠别名才搜得到"这种状态**功能上不算坏**（能搜到），
+   * 所以默认只提示、放过 —— 但它正是"读者在书上看到 A、数据里显示 B"的来源。
+   * 想守住那条约定就把 --strict 打开。 */
+  if (strict && rep.some((r) => r.offName.length)) {
+    console.error('\n✗ --strict：有人物的主名不是本书用字（见上）。按用户约定，主名一律用他发的那本书的写法。');
+    process.exit(1);
+  }
+  console.log('\n✓ 全部人物都能在原文里搜到。' + (strict ? '（且主名全部是本书用字）' : ''));
   process.exit(0);
 }
 
