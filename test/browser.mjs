@@ -49,7 +49,7 @@ function serve() {
       if (!fp.startsWith(ROOT) || !fs.existsSync(fp) || fs.statSync(fp).isDirectory()) {
         rep.writeHead(404); rep.end('404'); return;
       }
-      rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream' });
+      rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
       fs.createReadStream(fp).pipe(rep);
     });
     s.listen(PORT, () => res(s));
@@ -232,6 +232,65 @@ try {
     return added;
   })()`);
   ok(leak <= 0, `resize 监听无累积：连开关 3 次剧透保护后净新增 ${leak} 个（v85 修复前会累积 3 个）`);
+  /* ---- v0.96：`altNames`（又译）必须真的能搜到、并且在建议里标出来 ----
+   *
+   * 背景：v0.95 加了 `altNames` 字段，`audit-search.mjs` / 编辑器 / `draft.mjs` 都接上了，
+   * 但 `js/app.js` 里**一次都没出现过** —— 于是按规程 §二 规则 2.3 写进去的译名，
+   * 在网页上搜不到也看不见。用户报的正是"漏人名（包括不同的译名、别名）"。
+   *
+   * ⚠ 这里**在页面上现造一个 altName** 而不是依赖某本书真有数据：
+   *   依赖数据的话，哪天数据改了/那本书换了，这个断言就会变成"数据没了所以红"，
+   *   查起来很绕。被测的是**代码认不认这个字段**，不是数据填没填。
+   * 三个口径一起验（规程 §二 规则 2.5）：联想过滤 / 回车选中 / 建议里标「又译」。 */
+  const alt = await js(`(() => {
+    const ba = window.__ba, st = ba.state;
+    const c = st.book.characters.find((x) => !x.altNames || !x.altNames.length);
+    if (!c) return { skip: 'no char' };
+    const probe = 'ZZ探针又译名';
+    const keep = c.altNames;
+    c.altNames = [probe];
+    const inp = document.getElementById('search-input');
+    inp.value = probe;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+    const list = document.getElementById('search-input-combo-list');
+    const items = [...(list ? list.querySelectorAll('.combo-item:not(.combo-empty)') : [])];
+    const hit = items.find((el) => el.querySelector('b') && el.querySelector('b').textContent === c.name);
+    const res = {
+      probe, charName: c.name,
+      total: items.length,
+      found: !!hit,
+      hasAltLabel: !!(hit && /又译/.test(hit.textContent)),
+      altText: hit ? (hit.querySelector('.combo-alt') || {}).textContent || '' : '',
+      tipOnOverflow: !!(hit && hit.querySelector('.combo-alt[data-tip-full]')),
+      altCount: (c.altNames || []).length,
+    };
+    // 回车路径：清掉下拉里的精确 id，模拟"用户直接敲字然后回车"
+    inp.value = probe;
+    delete inp.dataset.id;
+    /* ⚠ 必须是 KeyboardEvent，不能用 Event ——
+     *   Event 会忽略 init 里的 key（它不是 KeyboardEventInit），
+     *   combo 的 keydown 监听器读 ev.key 拿到 undefined，于是根本不当作回车。
+     *   第一版写成 new Event('keydown', { key: 'Enter' })，于是 activeChar 一直是 null。 */
+    inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    /* ⚠ 断言读的是 state.activeChar，不是 state.focus ——
+     *   回车走 chooseCharById → selectCharacter → setHighlight，后者设的是
+     *   state.activeChar；state.focus 是「聚焦视图」那个概念，压根不会被设。
+     *   第一版读错成 focus，于是 focus=null，那条断言永远红。
+     *   （顺带：这段注释在 js(...) 的模板字符串里，**不能出现反引号**，
+     *     否则字符串当场被截断，报 "missing ) after argument list"。） */
+    res.pickedId = st.activeChar || null;
+    res.picked = res.pickedId === c.id;
+    c.altNames = keep;
+    return res;
+  })()`);
+  if (alt.skip) ok(false, 'altNames 搜索测试：找不到可用的测试人物');
+  else {
+    console.log(`    探针译名「${alt.probe}」→ 人物「${alt.charName}」；联想 ${alt.total} 条`);
+    ok(alt.found, `按又译名搜，联想里出现这个人（${alt.charName}）`);
+    ok(alt.hasAltLabel, `建议里标出了「又译」（实际：${alt.altText || '（没有 .combo-alt）'}）`);
+    ok(!alt.tipOnOverflow, `只有 1 个又译名时不截断、不挂浮层（altNames=${alt.altCount}）`);
+    ok(alt.picked, `直接敲译名再回车能选中（activeChar=${alt.pickedId}）`);
+  }
   /* ---- 数据一致性：relCh / charLastCh 预计算 Map 与原算法一致 ---- */
   const mapCheck = await js(`(() => {
     const ba = window.__ba, st = ba.state, b = st.book;

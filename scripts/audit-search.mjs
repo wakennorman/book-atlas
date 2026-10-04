@@ -62,11 +62,14 @@ for (const file of files) {
   const deg = new Map();
   for (const r of rels) { deg.set(r.from, (deg.get(r.from) || 0) + 1); deg.set(r.to, (deg.get(r.to) || 0) + 1); }
 
-  /* 全书文案（用于漏人扫描）*/
+  /* 全书文案（用于漏人扫描）
+   * ⚠ v0.96：`altNames`（又译）也要算进「已知名字」，否则**只写在 altNames 里的译名
+   *   会被当成漏人报出来** —— 而它明明已经在数据里了。
+   *   （`js/app.js` 的搜索/显示同批修的：这里判「已知」，那里判「搜得到」，口径必须一致。） */
   const texts = [];
   for (const e of book.events || []) texts.push(`${e.name} ${e.summary || ''} ${e.impact || ''}`);
   for (const r of rels) for (const ev of r.events || []) texts.push(ev.text || '');
-  for (const c of chars) texts.push(`${c.desc || ''} ${c.fate || ''} ${c.title || ''} ${(c.aliases || []).join(' ')}`);
+  for (const c of chars) texts.push(`${c.desc || ''} ${c.fate || ''} ${c.title || ''} ${(c.aliases || []).join(' ')} ${(c.altNames || []).join(' ')}`);
   for (const p of book.places || []) texts.push(`${p.name} ${p.desc || ''} ${(p.aliases || []).join(' ')}`);
   const allText = texts.join('\n');
 
@@ -74,7 +77,7 @@ for (const file of files) {
   let stripped = allText;
   const known = new Set();
   const allNames = [];
-  for (const c of chars) for (const n of [c.name, ...(c.aliases || [])]) if (n && n.length >= 2) allNames.push(n);
+  for (const c of chars) for (const n of [c.name, ...(c.aliases || []), ...(c.altNames || [])]) if (n && n.length >= 2) allNames.push(n);
   for (const p of book.places || []) for (const n of [p.name, ...(p.aliases || [])]) if (n && n.length >= 2) allNames.push(n);
   allNames.sort((a, b) => b.length - a.length);           // 长名优先：先替「何塞·阿尔卡蒂奥」再替「何塞」
   for (const n of allNames) { known.add(norm(n)); stripped = stripped.split(n).join('〇'); }
@@ -91,14 +94,18 @@ for (const file of files) {
   }
   const candTop = [...cand.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, candLimit);
 
-  /* ② 译名变体：名字/别名里有 A 形式但缺 B 形式 */
+  /* ② 译名变体：名字/别名/**又译**里有 A 形式但缺 B 形式
+   * ⚠ v0.96：`altNames` 也进池子。不进的话会**误报**：
+   *   「这个人的 altNames 里已经有 B 形式了」也会被报成"缺译名变体"。 */
   const missingVariants = [];
   for (const c of chars) {
-    const pool = [c.name, ...(c.aliases || [])].join('|');
+    const pool = [c.name, ...(c.aliases || []), ...(c.altNames || [])].join('|');
     for (const [a, b] of VARIANT_PAIRS) {
       if (a === b) continue;
       if (pool.includes(a) && !pool.includes(b)) {
-        const variant = c.name.includes(a) ? c.name.replace(a, b) : (c.aliases || []).find((x) => x.includes(a))?.replace(a, b);
+        const variant = c.name.includes(a) ? c.name.replace(a, b)
+          : (c.aliases || []).find((x) => x.includes(a))?.replace(a, b)
+          || (c.altNames || []).find((x) => x.includes(a))?.replace(a, b);
         if (variant && !pool.includes(variant)) missingVariants.push({ c, variant, pair: [a, b] });
       }
     }

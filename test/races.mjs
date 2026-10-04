@@ -34,7 +34,7 @@ const server = http.createServer((req, rep) => {
     }, 800);
   }
   if (rel.includes('.text.json') && !rel.includes('one-hundred-years')) { rep.writeHead(500); rep.end('boom'); return; }
-  rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream' });
+  rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
 await new Promise((r) => server.listen(PORT, r));

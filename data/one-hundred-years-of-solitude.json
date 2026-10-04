@@ -787,6 +787,103 @@
       "fate": "攻下马孔多后，据守的阿尔卡蒂奥被擒处决。",
       "gender": "m",
       "firstCh": 7
+    },
+    {
+      "id": "bruno-crespi",
+      "name": "布鲁诺·克雷斯皮",
+      "generation": 2,
+      "gender": "m",
+      "faction": "outsider",
+      "firstCh": 6,
+      "altNames": [
+        "布鲁诺·克雷斯比"
+      ],
+      "title": "玩具乐器店店主、皮埃特罗的弟弟",
+      "desc": "在土耳其人大街经营玩具乐器店；娶了安帕萝·摩斯科特，盖了一座露天剧院。",
+      "fate": "剧院与商店在他手上持续兴旺；小说未交代其结局",
+      "note": "皮埃特罗·克雷斯比的弟弟。原文：「他的弟弟布鲁诺·克雷斯皮负责商店的业务」「布鲁诺·克雷斯皮与安帕萝·摩斯科特结了婚，他的玩具乐器店生意蒸蒸日上。他盖了一座剧院」",
+      "aliases": []
+    },
+    {
+      "id": "anapola-moscote",
+      "name": "安帕萝·摩斯科特",
+      "generation": 2,
+      "gender": "f",
+      "faction": "outsider",
+      "firstCh": 6,
+      "title": "镇长之女、上校之妻的姐姐",
+      "desc": "蕾梅黛丝的姐姐。奥雷里亚诺痴恋蕾梅黛丝时，她与丽贝卡·布恩迪亚常一起外出、成为挚友，这份友谊给了奥雷里亚诺希望——去雷贝卡店里寻找蕾梅黛丝。",
+      "fate": "与丽贝卡·布恩迪亚的友谊终生保持；小说未交代其结局",
+      "note": "原文：「安帕萝·摩斯科特在家中的出现对他而…」「安帕萝·摩斯科特与丽贝卡.布恩迪亚之间突然萌生的友情燃起了奥雷里亚诺心中的希望」。用户 2026-10-04 报\"搜不到\"的人之一。",
+      "parents": [
+        "apolinar-moscote"
+      ],
+      "aliases": []
+    },
+    {
+      "id": "tomas-escalona",
+      "name": "堂梅尔乔·埃斯卡洛纳",
+      "generation": 2,
+      "gender": "m",
+      "faction": "outsider",
+      "firstCh": 6,
+      "title": "重建后的学校教师",
+      "desc": "从大泽区派来的老教师。主持学校重建，让不用功的学生在石灰地面跪着走、让言语放肆的学生吃辣椒。",
+      "fate": "",
+      "note": "原文：「学校也在那一时期重建，由堂梅尔乔·埃斯卡洛纳负责，他是一位从大泽区派来的老教师，让不用功的学生在院中石灰地面上跪着行走，让言语放肆的学生吃辣椒」。用户 2026-10-04 报\"搜不到\"的人之一。",
+      "aliases": []
+    },
+    {
+      "id": "antonio-isabel",
+      "name": "安东尼奥·伊莎贝尔",
+      "generation": 1,
+      "gender": "m",
+      "faction": "gov",
+      "firstCh": 2,
+      "title": "神甫",
+      "desc": "教何塞·阿尔卡蒂奥·布恩迪亚（第二代）敲钟、协助做弥撒，并教他教理问答；在这位神甫影响下，老何塞的儿子成了虔诚的天主教徒。",
+      "fate": "",
+      "note": "原文：「帮助\"新手\"的继任者安东尼奥·伊莎贝尔神甫做弥撒」「很快便听说，安东尼奥·伊莎贝尔神甫在为他准备第一次领圣体仪式」。",
+      "aliases": []
+    },
+    {
+      "id": "maginni-bisbal",
+      "name": "马格尼菲科·比斯巴勒",
+      "generation": 2,
+      "gender": "m",
+      "faction": "outsider",
+      "firstCh": 4,
+      "title": "奥雷里亚诺最亲密的朋友、建村元老比斯巴勒的儿子",
+      "desc": "与奥雷里亚诺·布恩迪亚上校形影不离，一起去卡塔利诺的店。",
+      "fate": "",
+      "note": "原文：「他跟最亲密的朋友马格尼菲科·比斯巴勒和赫里内勒多·马尔克斯——建村元老们的儿子，名字与父亲相同——在镇上散步时」",
+      "aliases": []
+    },
+    {
+      "id": "alirio-noguera",
+      "name": "阿利黎奥·诺格拉",
+      "generation": 1,
+      "gender": "m",
+      "faction": "outsider",
+      "firstCh": 3,
+      "title": "医生",
+      "desc": "几年前来到马孔多的自由派医生，以\"一钉入，一钉出\"行医，招牌上写着\"一药箱无味的药丸\"。表面平庸无害，暗地是组织地下反抗的成员。",
+      "fate": "与第一次联邦战争的地下组织有关；小说未细述其结局",
+      "note": "原文：「他去看望阿利黎奥·诺格拉医生，求治并不存在的肝痛」「阿利黎奥·诺格拉医生几年前来到马孔多，带着一药箱无味的药丸和一块无法令人信服的行医招牌」",
+      "aliases": []
+    },
+    {
+      "id": "carmelita-montiel",
+      "name": "卡梅莉塔·蒙铁尔",
+      "generation": 2,
+      "gender": "f",
+      "faction": "outsider",
+      "firstCh": 6,
+      "title": "皮拉尔·特内拉的朋友",
+      "desc": "在牌桌上向奥雷里亚诺·何塞求助；与皮拉尔·特内拉、赫里内勒多·马尔克斯的交情深厚。",
+      "fate": "",
+      "note": "原文：「\"今晚你别出门，\"她对他说，\"你在这儿睡，卡梅莉塔·蒙铁尔求了我不知多少次，让我把她带进你屋里。\"」",
+      "aliases": []
     }
   ],
   "relations": [
@@ -2215,6 +2312,266 @@
       "kin": "blood"
     },
     {
+      "from": "cataure",
+      "to": "visitacion",
+      "type": "兄妹",
+      "kin": "blood",
+      "style": "solid",
+      "events": [
+        {
+          "text": "卡塔乌雷与妹妹比西塔西翁（维希塔香）一起从瓜希拉王国逃到马孔多，躲的就是家乡那场失眠症。",
+          "chapter": "第2章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "cataure",
+      "to": "ursula",
+      "type": "寄居／辞别",
+      "style": "dotted",
+      "events": [
+        {
+          "text": "卡塔乌雷和妹妹寄住在布恩迪亚家；他一认出失眠症又回来了，就连夜逃走，乌尔苏拉再也没见过他。",
+          "chapter": "第2章",
+          "place": "casa"
+        }
+      ]
+    },
+    {
+      "from": "catalan-sage",
+      "to": "aureliano-babilonia",
+      "type": "忘年交／启蒙",
+      "style": "solid",
+      "events": [
+        {
+          "text": "小奥雷里亚诺几乎每个下午都泡在加泰罗尼亚人的书店里看那些没人买的书，店主由着他看，还给他讲欧洲的事。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "catalan-sage",
+      "to": "alvaro",
+      "type": "同乡／旧友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "几个加泰罗尼亚人每天下午在书店后间争论，生意冷清，谁也没真打算回故乡。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "alvaro",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿尔瓦罗和赫尔曼、阿方索把奥雷里亚诺·巴比伦拉进他们的下午：争论、听留声机、用纸牌算命。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "herman",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "赫尔曼用纸牌给奥雷里亚诺·巴比伦算命，说他哪儿也去不了——这话后来应验了。",
+          "chapter": "第12章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "alfonso",
+      "to": "aureliano-babilonia",
+      "type": "朋友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿方索是那伙人里最年轻的；他们一起在马孔多耗掉一个个下午，直到最后一个一个离开。",
+          "chapter": "第13章",
+          "place": "macondo"
+        }
+      ]
+    },
+    {
+      "from": "achilles-ricardo",
+      "to": "arcadio",
+      "type": "对阵／处决",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "阿基莱斯·里卡多上校率政府军攻下马孔多；据守的阿尔卡蒂奥被擒，随后被枪决。",
+          "chapter": "第7章",
+          "place": "escuela"
+        }
+      ]
+    },
+    {
+      "from": "pietro-crespi",
+      "to": "bruno-crespi",
+      "type": "兄弟",
+      "style": "solid",
+      "events": [
+        {
+          "text": "皮埃特罗一人照管音乐学校，弟弟布鲁诺·克雷斯皮负责商店的业务",
+          "chapter": "第6章",
+          "place": ""
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "bruno-crespi",
+      "to": "anapola-moscote",
+      "type": "夫妻",
+      "style": "solid",
+      "events": [
+        {
+          "text": "布鲁诺·克雷斯皮与安帕萝·摩斯科特结了婚，他的玩具乐器店生意蒸蒸日上，他盖了一座剧院",
+          "chapter": "第6章",
+          "place": ""
+        }
+      ],
+      "kin": "marriage"
+    },
+    {
+      "from": "apolinar-moscote",
+      "to": "anapola-moscote",
+      "type": "父女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "阿波利纳尔·摩斯科特向布恩迪亚家介绍他正好在那里的两个女儿安帕萝和蕾梅黛丝",
+          "chapter": "第2章",
+          "place": ""
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "anapola-moscote",
+      "to": "rebeca",
+      "type": "挚友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "安帕萝·摩斯科特与丽贝卡·布恩迪亚之间突然萌生的友情",
+          "chapter": "第5章",
+          "place": ""
+        }
+      ]
+    },
+    {
+      "from": "father-nicanor",
+      "to": "antonio-isabel",
+      "type": "同为主祭神甫（交替）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "尼卡诺尔神甫被肝病高热折磨时，由安东尼奥·伊莎贝尔神甫接替他做弥撒",
+          "chapter": "第2章",
+          "place": ""
+        }
+      ]
+    },
+    {
+      "from": "pietro-crespi",
+      "to": "tomas-escalona",
+      "type": "（重建学校的）前后任教职",
+      "style": "solid",
+      "events": []
+    },
+    {
+      "from": "maginni-bisbal",
+      "to": "aureliano-colonel",
+      "type": "挚友",
+      "style": "solid",
+      "events": [
+        {
+          "text": "奥雷里亚诺跟最亲密的朋友马格尼菲科·比斯巴勒和赫里内勒多·马尔克斯在镇上散步",
+          "chapter": "第4章",
+          "place": ""
+        }
+      ]
+    },
+    {
+      "from": "jose-arcadio-buendia",
+      "to": "alirio-noguera",
+      "type": "自由派同好（看病）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "老何塞去看望阿利黎奥·诺格拉医生，求治并不存在的肝痛",
+          "chapter": "第3章",
+          "place": ""
+        }
+      ]
+    },
+    {
+      "from": "carmelita-montiel",
+      "to": "aureliano-jose",
+      "type": "牌桌上的交情",
+      "style": "solid",
+      "events": [
+        {
+          "text": "卡梅莉塔·蒙铁尔求皮拉尔·特内拉把她带进奥雷里亚诺·何塞的房间",
+          "chapter": "第6章",
+          "place": ""
+        }
+      ]
+    },
+    {
+      "from": "visitacion",
+      "to": "amaranta",
+      "type": "教瓜希拉语（半个母亲）",
+      "style": "solid",
+      "events": [
+        {
+          "text": "维希塔香教阿尔卡蒂奥和阿玛兰妲学说瓜希拉语，把她当半个母亲",
+          "chapter": "第3章",
+          "place": "casa"
+        }
+      ]
+    },
+    {
+      "from": "aureliano-colonel",
+      "to": "aureliano-segundo",
+      "type": "叔侄（伯父与侄）",
+      "style": "solid",
+      "events": []
+    },
+    {
+      "from": "aureliano-colonel",
+      "to": "jose-arcadio-segundo",
+      "type": "叔侄（伯父与侄）",
+      "style": "solid",
+      "events": []
+    },
+    {
+      "from": "aureliano-colonel",
+      "to": "remedios-beauty",
+      "type": "叔侄（伯父与侄女）",
+      "style": "solid",
+      "events": []
+    },
+    {
+      "from": "visitacion",
+      "to": "aureliano-colonel",
+      "type": "救命恩人与监护人",
+      "style": "solid",
+      "events": []
+    },
+    {
       "from": "jose-arcadio-buendia",
       "to": "arcadio",
       "type": "祖孙（推导）",
@@ -2981,111 +3338,6 @@
         {
           "text": "由「阿玛兰妲·乌尔苏拉 与 何塞·阿尔卡蒂奥（第五代） 同为 奥雷里亚诺第二 的子女」＋「阿玛兰妲·乌尔苏拉 有子女 长猪尾巴的孩子」推导（原文没有直接互动）",
           "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "cataure",
-      "to": "visitacion",
-      "type": "兄妹",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "卡塔乌雷与妹妹比西塔西翁（维希塔香）一起从瓜希拉王国逃到马孔多，躲的就是家乡那场失眠症。",
-          "chapter": "第2章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "cataure",
-      "to": "ursula",
-      "type": "寄居／辞别",
-      "style": "dotted",
-      "events": [
-        {
-          "text": "卡塔乌雷和妹妹寄住在布恩迪亚家；他一认出失眠症又回来了，就连夜逃走，乌尔苏拉再也没见过他。",
-          "chapter": "第2章",
-          "place": "casa"
-        }
-      ]
-    },
-    {
-      "from": "catalan-sage",
-      "to": "aureliano-babilonia",
-      "type": "忘年交／启蒙",
-      "style": "solid",
-      "events": [
-        {
-          "text": "小奥雷里亚诺几乎每个下午都泡在加泰罗尼亚人的书店里看那些没人买的书，店主由着他看，还给他讲欧洲的事。",
-          "chapter": "第12章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "catalan-sage",
-      "to": "alvaro",
-      "type": "同乡／旧友",
-      "style": "solid",
-      "events": [
-        {
-          "text": "几个加泰罗尼亚人每天下午在书店后间争论，生意冷清，谁也没真打算回故乡。",
-          "chapter": "第12章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "alvaro",
-      "to": "aureliano-babilonia",
-      "type": "朋友",
-      "style": "solid",
-      "events": [
-        {
-          "text": "阿尔瓦罗和赫尔曼、阿方索把奥雷里亚诺·巴比伦拉进他们的下午：争论、听留声机、用纸牌算命。",
-          "chapter": "第12章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "herman",
-      "to": "aureliano-babilonia",
-      "type": "朋友",
-      "style": "solid",
-      "events": [
-        {
-          "text": "赫尔曼用纸牌给奥雷里亚诺·巴比伦算命，说他哪儿也去不了——这话后来应验了。",
-          "chapter": "第12章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "alfonso",
-      "to": "aureliano-babilonia",
-      "type": "朋友",
-      "style": "solid",
-      "events": [
-        {
-          "text": "阿方索是那伙人里最年轻的；他们一起在马孔多耗掉一个个下午，直到最后一个一个离开。",
-          "chapter": "第13章",
-          "place": "macondo"
-        }
-      ]
-    },
-    {
-      "from": "achilles-ricardo",
-      "to": "arcadio",
-      "type": "对阵／处决",
-      "style": "dashed",
-      "events": [
-        {
-          "text": "阿基莱斯·里卡多上校率政府军攻下马孔多；据守的阿尔卡蒂奥被擒，随后被枪决。",
-          "chapter": "第7章",
-          "place": "escuela"
         }
       ]
     }

@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import net from 'node:net';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 // v90：守住「画布被拖走之后回不来」。
@@ -22,7 +23,28 @@ import { fileURLToPath } from 'node:url';
 import { spawn as _s } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 19135, CDP_PORT = 19136;
+/* ⚠ v0.96：原来这里写死 `const PORT = 19135, CDP_PORT = 19136;`，代价是实测踩到的：
+ *
+ *   ① 上一次运行被强杀/被中断（连 finally 都进不去）之后，残留的 node 进程**还占着 19135**，
+ *      下一次跑直接 `EADDRINUSE :::19135` 在 0 秒内崩掉 —— 连跑三次全挂，
+ *      而且报错完全看不出"是上一次留下的"，因为崩溃点在 server.listen，不在断言里。
+ *      这和用户"页脚没版本号"那次是**同一个族**：都是端口/缓存把"上一次"的东西
+ *      带到了"这一次"。
+ *   ② 同一个测试没法并行跑两次。
+ *
+ * `test/` 里已有 7 个用 `listen(0)`（layout-stable / place / place-visible / build / ai /
+ * full-tip / roam），这里跟上；还剩 8 个写死的（parity / browser / e2e / editor / races /
+ * relax / lock / render-scale / canvas-hint），改它们要逐个核对 CDP 端口，单独做。
+ * HTTP 端口从 server.address() 读，CDP 端口先向系统借一个空闲端口再关掉
+ * （Edge 要在 spawn 之前就知道端口号）。 */
+const freePort = () => new Promise((res) => {
+  const s = net.createServer();
+  s.listen(0, '127.0.0.1', () => {
+    const p = s.address().port;
+    s.close(() => res(p));
+  });
+});
+const CDP_PORT = await freePort();
 const EDGE = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -38,7 +60,45 @@ const server = http.createServer((req, rep) => {
   rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
-await new Promise((r) => server.listen(PORT, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
+const PORT = server.address().port;   // v0.96：临时端口，见文件头说明
+
+// —— 启动清扫：回收历次运行泄漏的临时 profile ——
+//
+// 泄漏根因（2026-10-04 实测）：finally 里 `proc.kill()` 之后**立刻** rmSync，此时 Edge 还没真正
+// 退出、profile 仍被文件锁占用 → rmSync 抛错 → 被空 `catch {}` 静默吞掉 → 目录永久留在 Temp。
+// 而 flaky/fg 这类稳定性测试还会在超时轮次**直接强杀进程（连 finally 都进不去）**。
+// 两者叠加：24 小时泄漏 1012 个目录 / 60.5 GB，把 200GB 的 C 盘吃到只剩 0.3GB。
+//
+// 判据用「最后写入 > 30 分钟」而不是查进程表：正在被浏览器使用的 profile 会被持续写入、
+// mtime 一直是新的，所以这个判据天然不会误删别的并发会话正在跑的那个。
+// 本清扫是所有泄漏路径（崩溃在 try 之前 / 被 SIGKILL / rmSync 撞锁）的兜底。
+try {
+  const STALE_MS = 30 * 60 * 1000;
+  // 第一道保险：正在被浏览器进程使用的 profile 一律不碰（并发会话可能同时在跑）。
+  const inUse = new Set();
+  try {
+    const out = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+      "Get-CimInstance Win32_Process | Where-Object { $_.Name -match 'msedge|chrome' } | ForEach-Object { $_.CommandLine }"],
+      { encoding: 'utf8', timeout: 5000, windowsHide: true }).stdout || '';
+    for (const m of out.matchAll(/--user-data-dir="?([^"\s]+)/gi)) inUse.add(path.resolve(m[1]));
+  } catch { /* 查不到进程表就只靠下面的 mtime 判据，宁可漏删也不误删 */ }
+
+  let n = 0;
+  for (const name of fs.readdirSync(os.tmpdir())) {
+    if (!name.startsWith('ba-roam-')) continue;
+    const p = path.join(os.tmpdir(), name);
+    try {
+      if (inUse.has(path.resolve(p))) continue;
+      if (Date.now() - fs.statSync(p).mtimeMs < STALE_MS) continue;
+      fs.rmSync(p, { recursive: true, force: true });
+      n++;
+    } catch (e) {
+      console.log(`  (清扫跳过) ${name}: ${e.message}`);
+    }
+  }
+  if (n) console.log(`  (清扫) 回收历史泄漏 profile ${n} 个`);
+} catch (e) { console.log('  (清扫失败) ' + e.message); }
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-roam-'));
 const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
@@ -315,8 +375,23 @@ try {
   failed++; console.error('异常：' + e.message);
 } finally {
   try { ws.close(); } catch { }
-  try { proc.kill(); } catch { }
   try { server.close(); } catch { }
-  try { fs.rmSync(profile, { recursive: true, force: true }); } catch { }
+  // kill() 只是发信号，Edge 未必已经退出。必须等它真的退干净再删 profile ——
+  // 否则 rmSync 撞上文件锁抛错，被 catch 吞掉就是永久泄漏（实测 24h 漏 1012 个 / 60.5GB）。
+  try { proc.kill(); } catch { }
+  for (let i = 0; i < 50 && proc.exitCode === null && proc.signalCode === null; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  // 等完仍可能有子进程残留导致目录被占 → 重试几次，最后一次失败必须喊出来，不许静默。
+  let removed = false;
+  for (let i = 0; i < 5 && !removed; i++) {
+    try {
+      fs.rmSync(profile, { recursive: true, force: true });
+      removed = true;
+    } catch (e) {
+      if (i === 4) console.error(`\n⚠️ 临时 profile 清理失败（会泄漏，下次运行启动时兜底清扫）：${profile}\n   ${e.message}`);
+      else await new Promise((r) => setTimeout(r, 400));
+    }
+  }
 }
 process.exit(failed ? 1 : 0);

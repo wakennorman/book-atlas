@@ -1,8 +1,8 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v95';
+const CACHE = 'bookatlas-v96';
 // 只列页面真正会用到的 URL。
 // v85：删掉了重复项 —— 之前 editor.html / css/editor.css / js/editor.js / css/style.css / js/app.js
-// 各存了两份（一份无 ?v=、一份带 ?v=95），Cache Storage 的 key 不同 ⇒ app.js 白白占了两份 193KB。
+// 各存了两份（一份无 ?v=、一份带 ?v=96），Cache Storage 的 key 不同 ⇒ app.js 白白占了两份 193KB。
 // 页面里引用的是带 ?v= 的那份，这里就只留带 ?v= 的。
 // 另：js/export.js、js/ai.js 已删除（逻辑并入 app.js），不再预缓存；
 //     补上 data/three-kingdoms.json —— 之前唯独它不在预缓存里，首次离线访问拿不到三国。
@@ -17,10 +17,10 @@ const SHELL = [
   './assets/favicon-32x32.png',
   './assets/logo-mark.svg',
   './editor.html',
-  './css/style.css?v=95',
-  './css/editor.css?v=95',
-  './js/app.js?v=95',
-  './js/editor.js?v=95',
+  './css/style.css?v=96',
+  './css/editor.css?v=96',
+  './js/app.js?v=96',
+  './js/editor.js?v=96',
   './vendor/echarts.min.js',
   './vendor/fflate.min.js',
   './vendor/pdf.min.js',

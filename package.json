@@ -1,6 +1,6 @@
 {
   "name": "book-atlas",
-  "version": "0.95.0",
+  "version": "0.96.0",
   "private": true,
   "type": "module",
   "description": "书脉 BookAtlas · 人物关系与事件图谱",
@@ -28,7 +28,10 @@
     "test:place": "node test/place.mjs",
     "test:ai": "node test/ai.mjs",
     "test:place-visible": "node test/place-visible.mjs",
-    "test:build": "node test/build.mjs"
+    "test:build": "node test/build.mjs",
+    "preview": "node tools/preview.mjs",
+    "test:full-tip": "node test/full-tip.mjs",
+    "gate": "node tools/gate.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

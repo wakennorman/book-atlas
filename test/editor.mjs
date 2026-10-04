@@ -46,7 +46,7 @@ const server = http.createServer((req, rep) => {
   if (rel === '/') rel = '/index.html';
   const fp = path.join(ROOT, rel);
   if (!fp.startsWith(ROOT) || !fs.existsSync(fp) || fs.statSync(fp).isDirectory()) { rep.writeHead(404); rep.end(); return; }
-  rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream' });
+  rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
 await new Promise((r) => server.listen(PORT, r));

@@ -50,7 +50,19 @@ const server = http.createServer((req, rep) => {
   if (rel === '/') rel = '/index.html';
   const fp = path.join(ROOT, rel);
   if (!fp.startsWith(ROOT) || !fs.existsSync(fp) || fs.statSync(fp).isDirectory()) { rep.writeHead(404); rep.end(); return; }
-  rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream' });
+  /* Cache-Control: no-store —— 别删，但要知道它**不是**修过某个真 bug。
+   *
+   * 加它是因为 v0.96 排查时发现：15 个测试服务器里 10 个带 no-store，
+   * 这 5 个（parity/browser/editor/races/e2e）没有 ⇒ 浏览器可能喂给测试 HTTP 缓存里的旧
+   * data/*.json。这是**潜在漏洞**，不是当时那个失败的成因。
+   *
+   * 当时 parity 报「25 处 网页版 vs graph-core 不一致」的**真因是另一个**：
+   * 网页端 loadBook 优先 fetch meta.graphFile（data/*.graph.json 生成物），
+   * 而那个文件是旧的（磁盘上的 data/*.json 已经改好），跑 make-slim-packs.mjs 之后就好了。
+   *
+   * 留这个头的价值：**下次真出现「测试说数据不一致、磁盘上明明一致」时，
+   * 可以先把缓存层排除掉**，不用重新怀疑一遍。 */
+rep.writeHead(200, { 'Content-Type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
   fs.createReadStream(fp).pipe(rep);
 });
 await new Promise((r) => server.listen(PORT, r));

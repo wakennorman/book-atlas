@@ -57,6 +57,35 @@
 ```text
 双击  本地预览.bat          # 需要本机有 Python，会自动起服务并打开浏览器
 或手动：python -m http.server 8765   # 然后访问 http://localhost:8765/
+
+> ⚠ **日常预览请用 `npm run preview`**（= `node tools/preview.mjs`），它额外做了三件事：
+> ① `/sw.js` 返回空壳 worker 并带 `Clear-Site-Data`，**注销旧的 Service Worker** ——
+> 这是"我改了代码但页面没变"的头号原因（sw.js 会按自己的缓存键返回旧文件）；
+> ② 所有响应 `no-store`；③ 启动时打印当前版本号。
+>
+> **不要用 `test/*.mjs` 起的端口**（roam 19135、lock 19131、render-scale 19133…）——
+> 那是测试自己的临时服务器，跑完就消失，服务的是"测试跑那一刻磁盘上的代码"。
+> 看到 19135 这类端口，基本就说明打开的是测试服务器。
+>
+### 跑门禁
+```bash
+npm run gate                 # 按 .github/workflows/check.yml 的顺序跑**完全一样**的门禁
+npm run gate -- --list       # 只看会跑什么
+npm run gate -- --only 布局   # 只跑名字里含"布局"的步骤
+npm run gate -- --skip-slow  # 跳过四个最慢的（layout-stable / place-visible / lock / render-scale）
+```
+**判断"门禁绿了"请用这个，不要凭"我记得我跑过那些命令"。**
+它直接解析 `check.yml`，并且启动时做两次自检：
+① 每条命令的**参数**必须和 yml 里写的一样（第一版抓漏了 `--all`/`--check`，
+   于是 `make-slim-packs --check` 变成「重新生成」⇒ 永远绿，**同步检查完全失效**）；
+② 任何 `run: node` 都必须挂在某个 `- name:` 步骤里
+（第二版按 `name:`…`run:` 跨行匹配，注释一长就**整步漏掉**，实测漏了 5 步全是浏览器测试，
+而报告里"21 步全绿"看着完全正常）。
+自检不过就 **exit 2 拒绝跑** —— 宁可现在报错，也不要跑一个"看起来全绿"的门禁。
+
+> 另：改了 `data/*.json` 之后要跑 `node scripts/make-slim-packs.mjs`。
+> **网页端加载的是 `data/*.graph.json` 生成物，不是 `data/*.json`** ——
+> 忘了重跑的话页面读的还是旧数据，而校验全绿、看起来一切正常。
 ```
 > 直接双击 `index.html` 打不开是正常的：浏览器不允许 `file://` 页面读取数据文件，必须有本地服务。
 

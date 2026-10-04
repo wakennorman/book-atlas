@@ -777,7 +777,15 @@
       .filter((c) => !charLocked(c) && charVisibleAt(c) && (kind === 'path' ? !isCharHidden(c) : true))
       .slice()
       .sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))
-      .map((c) => ({ id: c.id, name: c.name, aliases: c.aliases || [], sub: comboSub(c) }));
+      /* ⚠ v0.96 修：`altNames`（"又译"，异译本的另一种写法）以前**根本没进搜索**。
+       *   而 v0.95 明确定了「`altNames` 不必是 `aliases` 的子集」——
+       *   于是照那条规则写数据的人，**按译名搜就搜不到这个人**（用户报的正是"漏人名"）。
+       *   `altNames` 在整个 app.js 里此前一次都没出现过：`audit-search.mjs` 读它、
+       *   编辑器有输入框，但网页端的搜索与显示都当它不存在。 */
+      .map((c) => ({
+        id: c.id, name: c.name, aliases: c.aliases || [], altNames: c.altNames || [],
+        sub: comboSub(c),
+      }));
   }
   /** 给 input 挂上下拉：输入即过滤，↑↓ 选择，回车选中（列表开着时）否则交给 onEnter */
   function attachCombo(input, opts) {
@@ -801,14 +809,29 @@
     function open() {
       const q = input.value.trim().toLowerCase();
       all = comboItems(opts.kind);
-      filtered = (q ? all.filter((it) => it.name.toLowerCase().includes(q) || it.aliases.some((a) => a.toLowerCase().includes(q))) : all).slice(0, 60);
+      /* 名字、别名、**又译**都要能命中（v0.96：altNames 以前不在这里，
+       * 于是"按另一个译本的译名搜"搜不到人 —— 用户报的就是这个）。 */
+      const hit = (it) => it.name.toLowerCase().includes(q)
+        || it.aliases.some((a) => a.toLowerCase().includes(q))
+        || (it.altNames || []).some((a) => a.toLowerCase().includes(q));
+      filtered = (q ? all.filter(hit) : all).slice(0, 60);
       active = filtered.length ? 0 : -1;
       render();
     }
     function render() {
       if (filtered.length) {
-        list.innerHTML = filtered.map((it, i) =>
-          `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${esc(it.desc)}</p>` : ''}</div>`
+        list.innerHTML = filtered.map((it, i) => {
+          /* 「又译」直接内联显示（.combo-item 本来就换行、不截断，一眼看全）。
+           * 只有 altNames 太多、条目会撑得太高时才截到 2 个，
+           * 这时用 data-tip-full 交给全文浮层（v0.96 新增）补全 —— 悬停看全部。 */
+          const alt = it.altNames || [];
+          const shown = alt.slice(0, 2);
+          const altHtml = alt.length
+            ? `<span class="combo-alt"${alt.length > shown.length
+              ? ` data-tip-full="又译：${esc(alt.join('、'))}"` : ''}>（又译 ${esc(shown.join('、'))}${alt.length > shown.length ? '…' : ''}）</span>`
+            : '';
+          return `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${altHtml}${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${esc(it.desc)}</p>` : ''}</div>`;
+        }
         ).join('') + (all.length > filtered.length
           ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
       } else {
@@ -2879,6 +2902,69 @@
     }
   }
 
+  /* ---------------- 截断文字：悬停／聚焦看全文 ----------------
+   *
+   * 用户报：「本章新关系」里的「何塞·阿尔卡蒂奥·布恩迪亚——决斗／亡魂——普鲁邓希奥…」和
+   * 「重大事件轴」里的「斗鸡之后，何塞·阿尔卡蒂奥·布恩迪亚（老何塞）…」这类**后面字数很多显示不全**，
+   * 问"那么多内容显示不出来有什么用？"
+   *
+   * 为什么用浮层而不是"悬停时慢慢移动"（用户给的两个方案之一）：
+   *   横着移的文字**读不了、复制不了、读屏用户也拿不到任何信息**；
+   *   而浮层可以选中文字、可以键盘到达、可以 Esc 关掉。
+   *   同一个项目里已经有一个符合 WCAG 2.1 SC 1.4.13 的浮层（地点名的 `.place-tip`），
+   *   复用它而不是再造第二套定位与无障碍逻辑。
+   *
+   * 两个关键设计：
+   *  ① **只在真的被剪掉时才出现**（`scrollWidth > clientWidth`）。
+   *     否则短标题也弹浮层，页面会变得很吵 —— 而"有浮层但没内容"更糟。
+   *  ② **完整文案本来就在 DOM 里**（只是被 CSS 的 ellipsis / line-clamp 剪掉），
+   *     所以不用改数据、不用加属性，委托一个类名就够了。
+   *
+   * 用法：给会被剪掉的元素加 `data-tip-full`（可选值＝自定义文案，默认取 textContent）。
+   */
+  let fullTipEl = null, fullTipOwner = null;
+  function fullTip() {
+    if (!fullTipEl) {
+      fullTipEl = document.createElement('div');
+      fullTipEl.className = 'place-tip full-tip';
+      fullTipEl.hidden = true;
+      fullTipEl.setAttribute('role', 'tooltip');
+      document.body.appendChild(fullTipEl);
+    }
+    return fullTipEl;
+  }
+  function hideFullTip() {
+    if (!fullTipEl || fullTipEl.hidden) return;
+    fullTipEl.hidden = true;
+    fullTipEl.id = '';
+    if (fullTipOwner) { fullTipOwner.removeAttribute('aria-describedby'); fullTipOwner = null; }
+  }
+  /** 元素是否真的被 CSS 剪掉了（没剪掉就不该给浮层） */
+  function isClipped(el) {
+    if (!el) return false;
+    // 往上卷（nowrap + ellipsis）和多行夹（line-clamp）两种都要认
+    return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+  }
+  function showFullTip(target) {
+    const text = String((target.dataset && target.dataset.tipFull) || target.textContent || '').trim();
+    if (!text || !isClipped(target)) { hideFullTip(); return; }
+    const tip = fullTip();
+    tip.id = 'full-tip';
+    tip.innerHTML = `<div class="pt-desc">${esc(text)}</div>`;
+    tip.hidden = false;
+    if (fullTipOwner && fullTipOwner !== target) fullTipOwner.removeAttribute('aria-describedby');
+    fullTipOwner = target;
+    target.setAttribute('aria-describedby', 'full-tip');
+    const r = target.getBoundingClientRect();
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    const left = Math.min(Math.max(8, r.left), Math.max(8, window.innerWidth - w - 8));
+    let top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+    top = Math.max(8, Math.min(top, Math.max(8, window.innerHeight - h - 8)));
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
+  }
+
   /* ---------------- 地点说明（悬停／聚焦弹出） ----------------
    *
    * 用户要的是"鼠标悬停地点就弹出解释框"。地点筛选那个下拉已经用 combo 的
@@ -3069,6 +3155,7 @@
         <span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
+        ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
         <span class="badge">关系 ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
@@ -3156,12 +3243,15 @@
     return steps;
   }
 
-  /** 两人关系输入框 → 人物 id：优先下拉选中的精确 id，没选过就按输入文字匹配一次 */
+  /** 两人关系输入框 → 人物 id：优先下拉选中的精确 id，没选过就按输入文字匹配一次
+   *  ⚠ v0.96：`altNames`（又译）也参与匹配 —— 在这里按译名输入也能选到人。 */
   function pathCharId(input) {
     if (input.dataset.id && state.byId.has(input.dataset.id)) return input.dataset.id;
     const q = input.value.trim();
     if (!q) return '';
-    const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
+    const match = (x) => x.name === q || (x.aliases || []).includes(q) || (x.altNames || []).includes(q)
+      || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q))
+      || (x.altNames || []).some((a) => a.includes(q));
     const c = state.book.characters.find((x) => !charLocked(x) && charVisibleAt(x) && !isCharHidden(x) && match(x));
     return c ? c.id : '';
   }
@@ -3224,7 +3314,7 @@
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
                <span class="ev-name">${esc(e.name)}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
-               <span class="ev-sum">${esc(e.summary)}</span>
+               <span class="ev-sum" data-tip-full="${esc(e.summary)}">${esc(e.summary)}</span>
              </button>`).join('')}
       </div>`;
     }).join('');
@@ -3378,7 +3468,7 @@
       body.innerHTML = `
         <p class="card-sub">本章 <b>${d.charsHere.length}</b> 人出场 · 新增关系 <b>${d.relsNew.length}</b> 条 · 事件 <b>${d.events.length}</b> 个 · 地点 <b>${d.places.length}</b> 处</p>
         ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
-        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
         ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
         ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
         <div class="ch-teaser">${teaser}</div>
@@ -3887,7 +3977,7 @@
   /** 人物资料：档案 + 关系 + 事件；结局按剧透保护决定给不给 */
   function aiCharContext(c) {
     const head = [
-      `姓名：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}`,
+      `姓名：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}${(c.altNames || []).length ? `（又译：${c.altNames.join('，')}）` : ''}`,
       c.title ? `身份：${c.title}` : '',
       state.groupMode === 'generation' ? `代际：${genText(c.generation)}` : `阵营：${factionTextOf(c)}`,
       `首次出场：第 ${charCh(c)} 章`,
@@ -4105,6 +4195,7 @@ ${body}
   <h2>${esc(c.name)}</h2>
   <p class="meta">${esc([factionTextOf(c), c.gender === 'f' ? '女' : '男', c.title, `第 ${charCh(c)} 章出场`].filter(Boolean).join(' · '))}</p>
   ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
+  ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
   ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
   <p class="meta">结局：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
   ${life ? `<h3>${c.gender === 'f' ? '她' : '他'}的一生（按章）</h3><ul>${life}</ul>` : ''}
@@ -4446,7 +4537,11 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       const picked = search.dataset.id;
       const pc = picked ? state.byId.get(picked) : null;
       if (pc && pc.name === q) { chooseCharById(pc.id); return; }
-      const match = (x) => x.name === q || (x.aliases || []).includes(q) || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q));
+      /* v0.96：`altNames`（又译）也参与匹配 —— 回车直接搜译名也能选到人。
+       * 下拉建议（comboItems / open）同批修的，三处口径必须一致。 */
+      const match = (x) => x.name === q || (x.aliases || []).includes(q) || (x.altNames || []).includes(q)
+        || x.name.includes(q) || (x.aliases || []).some((a) => a.includes(q))
+        || (x.altNames || []).some((a) => a.includes(q));
       const c = state.book.characters.find((x) => !charLocked(x) && !isCharHidden(x) && match(x));
       if (c) { selectCharacter(c.id); lockFromHighlight(c.name, 'search', [c.id], true); return; }
       const hiddenHit = state.book.characters.find((x) => isCharHidden(x) && match(x));
@@ -4522,8 +4617,37 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         const t = ev.target.closest && ev.target.closest('[data-place-id]');
         if (t) hidePlaceTip();
       });
+      /* v0.96：截断文字的全文浮层（用户报"那么多内容显示不出来有什么用"）。
+       * 委托到 document、只在**真的被剪掉**时出现；键盘同样可达（focusin/out），
+       * Esc 一起关。class 名不用属性，是为了让"加在哪"由 CSS 决定、语义由内容决定。 */
+      const FULL_TIP_SEL = '.ch-list li > .linkbtn, .event-chip .ev-sum, [data-tip-full]';
+      document.addEventListener('mouseover', (ev) => {
+        const t = ev.target.closest && ev.target.closest(FULL_TIP_SEL);
+        if (!t) return;
+        /* 事件轴摘要里**嵌着地点名**，两个浮层会同时想弹。全文摘要信息量更大，
+         * 所以这时候让全文浮层接管、把地点浮层收掉（否则两层叠在一起更看不清）。 */
+        /* 事件轴芯片里，地点引用在**兄弟节点 `.ev-name`**（且它没被截断），
+         * `.ev-sum` 里不可能有地点名 —— 所以下面这行**当前走不到**，是防御性的。
+         * 留着的原因：将来谁把地点引用挪进 `.ev-sum`（比如想让整张卡片只弹一个浮层），
+         * 它就是必要的。test/full-tip.mjs 的 ⑥ 断言的是"两个浮层不同时出现"。 */
+        if (ev.target.closest('[data-place-id]')) hidePlaceTip();
+        showFullTip(t);
+      });
+      document.addEventListener('mouseout', (ev) => {
+        const t = ev.target.closest && ev.target.closest(FULL_TIP_SEL);
+        if (!t) return;
+        if (!(ev.relatedTarget && fullTipEl && fullTipEl.contains(ev.relatedTarget))) hideFullTip();
+      });
+      document.addEventListener('focusin', (ev) => {
+        const t = ev.target.closest && ev.target.closest(FULL_TIP_SEL);
+        if (t) showFullTip(t);
+      });
+      document.addEventListener('focusout', (ev) => {
+        const t = ev.target.closest && ev.target.closest(FULL_TIP_SEL);
+        if (t) hideFullTip();
+      });
       document.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape') hidePlaceTip();
+        if (ev.key === 'Escape') { hidePlaceTip(); hideFullTip(); }
       });
     }
     if (placeSel) {

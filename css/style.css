@@ -397,6 +397,10 @@ main {
 }
 .combo-item b { font-weight: 600; }
 .combo-sub { margin-left: auto; font-size: 11.5px; color: var(--muted); text-align: right; }
+/* v0.96：「又译」（altNames，异译本的另一种写法）。紧跟名字后面，
+ * 让人一眼认出「搜到的这个人和另一个译本里写的是同一个」——
+ * 用户原话"漏人名（包括不同的译名、别名）"。 */
+.combo-alt { font-size: 11.5px; color: var(--muted); margin-left: 4px; }
 .combo-item:hover, .combo-item.on { background: var(--soft); }
 .combo-item.combo-empty { color: var(--muted); cursor: default; font-size: 12.5px; }
 /* v93 地点：说明跟着**当前行**走（指针悬停或 ↑↓ 都算），不是浮一个tooltip。
@@ -422,6 +426,9 @@ main {
 .place-tip .pt-name { font-weight: 600; }
 .place-tip .pt-meta { color: var(--muted); font-size: 11.5px; margin-bottom: 3px; }
 .place-tip .pt-desc { color: var(--ink); }
+/* v0.96：全文浮层（截断文字）。比地点浮层宽一点、字等宽可选中，
+ * 因为里面是可能被复制的一段正文，而不只是两三行说明。 */
+.place-tip.full-tip { max-width: 460px; cursor: text; user-select: text; }
 .place-ref { cursor: help; border-bottom: 1px dotted var(--line); }
 
 /* 锁定条是纯提示（无按钮）：不吃指针事件，压在图上也不挡节点点击 */
@@ -555,6 +562,12 @@ main > *, .side > * { min-width: 0; }
 }
 .ch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; min-width: 0; }
 .ch-list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* v0.96：被剪掉的文字悬停/聚焦给全文浮层（用户："那么多内容显示不出来有什么用"）。
+ * 完整文案本来就在 DOM 里（只是被 ellipsis 剪掉），浮层由 app.js 的 showFullTip 负责，
+ * 只在 scrollWidth/scrollHeight 真的超出时才弹 —— 短标题不弹，否则页面会很吵。
+ * 光标给个提示：这一行还有下文。 */
+.ch-list li > .linkbtn,
+.event-chip .ev-sum { cursor: help; }
 .ch-locked {
   background: var(--panel-2);
   border: 1px dashed var(--line);
