@@ -149,7 +149,55 @@ function audit(bookFile, textFile) {
   return { slug: (book.meta || {}).slug || path.basename(bookFile, '.json'), total: names.length, rows };
 }
 
+/* ---------- v0.97 新增：每个人物在原文里能不能被搜到 ---------- */
+/**
+ * 查「数据里的人名，原文里那个写法搜不搜得到」。
+ *
+ * 为什么必须单独一个模式（不并进 audit）：audit 找的是**漏人**
+ * （书里出现了、数据里没有），这个查的是**反过来**那一种 ——
+ * 数据里有这个人，但书上的写法一个都不命中，读者拿着书里的名字点不进来。
+ * 后者更阴险：人数对得上、门禁全绿，只有真人对着书找人才会发现。
+ *
+ * 《百年孤独》上真实踩到 7 个（每一处都是"读起来完全合理"的错）：
+ *   数据「维克多里奥·麦丁纳」   / 原文「维多利奥·梅迪纳」   别名「维多里奥」连字都对不上
+ *   数据「尼格罗曼妲」旧作「尼格罗曼塔」/ 原文「尼格罗曼妲」  旧别名「尼格罗·曼塔」0 次
+ *   数据「加布里埃尔」/ 原文「加布列尔」/ 旧别名「加夫列尔」0 次
+ *   数据「阿方索」/ 原文「阿尔丰索」
+ *   数据「皮拉尔·特内拉」/ 原文「庇拉尔·特尔内拉」/ 旧别名「皮拉·苔列娜」0 次
+ *   数据「特兰奇丽娜·玛丽亚…」/ 原文「特兰奇丽娜·玛利亚…」一字之差
+ *   数据「…雷伊纳神父」/ 原文「…雷伊纳神甫」
+ *
+ * ⚠ 这类错**在版本库里查不出来**：原著文本不在仓库里（extract-epub.mjs 注明了），
+ *   所以做不成 CI 门禁，只能做成"拿到 epub 就能跑"的独立检查，
+ *   并写进 docs/新书处理规程.md 的必做步骤。
+ *
+ * 「主名不在原文、但某个别名在」是**正常的译名差异**，不算错，
+ * 单独列出来让人一眼看见，不混进 dead 列表。
+ */
+function checkNames(bookFile, textFile) {
+  const book = JSON.parse(fs.readFileSync(bookFile, 'utf8'));
+  const raw = plain(fs.readFileSync(textFile, 'utf8'));
+  const slug = (book.meta || {}).slug || path.basename(bookFile, '.json');
+  /* 去掉「（第二代）」这类括注：那是给读者消歧的标记，原文里当然不会有 */
+  const bare = (n) => String(n || '').replace(/（[^）]*）/g, '').trim();
+  const rows = [];
+  for (const c of book.characters || []) {
+    const forms = [...new Set([c.name, ...(c.aliases || []), ...(c.altNames || [])].map(bare))]
+      .filter((s) => s.length >= 2);
+    const hits = [];
+    for (const f of forms) { const n = raw.split(f).length - 1; if (n > 0) hits.push([f, n]); }
+    rows.push({ name: c.name, hits, alt: (c.altNames || []).length });
+  }
+  return {
+    slug,
+    total: rows.length,
+    dead: rows.filter((r) => !r.hits.length),
+    offName: rows.filter((r) => r.hits.length && !r.hits.some(([f]) => f === bare(r.name))),
+  };
+}
+
 /* ---------- 主流程 ---------- */
+const nameMode = argv.includes('--names');
 const pairs = [];
 if (all) {
   const dataDir = path.join(process.cwd(), 'data');
@@ -165,9 +213,37 @@ if (all) {
   if (pos.length < 2) {
     console.error('用法：node scripts/audit-against-text.mjs data/xx.json 原文.txt [--min N] [--json]');
     console.error('  或：node scripts/audit-against-text.mjs --all .text/   # 每本书配 data/<slug>.txt');
+    console.error('  加 --names 改成查「已建档的人名在原文里搜不搜得到」：');
+    console.error('    node scripts/audit-against-text.mjs --all .text/ --names');
     process.exit(1);
   }
   pairs.push([pos[0], pos[1]]);
+}
+
+if (nameMode) {
+  let bad = 0;
+  const rep = pairs.map(([bf, tf]) => checkNames(bf, tf));
+  if (asJson) { console.log(JSON.stringify(rep, null, 1)); process.exit(0); }
+  for (const r of rep) {
+    console.log(`\n=== ${r.slug}（--names：原文里能不能搜到）===`);
+    console.log(`  共 ${r.total} 个人物；书里那个写法一个都不命中的 ${r.dead.length} 个`);
+    console.log(`  主名不是本书用字、靠别名才搜得到的 ${r.offName.length} 个（这是正常的译名差异，不算错）\n`);
+    for (const d of r.dead) {
+      console.log(`  ✗ 搜不到：${d.name}`);
+      console.log('      主名、aliases、altNames 在原文里全是 0 次 ⇒ 读者拿着书上的名字点不进来');
+    }
+    for (const o of r.offName) {
+      console.log(`  · ${o.name}  →  原文用的是「${o.hits.map(([f, n]) => `${f}（${n} 次）`).join('、')}」`);
+    }
+  }
+  /* 有搜不到的人就非零退出：这样它能当手动门禁用（"修完再跑一次"），
+   * 也能挂进任何拿到 epub 的本地流程。 */
+  if (rep.some((r) => r.dead.length)) {
+    console.error('\n✗ 有已建档的人物在原文里搜不到 —— 名字写错了，或别名漏了书上的写法。');
+    process.exit(1);
+  }
+  console.log('\n✓ 全部人物都能在原文里搜到。');
+  process.exit(0);
 }
 
 const report = pairs.map(([bf, tf]) => audit(bf, tf));

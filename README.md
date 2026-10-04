@@ -418,6 +418,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/merge-duplicate-relations.mjs` | **重复关系线合并**：同一对人物 + 同一类型的多条记录会扇开成多根一样的线（三国曾有 87 组），合并时并入小事件、统一方向、取区间并集；区间有空档的阶段关系（同盟→分裂→再同盟）自动跳过。`node scripts/merge-duplicate-relations.mjs [--write]`；`validate.mjs` 会拦住新出现的重复 |
 | `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
+| `scripts/audit-against-text.mjs` | **拿原著逐条核**（原著文本不在版本库，所以是手跑步骤，不是 CI 门禁）。默认模式找**漏人**（书里提到、数据里没有）；加 `--names` 查**反方向**——已建档的人名在书里那个写法搜不搜得到，有搜不到的**非零退出**。`node scripts/audit-against-text.mjs --all .text/ [--names]`，详见 [`docs/新书处理规程.md`](docs/新书处理规程.md) §二 2.6 与 §四 0.5 / 0.6 |
 | `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 73 [--dry-run]` |
 | `scripts/make-tutorial-gifs.mjs` | 动图教程生成器：用无头 Edge（CDP）**真实点击页面**逐帧截图（`docs/tutorial/frames/`），因为教程要展示的正是悬停提示、点事件聚焦、拖时间滑块这类真实交互，静态图拼不出来。场景见文件里的 `SCENES`：`node scripts/make-tutorial-gifs.mjs [--width 1024 --height 640 --fps 10]` |
 | `scripts/assemble-gif.py` | 把上一条截下的帧合成 GIF（可选 MP4）。用**全局共享调色板**量化，否则同一种颜色在不同帧取到不同索引、整块 UI 会「闪」：`python scripts/assemble-gif.py --frames docs/tutorial/frames/search --out docs/tutorial/search.gif [--colors 128 --mp4]`（依赖 pillow） |

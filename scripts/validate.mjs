@@ -246,6 +246,45 @@ function validate(file) {
     warn(`${noAlias.length} 个主要人物没有任何别名（${names}${noAlias.length > 6 ? ' …' : ''}）——建议补字号/俗称/异体译名，否则按俗称搜不到（跑 node scripts/audit-search.mjs 看全量报告）`);
   }
 
+  // ---------- altNames 卫生 + 名字形式跨人物冲突 ----------
+  /* v0.97。三条都是**纯数据错误**（不是"建议"），所以用 err 而不是 warn：
+   *   ① altNames 里有空串 / 和主名一样 / 字段内重复 —— 前两个是手滑，第三个是复制粘贴没去重。
+   *      「又译 X」显示在主名旁边，写成「又译 维希塔香」等于什么都没说。
+   *   ② 同一个名字形式挂在两个人物身上 —— 搜索会落到其中任意一个，读者点错人。
+   *      译名里"布恩蒂亚"这种姓氏共有是正常的，所以只在**完整形式**相同时才报。
+   *
+   * ⚠ 这里**查不出**"别名写错了"（《百年孤独》7 个人物全错那类）——
+   *   那种错要拿原著 epub 才知道，见
+   *   `node scripts/audit-against-text.mjs --all .text/ --names`。
+   *   写在这里是为了别让人误以为 validate 能管这件事。 */
+  {
+    const errs = [];
+    const clashes = new Map();
+    for (const c of chars) {
+      const alt = c.altNames || [];
+      if (alt.some((x) => typeof x !== 'string' || !x.trim())) errs.push(`${c.name} 的 altNames 里有空值`);
+      if (alt.includes(c.name)) errs.push(`${c.name} 的 altNames 里出现了自己的主名（等于「又译」自己）`);
+      const inner = alt.filter((x) => typeof x === 'string').filter((x, i, a) => a.indexOf(x) !== i);
+      if (inner.length) errs.push(`${c.name} 的 altNames 内部重复：${[...new Set(inner)].join('、')}`);
+      for (const f of new Set([c.name, ...(c.aliases || []), ...alt])) {
+        /* ⚠ 两处过滤都是踩过才知道的：
+         *   ① **按人去重**（new Set）。第一版没去重，于是同一个人「既写进 aliases 又写进
+         *      altNames」的正常情况被判成"两个人撞名"，报出 11 条里 9 条假警报。
+         *   ② **长度 ≥3**。「明公」「丞相」「魏王」这类两字称号挂在多个人物上是正常的
+         *      （《三国演义》一下报 23 条），真正要抓的是**完整姓名**撞车。 */
+        if (typeof f !== 'string' || f.length < 3) continue;
+        if (!clashes.has(f)) clashes.set(f, []);
+        clashes.get(f).push(c.name);
+      }
+    }
+    for (const m of errs) err(m);
+    const dupForms = [...clashes.entries()].filter(([, who]) => who.length > 1);
+    if (dupForms.length) {
+      const show = dupForms.slice(0, 5).map(([f, who]) => `${f}（${[...new Set(who)].join(' / ')}）`).join('；');
+      warn(`${dupForms.length} 个名字形式挂在多个人物上：${show}${dupForms.length > 5 ? ' …' : ''}——搜到它会落到其中任意一个，读者可能点错人`);
+    }
+  }
+
   // ---------- 亲子方向（成环 = 方向写反了）----------
   {
     const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;

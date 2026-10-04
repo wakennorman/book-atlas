@@ -62,7 +62,6 @@
       "aliases": [
         "老何塞",
         "霍塞·阿卡迪奥·布恩迪亚",
-        "霍塞·阿卡迪奥",
         "老布恩迪亚"
       ],
       "generation": 1,
@@ -72,7 +71,10 @@
       "fate": "精神失常后被绑在栗树下死去",
       "note": "家里三个「何塞·阿尔卡蒂奥」中的第一个（曾祖父辈）。日常被叫作「老何塞」。",
       "gender": "m",
-      "firstCh": 1
+      "firstCh": 1,
+      "altNames": [
+        "霍塞·阿卡迪奥·布恩迪亚"
+      ]
     },
     {
       "id": "ursula",
@@ -88,7 +90,10 @@
       "desc": "勤劳坚韧，做糖果生意、扩建宅子，维持家族上百年。",
       "fate": "失明后仍操持家务，活到115–122岁",
       "gender": "f",
-      "firstCh": 1
+      "firstCh": 1,
+      "altNames": [
+        "乌苏拉·伊瓜兰"
+      ]
     },
     {
       "id": "prudencio",
@@ -138,8 +143,7 @@
       "name": "何塞·阿尔卡蒂奥（第二代）",
       "aliases": [
         "巨人",
-        "霍塞·阿卡迪奥（第二代）",
-        "霍塞·阿卡迪奥第二"
+        "霍塞·阿卡迪奥（第二代）"
       ],
       "generation": 2,
       "faction": "buendia",
@@ -148,7 +152,10 @@
       "fate": "行刑场救弟；一年后在卧室被神秘枪杀",
       "note": "救奥雷里亚诺上校的是他；被以「滥权」枪决的是他儿子阿尔卡蒂奥（本名也叫何塞·阿尔卡蒂奥）。",
       "gender": "m",
-      "firstCh": 2
+      "firstCh": 2,
+      "altNames": [
+        "霍塞·阿卡迪奥"
+      ]
     },
     {
       "id": "aureliano-colonel",
@@ -165,7 +172,13 @@
       "fate": "停战后做小金鱼，老死马孔多",
       "note": "书里叫奥雷里亚诺的有二十多个，认准「上校」这个称呼。",
       "gender": "m",
-      "firstCh": 2
+      "firstCh": 2,
+      "altNames": [
+        "奥雷良诺·布恩地亚上校",
+        "奥雷连诺·布恩蒂亚上校",
+        "奥瑞里亚诺·布恩迪亚上校",
+        "邦迪亚上校"
+      ]
     },
     {
       "id": "amaranta",
@@ -179,7 +192,10 @@
       "desc": "因嫉妒与悔恨终生不嫁，缝寿衣度日。",
       "fate": "缝完寿衣当天死去",
       "gender": "f",
-      "firstCh": 2
+      "firstCh": 2,
+      "altNames": [
+        "阿玛兰塔"
+      ]
     },
     {
       "id": "rebeca",
@@ -193,13 +209,18 @@
       "desc": "吃土癖；带着炽热的冲动与勇气。",
       "fate": "丈夫死后闭门不出，孤独老死",
       "gender": "f",
-      "firstCh": 3
+      "firstCh": 3,
+      "altNames": [
+        "雷蓓卡"
+      ]
     },
     {
       "id": "pilar-ternera",
-      "name": "皮拉尔·特内拉",
+      "name": "庇拉尔·特尔内拉",
       "aliases": [
-        "皮拉·苔列娜"
+        "皮拉·苔列娜",
+        "庇拉尔",
+        "特尔内拉"
       ],
       "generation": 2,
       "faction": "outsider",
@@ -207,7 +228,10 @@
       "desc": "先后与兄弟俩相好，为各生一子；看透家族命运。",
       "fate": "活到140余岁，死在妓院的藤椅上",
       "gender": "f",
-      "firstCh": 2
+      "firstCh": 2,
+      "altNames": [
+        "皮拉·苔列娜"
+      ]
     },
     {
       "id": "remedios-moscote",
@@ -224,7 +248,10 @@
       "fate": "死于血中毒，腹中双胞胎同死",
       "note": "三个「蕾梅黛丝」之一：奥雷里亚诺上校的妻子。她的死，原文既是「血中毒」，也有阿玛兰妲自认误放鸦片酊的情节。",
       "gender": "f",
-      "firstCh": 4
+      "firstCh": 4,
+      "altNames": [
+        "莫氏柯蒂"
+      ]
     },
     {
       "id": "apolinar-moscote",
@@ -261,8 +288,10 @@
     },
     {
       "id": "father-nicanor",
-      "name": "尼卡诺尔·雷伊纳神父",
-      "aliases": [],
+      "name": "尼卡诺尔·雷伊纳神甫",
+      "aliases": [
+        "尼卡诺尔·雷伊纳神父"
+      ],
       "generation": 2,
       "faction": "outsider",
       "title": "神父",
@@ -313,11 +342,11 @@
     },
     {
       "id": "victorio-medina",
-      "name": "维克多里奥·麦丁纳将军",
+      "name": "维多利奥·梅迪纳将军",
       "aliases": [
-        "维多里奥·梅迪纳",
-        "维多里奥·梅迪纳将军",
-        "麦丁纳将军"
+        "维多利奥·梅迪纳",
+        "维多利奥·梅迪纳将军",
+        "梅迪纳将军"
       ],
       "generation": 2,
       "faction": "war",
@@ -370,7 +399,10 @@
       "desc": "沉默勤劳，抚养三个孩子。",
       "fate": "晚年离家出走，不知所终",
       "gender": "f",
-      "firstCh": 5
+      "firstCh": 5,
+      "altNames": [
+        "圣索菲娅·德拉·彼达"
+      ]
     },
     {
       "id": "aureliano-jose",
@@ -384,7 +416,10 @@
       "desc": "由阿玛兰妲抚养长大，迷恋姑妈。",
       "fate": "被乱军打死",
       "gender": "m",
-      "firstCh": 4
+      "firstCh": 4,
+      "altNames": [
+        "奥雷连诺·霍塞"
+      ]
     },
     {
       "id": "aurelianos-17",
@@ -402,7 +437,10 @@
       "desc": "额上有洗不掉的灰烬十字；其中一个带来铁路与制冰厂。",
       "fate": "一夜之间几乎全被杀，仅阿玛多逃过多年前仍被枪杀",
       "gender": "m",
-      "firstCh": 9
+      "firstCh": 9,
+      "altNames": [
+        "十七个奥雷连诺"
+      ]
     },
     {
       "id": "remedios-beauty",
@@ -418,7 +456,10 @@
       "fate": "乘床单升天",
       "note": "三个「蕾梅黛丝」之一：阿尔卡蒂奥与圣索菲亚的女儿，和上校的妻子蕾梅黛丝·莫科特不是一个人。",
       "gender": "f",
-      "firstCh": 8
+      "firstCh": 8,
+      "altNames": [
+        "雷梅迪奥斯"
+      ]
     },
     {
       "id": "aureliano-segundo",
@@ -432,7 +473,10 @@
       "desc": "贪吃享乐；与佩特拉养牲畜暴富。",
       "fate": "与孪生兄弟同日死，葬错坟",
       "gender": "m",
-      "firstCh": 8
+      "firstCh": 8,
+      "altNames": [
+        "奥雷良诺第二"
+      ]
     },
     {
       "id": "jose-arcadio-segundo",
@@ -446,7 +490,10 @@
       "desc": "斗鸡、当香蕉公司监工，目击大屠杀。",
       "fate": "在梅尔基亚德斯房间研究羊皮卷时死去",
       "gender": "m",
-      "firstCh": 8
+      "firstCh": 8,
+      "altNames": [
+        "霍塞·阿卡迪奥第二"
+      ]
     },
     {
       "id": "petra-cotes",
@@ -461,7 +508,10 @@
       "desc": "牲畜因她多产，带来财富。",
       "fate": "在衰败中陪伴到最后",
       "gender": "f",
-      "firstCh": 10
+      "firstCh": 10,
+      "altNames": [
+        "佩特娜·科特斯"
+      ]
     },
     {
       "id": "fernanda",
@@ -475,7 +525,10 @@
       "desc": "严苛、守礼、爱面子。",
       "fate": "在怨恨中死去",
       "gender": "f",
-      "firstCh": 11
+      "firstCh": 11,
+      "altNames": [
+        "费尔兰达·特里斯特"
+      ]
     },
     {
       "id": "mr-brown",
@@ -518,7 +571,10 @@
       "fate": "被送进修道院，终生一言不发",
       "note": "三个「蕾梅黛丝」之一：出生名雷纳塔·蕾梅黛丝，昵称梅梅。",
       "gender": "f",
-      "firstCh": 12
+      "firstCh": 12,
+      "altNames": [
+        "美美"
+      ]
     },
     {
       "id": "mauricio",
@@ -533,7 +589,10 @@
       "desc": "身边总有黄蝴蝶。",
       "fate": "被打伤瘫痪，恋人被送走",
       "gender": "m",
-      "firstCh": 13
+      "firstCh": 13,
+      "altNames": [
+        "马乌里肖·巴比洛伦"
+      ]
     },
     {
       "id": "jose-arcadio-5",
@@ -564,7 +623,10 @@
       "desc": "开朗、现代，给老宅带来新鲜空气。",
       "fate": "与姨甥相爱生子，产后大出血而死",
       "gender": "f",
-      "firstCh": 12
+      "firstCh": 12,
+      "altNames": [
+        "阿玛兰塔·乌苏拉"
+      ]
     },
     {
       "id": "gaston",
@@ -578,7 +640,10 @@
       "desc": "欧洲人，想做航空邮政生意。",
       "fate": "回欧洲后再未归来",
       "gender": "m",
-      "firstCh": 15
+      "firstCh": 15,
+      "altNames": [
+        "加斯东"
+      ]
     },
     {
       "id": "aureliano-babilonia",
@@ -595,13 +660,17 @@
       "fate": "译出羊皮卷，随飓风消失",
       "note": "第六代；名字来自上校那一系，但他是梅梅的儿子。",
       "gender": "m",
-      "firstCh": 14
+      "firstCh": 14,
+      "altNames": [
+        "奥雷良诺·巴比洛尼亚",
+        "奥雷连诺·布恩蒂亚"
+      ]
     },
     {
       "id": "nigromanta",
-      "name": "尼格罗曼塔",
+      "name": "尼格罗曼妲",
       "aliases": [
-        "尼格罗·曼塔"
+        "尼格罗曼妲"
       ],
       "generation": 6,
       "faction": "outsider",
@@ -613,9 +682,9 @@
     },
     {
       "id": "gabriel",
-      "name": "加布里埃尔",
+      "name": "加布列尔",
       "aliases": [
-        "加夫列尔"
+        "加布列尔"
       ],
       "generation": 6,
       "faction": "outsider",
@@ -637,7 +706,10 @@
       "desc": "百年里唯一因爱情受孕的孩子。",
       "fate": "出生即被蚂蚁吃掉",
       "gender": "m",
-      "firstCh": 20
+      "firstCh": 20,
+      "altNames": [
+        "有尾巴的婴儿"
+      ]
     },
     {
       "id": "aureliano-buendia-1st",
@@ -676,7 +748,7 @@
     },
     {
       "id": "ursula-grandmother",
-      "name": "特兰奇丽娜·玛丽亚·米尼亚达·阿洛科克·布恩迪亚",
+      "name": "特兰奇丽娜·玛利亚·米尼亚达·阿洛科克·布恩迪亚",
       "aliases": [
         "乌尔苏拉的外祖母",
         "乌苏拉的外祖母"
@@ -764,7 +836,7 @@
     },
     {
       "id": "alfonso",
-      "name": "阿方索",
+      "name": "阿尔丰索",
       "aliases": [],
       "generation": 1,
       "faction": "outsider",
