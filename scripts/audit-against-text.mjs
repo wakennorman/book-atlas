@@ -71,7 +71,21 @@ function audit(bookFile, textFile) {
   const book = JSON.parse(fs.readFileSync(bookFile, 'utf8'));
   const raw = plain(fs.readFileSync(textFile, 'utf8'));
   const okFile = bookFile.replace(/\.json$/, '.missing-ok.json');
-  const okSet = new Set(fs.existsSync(okFile) ? JSON.parse(fs.readFileSync(okFile, 'utf8')) : []);
+  /* 忽略名单有两种条目，纯字符串和 {name, why} 对象都收。
+   *
+   * ⚠ 为什么必须两种都收（v0.97 踩过）：文件里原本 272 条是纯字符串，
+   *   我往里加 21 条 {name, why}（带判定理由，因为规程要求名单可审计），
+   *   结果 `new Set(数组)` 装进去的是**对象**，`okSet.has('齐美尔')` 永远 false
+   *   —— 名单看着写了、实际一条都不生效，工具照旧报那 21 条。
+   *   而"没生效的忽略名单"比"没有名单"更坏：它让人以为已经判过了。
+   *
+   * ⚠ `_` 开头的是文件头的说明（收集规则与红线），不是名字，要跳过，
+   *   否则它们会混进名字集合，将来报告里出现莫名其妙的行。
+   */
+  const okRaw = fs.existsSync(okFile) ? JSON.parse(fs.readFileSync(okFile, 'utf8')) : [];
+  const okSet = new Set(okRaw
+    .map((e) => (typeof e === 'string' ? e : (e && e.name)))
+    .filter((n) => typeof n === 'string' && n && !n.startsWith('_')));
 
   const chars = book.characters || [];
   const places = book.places || [];

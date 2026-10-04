@@ -148,8 +148,9 @@
     },
     {
       "id": "katerina",
-      "name": "卡捷莉娜·伊凡诺芙娜·玛尔美拉多娃",
+      "name": "卡捷莉娜",
       "aliases": [
+        "卡捷莉娜·伊凡诺芙娜·玛尔美拉多娃",
         "卡捷琳娜",
         "卡捷莉娜",
         "卡捷莉娜·伊万诺夫娜·玛尔美拉多娃",
@@ -264,6 +265,7 @@
       "id": "luzhin",
       "name": "彼得·彼得罗维奇·卢仁",
       "aliases": [
+        "彼得·彼得罗维奇",
         "卢仁律师",
         "卢仁",
         "彼得·彼得罗维奇·卢津",
@@ -323,7 +325,7 @@
     },
     {
       "id": "amalia",
-      "name": "阿玛丽雅·伊凡诺芙娜·里普威赫节尔",
+      "name": "阿玛丽雅·费多罗芙娜·里普威赫节尔",
       "generation": 1,
       "gender": "f",
       "firstCh": 14,
@@ -332,8 +334,10 @@
       "desc": "自称有体面亲戚的女房东，与卡捷莉娜水火不容。",
       "fate": "在卡捷莉娜的丧饭上被大闹一场。",
       "aliases": [
+        "阿玛丽雅·伊凡诺芙娜·里普威赫节尔",
         "阿玛丽雅",
-        "阿玛丽雅·伊万诺夫娜·里普威赫节尔"
+        "阿玛丽雅·伊万诺夫娜·里普威赫节尔",
+        "阿玛丽雅·费多罗芙娜"
       ]
     },
     {
@@ -434,7 +438,8 @@
       "name": "德米特利",
       "aliases": [
         "米季卡",
-        "米特莱"
+        "米特莱",
+        "米特卡"
       ],
       "generation": 1,
       "gender": "m",
@@ -443,6 +448,193 @@
       "title": "油漆工人",
       "desc": "尼古拉的同伴，两人一起在地下室刷漆。",
       "fate": "听说同伴认了罪，又气又怕。"
+    },
+    {
+      "id": "lonyusha",
+      "name": "廖尼娅",
+      "aliases": [
+        "小廖尼娅"
+      ],
+      "gender": "f",
+      "firstCh": 7,
+      "faction": "marmeladov",
+      "title": "玛尔美拉朵夫的小女儿",
+      "desc": "玛尔美拉朵夫与卡捷莉娜的小女儿，波丽娜的妹妹；父亲被马车轧伤时尖叫着扑到波丽娜身上。",
+      "fate": "一家人流落街头，此后没有再单独出现。",
+      "generation": 1
+    },
+    {
+      "id": "korya",
+      "name": "柯里亚",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 7,
+      "faction": "marmeladov",
+      "title": "玛尔美拉朵夫的儿子",
+      "desc": "玛尔美拉朵夫与卡捷莉娜的儿子，廖尼娅的哥哥；跟着母亲一句句念祷文。",
+      "fate": "没有再单独出现。",
+      "generation": 1
+    },
+    {
+      "id": "mihalka",
+      "name": "米科尔卡",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 5,
+      "faction": "commoner",
+      "title": "马车夫",
+      "desc": "赶车的马车夫，拉斯柯尔尼科夫发烧昏倒时赶车载他去城外；他的黑鬃黄毛小母马在途中累死了。",
+      "fate": "继续在彼得堡拉车。",
+      "generation": 1
+    },
+    {
+      "id": "kapernaumov",
+      "name": "卡彼尔纳乌莫夫",
+      "aliases": [
+        "卡彼尔纳乌莫夫太太"
+      ],
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "commoner",
+      "title": "裁缝师",
+      "desc": "瘸腿的裁缝师，说话口齿不清；卡捷莉娜带着孩子租住在他家，一家人也都笨口拙舌。",
+      "fate": "没有交代结局。",
+      "generation": 1
+    },
+    {
+      "id": "afanasyev",
+      "name": "伊凡·阿法纳谢维奇",
+      "aliases": [
+        "伊凡·阿法纳谢维奇大人"
+      ],
+      "gender": "m",
+      "firstCh": 2,
+      "faction": "commoner",
+      "title": "木材商",
+      "desc": "索尼娅回忆里提到的「大人」：她小时候家里穷，只好把东西典当到他家；她说他「像一块蜡」。",
+      "fate": "没有交代结局。",
+      "generation": 1
+    },
+    {
+      "id": "berg",
+      "name": "别尔格",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "气球飞行者",
+      "desc": "要驾大气球飞上天的人。斯维德利盖洛夫说听说他星期日要带顾客一起飞，还说自己以后也许跟他同乘。",
+      "fate": "没有交代结局。",
+      "generation": 1
+    },
+    {
+      "id": "franzovna",
+      "name": "达莉雅·福兰左芙娜",
+      "aliases": [
+        "福兰左芙娜"
+      ],
+      "gender": "f",
+      "firstCh": 2,
+      "faction": "commoner",
+      "title": "多次进过警察局的女人",
+      "desc": "「存心不良而且多次进过警察局」的女人；她告发了索尼娅的继母，又三次托请女房东要见索尼雅，逼得索尼娅在继母的丧饭上被大闹一场。",
+      "fate": "没有交代结局。",
+      "generation": 1
+    },
+    {
+      "id": "balasha",
+      "name": "巴拉霞",
+      "aliases": [
+        "黑眼睛的巴拉霞"
+      ],
+      "gender": "f",
+      "firstCh": 4,
+      "faction": "predator",
+      "title": "卢仁家的使女",
+      "desc": "卢仁讲自己那套「征服女人」的手段时提到她：刚从他乡来当使女的姑娘，被他纠缠得大哭大嚷，杜尼雅还特意去要求他别再惊扰她。",
+      "fate": "没有交代结局。",
+      "generation": 1
+    },
+    {
+      "id": "fourier",
+      "name": "傅立叶",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "法国空想社会主义者（书中被提及）",
+      "desc": "安德烈·谢敏诺维奇想向彼得·彼得罗维奇讲他的体系和达尔文的学说，被冷冷地听着。",
+      "fate": "（书中只被提及，并未登场。）",
+      "note": "历史人物，书中只作为话题出现，不是在场角色。",
+      "generation": 1
+    },
+    {
+      "id": "dobrolyubov",
+      "name": "杜勃罗留波夫",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "俄国革命民主主义者、文学评论家（书中被提及）",
+      "desc": "拉斯柯尔尼科夫那场酒后的宏论里提到：要是杜勃罗留波夫从坟墓里站起来，他就要跟他辩论，连别林斯基也会让他三分。",
+      "fate": "（书中只被提及，并未登场。）",
+      "note": "历史人物，书中只被提及，不是在场角色。",
+      "generation": 1
+    },
+    {
+      "id": "belinsky",
+      "name": "别林斯基",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "俄国革命民主主义者、文学评论家（书中被提及）",
+      "desc": "与杜勃罗留波夫一起被拉斯柯尔尼科夫当作自己也\"能让其让三分\"的人提起来。",
+      "fate": "（书中只被提及，并未登场。）",
+      "note": "历史人物，书中只被提及，不是在场角色。",
+      "generation": 1
+    },
+    {
+      "id": "darwin",
+      "name": "达尔文",
+      "aliases": [],
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "英国博物学家（书中被提及）",
+      "desc": "安德烈·谢敏诺维奇想讲傅立叶的体系和达尔文的学说，被彼得·彼得罗维奇讥笑。",
+      "fate": "（书中只被提及，并未登场。）",
+      "note": "历史人物，书中只被提及，不是在场角色。",
+      "generation": 1
+    },
+    {
+      "id": "chetbarov",
+      "name": "切巴罗夫",
+      "aliases": [
+        "切巴罗夫先生",
+        "七品文官切巴罗夫"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 1,
+      "faction": "police",
+      "title": "七品文官，持有杜尼雅那张过期借据的人",
+      "desc": "从八品文官遗孀扎尔尼齐娜手里转过那张一百五十卢布的过期借据，办事员拿着它来向杜尼雅追债。",
+      "fate": "没有交代结局。"
+    },
+    {
+      "id": "zarnitsyna",
+      "name": "扎尔尼齐娜",
+      "aliases": [
+        "八品文官的遗孀扎尔尼齐娜"
+      ],
+      "generation": 1,
+      "gender": "f",
+      "firstCh": 1,
+      "faction": "commoner",
+      "title": "杜尼雅所住公寓的女房东，八品文官的遗孀",
+      "desc": "杜尼雅住的那间公寓的女房东；她手里那张一百五十卢布的过期借据后来转给了七品文官切巴罗夫。",
+      "fate": "没有交代结局。"
     }
   ],
   "relations": [
@@ -888,6 +1080,243 @@
           "place": "marmeladov-flat"
         }
       ]
+    },
+    {
+      "from": "katerina",
+      "to": "lonyusha",
+      "type": "母女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "小廖尼娅尖叫一声往波丽娜身上扑；卡捷莉娜抱着孩子站在门边。",
+          "chapter": "第14章"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "marmeladov",
+      "to": "lonyusha",
+      "type": "父女",
+      "style": "solid",
+      "events": [
+        {
+          "text": "「在我们这些孩子当中，他最喜欢的是廖尼娅」——玛尔美拉朵夫的小女儿。",
+          "chapter": "第7章"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "polina",
+      "to": "lonyusha",
+      "type": "姐妹",
+      "style": "solid",
+      "events": [
+        {
+          "text": "波连卡是姐姐，替母亲照顾弟弟妹妹。",
+          "chapter": "第14章"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "katerina",
+      "to": "korya",
+      "type": "母子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "「柯里亚和廖尼娅呢，跟着妈妈一句句念」——念的是卡捷莉娜在教的祷文。",
+          "chapter": "第14章"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "raskolnikov",
+      "to": "mihalka",
+      "type": "赶车的（送他出城看病）",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "拉斯柯尔尼科夫在街上昏倒，米科尔卡赶车载他去城外；小母马在途中累死。",
+          "chapter": "第5章"
+        }
+      ]
+    },
+    {
+      "from": "katerina",
+      "to": "kapernaumov",
+      "type": "房东与房客",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "「她住在裁缝师卡彼尔纳乌莫夫家，在他们那儿租了个住处」；卡捷莉娜后来还到那家去做工。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "sonya",
+      "to": "afanasyev",
+      "type": "典当主顾",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "索尼娅回忆童年：动身到伊凡·阿法纳谢维奇大人家里去——家里穷，只好把东西典当。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "svidrigailov",
+      "to": "berg",
+      "type": "想跟他一起坐气球走",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "斯维德利盖洛夫说听说别尔格星期日要驾气球飞上天，还邀顾客同去，并说自己以后也许跟别尔格一起搭气球。",
+          "chapter": "第20章"
+        }
+      ]
+    },
+    {
+      "from": "sonya",
+      "to": "franzovna",
+      "type": "陷害",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "达莉雅·福兰左芙娜告发索尼娅的继母，又三次托请女房东要来见索尼雅，逼得她在继母丧饭上被闹。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "amalia",
+      "to": "franzovna",
+      "type": "同谋（托请女房东的人）",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卡捷莉娜说这话就出自达莉雅·福兰左芙娜之口。",
+          "chapter": "第14章"
+        }
+      ]
+    },
+    {
+      "from": "lebezyatnikov",
+      "to": "fourier",
+      "type": "想向他讲述其学说",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "「安德烈·谢敏诺维奇本来想试着向他讲述傅立叶的体系和达尔文的学说」——被彼得·彼得罗维奇讥笑。",
+          "chapter": "第27章"
+        }
+      ]
+    },
+    {
+      "from": "lebezyatnikov",
+      "to": "darwin",
+      "type": "想向他讲述其学说",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "同一句：傅立叶的体系和达尔文的学说。",
+          "chapter": "第27章"
+        }
+      ]
+    },
+    {
+      "from": "marmeladov",
+      "to": "korya",
+      "type": "父子",
+      "style": "solid",
+      "events": [
+        {
+          "text": "柯里亚是玛尔美拉朵夫与卡捷莉娜的儿子：文中「柯里亚和廖尼娅呢，跟着妈妈一句句念」说的是卡捷莉娜在教两个孩子念祷文，玛尔美拉朵夫是父亲。",
+          "chapter": "第7章"
+        }
+      ],
+      "kin": "blood",
+      "note": "第一人称段落：母亲同段被点名（卡捷莉娜）（原文距上一处点名 2368 字）"
+    },
+    {
+      "from": "luzhin",
+      "to": "balasha",
+      "type": "主人与使女（纠缠）",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卢仁当面讲自己那套「征服女人」的手段时提到巴拉霞：她是刚从他乡来当使女的姑娘，被他纠缠得大哭大嚷；这段独白里他还称呼罗佳「罗季昂·罗曼内奇」，可确认说话人是卢仁。",
+          "chapter": "第4章"
+        }
+      ],
+      "note": "第一人称段落：说话人（卢仁）在独白开头被罗佳称呼的上下文确认（原文距上一处点名 1323 字）"
+    },
+    {
+      "from": "dunya",
+      "to": "zarnitsyna",
+      "type": "房东与房客",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "「她不就是我的女房东吗？」——杜尼雅认得那张过期借据的出借人。",
+          "chapter": "第3章"
+        }
+      ]
+    },
+    {
+      "from": "chetbarov",
+      "to": "zarnitsyna",
+      "type": "接过她的借据",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "「借据是九个月前您写给八品文官的遗孀扎尔尼齐娜的，后来那位遗孀扎尔尼齐娜又转付给七品文官切巴罗夫」",
+          "chapter": "第1章"
+        }
+      ]
+    },
+    {
+      "from": "zametov",
+      "to": "chetbarov",
+      "type": "拿他的借据去追债",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "办事员（扎麦托夫）拿着一百五十卢布的过期借据来问杜尼雅的债，借据的持有者就是切巴罗夫。",
+          "chapter": "第9章"
+        }
+      ]
+    },
+    {
+      "from": "luzhin",
+      "to": "dobrolyubov",
+      "type": "想与之辩论",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卢仁与列别齐亚特尼科夫争论索菲雅时说：卢仁夸口：「要是杜勃罗留波夫从坟墓里站起来，我就会跟他辩论。」",
+          "chapter": "第1章"
+        }
+      ],
+      "note": "说话人是卢仁，依据是同段的对话标签「彼得·彼得罗维奇打断他的话说」（原文实字，非推测）；同段命中 彼得·彼得罗维奇"
+    },
+    {
+      "from": "luzhin",
+      "to": "belinsky",
+      "type": "自认能驳倒他",
+      "style": "dashed",
+      "events": [
+        {
+          "text": "卢仁与列别齐亚特尼科夫争论索菲雅时说：紧接着上一句：「就连别林斯基也会让我驳得体无完肤！」",
+          "chapter": "第1章"
+        }
+      ],
+      "note": "说话人是卢仁，依据是同段的对话标签「彼得·彼得罗维奇打断他的话说」（原文实字，非推测）；同段命中 彼得·彼得罗维奇"
     }
   ],
   "phases": [
