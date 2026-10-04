@@ -626,6 +626,39 @@
     updateSearchPlaceholder();
   }
 
+  /* ---------------- 构建版本水印（v0.94） ----------------
+ *
+ * 为什么加：用户报的"点开某人画布空白"里，有一部分**复现不了** ——
+ * 而这个项目已经吃过一次"部署后老访客仍跑旧代码"的亏（`scripts/check-version.mjs` 就是为它写的）。
+ * 有了页脚这行字，"你跑的是不是旧代码"就不用再靠猜：
+ *   ① 显示的是**实际加载到的** app.js 的 ?v=（不是 sw.js 里写的，也不是 package.json 里的）
+ *   ② 顺便问服务器 sw.js 的 CACHE 名；不一致就明说"请硬刷新"
+ *      （Service Worker 的缓存键变了但页面没硬刷新时，index.html 是新的、app.js 可能还是旧的）
+ *
+ * 取 ?v= 用 document.currentScript —— app.js 是普通 script（非 module），执行时它还有值。
+ */
+  const BUILD_V = (() => {
+    try {
+      const src = document.currentScript && document.currentScript.src;
+      return new URL(src || '', location.href).searchParams.get('v') || '';
+    } catch (e) { return ''; }
+  })();
+
+  function renderBuildStamp() {
+    const el = document.getElementById('build-ver');
+    if (el) el.textContent = BUILD_V ? 'v0.' + BUILD_V : '未知';
+    const stale = document.getElementById('build-stale');
+    if (!stale) return;
+    stale.hidden = true;
+    if (!BUILD_V) return;
+    // file:// 下没有 sw.js，测不了就不提示（别在本地开发时满屏警告）
+    if (!/^https?:$/.test(location.protocol)) return;
+    fetch('sw.js', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
+      const m = /bookatlas-v(\d+)/.exec(t || '');
+      if (m && m[1] !== BUILD_V) stale.hidden = false;
+    }).catch(() => { /* 取不到就当一致，不打扰 */ });
+  }
+
   /* ---------------- 页脚（三本书统一四行：一句话 / 结构 / 数据 / 来源） ---------------- */
   // 代际跨度文案：0 与负数并入「前史」，正代际压缩成「第 1–N 代」
   function genSpanText(gens) {
@@ -637,6 +670,7 @@
     return out.join('、') || '—';
   }
   function renderFooter() {
+    renderBuildStamp();
     const b = state.book, m = b.meta || {};
     const rows = [];
     // ① 一句话：最能概括这本书的一句 + 出处
@@ -3783,13 +3817,23 @@
    * 官方已公告 deepseek-chat / deepseek-reasoner 两个名字进入弃用流程
    * （分别对应 V4-Flash 的非思考模式与思考模式），将来会下线。现在还能调用，
    * 但新装的用户没理由一上来就用一个要被弃用的名字。
-   * 已存过旧名字的用户**不改**（localStorage 里有的就用用户的），避免擅自改人配置。 */
+   * 已存过旧名字的用户**原样保留**（localStorage 里有的就用用户的），避免擅自改人配置。
+   *
+   * v0.94 例外：`deepseek-chat` / `deepseek-reasoner` 这两个名字官方已公告进入弃用流程，
+   * 留着等于让用户的每次请求都发给一个将被下线的模型名（用户报"AI 行为不对"时查出来的）。
+   * 所以只对**这两个已进入弃用流程的名字**做一次性迁移，别的一律不动。 */
   const AI_DEFAULT_MODEL = 'deepseek-flash';
+  const AI_DEPRECATED_MODELS = { 'deepseek-chat': 'deepseek-flash', 'deepseek-reasoner': 'deepseek-reasoner' };
   const aiConfig = () => {
     try {
+      let model = localStorage.getItem('ba-ai-model') || AI_DEFAULT_MODEL;
+      if (AI_DEPRECATED_MODELS[model] && AI_DEPRECATED_MODELS[model] !== model) {
+        localStorage.setItem('ba-ai-model', AI_DEPRECATED_MODELS[model]);   // 迁一次，落盘
+        model = AI_DEPRECATED_MODELS[model];
+      }
       return {
         base: localStorage.getItem('ba-ai-base') || AI_DEFAULT_BASE,
-        model: localStorage.getItem('ba-ai-model') || AI_DEFAULT_MODEL,
+        model,
         key: localStorage.getItem('ba-ai-key') || '',
       };
     } catch (e) {

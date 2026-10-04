@@ -182,6 +182,15 @@ jobs:
         #     测出 10/10 假绿，而真实单点路径是 3/10）。
         run: node test/place-visible.mjs
 
+      - name: 构建版本水印 + 弃用模型名迁移（无头 Edge）
+        # v0.94 新增。两件"用户看得见但门禁看不见"的事：
+        #  ① 页脚版本号取自**实际加载到的** app.js 的 ?v=，与服务器 sw.js 不一致就提示硬刷新。
+        #     本项目吃过一次"部署后老访客仍跑旧代码"的亏；断言 document.currentScript
+        #     还能取到值，是防"哪天改成 module 了、水印悄悄变成'未知'"。
+        #  ② localStorage 里存的 deepseek-chat（已公告弃用）迁移成 deepseek-flash；
+        #     但别的模型名一律不动 —— 迁移只针对弃用清单，不擅自改人配置。
+        run: node test/build.mjs
+
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all
 

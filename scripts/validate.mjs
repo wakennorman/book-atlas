@@ -65,6 +65,62 @@ function validate(file) {
   }
   for (const [name, list] of names) if (list.length > 1) warn(`角色名重复：${name}（${list.join(', ')}）——记得用 note 写清消歧提示`);
 
+  /* ---------- v0.94：血缘必须可核对（parents 字段 + 双向一致检查） ----------
+   *
+   * 为什么加这个字段：本项目的数据模型里**没有"父母"字段**，父子关系只是一条普通 relations 边。
+   * 后果就是漏一条边**没有任何机制会发现它** —— 只能靠人记得加。已经被用户抓到过：
+   * 「奥雷里亚诺·布恩迪亚上校」和「奥雷里亚诺第二 / 何塞·阿尔卡蒂奥第二 / 美人儿蕾梅黛丝」
+   * 明明是叔侄，图上一条线都没有；而 validate.mjs 当时一声不响（关系表是自洽的，
+   * 它只检查"边的两端存在"，没法检查"该有的边在不在"）。
+   *
+   * 有了 `parents: []`，"该有的边在不在"就变成可判定的：
+   *   正向：parents 里的每个 id，都必须有一条父子边
+   *   反向：有父子边的两个人，必须在双方的 parents/children 里登记
+   * 这样血缘由**结构化字段声明**，边可以由脚本派生，而不是手工维护一堆看不见全貌的边。
+   *
+   * 字段可选（没填不报错，只提示），这样老数据不会因为加字段而红一片；
+   * 但**填了就要一致** —— 半填比不填更危险。
+   */
+  /* 亲子边判定：只认"父母 ↔ 子女"这条轴。
+   * 先把旁系/姻亲词剔掉再判，否则「婆媳（无名的儿媳）」「外祖母与外孙女」
+   * 「同母异父的兄弟（也是堂兄弟）」「岳母」全都会被误判成亲子边 —— 那样警告会变成噪声，
+   * 而噪声是"让人忽略警告"的根源（这正是 `kin.mjs` 里 NOT_KIN 干的事，这里是同一类问题）。 */
+  const COLLATERAL = /外祖母|外孙女|外祖父|外孙|婆媳|儿媳|儿媳妇|女婿|媳妇|岳母|岳父|岳丈|祖母|祖父|岳|姑|舅|叔|伯|侄|甥|兄弟|姐妹|兄妹|姐弟|堂兄|堂弟|表兄|表姐|孪生/g;
+  const isParentEdge = (t) => {
+    const s = String(t || '').replace(COLLATERAL, '');
+    return /父子|父女|母子|母女|父母/.test(s)
+      || /父[儿女子女]/.test(s) || /母[儿女子女]/.test(s) || /[儿女子女][父母]/.test(s);
+  };
+  const relList = book.relations || [];
+  const parentEdge = (a, b) => relList.some((r) =>
+    (r.from === a && r.to === b || r.from === b && r.to === a) && isParentEdge(r.type));
+  const byId = new Map(chars.map((c) => [c.id, c]));
+  let parentsDeclared = 0;
+  for (const c of chars) {
+    const ps = c.parents;
+    if (ps === undefined || ps === null) continue;
+    if (!Array.isArray(ps)) { err(`角色 ${c.id} 的 parents 必须是数组（没填就整个字段省略，别写 null/字符串）`); continue; }
+    parentsDeclared++;
+    for (const pid of ps) {
+      if (!byId.has(pid)) { err(`角色 ${c.id} 的 parents 里「${pid}」不是本书人物 id`); continue; }
+      if (!parentEdge(c.id, pid)) {
+        err(`角色 ${c.name} 声明了父母 ${byId.get(pid).name}，但图上没有他们之间的亲子边 —— 声明与关系不一致`);
+      }
+    }
+  }
+  // 反向：有亲子边但没在 parents 里登记（只提示，且只在已经有人在填 parents 时才提示）
+  if (parentsDeclared) {
+    for (const r of relList) {
+      if (!isParentEdge(r.type)) continue;
+      const p = byId.get(r.from), k = byId.get(r.to);
+      if (!p || !k) continue;
+      const kHas = Array.isArray(k.parents) && k.parents.includes(p.id);
+      const pHas = Array.isArray(p.parents) && p.parents.includes(k.id);
+      if (!kHas && !pHas) warn(`亲子边 ${p.name} —${r.type}→ ${k.name} 双方都没有用 parents 登记 —— 建议在子女那侧写 parents（长辈那侧写 children）`);
+    }
+  }
+  console.log(`  ℹ 血缘声明：${parentsDeclared}/${chars.length} 个人物填了 parents（填了就会双向校验一致性）`);
+
   // ---------- 分组标准（代际轴 / 阵营轴） ----------
   const genSet = new Set(chars.map((c) => Number(c.generation)));
   const facSet = new Set(chars.map((c) => c.faction).filter(Boolean));

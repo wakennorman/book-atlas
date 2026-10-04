@@ -606,6 +606,8 @@
         <label>阵营<select data-field="faction"><option value="">（无）</option>${facs}</select></label>
         <label>身份/头衔<input data-field="title" value="${esc(c.title || '')}"></label>
         <label class="wide">别名（逗号分隔）<input data-field="aliases" value="${esc((c.aliases || []).join('，'))}"></label>
+        <label class="wide">又译 / 异译本名（逗号分隔）<input data-field="altNames" value="${esc((c.altNames || []).join('，'))}"></label>
+        <label class="wide">父母 id（逗号分隔，可留空）<input data-field="parents" value="${esc((c.parents || []).join('，'))}"></label>
         <label class="wide">一句话描述<textarea data-field="desc">${esc(c.desc || '')}</textarea></label>
         <label class="wide">结局<textarea data-field="fate">${esc(c.fate || '')}</textarea></label>
         <label class="wide">易混提示 note<textarea data-field="note">${esc(c.note || '')}</textarea></label>
@@ -769,7 +771,7 @@
   const AI_SCHEMA = `{
   "meta": { "title": "", "author": "", "chapters": 20, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
-  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
+  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "altNames": ["只放**其他译本的写法**（奥雷良诺/乌苏拉/雷贝卡/拉斯科利尼科夫…）；昵称、外号、简称仍放 aliases。这是可选项，拿不准就省略"], "parents": ["父母 id，可选；但每个原生血缘人物都应该填，否则门禁查不出漏掉的关系线"], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
   "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（只有亲属才填，不是亲属就省略这个字段）", "style": "solid|dashed|dotted", "fromCh": "可选：这条关系从第几章成立", "toCh": "可选：从第几章起不再存在（同盟变敌对时，请拆成两条并各给 fromCh/toCh）", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
   "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "城镇|宅邸|酒馆…", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
@@ -1028,7 +1030,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=94';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=95';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1589,7 +1591,7 @@
   }
 
   function templateFor(sec) {
-    if (sec === 'characters') return { id: '', name: '', aliases: [], generation: 1, gender: 'm', firstCh: 1, faction: (ed.book.factions[0] || {}).key || '', title: '', desc: '', fate: '', note: '' };
+    if (sec === 'characters') return { id: '', name: '', aliases: [], altNames: [], parents: [], generation: 1, gender: 'm', firstCh: 1, faction: (ed.book.factions[0] || {}).key || '', title: '', desc: '', fate: '', note: '' };
     if (sec === 'relations') return { from: (ed.book.characters[0] || {}).id || '', to: (ed.book.characters[1] || ed.book.characters[0] || {}).id || '', type: '', style: 'solid', events: [{ text: '', chapter: '', place: '' }] };
     if (sec === 'events') return { id: uid('e'), name: '', phase: (ed.book.phases[0] || {}).id || '', order: (ed.book.events.length + 1), ch: 1, chars: [], summary: '', impact: '', quote: '' };
     if (sec === 'phases') return { id: uid('p'), name: '', order: ed.book.phases.length + 1 };
@@ -1605,6 +1607,15 @@
         ...f,
         id: (f.id || '').trim() || uid('c'),
         aliases: toList(f.aliases),
+        /* v0.95：`altNames` 标出「哪个别名是另一个译本」，界面分开措辞（又译 vs 别名）。
+         * 留空时**不写这个键**（而不是写 []）—— validate 只在"填了"时才校验一致性。
+         * 注意它不必是 aliases 的子集：一条别名里混了译名差异和绰号时
+         *（如「奥雷良诺·布恩迪亚上校」），这里写拆干净的变体「奥雷良诺·布恩迪亚」即可。 */
+        ...(toList(f.altNames).length ? { altNames: toList(f.altNames) } : {}),
+        /* v0.95：`parents` 让血缘变成可核对的结构化声明 ——
+         * 以前父子关系只是一条普通 relations 边，漏一条没有任何机制能发现它
+         * （"上校与奥雷里亚诺第二明明是叔侄却一条线都没有"就是这么漏的）。 */
+        ...(toList(f.parents).length ? { parents: toList(f.parents) } : {}),
         generation: Number(f.generation) || 0,
         firstCh: Number(f.firstCh) || 0,
         gender: f.gender === 'f' ? 'f' : 'm'

@@ -117,7 +117,7 @@ console.log(`▶ ${path.basename(epubFile || textFile)}：${chapters.length} 章
 const SCHEMA = `{
   "meta": { "title": "", "author": "", "chapters": 120, "note": "" },
   "factions": [{ "key": "", "name": "", "color": "#hex" }],
-  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
+  "characters": [{ "id": "拼音-kebab", "name": "", "aliases": [], "altNames": ["只放其他译本的写法；昵称外号简称仍放 aliases。拿不准就省略"], "parents": ["父母 id，可选；但每个原生血缘人物都该填，否则门禁查不出漏掉的关系线"], "generation": 1, "gender": "m|f", "firstCh": 1, "faction": "", "title": "", "desc": "", "fate": "", "note": "" }],
   "relations": [{ "from": "id", "to": "id", "type": "", "kin": "blood|marriage|inlaw|adoptive|foster|step|sworn（只有亲属才填，不是亲属就省略这个字段）", "style": "solid|dashed|dotted", "events": [{ "text": "", "chapter": "第X章", "place": "地点 id 或空" }] }],
   "places": [{ "id": "拼音-kebab", "name": "", "aliases": [], "type": "", "firstCh": 1, "desc": "" }],
   "phases": [{ "id": "p1", "name": "", "order": 1 }],
