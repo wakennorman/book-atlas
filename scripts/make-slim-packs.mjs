@@ -19,11 +19,19 @@
  *
  * 字段选择依据（严格按 js/app.js 启动路径实际读到的，不能凭感觉砍）
  * --------------------------------------------------------------
- * 人物：id name gender faction generation tier firstCh aliases factionHistory
+ * 人物：id name gender faction generation tier firstCh aliases altNames factionHistory
  *   · firstCh     charCh() / charVisibleAt() / 剧透锁定
  *   · aliases     搜索与下拉要
+ *   · altNames    「又译」：搜索、联想、人物卡、人物志、EPUB 导出都要（v0.97 补）
  *   · factionHistory effectiveFactionKey()（分组与阵营色）
  *   · tier        次要人物/仅提及 的折叠
+ *
+ * ⚠⚠ **白名单是这类漏字段的根源**：加新字段时忘了在这里 put，图包里就没有，
+ *   而前端测试往往用**运行时注入的探针**去测那个字段 ⇒ 一路绿灯，功能在浏览器里却是死的。
+ *   实测踩过：`altNames` 从 v0.95 起就接进了前端、v0.97 填了 27 条真实译名，
+ *   却因为白名单漏了它，网页端一条都显示不出来。
+ *   ⇒ 防它靠 `check-packs-sync.mjs` 的**字段覆盖检查**（拿源数据的字段名集合
+ *     减去图包，再减去一份显式的"故意不带"清单），不要靠前端断言。
  * 关系：from to type kin style derived fromCh toCh events[].chapter/place
  *   · events[].chapter **必须留**：relCh() 取它算"这段关系第几章成立"，
  *     charLastCh() 也靠它算人物最后出场章。只留条数会让剧透判定全错。
@@ -69,6 +77,21 @@ function split(book) {
       put(o, 'generation', c.generation);
       put(o, 'tier', c.tier);
       put(o, 'aliases', c.aliases);
+      /* ⚠ altNames（「又译」）**必须**进图包。
+       *   v0.95 把 altNames 接进了搜索/联想/人物卡/人物志/EPUB 导出，
+       *   v0.97 又给它填了 27 条真实译名 —— 而这个白名单里**漏了它**，
+       *   于是网页端读到的 graph.json 里 altNames 恒为 0，
+       *   **整个「又译」功能在浏览器里一条都显示不出来**。
+       *
+       *   为什么门禁没抓到：`test/browser.mjs` 里那几条 altNames 断言用的是
+       *   **运行时注入的探针 altName**，绕过了数据通路 ——
+       *   典型的"测试用探针、于是真数据缺字段也照样绿"。
+       *   ⇒ 防这类错要靠 `check-packs-sync.mjs` 的字段覆盖检查（比字段名逐字比），
+       *     不能靠前端断言。 */
+      put(o, 'altNames', c.altNames);
+      /* lordHistory：三国用它记「历任主公」，app.js 的君主更替线要读。
+       * 它同样一度只存在于 data/*.json、两个包里都没有 ⇒ 那条线在浏览器里是空的。 */
+      put(o, 'lordHistory', c.lordHistory);
       put(o, 'factionHistory', c.factionHistory);
       return o;
     }),

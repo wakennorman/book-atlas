@@ -46,6 +46,15 @@ jobs:
         # 这一步同时校验"两份合起来 == 源文件"，剧透判定依赖的字段少一个都会失败。
         run: node scripts/make-slim-packs.mjs --check
 
+      - name: graph/text 包的人物字段覆盖
+        # v0.97 新增。`make-slim-packs.mjs --check` 只能发现"忘了重新生成"，
+        # 发现不了"**生成脚本的白名单里漏了这个字段**"。
+        # 实测踩过：`altNames`（又译）从 v0.95 接进前端、v0.97 填了 27 条真实译名，
+        # 却因为白名单漏了它 ⇒ 网页端两个包里都没有它 ⇒ 浏览器里「又译」一条都不显示，
+        # 而门禁全绿（前端那几条断言用的是运行时注入的探针 altName，绕过了数据通路）。
+        # 判据是「源数据里有值、而 graph.json 与 text.json 里都没有」。
+        run: node scripts/check-graph-fields.mjs
+
       - name: sw.js 预缓存清单与 books.json 一致
         # 网站会持续加书，而 sw.js 的 SHELL 里是硬编码每个图包的路径。
         # 忘了加不会白屏（/data/ 走 stale-while-revalidate），但会静默不一致。
