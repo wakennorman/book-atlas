@@ -1270,6 +1270,10 @@
         },
       },
       series: [{
+        /* v93：把本次真正交给 ECharts 的节点数组留在 state 上。
+         * 「世界单位→像素」的换算要用它（measuredUnitPxBase）—— 它就是**当前绘制集合**，
+         * 而 buildOption 早于 setOption 执行，所以取值时机天然正确。 */
+        ...(state.drawnData = data, {}),
         type: 'graph',
         // v92：「自由」视图现在也用 'none' —— 位置由我们自己的 forceLayout() 算好（固定种子/轮数），
         // 要是这里还让 ECharts 跑它的力导向，会在我们排完之后又覆盖一遍，固定种子的好处全白费。
@@ -1799,6 +1803,68 @@
     saveViewMemory();
   }
 
+  /** v93：量出 ECharts **此刻**真实采用的「世界单位 → 像素」比例（zoom=1 时的基准）。
+   *
+   *  为什么要量而不算：fitPositions 里那个解析式（pxScale = s * fitK）是按**全图**包围盒
+   *  推的，只在"画的就是全图"时准。可 ECharts 的 View 坐标系适配的是**当前绘制集合**——
+   *  一旦筛选/锁定到少数节点，它就把那几十个点重新等比塞满画布。实测《百年孤独》：
+   *
+   *    状态                 真实比例      解析式给的     吻合
+   *    全图 53 个点          1.0644       1.0638        0.999 ✓
+   *    只剩里奥阿查 3 人     3.9832       1.0638        0.267 ✗  差 3.74 倍
+   *    取消筛选回全图        1.0644       1.0638        0.999 ✓
+   *
+   *  比例一错，"人在不在画面里"和"放大能不能救"这两个判断**同时反掉** ——
+   *  focusViewOn 以为人还在画面里就什么都不做，而实际上人已经被推出去了；
+   *  这就是"点开地点/事件，画布一片空白"的真正病根。
+   *
+   *  做法：调 ECharts 公开的 convertToPixel 标定。实测 setOption 之后**同一 tick** 就能量到
+   *  新值（View 坐标系是 setOption 同步算的，不必等 paint），所以可以随时按需调用。
+   *  节点多时不能两两全比（三国 871² 次数），取最多 10 个均匀采样点两两比较。
+   *
+   *  @returns {number|null} px / 世界单位（zoom=1）；量不出来返回 null，调用方退回解析式。
+   */
+  function measuredUnitPxBase() {
+    const ch = state.chart;
+    if (!ch) return null;
+    const data = state.drawnData || (() => { try { return ch.getOption().series[0].data; } catch (e) { return null; } })();
+    if (!data || data.length < 2) return null;
+    // 均匀采样：三国 871 个点时 O(n²) 比对 + convertToPixel 太贵
+    const MAXP = 10;
+    const step = Math.max(1, Math.floor(data.length / MAXP));
+    const pts = [];
+    for (let i = 0; i < data.length && pts.length < MAXP; i += step) {
+      const d = data[i];
+      if (d && typeof d.x === 'number' && typeof d.y === 'number' && isFinite(d.x) && isFinite(d.y)) pts.push(d);
+    }
+    if (pts.length < 2) return null;
+    let bestDw = 0, bestDp = 0;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j];
+        const dw = Math.hypot(b.x - a.x, b.y - a.y);
+        if (!(dw > 1e-6) || dw <= bestDw) continue;      // 取最远的一对，抗投影噪声
+        let pa, pb;
+        try {
+          pa = ch.convertToPixel({ seriesIndex: 0 }, [a.x, a.y]);
+          pb = ch.convertToPixel({ seriesIndex: 0 }, [b.x, b.y]);
+        } catch (e) { continue; }
+        if (!pa || !pb || !isFinite(pa[0]) || !isFinite(pb[0]) || !isFinite(pa[1]) || !isFinite(pb[1])) continue;
+        bestDw = dw; bestDp = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+      }
+    }
+    const zoom = state.zoom || 1;
+    const v = bestDw > 0 ? bestDp / bestDw / zoom : 0;
+    return v > 0 && isFinite(v) ? v : null;
+  }
+
+  /** v93：统一出口 —— 要「当前屏幕上多少像素 = 一个世界单位」都走这里。
+   *  量得到就用实测值（筛选/锁定后依然准），量不到才退回 fitPositions 的解析式。 */
+  function unitPxNow() {
+    return measuredUnitPxBase() * (state.zoom || 1)
+      || (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);
+  }
+
   /** v90：整张图是否已经被拖到视口外面去了？
    *  纯算术，不扫 zrender：视口半宽/半高（像素）换算成世界坐标，
    *  拿它和 state.bbox（已居中于原点）比。 */
@@ -1807,8 +1873,7 @@
     const el = $('#graph');
     const W = el.clientWidth || 0, H = el.clientHeight || 0;
     if (!W || !H) return false;
-    const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）
-    const perUnit = unitPx * (state.zoom || 1);
+    const perUnit = unitPxNow();                                // v93：实测优先，见 unitPxNow
     if (!(perUnit > 0)) return false;
     const halfW = (W / 2) / perUnit, halfH = (H / 2) / perUnit;
     const vc = state.viewCenter || [0, 0];
@@ -1864,12 +1929,13 @@
      * 而那一小块里只有他一个人（周围按群组轴隔开上百像素）⇒ 屏幕上一片空白，
      * 必须「重置」或双击才回得来。
      *
-     * 换算：屏幕尺度 = pxScale/fitLast（px/适配后单位）× zoom，所以要的是
-     *   target = 想要的像素尺度 ÷ (pxScale/fitLast)
+     * 换算：屏幕尺度 = 「一个世界单位此刻值多少像素」，而 v93 起这个尺度是**实测**的
+     *   （unitPxNow，用 convertToPixel 标定），不再是 pxScale/fitLast 推算 ——
+     *   推算值只在"画的就是全图"时准，筛选到少数节点后会差 3.74 倍（见 unitPxNow）。
      */
-    const unitPx = (state.pxScale || 1) / (Math.abs(state.fitLast) || 1);   // px / 适配后单位（zoom=1）
+    const unitPx = unitPxNow();                                       // px / 世界单位（当前 zoom 下，见 unitPxNow）
     const wantPx = Math.min((W * 0.55) / w, (H * 0.55) / h);        // 高亮集合该有的像素跨度
-    const perUnit = unitPx * cur;                                    // 当前 1「适配后」单位 = 多少像素
+    const perUnit = unitPx;                                          // 屏幕上 1 世界单位 = 多少像素
     /* v90：加一道「别把图丢太多」的闸。
      *
      * 目标倍率原来是纯按「高亮包围盒该占画布 55%」算的，而只有一两个人时包围盒会被
@@ -1886,17 +1952,45 @@
       state.bbox ? state.bbox.maxX * 2 : 0,
       state.bbox ? state.bbox.maxY * 2 : 0, 1);
     const zoomCap = (Math.min(W, H) / (graphSpan * perUnit * 0.35)) * cur;
-    const target = Math.min(Math.max(wantPx / unitPx, cur), 4, Math.max(cur, zoomCap));
-    const improved = target >= cur * minGain;
+    /* v93：倍率**允许变小**了 —— 原来的 `Math.max(wantPx / unitPx, cur)` 把它钉成"只升不降"。
+     *
+     * 那个假设写在 fitLockView 的注释里："集合是当前绘制集合的子集，所以只需放大、不需要缩小"。
+     * 对"点一个人物看他是谁"成立，对**地点筛选**不成立：
+     * 一个地点关联的少数几个人可能散布在整张图上（实测《百年孤独》点「火车站」，
+     * 3 个人横跨 3300px），这时要收进画面**必须缩小**。
+     *
+     * 而且筛选之后 ECharts 会把绘制集合重新适配满画布（比例从 1.06 跳到 3.98），
+     * 人本来就已经顶满画面，再"放大"只会把人推出画布 —— 所以这里不仅要允许缩小，
+     * 还必须用实测比例（unitPxNow）才算得对，见那段说明。
+     *
+     * 只在"当前倍率装不下这个集合"时才允许缩小；装得下就一动不动，
+     * 免得动辄把用户自己调好的视野改掉。 */
+    const spanPx = Math.max(w, h) * perUnit;                  // 集合最长边在屏幕上有多长
+    const spreadOut = spanPx > Math.min(W, H) * 0.92;          // 快撑满/超出画布 ⇒ 散得太开
+    const want = wantPx / unitPx;                             // 让集合占画布 55% 所需的倍率
+    const shrinking = want < cur && spreadOut;
+    let target;
+    if (shrinking) {
+      target = Math.max(0.05, Math.min(want, cur));
+    } else {
+      target = Math.min(Math.max(want, cur), 4, Math.max(cur, zoomCap));
+    }
+    const improved = shrinking ? target <= cur / minGain : target >= cur * minGain;
     /* v90：把"要不要把视野挪过去"从启发式换成**真的算一遍在不在画布里**。
      *
      * 原来是 `moved = 位移 > 短边 × 0.2` 这种"动得够不够大"的启发式；只要 viewCenter 稍有偏差
      * （用户拖动过、或者高亮中心恰好靠近数据原点），就会算出"没跑出去"而完全不挪 ——
      * 画布停在空白处，点谁都没反应。
      *
-     * 现在直接用真实尺度算视野矩形：高亮中心落在视口外 ⇒ 无条件拉回来；在视口内 ⇒ 才考虑放大。 */
+     * 现在直接用真实尺度算视野矩形：高亮中心落在视口外 ⇒ 无条件拉回来；在视口内 ⇒ 才考虑放大。
+     *
+     * v93：判据从"**中心**在不在画布里"升级成"**包围盒**有没有露在画布外"。
+     * 只看中心的话，一个"中心恰好靠近当前视野、成员散布在四周"的集合会被判成"在里面"，
+     * 于是后面两条 early-return 全部命中、什么都不动，而人其实在屏幕外。
+     * 集合比画布还大时这个判据恒为真（那是应该的：把中心对过去总比停在别处强）；
+     * maxNodes 那条仍然只挡"放大"，不挡"挪位置"。 */
     const halfW = (W / 2) / perUnit, halfH = (H / 2) / perUnit;
-    const outside = Math.abs(cx - vc[0]) > halfW * 0.9 || Math.abs(cy - vc[1]) > halfH * 0.9;
+    const outside = (Math.abs(cx - vc[0]) + w / 2) > halfW * 0.9 || (Math.abs(cy - vc[1]) + h / 2) > halfH * 0.9;
     /* 跑出视野 ⇒ 无条件拉回来。人多（> maxNodes）时**只挪位置、不放大** ——
        对着 253 人的集合放大没有意义，但"人在屏幕外"必须救。 */
     if (outside) {
@@ -1908,9 +2002,8 @@
     if (nodes.size > maxNodes) return false;
     if (!improved) return false;
     /* 高亮已经占到画布短边的 1/3 以上时，放大带来的清晰度收益远不如"把整张图留在画面里"
-     * 值钱，就不放大。 */
-    const onScreen = Math.max(w, h) * perUnit;
-    if (onScreen >= Math.min(W, H) / 3) return false;
+     * 值钱，就不放大。（v93：缩小路线不受这条约束 —— 散开的集合正是要收进来。） */
+    if (!shrinking && spanPx >= Math.min(W, H) / 3) return false;
     applyZoom(target, [cx, cy]);
     return true;
   }
@@ -1918,7 +2011,10 @@
   /** v89：锁定后把视野适配到剩下的人/线。
    *  ⚠ 只调 applyZoom（改 state.zoom / viewCenter），**绝不走 fitPositions** ——
    *  fitPositions 会把缩放乘回 state.pos，锁定态下调它会让解除锁定后的整张图坐标被改坏。
-   *  集合是"当前已绘制集合"的子集，所以只需放大、不需要缩小，focusViewOn 的语义正合适。 */
+   *  集合是"当前已绘制集合"的子集，所以只需放大、不需要缩小，focusViewOn 的语义正合适。
+   *  ⚠ v93 更正：上面这句**是错的**。地点筛选锁定的几个人可能散布在整张图上，
+   *  这时要的是**缩小**才能收进画面（见 focusViewOn 里 shrinking 那段）；只升不降会让
+   *  倍率一路爬到 3.57，实测把画布上可见的图元压到 0 个 —— 用户看到的就是一片空白。 */
   function fitLockView() {
     const lock = state.clickLock;
     if (!lock || !lock.nodes || !lock.nodes.size) return false;
@@ -2871,6 +2967,16 @@
     renderTimeline();
     if (!state.placeFilter) { clearHighlight(); return; }
     const nodes = placeNodeScope() || new Set();
+    /* v93：一个地点可能**一个关联人物都没有**（《罪与罚》的「广场（干草广场）」
+     * 事件 0、关系事件 0）。原来照样 setHighlight + 建锁 ⇒ 空集合静默生效，
+     * 画面上什么都不变，用户以为"点坏了/是空白"。
+     * 规则：范围为空就明说，别装作筛选成功了。 */
+    if (!nodes.size) {
+      clearHighlight();
+      renderPlacePanel(state.placeFilter, []);
+      toast(`「${placeName(state.placeFilter) || '这个地点'}」还没有关联的人物或事件，暂时看不了。`);
+      return;
+    }
     const edges = new Set();
     for (const r of state.book.relations) {
       if (!placeRelSet(r)) continue;
@@ -4790,6 +4896,11 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     selectCharacter: (id) => selectCharacter(id),
     selectRelation: (a, b) => { const r = findRel(a, b); if (r) selectRelation(r); return !!r; },
     selectEventForTest: (id) => selectEvent(id),
+    /** v93：诊断"点地点后画布空白"用（test/place-visible.mjs、test/place.mjs 也用） */
+    applyPlaceFilterForTest: (id) => applyPlaceFilter(id),
+    placeScope: () => { const s = placeNodeScope(); return s ? [...s] : null; },
+    /** v93：当前「一个世界单位值多少像素」到底是多少（测试用来对拍实测值） */
+    unitPxNow: () => unitPxNow(),
     /** v93：把 chart click 的真实处理函数暴露出来（不是它的副本），供 test/lock.mjs 驱动。 */
     graphClick: (dataType, data) => onGraphClick({ dataType, data }),
     /** v93：锁定当前集合（供 test/lock.mjs 断言"从图外导航进画布一律建锁"，不走 UI 旁路） */

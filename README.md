@@ -154,6 +154,7 @@ npm run test:lock       # 锁定只显示相关（系列里不含集合外的元
 npm run test:render-scale  # 渲染尺度与「分组·横」布局（pxScale 对拍 ECharts、墨迹真的铺开、点人不变空白）
 npm run test:roam          # 画布漫游与视野自救（真实拖动/滚轮同步 viewCenter、点人拉得回来、拖出视野能自救）
 npm run test:canvas-hint   # 画布手感与导航提示（grab 光标、图下常驻提示、右栏/事件轴闪烁时长、文案不含糊）
+npm run test:place-visible # 点开地点后画布不能空白（比例实测对拍 ＋ 每个地点重载页面后单点，20 个地点）
 
 # ESLint 代码检查（需要先 npm install）
 npm run lint
@@ -309,6 +310,10 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 - 地点也吃**剧透保护**：`places[].firstCh` 没到就不出现在下拉里
 - **筛选必须全局生效**：一旦按地点筛选，点人物也只在「该地点范围内」展开（范围＝该地点事件涉及的人 ∪ 该地点关系事件的两端）；点到范围外的人会**自动取消筛选**，而不是偷偷把全部关系放出来
 - 因此**关系里的小事件也要标 `place`**（`relations[].events[].place`）——只标有把握的，宁缺勿错；没标的不会出现在任何地点筛选结果里
+- ⚠ **范围为空要明说，不能静默**（v0.94）。有些地点一条事件/关系事件都没挂（《罪与罚》的「广场（干草广场）」就是这样），点它会得到一个**空集合**。
+  空集合筛选"生效了"但画面上什么都不变，用户只会以为点坏了。
+  ⇒ `applyPlaceFilter` 里遇到 `placeNodeScope()` 为空就 `clearHighlight()` + 面板留空 + toast 说明「还没有关联的人物或事件」，**不建空锁**。
+  `test/place-visible.mjs` 有对应断言：既要点名提示、也要断言没有留下空锁。
 
 ---
 

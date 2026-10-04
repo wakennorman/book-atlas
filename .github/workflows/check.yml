@@ -152,6 +152,36 @@ jobs:
         #      比右栏晚 550ms，1.8s 根本来不及）⇒ 事件卡闪烁加长到 3.9s。
         run: node test/canvas-hint.mjs
 
+      - name: 布局可复现 + 视野记忆（无头 Edge）
+        # v93 新增。「自由」视图改用固定种子 + 固定轮数的确定性力导向之后，
+        # 三种视图的坐标必须在两次独立冷启动之间**逐位相同**（871 个坐标实测全等）；
+        # 同时每本书的视野（zoom + center）要记住，且首屏稳定期那个迟到的 resize
+        # 不能把它抹掉（pendingView 有 3 秒有效期）。
+        run: node test/layout-stable.mjs
+
+      - name: 地点介绍（combobox + 无障碍浮层）
+        # v93 新增。原生 <select> 的 <option> 由操作系统绘制 ⇒ 挂不上 tooltip，
+        # 所以筛选下拉换成项目自己的 combo（说明跟当前行走，WCAG 的 combobox 模式），
+        # 页面别处的地点名走 WCAG 2.1 SC 1.4.13 的悬停/聚焦浮层。
+        run: node test/place.mjs
+
+      - name: AI 讲解多轮追问
+        # v93 新增。拦 `window.fetch` 看**真正发出去的 messages**：
+        # system 要每轮重发、追问要带上历史、失败的提问要回滚。
+        run: node test/ai.mjs
+
+      - name: 点开地点后画布不能空白（无头 Edge）
+        # v94 新增。用户报"按地点筛选点开之后关系画布是空白的"。
+        # 病根：world→像素 的换算一直用 fitPositions 的**解析式**，而那个式子是按
+        # **全图**包围盒推的；ECharts 的 View 坐标系适配的却是**当前绘制集合** ——
+        # 筛选到少数节点后真实比例从 1.064 跳到 3.983，解析式仍给 1.064（差 3.74 倍），
+        # 于是 focusViewOn 里"人在不在画面里"和"放大能不能救"两个判断同时反掉。
+        # 两步门禁：① 比例实测对拍（用 convertToPixel 独立量，和 app 自己用的值比）；
+        # ② 每个地点**重新加载页面**后单独点一次，数锁定的人有几个真在画布内
+        #    （连点会让上一次的视野残留替这一次打掩护 —— 第一版探针就栽在这，
+        #     测出 10/10 假绿，而真实单点路径是 3/10）。
+        run: node test/place-visible.mjs
+
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all
 

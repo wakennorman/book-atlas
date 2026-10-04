@@ -32,6 +32,10 @@ function unstash() {
   const label = fs.readFileSync(path.join(BAK, 'label'), 'utf8');
   for (const f of FILES) fs.copyFileSync(path.join(BAK, f.replace(/[\\/]/g, '__')), p(f));
   console.log(`已还原（对应回退项：${label}）`);
+  // 把还原的是哪一份、什么时候的快照打出来：备份一旦过旧，肉眼要能看出来
+  // （本轮真出过"标签是今天的、文件是 9:38 的"这种情况，直接把当天改动抹掉了）
+  const when = new Date(fs.statSync(path.join(BAK, FILES[0].replace(/[\\/]/g, '__'))).mtime);
+  console.log(`  快照时间：${when.toLocaleString('zh-CN')}（如果比你的改动还早，说明这份备份是旧的，别急着继续改）`);
 }
 const read = (rel) => fs.readFileSync(p(rel), 'utf8');
 const write = (rel, s) => fs.writeFileSync(p(rel), s);
@@ -71,6 +75,25 @@ const PATCHES = [
       ['js/app.js', / {6}state\.frozen = true;\r?\n {6}state\.pos = new Map\(\);\r?\n {6}for \(const c of state\.book\.characters\) \{\r?\n {8}if \(!isCharHidden\(c\)\) state\.pos\.set\(c\.id, \{ x: 0, y: 0 \}\);\r?\n {6}\}/,
         '      state.frozen = false;\n      state.pos = new Map();'],
       ['js/app.js', / {6}forceLayoutVisible\(\);\r?\n/, ''],
+    ],
+  },
+  {
+    id: 'scale-measure',
+    desc: '「世界单位→像素」改用 convertToPixel **实测**（筛选后 ECharts 会把绘制集合重新适配满画布，解析式会差 3.74 倍）',
+    test: 'test/place-visible.mjs',
+    edits: [
+      /* ⚠ 回退方向要注意：只把 shrinking / outside 判据改回去**不足以复现**，
+       * 因为病根是换算本身错了 —— 下面第一条才是关键（退回解析式推算）。
+       * 三条都要用正则：源文件是 CRLF，写成含 \n 的字面串会一条都匹配不上，
+       * 而"只应用了 1/3 处"的回退看起来像是"测试只红了一项"，很容易被当成回退成功。 */
+      ['js/app.js', / {4}return measuredUnitPxBase\(\) \* \(state\.zoom \|\| 1\)\r?\n {6}\|\| \(state\.pxScale \|\| 1\) \/ \(Math\.abs\(state\.fitLast\) \|\| 1\);/,
+        '    return ((state.pxScale || 1) / (Math.abs(state.fitLast) || 1)) * (state.zoom || 1);'],
+      ['js/app.js', / {4}const outside = \(Math\.abs\(cx - vc\[0\]\) \+ w \/ 2\) > halfW \* 0\.9 \|\| \(Math\.abs\(cy - vc\[1\]\) \+ h \/ 2\) > halfH \* 0\.9;/,
+        '    const outside = Math.abs(cx - vc[0]) > halfW * 0.9 || Math.abs(cy - vc[1]) > halfH * 0.9;'],
+      ['js/app.js', / {4}const shrinking = want < cur && spreadOut;\r?\n {4}let target;\r?\n {4}if \(shrinking\) \{\r?\n {6}target = Math\.max\(0\.05, Math\.min\(want, cur\)\);\r?\n {4}\} else \{\r?\n {4}target = Math\.min\(Math\.max\(want, cur\), 4, Math\.max\(cur, zoomCap\)\);\r?\n {4}\}/,
+        '    const shrinking = false;\n    target = Math.min(Math.max(want, cur), 4, Math.max(cur, zoomCap));'],
+      ['js/app.js', / {4}if \(!shrinking && spanPx >= Math\.min\(W, H\) \/ 3\) return false;/,
+        '    if (Math.max(w, h) * perUnit >= Math.min(W, H) / 3) return false;'],
     ],
   },
   {
@@ -141,8 +164,15 @@ if (cmd === 'restore') {
 
 const patch = PATCHES.find((x) => x.id === cmd);
 if (!patch) { console.error('没有这一项：' + cmd + '（用 list 看可选项）'); process.exit(1); }
-if (!fs.existsSync(BAK)) stash(patch.id);
-else fs.writeFileSync(path.join(BAK, 'label'), patch.id);
+/* ⚠ 每次都重新备份，不能写成"目录已存在就只更新标签"。
+ *
+ *   原来那版（if (!fs.existsSync(BAK)) stash(...) else 只写 label）在同一轮里
+ *   只 worked，因为备份是当场建的。跨轮就完了：上一轮 9:38 留下的备份还在，
+ *   今天的 stash 只更新了标签、没覆盖文件 ⇒ restore 把**上一轮的旧版本**盖了回去，
+ *   当天没提交的改动被静默抹掉（js/app.js 差点就这么丢了，git 里也没有，只能重写一遍）。
+ *
+ *   每次都快照"调用这一刻"的状态，restore 才能回到"刚才那次调用之前"。 */
+stash(patch.id);
 
 let n = 0, miss = [];
 for (const [file, from, to] of patch.edits) {
