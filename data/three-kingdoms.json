@@ -2232,8 +2232,11 @@
     },
     {
       "id": "dong-zhuo-mu",
-      "name": "董卓母",
-      "aliases": [],
+      "name": "卓母",
+      "aliases": [
+        "董卓母",
+        "董母"
+      ],
       "generation": 1,
       "gender": "f",
       "firstCh": 9,
@@ -3299,8 +3302,10 @@
     },
     {
       "id": "che-zhou",
-      "name": "车胄",
-      "aliases": [],
+      "name": "车冑",
+      "aliases": [
+        "车胄"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 20,
@@ -7848,8 +7853,10 @@
     },
     {
       "id": "hua-tuo-qi",
-      "name": "华佗之妻",
-      "aliases": [],
+      "name": "佗之妻",
+      "aliases": [
+        "华佗之妻"
+      ],
       "generation": 1,
       "gender": "f",
       "firstCh": 78,
@@ -8233,8 +8240,10 @@
     },
     {
       "id": "fu-tong",
-      "name": "傅彤",
-      "aliases": [],
+      "name": "傅肜",
+      "aliases": [
+        "傅彤"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 81,
@@ -9409,8 +9418,11 @@
     },
     {
       "id": "jiang-jiong",
-      "name": "姜冏",
-      "aliases": [],
+      "name": "姜维之父",
+      "aliases": [
+        "姜冏",
+        "名冏"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 92,
@@ -12203,8 +12215,10 @@
     },
     {
       "id": "liang-gang",
-      "name": "梁刚",
-      "aliases": [],
+      "name": "梁纲",
+      "aliases": [
+        "梁刚"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 17,
@@ -12643,8 +12657,10 @@
     },
     {
       "id": "cao-wenshu",
-      "name": "曹文叔",
-      "aliases": [],
+      "name": "文叔",
+      "aliases": [
+        "曹文叔"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 107,

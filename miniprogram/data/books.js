@@ -12,7 +12,7 @@ module.exports = {
       "title": "罪与罚",
       "author": "陀思妥耶夫斯基",
       "file": "./crime-and-punishment.js",
-      "kb": 32
+      "kb": 44
     },
     {
       "slug": "three-kingdoms",

@@ -200,13 +200,67 @@ function checkNames(bookFile, textFile) {
       .filter((s) => s.length >= 2);
     const hits = [];
     for (const f of forms) { const n = raw.split(f).length - 1; if (n > 0) hits.push([f, n]); }
-    rows.push({ name: c.name, hits, alt: (c.altNames || []).length });
+    rows.push({ name: c.name, hits, alt: (c.altNames || []).length, id: c.id, title: c.title || '' });
   }
+
+  /* v0.97：对"一个形式都命中不到"的人物给**分诊**，否则这份清单没法处理。
+   *
+   * 为什么必须分诊：实测四种成因的处理方式完全相反 ——
+   *   ① 异体字（车胄/车冑、傅彤/傅肜、梁刚/梁纲）⇒ 改名，读者就能搜到
+   *   ② 只以身份出现（卓母、佗之妻、曹爽从弟文叔之妻）⇒ 拿书里的说法当别名
+   *   ③ 只有一字可用（"父名冏"）⇒ 单字过不了搜索门槛，得给可读的主名 + 别名
+   *   ④ 名字只存在于史书、演义根本没写 ⇒ 按规程"从原著出发"应当**删掉**
+   * 而单看"0 命中"这四个字，①②③④ 长得一模一样。
+   *
+   * 判据（都是机械可算的）：
+   *   · 逐字命中 —— 哪个字在原文里出现过。异体字通常只错一个字。
+   *   · 官职/身份命中 —— title 在原文里出现 ⇒ 人一定在，只是没被点名。
+   *   · 共姓命中数 + 样例 —— 共姓很多却全名没有，通常是"演义里是另一个人"。
+   */
+  const ctxOf = (needle, n = 3) => {
+    /* ⚠ 只取**像人名**的上下文：姓氏后面紧跟 1–2 个字才算。
+     *   第一版直接取任意位置，于是「陶」给的样本是回目标题「陶恭祖三让徐州」
+     *   和「谏议大夫刘陶」—— 全是噪声，看完还是不知道这个人在不在。 */
+    const out = [];
+    let i = -1;
+    while ((i = raw.indexOf(needle, i + 1)) >= 0 && out.length < n) {
+      const seg = raw.slice(i, i + needle.length + 3).replace(/\s+/g, '');
+      /* ⚠⚠ 这里必须是**显式**的码位范围，不能图省事写 `/^[一龥]{2,3}/`。
+     字符类里两个汉字连写会被解析成**范围**（U+4E00–U+9FA5），本意虽通、行为却和
+     写法不符，改的人根本看不出来；而且实测它对「陶恭祖三」返回 false，
+     于是"像人名的用法"一栏永远为空 —— 静默失效最难查。 */
+      if (/^[一-鿿]{2,3}/.test(seg)) out.push(raw.slice(Math.max(0, i - 14), i + needle.length + 16).replace(/\s+/g, ' '));
+    }
+    return out;
+  };
+  const triage = (r) => {
+    const nm = bare(r.name);
+    const chars = [...new Set(nm.replace(/[（）()之]/g, ''))];
+    const perChar = chars.map((ch) => [ch, raw.split(ch).length - 1]);
+    /* ⚠ 这里存的是 title 的**字符串**，不是布尔值 —— 第一版存了 boolean，
+     *   输出变成「官职「true」在原文里出现过」，等于没说。 */
+    const titleHit = (r.title && r.title.length >= 2 && raw.includes(r.title)) ? r.title : '';
+    const surname = nm[0] || '';
+    const surnameN = surname ? raw.split(surname).length - 1 : 0;
+    const missChars = perChar.filter(([, n]) => n === 0).map(([ch]) => ch);
+    /* 四类成因，处理方式完全相反，所以要分开：
+     *   A 有字命中不到 ⇒ **异体字/错字**方向，先查那几个 0 命中字的写法
+     *   B 字全命中、整名没有 ⇒ 这个组合原文里没有（可能是错字，也可能书里根本没这个人）
+     *   C title 命中 ⇒ 人一定在，只是没被点名（只以官职/身份出现）
+     *   D 字全 0 ⇒ 只存在于史书，按规程应删或注明 */
+    let kind = 'B';
+    if (missChars.length) kind = 'A';
+    else if (titleHit) kind = 'C';
+    if (perChar.every(([, n]) => n === 0)) kind = 'D';
+    return { id: r.id, name: r.name, title: r.title, titleHit, perChar, missChars, surname, surnameN, kind, samples: surnameN > 0 ? ctxOf(surname, 3) : [] };
+  };
+
   return {
     slug,
     total: rows.length,
     dead: rows.filter((r) => !r.hits.length),
     offName: rows.filter((r) => r.hits.length && !r.hits.some(([f]) => f === bare(r.name))),
+    triage: rows.filter((r) => !r.hits.length).map(triage),
   };
 }
 
@@ -246,7 +300,27 @@ if (nameMode) {
       + (strict ? '（--strict：这是错误）' : '（这是正常的译名差异，不算错）') + '\n');
     for (const d of r.dead) {
       console.log(`  ✗ 搜不到：${d.name}`);
-      console.log('      主名、aliases、altNames 在原文里全是 0 次 ⇒ 读者拿着书上的名字点不进来');
+      const t = (r.triage || []).find((x) => x.id === d.id);
+      if (t) {
+        console.log(`      逐字命中：${t.perChar.map(([ch, n]) => `${ch}=${n}`).join(' ')}`);
+        if (t.titleHit) console.log(`      ★ 官职「${t.titleHit}」在原文里出现过`);
+        console.log(`      共姓「${t.surname}」原文 ${t.surnameN} 次`);
+        t.samples.forEach((s) => console.log(`        像人名的用法：…${s}…`));
+        if (t.kind === 'A') {
+          console.log(`      ⇒ **A 异体字/错字**：这些字在原文里一次都没有 —— ${t.missChars.join('、')}；`
+            + '先查它们的写法（胄/冑、彤/肜、刚/纲 这类），改主名或补别名即可');
+        } else if (t.kind === 'C') {
+          console.log('      ⇒ **C 只以身份出现**：书里没有这个名字，但官职能对上。'
+            + '拿书里的说法当别名（卓母、佗之妻、「曹爽从弟文叔之妻」这种）');
+        } else if (t.kind === 'D') {
+          console.log('      ⇒ **D 只存在于史书**：名字的每个字原文里都没有。'
+            + '按规程「从原著出发」，演义没写的人应当删掉，或注明出自史书');
+        } else {
+          console.log('      ⇒ **B 组合不存在**：每个字都在，但这个组合原文里没有 —— '
+            + '要么写错了字/顺序，要么书里根本没点名。逐个核；'
+            + '共姓很多时尤其要怀疑「演义里是另一个人」（如 钟毓 vs 钟繇、公孙晃 vs 公孙渊）');
+        }
+      }
     }
     for (const o of r.offName) {
       console.log(`  ${strict ? '✗' : '·'} ${o.name}  →  原文用的是「${o.hits.map(([f, n]) => `${f}（${n} 次）`).join('、')}」`);
