@@ -1,155 +1,154 @@
 #!/usr/bin/env node
 /**
- * 族谱补全：从"亲子关系"推导出祖孙 / 曾祖孙 / 叔侄舅甥，补成 `derived: true` 的关系
+ * 族谱补全：从**亲子边**推导出亲属关系，补成 `derived: true` 的关系。
  *
- * 为什么需要：一本书里如果只记录了父母-子女，祖父那一侧往往没有直接互动事件，
- * 图上就会出现"老何塞连不到孙辈"这种断线。这些边**不是编造**：
- * 每一跳都在数据里标出来（例：由「老何塞 —父子→ 巨人」「巨人 —父子→ 阿尔卡蒂奥」推导）。
+ * v0.103 重写。旧版只做到 3 代（曾祖孙）就停，于是《百年孤独》第 4 代以后
+ * 祖先边全断 —— 梅梅有祖母、有祖父，却没有高祖母/高祖父。
+ * 用户指出"从前几代开始关系线变少了"，查下来不是规则没起作用，是**只覆盖到第 3 代**。
  *
- * 规则：
- *   · 亲子边 = type 匹配 父/母 + 子/女（含 养父/养母，标 kin=adoptive 的按收养算）
- *   · 推导 2 代 → 祖孙；3 代 → 曾祖孙；旁系（父母的手足）→ 叔侄/姑侄/舅甥/姨甥
- *   · 已有直接关系的两个人不再推导
- *   · 方向统一为「长辈 → 晚辈」；style=dotted、derived=true、chapter 留空
- *   · 可重复执行：先删掉旧的 derived 关系再重算
+ * ## 补哪些、不补哪些（这是本脚本最要紧的决定）
+ *
+ *   ✅ 直系祖孙，**任意代差**        —— 是事实、可从族谱算出、读者也期待。零主观成分。
+ *   ✅ 旁系差 1 代（叔侄/姑侄/舅甥）—— 密度高、代差小
+ *   ✅ 同胞 / 堂表
+ *   ❌ 旁系差 ≥2 代（叔祖父/姑侄孙…）
+ *        **不补**。理由有二：
+ *          ① 组合爆炸：每多一个后代，所有祖先的旁系边就翻一倍
+ *             （《百年孤独》实测：补的话 60 对里 32 对是这类）
+ *          ② 「高祖叔父与侄玄孙」这种标签对读者**零信息量**，
+ *             却让图变成一团毛线
+ *
+ * ## 为什么称谓交给 kin-terms.mjs
+ *
+ * 旧版自己写 `label()` 判「伯叔侄」，于是：男性长辈一律叫"叔"、不分伯；
+ * 第 4 代会拼出中文里不存在的「高祖孙」。
+ * 现在统一由 scripts/kin-terms.mjs 算：上行/下行的辈分字第 4 代起分岔（高祖父 vs 玄孙），
+ * 伯/叔按 `birthRank` 分，排行不详时写「伯叔」不硬猜。**双轨消除了。**
+ *
+ * ## 为什么手打的关系优先
+ *
+ * 「已有直接关系的两个人不再推导」这条**保留**，但它现在只挡"重复"，
+ * 不再挡"纠错" —— 手打的错标签由 scripts/check-kin-terms.mjs 负责报出来。
  *
  * 用法：
- *   node scripts/derive-kin.mjs --all            # 预览所有书
+ *   node scripts/derive-kin.mjs --all            # 预览
+ *   node scripts/derive-kin.mjs --all --write
  *   node scripts/derive-kin.mjs data/xx.json --write
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildTree, computeKin } from './kin-terms.mjs';
 
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
-const write = argv.includes('--write');
+const WRITE = argv.includes('--write');
+const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok)\.json$|^books\.json$/;
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(process.cwd(), 'data')).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(process.cwd(), 'data', f))
+  ? fs.readdirSync(path.join(ROOT, 'data'))
+    .filter((f) => f.endsWith('.json') && !SIDECAR.test(f)).map((f) => path.join('data', f))
   : argv.filter((a) => !a.startsWith('--'));
 
-if (!files.length) { console.error('用法：node scripts/derive-kin.mjs data/xx.json [--write]  |  --all [--write]'); process.exit(1); }
-
-const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;   // 父子/母子/父女/母女/养父子…
-const isParentChild = (r) => PARENT_CHILD.test(String(r.type || '').replace(/[（(].*$/, '').trim());
-
-for (const file of files) {
-  const book = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const chars = book.characters || [];
-  const byId = new Map(chars.map((c) => [c.id, c]));
-  const name = (id) => (byId.get(id) || {}).name || id;
-  const gender = (id) => (byId.get(id) || {}).gender || 'm';
-
-  // 0) 清掉上一轮推导出来的
-  const base = (book.relations || []).filter((r) => !r.derived);
-
-  // 1) 亲子边（去重，方向：长辈 → 晚辈）
-  const parents = new Map();   // child -> [parentId]
-  const children = new Map();  // parent -> [childId]
-  const parentEdge = new Map(); // "p|c" -> 那条关系（取 type 用于说明）
-  for (const r of base) {
-    if (!r) continue;
-    if (!byId.has(r.from) || !byId.has(r.to)) continue;
-    if (!isParentChild(r)) continue;
-    if (/^养/.test(String(r.type))) {
-      // 收养：照旧算亲子（族谱上仍然是一条边）
-    }
-    if (!parents.has(r.to)) parents.set(r.to, []);
-    if (!parents.get(r.to).includes(r.from)) parents.get(r.to).push(r.from);
-    if (!children.has(r.from)) children.set(r.from, []);
-    if (!children.get(r.from).includes(r.to)) children.get(r.from).push(r.to);
-    parentEdge.set(`${r.from}|${r.to}`, r.type);
-  }
-
-  const has = (a, b) => base.some((r) => (r.from === a && r.to === b) || (r.from === b && r.to === a));
-  const derived = [];
-  const skipped = [];
-  const chainText = (pairs) => '由 ' + pairs.map(([a, b]) => `「${name(a)} —${parentEdge.get(`${a}|${b}`) || '亲子'}→ ${name(b)}」`).join('、') + ' 推导（原文没有直接互动）';
-  // 兜底：自己和"同名不同 id"（数据里可能有重名的两个人）都不推导
-  const baseName = (id) => {
-    const n = String(name(id));
-    const cut = [n.indexOf('（'), n.indexOf('(')].filter((i) => i >= 0);
-    return (cut.length ? n.slice(0, Math.min(...cut)) : n).trim();
-  };
-  const sameName = (a, b) => baseName(a) === baseName(b);
-  const push = (item, label) => {
-    if (item.from === item.to) { skipped.push(`自环：${name(item.from)}`); return; }
-    if (sameName(item.from, item.to)) { skipped.push(`同名不同 id（疑似重复人物，建议先合并）：${name(item.from)}`); return; }
-    derived.push(item);
-  };
-
-  // 2) 祖孙 / 曾祖孙（长辈 → 晚辈）
-  const ancestorChains = new Map();   // "a|d" -> [[a,b],[b,d]]
-  for (const [mid, ps] of parents) {
-    for (const p of ps) {
-      for (const child of children.get(mid) || []) {
-        const key = `${p}|${child}`;
-        ancestorChains.set(key, [[p, mid], [mid, child]]);
-      }
-      // 三代：p → mid → g → x
-      for (const g of children.get(mid) || []) {
-        for (const x of children.get(g) || []) {
-          ancestorChains.set(`${p}|${x}`, [[p, mid], [mid, g], [g, x]]);
-        }
-      }
-    }
-  }
-  for (const [key, pairs] of ancestorChains) {
-    const [a, d] = key.split('|');
-    if (has(a, d)) continue;
-    const gen = pairs.length;
-    push({
-      from: a, to: d,
-      type: gen === 2 ? '祖孙（推导）' : '曾祖孙（推导）',
-      kin: 'blood', style: 'dotted', derived: true,
-      events: [{ text: chainText(pairs), chapter: '' }],
-    });
-  }
-
-  // 3) 旁系：父母的手足 → 叔侄/姑侄/舅甥/姨甥
-  //    兄弟姐妹 = **同一对父母的两个孩子**（不是"同一个孩子的两个父母"！）
-  const siblingPairs = new Map();   // "a|b" -> 共同的父母（用于说明）
-  for (const [parent, kids] of children) {
-    for (let i = 0; i < kids.length; i++) {
-      for (let j = i + 1; j < kids.length; j++) {
-        const a = kids[i], b = kids[j];
-        siblingPairs.set(a < b ? `${a}|${b}` : `${b}|${a}`, parent);
-      }
-    }
-  }
-  for (const [key, viaParent] of siblingPairs) {
-    const [s1, s2] = key.split('|');
-    const kids1 = children.get(s1) || [];
-    const kids2 = children.get(s2) || [];
-    // 称谓看"长辈自己的性别 + 连接父母的性别"：兄弟→伯叔侄，兄妹→姑侄，姐弟→舅甥，姐妹→姨甥
-    const label = (au, parent) => {
-      const auM = gender(au) === 'm';
-      const paM = gender(parent) === 'm';
-      if (auM) return paM ? '伯叔侄（推导）' : '舅甥（推导）';
-      return paM ? '姑侄（推导）' : '姨甥（推导）';
-    };
-    const link = (au, parent, kid) => {
-      if (has(au, kid)) return;
-      push({
-        from: au, to: kid, type: label(au, parent), kin: 'blood', style: 'dotted', derived: true,
-        events: [{ text: `由「${name(s1)} 与 ${name(s2)} 同为 ${name(viaParent)} 的子女」＋「${name(parent)} 有子女 ${name(kid)}」推导（原文没有直接互动）`, chapter: '' }],
-      });
-    };
-    for (const c1 of kids1) link(s2, s1, c1);
-    for (const c2 of kids2) link(s1, s2, c2);
-  }
-
-  console.log(`\n▶ ${path.basename(file)}：现有关系 ${base.length} 条，可推导 ${derived.length} 条`);
-  if (skipped.length) console.log(`   ⚠ 跳过 ${skipped.length} 条：${[...new Set(skipped)].slice(0, 6).join('；')}`);
-  const byType = {};
-  for (const d of derived) byType[d.type] = (byType[d.type] || 0) + 1;
-  console.log('   ' + Object.entries(byType).map(([k, v]) => `${k} ${v}`).join(' · '));
-  const sample = derived.slice(0, 6).map((d) => `      ${name(d.from)} → ${name(d.to)}（${d.type}）`);
-  console.log(sample.join('\n'));
-
-  if (write && derived.length) {
-    book.relations = [...base, ...derived];
-    fs.writeFileSync(file, JSON.stringify(book, null, 2) + '\n', 'utf8');
-    console.log(`   ✓ 已写回：关系 ${base.length} → ${book.relations.length}`);
-  } else if (!write) {
-    console.log('   （预览模式：加 --write 才写回）');
-  }
+if (!files.length) {
+  console.error('用法：node scripts/derive-kin.mjs data/xx.json [--write]  |  --all [--write]');
+  process.exit(1);
 }
+
+/** 这一对该不该补？—— 就是上面那张表的代码化。 */
+function shouldDerive(k) {
+  if (k.kind === 'unrelated' || k.kind === 'self') return false;
+  if (k.kind === 'direct') return true;                 // 直系：任意代差
+  if (k.kind === 'sibling' || k.kind === 'cousin') return true;
+  if (k.kind === 'collateral') return k.gap === 1;      // 旁系只补 1 代
+  return false;
+}
+
+/** 从 younger 一路往上到 elder 的亲子边序列，用来写推导链。 */
+function chainUp(tree, from, to, edgeLabel) {
+  const out = [];
+  let frontier = [from];
+  let cur = from;
+  for (let step = 0; step < 12; step++) {
+    if (cur === to) return out.reverse();
+    const ps = (tree.parents.get(cur) ?? []).filter((p) => p !== cur);
+    const next = ps.find((p) => !out.some(([a]) => a === p) || true);
+    if (!next) break;
+    out.push([next, cur]);
+    cur = next;
+    frontier = [cur];
+  }
+  return out.reverse();
+}
+
+/** 这条亲子边的 type 原文（写进推导链，让读者能看到是从哪条边推的） */
+function edgeLabel(book, parent, child) {
+  for (const r of book.relations || []) {
+    if (r.from === parent && r.to === child && /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/.test(String(r.type || '').replace(/[（(].*$/, '').trim())) {
+      return r.type.replace(/[（(].*$/, '');
+    }
+  }
+  return '亲子';
+}
+
+let grandTotal = 0;
+for (const rel of files) {
+  const file = path.isAbsolute(rel) ? rel : path.join(ROOT, rel);
+  if (!fs.existsSync(file)) { console.log(`  (跳过) 找不到 ${rel}`); continue; }
+  const book = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const bookId = path.basename(file, '.json');
+  const name = (id) => book.characters.find((c) => c.id === id)?.name ?? id;
+
+  /* 族谱只从**亲子边**建 —— 推导边本身不能当族谱输入，否则会自我放大 */
+  const tree = buildTree(book.relations || [], book.characters || []);
+  if (!tree.parents.size) { console.log(`  · ${bookId}：没有亲子边，跳过`); continue; }
+
+  /* 已有关系（不分方向）：手打的都算，已有的推导边会在下面被重建 */
+  const has = new Set();
+  for (const r of book.relations || []) {
+    if (r.derived) continue;                          // 旧的推导边：删掉重建
+    has.add(r.from < r.to ? `${r.from}|${r.to}` : `${r.to}|${r.from}`);
+  }
+
+  const ids = (book.characters || []).map((c) => c.id);
+  const fresh = [];
+  const skippedFar = [];
+  for (let i = 0; i < ids.length; i++) {
+    for (let j = i + 1; j < ids.length; j++) {
+      const [a, b] = ids[i] < ids[j] ? [ids[i], ids[j]] : [ids[j], ids[i]];
+      if (has.has(`${a}|${b}`)) continue;
+      const k = computeKin(tree, a, b);
+      if (k.kind === 'unrelated' || k.kind === 'self') continue;
+      if (!shouldDerive(k)) { skippedFar.push({ a, b, k }); continue; }
+
+      /* 方向统一为「长辈 → 晚辈」 */
+      const elder = k.elder ?? a, younger = k.younger ?? b;
+      const chain = chainUp(tree, younger, elder);
+      const chainText = chain.length
+        ? `由 ${chain.map(([p, c]) => `「${name(p)} —${edgeLabel(book, p, c)}→ ${name(c)}」`).join('、')} 推导`
+        : `由族谱（${name(k.lca)} 一线）推导`;
+      fresh.push({
+        from: elder, to: younger,
+        type: `${k.term}（推导）`,
+        style: 'dotted', derived: true, kin: 'blood',
+        events: [{ chapter: '', text: `${chainText}（原文没有直接互动）` }],
+      });
+      fresh[fresh.length - 1].events[0].evidence = 'derived';
+    }
+  }
+
+  const before = (book.relations || []).length;
+  const oldDerived = (book.relations || []).filter((r) => r.derived).length;
+  book.relations = [...(book.relations || []).filter((r) => !r.derived), ...fresh];
+  grandTotal += fresh.length;
+
+  console.log(`  ${bookId}：推导边 ${oldDerived} → ${fresh.length} 条`
+    + `　关系总数 ${before} → ${book.relations.length}`
+    + `　（有意不补的旁系远亲 ${skippedFar.length} 对）`);
+  for (const s of fresh.slice(0, 4)) console.log(`     ＋ ${name(s.from)} —${s.type}— ${name(s.to)}`);
+  if (fresh.length > 4) console.log(`     …另 ${fresh.length - 4} 条`);
+  for (const s of skippedFar.slice(0, 3)) console.log(`     － ${name(s.a)} —${s.k.term}— ${name(s.b)}（旁系差 ${s.k.gap} 代，按规则不补）`);
+
+  if (WRITE) fs.writeFileSync(file, JSON.stringify(book, null, 2) + '\n', 'utf8');
+}
+
+console.log(`\n合计新生成推导边 ${grandTotal} 条${WRITE ? '（已写入）' : '（预览，加 --write 才落盘）'}`);

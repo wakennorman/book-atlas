@@ -1381,6 +1381,51 @@
         }
       ],
       "note": "说话人是卢仁，依据是同段的对话标签「彼得·彼得罗维奇打断他的话说」（原文实字，非推测）；同段命中 彼得·彼得罗维奇"
+    },
+    {
+      "from": "lonyusha",
+      "to": "sonya",
+      "type": "同父异母的姐妹（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「谢敏·扎哈洛维奇·玛尔美拉朵夫 —父女→ 索菲雅·谢敏诺芙娜·玛尔美拉朵娃」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "korya",
+      "to": "sonya",
+      "type": "同父异母的兄妹（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「谢敏·扎哈洛维奇·玛尔美拉朵夫 —父女→ 索菲雅·谢敏诺芙娜·玛尔美拉朵娃」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "korya",
+      "to": "lonyusha",
+      "type": "兄妹（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「卡捷莉娜 —母女→ 廖尼娅」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
     }
   ],
   "phases": [
