@@ -15,8 +15,8 @@
  * ⚠ 养父母、继亲不完全按代号走，所以单独归一类、不算错。
  */
 import fs from 'node:fs';
+import { isParentChild } from './kin-terms.mjs';
 
-const PC = /^(亲生)?(父|母)(子|女)$/;
 for (const slug of ['three-kingdoms', 'crime-and-punishment', 'one-hundred-years-of-solitude']) {
   const book = JSON.parse(fs.readFileSync(`data/${slug}.json`, 'utf8'));
   const byId = new Map(book.characters.map((c) => [c.id, c]));
@@ -24,8 +24,11 @@ for (const slug of ['three-kingdoms', 'crime-and-punishment', 'one-hundred-years
 
   const rev = [], same = [], noGen = [];
   for (const r of book.relations) {
-    const base = String(r.type || '').replace(/[（(].*$/, '').trim();
-    if (!PC.test(base)) continue;
+    /* ⚠ 亲子边定义从 kin-terms.mjs 引，不在这里另写一份。
+     *   v0.110 之前这里用 /^(亲生)?(父|母)(子|女)$/，不含 `养`，
+     *   于是所有养亲边对审计不可见 —— 而查出的正是
+     *   `夏侯楙 —养父子— 夏侯惇` 方向反了（被收养的人填成了收养者）。 */
+    if (!isParentChild(r)) continue;
     const a = byId.get(r.from), b = byId.get(r.to);
     if (!a || !b || a.generation == null || b.generation == null) { noGen.push(r); continue; }
     if (a.generation > b.generation) rev.push(r);

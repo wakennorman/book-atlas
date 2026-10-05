@@ -36340,8 +36340,8 @@
       ]
     },
     {
-      "from": "xiahou-mao",
-      "to": "xiahou-dun",
+      "from": "xiahou-dun",
+      "to": "xiahou-mao",
       "type": "养父子",
       "kin": "adoptive",
       "style": "solid",
@@ -48793,66 +48793,6 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "xiahou-hui",
-      "to": "xiahou-dun",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "xiahou-he",
-      "to": "xiahou-dun",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "xiahou-ba",
-      "to": "xiahou-dun",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "xiahou-wei",
-      "to": "xiahou-dun",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
