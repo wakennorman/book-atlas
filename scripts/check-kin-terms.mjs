@@ -25,6 +25,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { listBooks } from './lib/data-files.mjs';
 import { fileURLToPath } from 'node:url';
 import { buildTree, computeKin } from './kin-terms.mjs';
 
@@ -102,7 +103,6 @@ const loadExempt = () => {
 /* data/ 下还有图包（*.graph.json）、豁免清单（*.missing-ok.json）、索引（books.json）
  * —— 它们不是书，装载结构也不同（books.json 的 characters 是对象不是数组）。
  * 全量扫会直接崩在 `book.characters.map`。 */
-const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok)\.json$|^books\.json$/;
 /** 族谱覆盖率低于这个比例就整体跳过（数据本来就没录全，不是缺陷）。 */
 const COVERAGE_MIN = 0.15;
 
@@ -110,10 +110,10 @@ const COVERAGE_MIN = 0.15;
 const KIN_RE = /父|母|子|女|叔|姑|舅|姨|侄|甥|祖|孙|兄弟|姐妹|堂|表/;
 
 const argv = process.argv.slice(2);
+/* ⚠ sidecar 名单不再在这里抄一份 —— 统一从 scripts/lib/data-files.mjs 引。
+ *   v0.113 加了 kin-terms-exempt.json 忘了同步，于是这个 JSON 被当成一本书扫。 */
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(ROOT, 'data'))
-    .filter((f) => f.endsWith('.json') && !SIDECAR.test(f))
-    .map((f) => path.join('data', f))
+  ? listBooks().map((x) => `data/${x}`)
   : argv.filter((a) => !a.startsWith('--'));
 
 if (!files.length) {

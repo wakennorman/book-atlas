@@ -28,6 +28,7 @@
  *   node scripts/audit-relation-actors.mjs --context 200   # 上下文窗口字���
  */
 import fs from 'node:fs';
+import { listBooks } from './lib/data-files.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -82,8 +83,8 @@ function looksVerbatim(text) {
 
 const PRONOUN = /[他她其此人该]/;
 
-const books = fs.readdirSync(path.join(ROOT, 'data'))
-  .filter((f) => f.endsWith('.json') && !f.startsWith('.') && !/\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok)\.json$/.test(f) && f !== 'books.json');
+/* ⚠ sidecar 名单从 scripts/lib/data-files.mjs 引，不再抄一份。 */
+const books = listBooks();
 
 const rows = [];
 const stats = {};

@@ -39,14 +39,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildTree, computeKin } from './kin-terms.mjs';
+import { listBooks } from './lib/data-files.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const WRITE = argv.includes('--write');
-const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok)\.json$|^books\.json$/;
+/* ⚠ sidecar 名单从 scripts/lib/data-files.mjs 引，不再抄一份。 */
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(ROOT, 'data'))
-    .filter((f) => f.endsWith('.json') && !SIDECAR.test(f)).map((f) => path.join('data', f))
+  ? listBooks().map((x) => `data/${x}`)
   : argv.filter((a) => !a.startsWith('--'));
 
 if (!files.length) {
