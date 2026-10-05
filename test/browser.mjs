@@ -107,7 +107,13 @@ try {
   if (!url) throw new Error('CDP 没起来');
 
   ws = new WebSocket(url);
-  await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('WS 连接失败')); });
+  await Promise.race([
+
+    await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('WS 连接失败')); }),
+
+    new Promise((_, rej) => setTimeout(() => rej(new Error('CDP WebSocket 10 秒内没连上')), 10000)),
+
+  ]);
   ws.onmessage = (ev) => {
     const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString());
     if (m.id && pending.has(m.id)) {

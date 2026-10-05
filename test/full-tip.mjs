@@ -54,7 +54,13 @@ let url = null;
 for (let i = 0; i < 150 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 if (!url) { console.error('  ✗ 连不上 Edge 的 CDP 端点（等了 37 秒）—— 这是**环境/负载**问题，不是断言失败'); process.exit(1); }
 const ws = new WebSocket(url);
-await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+await Promise.race([
+
+  await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; }),
+
+  new Promise((_, rej) => setTimeout(() => rej(new Error('CDP WebSocket 10 秒内没连上')), 10000)),
+
+]);
 let seq = 0; const pending = new Map();
 ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString()); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.reject(new Error(m.error.message)) : p.resolve(m.result || {}); } };
 const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); setTimeout(() => { if (pending.has(id)) { pending.delete(id); reject(new Error(method + ' 超时')); } }, 25000); });

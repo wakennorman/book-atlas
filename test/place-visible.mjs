@@ -46,8 +46,33 @@ const cdpUrl = () => new Promise((res, rej) => {
 });
 let url = null;
 for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+/* ⚠ 连不上 CDP 时必须**在这里**报错退出，不能往下走。
+ *
+ * 下面是 `new WebSocket(url)` 加一个只监听 onopen/onerror 的 promise ——
+ * url 拿不到时它是 null，连不上时那个 promise **永远不 settle**，
+ * 于是进程静默挂死：stdout / stderr **0 字节**，没有异常、没有退出码，
+ * 看起来像"卡在某个断言上"，其实一条断言都还没开始跑。
+ * 实测在门禁里撞过两次，每次要等十几分钟超时才发现。
+ * （v0.100 把这道防线补齐到所有走 CDP 的测试文件。）
+ */
+if (!url) {
+  console.error('  ✗ Edge 起来后连不上 CDP 端点 —— 这是**环境/负载**问题，不是断言失败。');
+  console.error('    多半是刚借到的临时端口被别的进程抢走了（借出到 Edge 抢占之间有个毫秒级窗口，');
+  console.error('    见 test/_free-port.mjs 的说明）—— 重跑一次通常就好。');
+  try { proc.kill(); } catch { /* 忽略 */ }
+  try { server.close(); } catch { /* 忽略 */ }
+  releaseProfile(profile);
+  process.exit(1);
+}
+
 const ws = new WebSocket(url);
-await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+await Promise.race([
+
+  await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; }),
+
+  new Promise((_, rej) => setTimeout(() => rej(new Error('CDP WebSocket 10 秒内没连上')), 10000)),
+
+]);
 let seq = 0; const pending = new Map();
 ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString()); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.reject(new Error(m.error.message)) : p.resolve(m.result || {}); } };
 const send = (method, params = {}) => new Promise((resolve, reject) => {
