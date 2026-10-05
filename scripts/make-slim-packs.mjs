@@ -75,6 +75,11 @@ function split(book) {
       put(o, 'gender', c.gender);
       put(o, 'faction', c.faction);
       put(o, 'generation', c.generation);
+      /* birthRank：兄弟姐妹排行（1 = 长子）。v0.99 新增。
+       *   中文里「父亲的哥哥＝伯父、父亲的弟弟＝叔父」是硬性区别，
+       *   分不出来就只能写含糊的「伯叔」⇒ 排行必须跟着人物走，不能只留在脚本里。
+       *   `put` 是"有值才写"，所以只有《百年孤独》那 4 个带排行的人会有这个字段。 */
+      put(o, 'birthRank', c.birthRank);
       put(o, 'tier', c.tier);
       put(o, 'aliases', c.aliases);
       /* ⚠ altNames（「又译」）**必须**进图包。

@@ -210,6 +210,17 @@ jobs:
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all
 
+      - name: 亲属称谓计算（族谱推称谓：直系 / 同胞 / 伯叔 / 姑舅姨 / 堂表）
+        run: node test/kin-terms.mjs
+
+      - name: 亲属称谓对质（手写 type 必须与族谱算出来的一致）
+        # 起因 v0.99：用户报「上校—叔侄（伯父与侄）—奥雷里亚诺第二」
+        # 说"第二代和第四代怎么可能只是叔侄"。手打的称谓字符串不可能自洽，
+        # 而 derive-kin.mjs 有「已有直接关系的两个人不再推导」⇒ 错的标签
+        # 还会把正确的推导边一起挡掉。本步让错标签**自己报出来**。
+        # 族谱覆盖不足的书会整体跳过（那是数据没录全，不是缺陷）。
+        run: node scripts/check-kin-terms.mjs --all
+
       - name: 搜索命中率审计（别名覆盖 / 译名变体 / 疑似漏人 / 同名）
         run: node scripts/audit-search.mjs --all
 
