@@ -46,8 +46,30 @@ const cdpUrl = () => new Promise((res, rej) => {
 let url = null;
 for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 
+/* ⚠ 连不上 CDP 时必须**在这里**报错退出，不能往下走。
+ *
+ * 下面是 `new WebSocket(url)` 加一个只监听 onopen/onerror 的 promise ——
+ * url 拿不到时它是 null，连不上时那个 promise **永远不 settle**，
+ * 于是进程静默挂死：stdout / stderr **0 字节**，没有异常、没有退出码，
+ * 看起来像"卡在某个断言上"，其实一条断言都还没开始跑。
+ * 实测在门禁里撞过两次，每次要等十几分钟超时才发现。
+ * （同一模式在另外 15 个测试文件里也有，这次先修我改到的这个。）
+ */
+if (!url) {
+  console.error(`  ✗ Edge 起来后 10 秒内没在 ${CDP_PORT} 上暴露 CDP 端点。`);
+  console.error('    多半是刚借到的临时端口被别的进程抢走了（借出到 Edge 抢占之间有个毫秒级窗口，');
+  console.error('    见 test/_free-port.mjs 的说明）—— 重跑一次通常就好。');
+  try { proc.kill(); } catch { /* 忽略 */ }
+  try { server.close(); } catch { /* 忽略 */ }
+  releaseProfile(profile);
+  process.exit(1);
+}
+
 const ws = new WebSocket(url);
-await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+await Promise.race([
+  new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; }),
+  new Promise((_, rej) => setTimeout(() => rej(new Error(`CDP WebSocket 10 秒内没连上（${CDP_PORT}）`)), 10000)),
+]);
 let seq = 0; const pending = new Map();
 ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString()); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.reject(new Error(m.error.message)) : p.resolve(m.result || {}); } };
 const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
@@ -398,6 +420,76 @@ try {
 
   await unlockAll();
 
+  /* ================= ⑦ v0.97 锁定某个点后滚轮缩放，画布不许被复位 =================
+   *
+   * 用户报的现象：锁定单个人物（= 锁定某个点）之后，滚轮一缩放，画布就被"复位"了。
+   *
+   * 病根不在滚轮，在 **setOption**：原来的 buildOption 写的是
+   *     ...(opts.keepView ? {} : { zoom, center })
+   * 也就是"保留视野"靠**不把 zoom/center 写进 option**，赌 ECharts 会自己保住。
+   * 那个赌注输了 —— ECharts 的 View 坐标系每次 setOption 都会按**当前绘制集合**
+   * 重新自动适配；不传 center/zoom 它就重算。锁定时绘制集合变小，小图被重新塞满画布，
+   * 于是用户的缩放被丢掉（实测 zoom 3 → 0.229、center [0,0] → [0,-11]）。
+   *
+   * 本节用**真实滚轮事件**（CDP Input.dispatchMouseEvent / mouseWheel）驱动，
+   * 因为派发合成 WheelEvent 是不行的：zrender 不认非可信事件，测试会"假绿"。 */
+  console.log('\n▶ v0.97 锁定某个点后滚轮缩放：画布不许被复位');
+  await unlockAll();
+  await fill('#search-input', '曹操');
+  await click('#search-go');
+  await wait(2800);
+  const zoomLock = await probe();
+  ok(zoomLock.locked && zoomLock.origin === 'search',
+    `锁定单个人物（${zoomLock.nNodes} 点 / ${zoomLock.nLinks} 线 —— 绘制集合比全图小）`);
+
+  const readView = () => js(`(() => {
+    const ch = window.__ba.chart();
+    const cs = ch.getModel().getSeriesByIndex(0).coordinateSystem;
+    return { zoom: cs.getZoom(), center: cs.getCenter().map((v) => Math.round(v)) };
+  })()`);
+
+  const view0 = await readView();
+  const cbox = await js(`(() => {
+    const r = document.getElementById('graph').getBoundingClientRect();
+    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+  })()`);
+  const each = [];
+  for (let i = 0; i < 5; i++) {
+    await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: cbox.x, y: cbox.y, deltaX: 0, deltaY: -120 });
+    await wait(220);
+    each.push({ v: await readView(), s: await js(`window.__ba.state.zoom`) });
+  }
+  console.log(`    逐格：${each.map((e, i) => `${i + 1}: View ${e.v.zoom.toFixed(3)} / state ${(+e.s).toFixed(3)}`).join('　')}`);
+  await wait(1300);          // 等 graphroam 里那个 200ms 的标签定时器跑完（复位就发生在它里面）
+  const view1 = await readView();
+  const wheelMoved = Math.abs(view1.zoom - view0.zoom) / view0.zoom > 0.15;
+  ok(wheelMoved, `真实滚轮事件打动了 View（${view0.zoom.toFixed(3)} → ${view1.zoom.toFixed(3)}，center ${JSON.stringify(view0.center)} → ${JSON.stringify(view1.center)}）`);
+
+  // 决定性断言：标签刷新那种"不动绘制集合的 setOption"不许把视野冲掉。
+  // 没有修复时这里是 3 → 0.229（掉了 92%）。
+  const kept = await js(`(() => {
+    const ba = window.__ba, ch = ba.chart();
+    const cs = () => ch.getModel().getSeriesByIndex(0).coordinateSystem;
+    const before = { zoom: cs().getZoom(), center: cs().getCenter().map((v) => Math.round(v)) };
+    ch.setOption(ba._buildOption({ keepView: true }), { notMerge: true });
+    const after = { zoom: cs().getZoom(), center: cs().getCenter().map((v) => Math.round(v)) };
+    return { before, after };
+  })()`);
+  const drift = Math.abs(kept.after.zoom - kept.before.zoom) / (Math.abs(kept.before.zoom) || 1);
+  const driftC = Math.max(...kept.after.center.map((v, i) => Math.abs(v - kept.before.center[i])));
+  console.log(`    setOption 前 ${kept.before.zoom.toFixed(3)} @ ${JSON.stringify(kept.before.center)} → 后 ${kept.after.zoom.toFixed(3)} @ ${JSON.stringify(kept.after.center)}`);
+  ok(drift < 0.02, `keepView 的 setOption 不再把缩放冲掉（漂移 ${(drift * 100).toFixed(1)}%，门槛 2%）`);
+  ok(driftC <= 1, `中心也不再跑掉（漂移 ${driftC}px）`);
+
+  // 锁着的时候 option 必须一直带着 zoom/center —— 少了它们，ECharts 就会自己重新适配（＝复位）
+  const optView = await js(`(() => {
+    const s = window.__ba._buildOption({ keepView: true }).series[0];
+    return { zoom: s.zoom, center: s.center ? s.center.slice() : null };
+  })()`);
+  ok(typeof optView.zoom === 'number', `keepView 建 option 时仍然带着 zoom（${optView.zoom}）`);
+  ok(Array.isArray(optView.center), `也带着 center（${JSON.stringify(optView.center)}）`);
+
+  await unlockAll();
 } catch (e) {
   failed++;
   console.error('  ✗ 异常：' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 4).join('\n'));

@@ -71,6 +71,137 @@
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
+  /* v0.97：连线扇形 —— 让"连到同一个点上的那些线"在**节点附近**岔开。
+   *
+   * 病根（用户报「拖动节点出来后，连到它上面的关系线重叠、间距太小，鼠标不好悬浮和点」）：
+   * ECharts 的图连线一律从节点**中心**出发，曲率只决定这条线往哪一侧弯、弯多少。
+   * 而原先那条 pairSeen 曲率只按"同一**对**人物"分组，所以从某个枢纽人物连出去的 N 条线
+   * 曲率**全都是同一个 0.08** —— 那等于给所有线**平移了同一个出发方位角**
+   * （≈ atan(2×0.08) ≈ 9.1°），**一条也没互相分开**。
+   *
+   * 于是决定"挤不挤"的只剩邻居方向本身：把节点拖到一边，邻居全落到同一侧，
+   * 相邻方位角能小到一两度，几条线就几乎平行地贴着走，鼠标只能命中最上面那条。
+   *
+   * 做法：ECharts 用 `curveness=c` 时，线在**出发端**的方位角 = 直线方位角 − atan(2c)，
+   * 在**到达端**（从到达点看回出发点）= 直线方位角 + atan(2c)（推导见 vendor/echarts.min.js 里
+   * `_A`：控制点 = 中点 + (−dy, −dx)·c）。
+   *
+   * 于是对**出发方位角**做松弛，而不是给曲率排序：
+   *   ① 每个节点的出线按邻居方位角排序；
+   *   ② 前向推开：后一条与前一条挨得比 MIN_GAP 还近的，把它顶出去；
+   *   ③ 从尾往回收（都挤在同一侧时前向会顶出整圈），保证首尾也差得开；
+   *   ④ 得到每条线这一端"想挪 d 弧度"，以及这个节点有多饿 need = (n−1)·gap。
+   *
+   * ⚠ **一条线只有一个曲率，所以两端只能选一个**（第一版就栽在这）：
+   *   出发端想"+d" 要 c<0，到达端想"+d" 要 c>0 —— 方向相反，一个值给不了两个。
+   *   第一版取加权平均，两端 d 一样大时**正好归零**：实测 785 条边里有 390 条（49.7%）
+   *   扇形完全失效（张梁那三条线夹角就是 0°）。那是真浪费：明明服务好一端就是净赚。
+   *   所以改成**明确的取舍**：谁的"需求"大就整条给谁（需求 = 想挪的 d × 这个节点的拥挤预算 need）。
+   *   没被挑中的那一端只会朝反方向偏 d —— 挨近一点，但不会比"两条都叠着"更糟。
+   *   实测：张梁那种"三条线同向、完全重叠（0°）"的典型情形 → 3.9°；
+   *        把它拖离邻居簇再重算 → 4.0°（正好是设计值）。
+   *
+   * ⚠ 曲率是**烤进 option** 的，而 ECharts 是在**渲染时**才拿它配上**当下的**节点坐标
+   *    去算二次贝塞尔控制点（所以拖完节点线会跟着变形）。这意味着拖完之后必须重算一次
+   *    —— 见 refreshEdgeFan()。
+   *
+   * @param {Array} drawnRels 本轮真正画出来的关系（过滤之后的那一批）
+   * @returns {Map<object, number>} 关系对象 → 曲率增量（可为负）
+   */
+  const EDGE_FAN_MIN_GAP = 0.07;      // 想要的最小出发夹角 ≈ 4.0°
+  const EDGE_FAN_BUDGET = 0.7;        // 单端单条线最多被推开 0.7 弧度（40°）
+                                       // ⚠ 曲率 clamp 在 ±0.5（＝±45° 出发角），预算留在它里面，
+                                       //   位移上限就永远不会真的生效 —— 否则一批线会被压成
+                                       //   **同一个**位移（实测曹操 206 条出边只剩 63 个不同曲率，扇形整个失效）。
+  function computeEdgeFan(drawnRels) {
+    const out = new Map();
+    if (!drawnRels || drawnRels.length < 2) return out;
+    const TAU = Math.PI * 2;
+    const ends = new Map();        // 关系 → [{ sign, d, need }]：这条线在**每一端**各有一条需求
+    const inc = new Map();
+    // sign = 这条线在**我**这里是出发端（-1）还是到达端（+1）：
+    //   出发端的出发角 = 直线角 − atan(2c)，要"+d"就得 c<0；到达端反之要 c>0。
+    const add = (id, other, r, sign) => {
+      const a = state.pos.get(id), b = state.pos.get(other);
+      if (!a || !b) return;
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      if (!Number.isFinite(ang)) return;
+      let l = inc.get(id);
+      if (!l) inc.set(id, (l = []));
+      l.push({ r, sign, ang });
+    };
+    for (const r of drawnRels) {
+      if (!r.from || !r.to || r.from === r.to) continue;
+      add(r.from, r.to, r, -1);
+      add(r.to, r.from, r, 1);
+    }
+    for (const [, list] of inc) {
+      const n = list.length;
+      if (n < 2) continue;                       // 只有一条线：没有"互相压住"的问题
+      list.sort((p, q) => p.ang - q.ang);        // 挨得最近的两条在排序后也相邻
+      // 条数越多分到的越少：位移最大到 EDGE_FAN_BUDGET，所以 (n−1)·gap ≤ 预算。
+      // 整圈也放不下时还要按 2π/n 再收一道。两道取小的那个。
+      const gap = Math.min(EDGE_FAN_MIN_GAP, EDGE_FAN_BUDGET / (n - 1), (TAU * 0.9) / n);
+      const want = list.map((e) => e.ang);
+      for (let k = 1; k < n; k++) if (want[k] < want[k - 1] + gap) want[k] = want[k - 1] + gap;
+      for (let k = n - 1; k >= 0; k--) {
+        const lim = (k === n - 1) ? want[0] + TAU - gap : want[k + 1] - gap;
+        if (want[k] > lim) want[k] = lim;
+      }
+      const need = (n - 1) * gap;
+      for (let k = 0; k < n; k++) {
+        let d = want[k] - list[k].ang;
+        if (d > EDGE_FAN_BUDGET) d = EDGE_FAN_BUDGET;
+        else if (d < 0) d = 0;                   // 负数只是"绕圈收尾"把它拉回去，不是"被挤"的需求
+        if (!d) continue;                         // 没被挤就不登记 —— 见上面"只让真的有需求的端参与"
+        let arr = ends.get(list[k].r);
+        if (!arr) ends.set(list[k].r, (arr = []));
+        arr.push({ sign: list[k].sign, d, need });
+      }
+    }
+    for (const [r, arr] of ends) {
+      let best = null;
+      for (const e of arr) {
+        const w = e.need * e.d;                 // 这一端有多饿：想挪多少 × 这个节点有多挤
+        if (!best || w > best.w) best = { w, e };
+      }
+      out.set(r, best ? best.e.sign * best.e.d / 2 : 0);
+    }
+    return out;
+  }
+
+  /** v0.97：节点被拖动之后，把新坐标写回 state.pos 并重画（扇形才作废重算）。
+   *
+   *  为什么必须单独做：曲率是**烤进 option** 的，而 ECharts 是**渲染时**才拿它配上**当下**的
+   *  节点坐标去算控制点。于是拖完之后，线是"按拖之前算好的曲率 ＋ 拖之后的坐标"画出来的 ——
+   *  扇形等于作废，而且越拖越乱。这正是用户说的「拖动节点出来后，连到它上面的线重叠、间距太小」。
+   *
+   *  只在**确实有节点动了**的时候才重建（三国全量 setOption 实测约 66ms，不能每松一次手都付）。
+   *  @returns {boolean} 有没有发生重建
+   */
+  function refreshEdgeFan() {
+    if (!state.chart) return false;
+    const d = state.chart.getModel().getSeriesByIndex(0).getData();
+    let moved = false;
+    for (let i = 0; i < d.count(); i++) {
+      const id = d.getId(i);
+      if (!id || String(id).startsWith('__gen_')) continue;
+      const cur = state.pos.get(id);
+      if (!cur) continue;
+      const layout = d.getItemLayout(i);
+      if (!layout) continue;
+      const x = layout[0] ?? layout.x, y = layout[1] ?? layout.y;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      if (Math.abs(x - cur.x) > 1e-6 || Math.abs(y - cur.y) > 1e-6) {
+        state.pos.set(id, { x, y });
+        moved = true;
+      }
+    }
+    if (!moved) return false;
+    state.chart.setOption(buildOption({ keepView: true }));
+    return true;
+  }
+
   /* ---------------- 文案包：图画完之后空闲时预取，回来再贴回 state.book ----------------
    * v85。刻意**不**在点开人物时才去拉 —— 那会让第一次点击的面板先空一下。
    * 空闲预取的话，多数情况下用户还没点，文案就已经在本地了。
@@ -1253,7 +1384,7 @@
       for (let i = 0; i < b.relations.length; i++) state.relIndexOf.set(b.relations[i], i);
       state.relIdxBook = b;
     }
-    const links = b.relations
+    const drawnRels = b.relations
       .filter((r) => state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r))
       .filter((r) => !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to)))
       .filter((r) => passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to))
@@ -1261,8 +1392,12 @@
       .filter(passEdgeFilter)
       .filter(relVisibleAt)
       // v89：锁定态只保留锁定集合内的边（同一对人物的多条线会一起保留、一起高亮）
-      .filter((r) => !lockEdgeSet || lockEdgeSet.has(edgeKey(r.from, r.to)))
-      .map((r) => {
+      .filter((r) => !lockEdgeSet || lockEdgeSet.has(edgeKey(r.from, r.to)));
+    /* v0.97：把"连到同一个点上的那些线"在节点附近岔开（病根与算法见 computeEdgeFan 的注释）。
+     * 这一层与下面的 pairSeen 正交：pairSeen 分的是"同一**对**之间的多条线"，
+     * computeEdgeFan 分的是"同一个**点**连出去的很多条线" —— 后者才是用户报的"重叠、间距太小"。 */
+    const edgeFan = computeEdgeFan(drawnRels);
+    const links = drawnRels.map((r) => {
         const hiddenTier = isMentioned(state.byId.get(r.from)) || isMentioned(state.byId.get(r.to));
         const derived = isDerived(r);
         const key = edgeKey(r.from, r.to);
@@ -1284,7 +1419,8 @@
           width: fxOk(hlEdge ? 3 : 1.2),
           opacity: dim ? 0.05 : (derived ? 0.32 : (hiddenTier ? 0.3 : 0.5)),
           type: hiddenTier || derived ? 'dashed' : (r.style === 'dashed' ? 'dashed' : r.style === 'dotted' ? 'dotted' : 'solid'),
-          curveness: Math.min(0.5, curve),
+          // pairSeen 的"同一对多线"曲率 ＋ computeEdgeFan 的"同一个点多线"扇形（v0.97）
+          curveness: Math.max(-0.5, Math.min(0.5, curve + (edgeFan.get(r) || 0))),
           // 点中的线：桌面端也给描边光晕（原先只有小屏有），点击反馈更明显
           ...(hlEdge ? { shadowBlur: 6, shadowColor: 'rgba(0,0,0,.45)' } : {}),
         },
@@ -1336,8 +1472,25 @@
         // 要是这里还让 ECharts 跑它的力导向，会在我们排完之后又覆盖一遍，固定种子的好处全白费。
         layout: (state.view === 'force' || (state.frozen && !state.focus)) ? 'none' : 'force',
         roam: true, draggable: state.nodeDrag,
-        // 视图（缩放/中心）只在"重建"时写进 option；标签刷新用 keepView 合并，避免把用户平移的视角弹回去
-        ...(opts.keepView ? {} : { zoom: state.zoom || 1, center: state.viewCenter || undefined }),
+        /* ⚠ v0.97 修「锁定某个点后一缩放画布就复位」。
+         *
+         * 原来这里是 `...(opts.keepView ? {} : { zoom, center })` ——
+         * 也就是说"保留视野"靠的是**不把 zoom/center 写进 option**，赌 ECharts 会自己保住。
+         * 那个赌注输了：**ECharts 的 View 坐标系在每次 setOption 时都会按"当前绘制集合"
+         * 重新自动适配**。不传 center/zoom，它就重新算 —— 于是用户的缩放被丢掉。
+         *
+         * 实测（锁定 24 个点，applyZoom 到 3，再点一个锁定中的人物触发一次 setOption）：
+         *     zoom   3    → 0.229
+         *     center [0,0] → [0,-11]
+         * 锁定时绘制集合变小，自动适配把小图重新塞满画布 —— 看起来就是"画布被复位了"。
+         * ���锁定时集合没变，所以之前一直没被发现。
+         *
+         * 修法：**始终**把 zoom/center 写进 option。它们的值由 `graphroam` 实时同步
+         * （state.zoom / state.viewCenter），所以这恰好实现了 v92 注释里原本想要的
+         * 那个效果 —— "不把用户平移的视角弹回去"。
+         * ⚠ `opts.keepView` 因此不再影响视图处理（调用点保留，以免大面积改签名）。 */
+        zoom: state.zoom || 1,
+        center: state.viewCenter || undefined,
         categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         // v92：只有 layout==='force' 时才会用到（聚焦态、还没冻结时的老路径）。
         // 「自由」视图走的是我们自己的 forceLayout()，这里用不到。
@@ -2489,8 +2642,12 @@
     const graphEl = $('#graph');
     const setPanning = (on) => { if (graphEl) graphEl.classList.toggle('is-panning', !!on); };
     state.chart.getZr().on('mousedown', () => setPanning(true));
-    state.chart.getZr().on('mouseup', () => setPanning(false));
-    state.chart.getZr().on('globalout', () => setPanning(false));
+    /* v0.97：松手时如果是「拖动节点」模式，就把拖出来的新坐标写回并重算连线扇形
+     * （否则线用的是拖之前的曲率，越拖越挤 —— 见 refreshEdgeFan 的注释）。
+     * 平移画布不受影响：refreshEdgeFan 会先比对，没节点动过就直接返回 false。 */
+    const endPanning = () => { setPanning(false); if (state.nodeDrag) refreshEdgeFan(); };
+    state.chart.getZr().on('mouseup', endPanning);
+    state.chart.getZr().on('globalout', endPanning);
     /* 缩放联动标签 + **同步真实视野**（节流 200ms）
      *
      * v90 修「分组·横下画布跑到一边去、再也回不来」：
@@ -2508,8 +2665,18 @@
      */
     state.chart.on('graphroam', (p) => {
       const cs = state.chart && state.chart.getModel().getSeriesByIndex(0).coordinateSystem;
-      if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
-      else if (cs && cs.getZoom) state.zoom = cs.getZoom();
+      /* ⚠ v0.97 修「锁定某个点后一缩放画布就复位」（第二个 bug，与 buildOption 那处独立）。
+       *
+       * 原来优先信 p.zoom —— 但 **p.zoom 是"这一次滚动的相对倍率"，不是缩放的绝对值**。
+       * 滚轮放大一格固定是 1.1，所以滚 5 下之后：
+       *     View 真实缩放      1.611
+       *     state.zoom（错的）  1.1    ← 每次事件都被覆写成同一个 1.1
+       * 于是只要有一次 setOption 把 state.zoom 写回 option，画布就被从 1.611 拽回 1.1 ——
+       * 表现同样是"缩放被复位"。这也是为什么单修 buildOption 还不够：漂移从 92% 降到 31.7%。
+       *
+       * 改成：**绝对值只从 View 取**（它才是真值），p.zoom 只在 View 拿不到时兜底。 */
+      if (cs && cs.getZoom) state.zoom = cs.getZoom();
+      else if (typeof p.zoom === 'number' && p.zoom > 0) state.zoom = p.zoom;
       if (cs && cs.getCenter) state.viewCenter = cs.getCenter().slice();
       updateOffscreenHint();
       clearTimeout(state.viewMemTimer);
