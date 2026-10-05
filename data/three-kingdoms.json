@@ -39044,21 +39044,6 @@
       ]
     },
     {
-      "from": "gongsun-kang",
-      "to": "gongsun-gong",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "公孙康死后，其弟公孙恭继其职",
-          "chapter": "第106章",
-          "place": "liao-dong",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
       "from": "gongsun-gong",
       "to": "gongsun-yuan",
       "type": "叔侄",
@@ -49363,36 +49348,6 @@
         {
           "chapter": "",
           "text": "由 「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "gongsun-du",
-      "to": "gongsun-gong",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙恭」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "gongsun-gong",
-      "to": "gongsun-xiu",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
