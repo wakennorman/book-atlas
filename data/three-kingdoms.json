@@ -48140,10 +48140,10 @@
     {
       "from": "cao-teng",
       "to": "cao-cao",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48170,10 +48170,10 @@
     {
       "from": "cao-cao",
       "to": "cao-fang",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48200,10 +48200,10 @@
     {
       "from": "cao-teng",
       "to": "cao-jie",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48320,10 +48320,10 @@
     {
       "from": "cao-jie",
       "to": "dian-man",
-      "type": "同父异母的姐弟（推导）",
+      "type": "养同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48455,10 +48455,10 @@
     {
       "from": "cao-song",
       "to": "cao-fang",
-      "type": "高祖父与玄孙（推导）",
+      "type": "养高祖父与玄孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48470,10 +48470,10 @@
     {
       "from": "cao-song",
       "to": "dian-man",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48485,10 +48485,10 @@
     {
       "from": "cao-teng",
       "to": "cao-ang",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48500,10 +48500,10 @@
     {
       "from": "cao-teng",
       "to": "cao-pi",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48515,10 +48515,10 @@
     {
       "from": "cao-teng",
       "to": "cao-zhi",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48530,10 +48530,10 @@
     {
       "from": "cao-teng",
       "to": "cao-guiren",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48545,10 +48545,10 @@
     {
       "from": "cao-teng",
       "to": "cao-zhang",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48560,10 +48560,10 @@
     {
       "from": "cao-teng",
       "to": "cao-xiong",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48575,10 +48575,10 @@
     {
       "from": "cao-teng",
       "to": "cao-rui",
-      "type": "高祖父与玄孙（推导）",
+      "type": "养高祖父与玄孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48590,10 +48590,10 @@
     {
       "from": "cao-teng",
       "to": "qinghe-gongzhu",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48605,10 +48605,10 @@
     {
       "from": "cao-teng",
       "to": "cao-fang",
-      "type": "天祖父与来孙（推导）",
+      "type": "养天祖父与来孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48620,10 +48620,10 @@
     {
       "from": "cao-teng",
       "to": "dian-man",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48650,10 +48650,10 @@
     {
       "from": "liu-hong",
       "to": "liu-feng",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48860,10 +48860,10 @@
     {
       "from": "sun-ce",
       "to": "sun-shao",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -48995,10 +48995,10 @@
     {
       "from": "cao-ang",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49055,10 +49055,10 @@
     {
       "from": "guan-ping",
       "to": "guan-xing",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49235,10 +49235,10 @@
     {
       "from": "cao-pi",
       "to": "cao-fang",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49250,10 +49250,10 @@
     {
       "from": "cao-pi",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49265,10 +49265,10 @@
     {
       "from": "zhen-shi",
       "to": "cao-fang",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49400,10 +49400,10 @@
     {
       "from": "cao-zhi",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49415,10 +49415,10 @@
     {
       "from": "liu-feng",
       "to": "liu-shan",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49460,10 +49460,10 @@
     {
       "from": "liu-feng",
       "to": "liu-yong",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49475,10 +49475,10 @@
     {
       "from": "liu-feng",
       "to": "liu-li",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49700,10 +49700,10 @@
     {
       "from": "cao-guiren",
       "to": "dian-man",
-      "type": "同父异母的姐弟（推导）",
+      "type": "养同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49760,10 +49760,10 @@
     {
       "from": "cao-zhang",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49805,10 +49805,10 @@
     {
       "from": "cao-xiong",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "养同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -49835,10 +49835,10 @@
     {
       "from": "bian-furen",
       "to": "cao-fang",
-      "type": "曾祖孙（推导）",
+      "type": "养曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",
@@ -50075,10 +50075,10 @@
     {
       "from": "dian-man",
       "to": "qinghe-gongzhu",
-      "type": "同父异母的兄妹（推导）",
+      "type": "养同父异母的兄妹（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",

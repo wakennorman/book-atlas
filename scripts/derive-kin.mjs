@@ -129,7 +129,10 @@ for (const rel of files) {
       fresh.push({
         from: elder, to: younger,
         type: `${k.term}（推导）`,
-        style: 'dotted', derived: true, kin: 'blood',
+        style: 'dotted', derived: true,
+        /* v0.111：路径上含养亲边 ⇒ kin 标 'adoptive'（称谓已带「养」字）。
+         * 否则和血亲边混在一起，读者分不出「养祖父」和真「祖父」。 */
+        kin: k.adoptive ? 'adoptive' : 'blood',
         events: [{ chapter: '', text: `${chainText}（原文没有直接互动）` }],
       });
       fresh[fresh.length - 1].events[0].evidence = 'derived';

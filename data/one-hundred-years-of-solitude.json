@@ -3406,10 +3406,10 @@
     {
       "from": "ursula-father",
       "to": "rebeca",
-      "type": "祖孙（推导）",
+      "type": "养祖孙（推导）",
       "style": "dotted",
       "derived": true,
-      "kin": "blood",
+      "kin": "adoptive",
       "events": [
         {
           "chapter": "",

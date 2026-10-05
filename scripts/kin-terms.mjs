@@ -55,13 +55,56 @@ export function buildTree(relations, chars) {
   }
   const parents = new Map();   // child -> [parentId]
   const children = new Map();  // parent -> [childId]
+  /**
+   * 养亲边：`"父|子"` 形式（v0.111）
+   *
+   * ⚠ 为什么单列这张表
+   *
+   * 中文里「养父」确实是父亲关系，但**顺着养亲边算出来的祖孙辈分会误导**。
+   * 活例子：数据里 `夏侯惇 —养父子— 夏侯楙`（原文明写「自幼嗣与夏侯惇为子」）
+   * 一旦接进族谱，`夏侯渊 → 夏侯楙 → 夏侯惇` 就成立，
+   * computeKin 判「夏侯渊是夏侯惇的祖父，差 2 代」——
+   * 而原文明说这两位是**族兄弟**。
+   *
+   * 用户裁定走 (b)：**仍算进族谱，但推导出的称谓加「养」字**（养祖父、养父…），
+   * 并在关系上标 `kin: 'adoptive'`。
+   */
+  const adoptive = new Set();
   for (const r of relations) {
     if (!r || !isParentChild(r)) continue;
     if (!gender.has(r.from) || !gender.has(r.to)) continue;
     push(parents, r.to, r.from);
     push(children, r.from, r.to);
+    if (/^养/.test(String(r.type || '').replace(/[（(].*$/, '').trim())) adoptive.add(`${r.from}|${r.to}`);
   }
-  return { gender, birthRank, parents, children };
+  return { gender, birthRank, parents, children, adoptive };
+}
+
+/**
+ * from 与 target 之间**是不是只有养亲路径**。
+ *
+ * 一个人可能有多个父母（父/母两条边）⇒ 多条路径。语义要准：
+ *   · 存在**任何一条纯血亲路径** ⇒ 算血亲（否则误报）
+ *   · 所有能走通的路径都含至少一跳养亲 ⇒ 才算养亲
+ *
+ * 第一版写成"碰到养亲路径就 return true"，在"血亲路径与养亲路径并存"时会误报。
+ * 自己踩过一次，所以两类都跑完再下结论。
+ */
+function onlyAdoptivePath(tree, from, target) {
+  if (from === target) return false;
+  const seen = new Set([from]);
+  const stack = [[from, false]];
+  let blood = false, adopted = false;
+  while (stack.length) {
+    const [x, viaAdopt] = stack.pop();
+    if (x === target) { if (viaAdopt) adopted = true; else blood = true; continue; }
+    for (const p of tree.parents.get(x) ?? []) {
+      if (seen.has(p)) continue;
+      seen.add(p);
+      stack.push([p, viaAdopt || tree.adoptive.has(`${p}|${x}`)]);
+    }
+  }
+  return adopted && !blood;
 }
 
 /**
@@ -208,6 +251,14 @@ export function computeKin(tree, aId, bId) {
   const mY = tree.gender.get(younger) === 'm';
   const gap = youngerGen - elderGen;
 
+  /* 养亲判定（v0.111，用户裁定走 (b)）
+   *
+   * 两人之间**所有**能走通的族谱路径都含至少一跳养亲边 ⇒ 这层关系是养的，
+   * 称谓加「养」前缀（养父 / 养祖父 / 养侄…），并带 `adoptive: true`
+   * 供 derive-kin 打 `kin: 'adoptive'`。 */
+  const isAdoptive = onlyAdoptivePath(tree, younger, elder) || onlyAdoptivePath(tree, elder, younger);
+  const tagAdoptive = (o) => (isAdoptive ? { ...o, term: `养${o.term}`, adoptive: true } : o);
+
   /* 直系：elder 自己就是共同祖先。
    * 差 1 代 ⇒ 父子/母子；差 2 代 ⇒ 祖孙；差 3 代 ⇒ 曾祖孙；
    * ⚠ **第 4 代起上、下两行的字分岔了，不能再压缩成一个词**：
@@ -231,7 +282,7 @@ export function computeKin(tree, aId, bId) {
       const youngerSide = mY ? sun : sun.replace(/孙$/, '孙女');   // 玄孙 → 玄孙女
       term = `${elderSide}与${youngerSide}`;
     }
-    return { kind: 'direct', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor, term };
+    return tagAdoptive({ kind: 'direct', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor, term });
   }
 
   /* 同辈：两人在共同祖先的同一层 */
@@ -239,6 +290,18 @@ export function computeKin(tree, aId, bId) {
     const pa = tree.parents.get(aId) ?? [];
     const pb = tree.parents.get(bId) ?? [];
     const shared = pa.filter((x) => pb.includes(x));
+    /**
+     * 同胞的养亲判定要**单独算**（v0.111）
+     *
+     * 兄弟之间不是祖先路径，是靠**共同父亲**连的，
+     * 所以上面那个 onlyAdoptivePath(younger, elder) 对同胞恒为 false。
+     * 判据：共同父亲这条连接，对**两人中至少一人**是养亲；
+     * 而且两人之间没有任何一条纯血亲路径（否则是既有血亲又有养亲 ⇒ 算血亲）。
+     */
+    const sibAdoptive = shared.length > 0
+      && shared.every((p) => tree.adoptive.has(`${p}|${aId}`) || tree.adoptive.has(`${p}|${bId}`))
+      && !(shared.some((p) => tree.adoptive.has(`${p}|${aId}`) === false
+        && tree.adoptive.has(`${p}|${bId}`) === false));
     let term;
     /* ⚠ 性别组合有四种，不是两种。
      *   第一版写成 `mE === mY ? '兄弟' : '姐妹'` —— 两人都是女性时 mE===mY 同样成立，
@@ -251,9 +314,12 @@ export function computeKin(tree, aId, bId) {
       term = `${tree.gender.get(p) === 'm' ? '同父异母' : '同母异父'}的${sibWord}`;
     } else term = `${cousinMark(tree, aId, bId)}${sibWord}`;   // 数据里不该出现：同辈必有共同父母
     const mark = shared.length >= 2 ? '' : shared.length === 1 ? '半血' : cousinMark(tree, aId, bId);
-    return { kind: 'sibling', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor,
-      siblingKind: shared.length >= 2 ? 'full' : shared.length === 1 ? 'half' : 'none',
-      mark, term };
+    return sibAdoptive
+      ? { kind: 'sibling', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor,
+          siblingKind: 'adoptive', mark, term: `养${term}`, adoptive: true }
+      : { kind: 'sibling', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor,
+          siblingKind: shared.length >= 2 ? 'full' : shared.length === 1 ? 'half' : 'none',
+          mark, term };
   }
 
   /* 旁系：elder 在上，younger 在下，中间隔 gap 代。
@@ -355,12 +421,12 @@ export function computeKin(tree, aId, bId) {
   /* 主词：q 是女性 ⇒ elder 走舅/姨一侧 ⇒ 叫「舅甥」；q 是男性 ⇒ 「叔侄」。
    * 晚辈侧那个「侄/甥」则永远看 link（younger 的直接上一代）的性别：
    * link 是男性 ⇒ younger 是他的 侄；link 是女性 ⇒ 甥。 */
-  return {
+  return tagAdoptive({
     kind: 'collateral', elder, younger, elderGen, youngerGen, gap, lca: f.ancestor,
     link, q, mark, base: baseWord, order: order || null, orderUnknown,
     elderWord: elderFull, youngerWord: youngerFull,
     term: `${baseWord}（${elderFull}与${youngerFull}）`,
-  };
+  });
 }
 
 /** 去掉括号说明与「（推导）」，只留主词。 */

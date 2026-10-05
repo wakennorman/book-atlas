@@ -348,6 +348,59 @@ console.log('\n▶ ★ 伯 / 叔 按长幼区分（用户 2026-10-05：「叔就
     '★ 差 2 代升级：伯→伯祖父、叔→叔祖父', { ben: e.elderWord, shu: f.elderWord });
 }
 
+/* ============================================================
+ * 养亲（v0.111，用户裁定走 (b)：仍算进族谱，但称谓加「养」字）
+ *
+ * 起因：`夏侯惇 —养父子— 夏侯楙`（原文明写「自幼嗣与夏侯惇为子」）
+ * 接进族谱后 夏侯渊 → 夏侯楙 → 夏侯惇 成立，
+ * computeKin 判「夏侯渊是夏侯惇的祖父」—— 而原文说这两位是族兄弟。
+ *
+ * 谱：
+ *   XBF ── AP ── AD            AD 是 XBF 亲生的孙子
+ *   AP ── AD2（养）            AP 收养了 AD2（无血缘）
+ */
+{
+  const ac = [
+    { id: 'XBF', gender: 'm' }, { id: 'AP', gender: 'm' },
+    { id: 'AD', gender: 'm' }, { id: 'AD2', gender: 'm' },
+  ];
+  const ar = [
+    { from: 'XBF', to: 'AP', type: '父子' },
+    { from: 'AP', to: 'AD', type: '父子' },
+    { from: 'AP', to: 'AD2', type: '养父子' },   // ← 唯一的养亲边
+  ];
+  const at = buildTree(ar, ac);
+
+  const bio = computeKin(at, 'AP', 'AD');
+  ok(bio.term === '父子' && !bio.adoptive,
+    '养亲实现：亲生父子不受影响，仍是「父子」', { term: bio.term, adoptive: bio.adoptive });
+
+  const adopted = computeKin(at, 'AP', 'AD2');
+  ok(adopted.term === '养父子' && adopted.adoptive === true,
+    '养亲实现：养父子 ⇒「养父子」且标 adoptive', { term: adopted.term, adoptive: adopted.adoptive });
+
+  const grand = computeKin(at, 'XBF', 'AD2');
+  ok(grand.term === '养祖孙', '养亲实现：隔代的养关系 ⇒「养祖孙」（不是祖孙）', { term: grand.term });
+
+  const cousin = computeKin(at, 'AD', 'AD2');
+  ok(cousin.adoptive === true && /养/.test(cousin.term),
+    '养亲实现：养兄弟 ⇒ 主词带「养」字', { term: cousin.term, adoptive: cousin.adoptive });
+
+  /* 关键反例：血亲路径与养亲路径**并存**时，必须判血亲。
+   * AD2 同时有 AP 的养父和 XBF 的血亲曾祖父 ⇒ XBF→AP→AD2 里
+   * XBF→AP 是亲生、AP→AD2 是养的，路径上确实含养亲；
+   * 但只要存在一条全血亲路径就不该标养。 */
+  const mixed = [
+    ...ar,
+    { from: 'AP2', to: 'AD2', type: '父子' }, { from: 'XBF', to: 'AP2', type: '父子' },
+  ];
+  const ac2 = [...ac, { id: 'AP2', gender: 'm' }];
+  const mt = buildTree(mixed, ac2);
+  const m = computeKin(mt, 'AP2', 'AD2');
+  ok(m.term === '父子' && !m.adoptive,
+    '养亲实现：血亲与养亲路径并存时判血亲，不误标「养」', { term: m.term, adoptive: m.adoptive });
+}
+
 console.log(`\n${'='.repeat(40)}`);
 console.log(`亲属称谓计算　通过：${pass}  失败：${fail}`);
 process.exit(fail > 0 ? 1 : 0);
