@@ -3307,7 +3307,7 @@
       "aliases": [
         "皇丈"
       ],
-      "generation": 2,
+      "generation": 0,
       "gender": "m",
       "firstCh": 20,
       "faction": "han",
@@ -8086,11 +8086,11 @@
     },
     {
       "id": "sun-he",
-      "name": "孙河",
+      "name": "孙和",
       "aliases": [
-        "俞河",
-        "名河",
-        "其父名河"
+        "孙和",
+        "孙和",
+        "其父孙和"
       ],
       "generation": 1,
       "gender": "m",
@@ -8099,7 +8099,8 @@
       "title": "孙桓之父",
       "desc": "本姓俞，得孙策赐姓孙",
       "fate": "未详",
-      "note": "本章仅提及"
+      "note": "本章仅提及",
+      "birthRank": 2
     },
     {
       "id": "ma-zhong",
@@ -9586,7 +9587,8 @@
       "desc": "孙权所立太子",
       "fate": "居武昌",
       "note": "",
-      "tier": "minor"
+      "tier": "minor",
+      "birthRank": 1
     },
     {
       "id": "yang-yong",
@@ -10152,7 +10154,8 @@
       "title": "吴主",
       "desc": "孙权三子，潘夫人所生",
       "fate": "继位，政归孙峻",
-      "note": ""
+      "note": "",
+      "birthRank": 3
     },
     {
       "id": "pan-furen",
@@ -11524,7 +11527,8 @@
       "title": "北地王",
       "desc": "后主五子，英敏刚烈",
       "fate": "哭昭烈庙，杀妻儿后自刎",
-      "note": "后主第五子，与诸弟同名易混"
+      "note": "后主第五子，与诸弟同名易混",
+      "birthRank": 5
     },
     {
       "id": "cui-furen",
@@ -12708,7 +12712,8 @@
       "desc": "蜀汉太子，后主之子",
       "fate": "被魏兵所杀",
       "note": "",
-      "tier": "minor"
+      "tier": "minor",
+      "birthRank": 1
     },
     {
       "id": "guan-yi",
@@ -30484,8 +30489,8 @@
       ]
     },
     {
-      "from": "liu-xun-zhangzi",
-      "to": "liu-zhang",
+      "from": "liu-zhang",
+      "to": "liu-xun-zhangzi",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -36004,8 +36009,8 @@
       "fromCh": 83
     },
     {
-      "from": "lu-xun",
-      "to": "lu-jun",
+      "from": "lu-jun",
+      "to": "lu-xun",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -36352,8 +36357,8 @@
       ]
     },
     {
-      "from": "xiahou-mao",
-      "to": "xiahou-yuan",
+      "from": "xiahou-yuan",
+      "to": "xiahou-mao",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -38491,8 +38496,8 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "sun-deng",
+      "from": "sun-deng",
+      "to": "sun-quan",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -38512,8 +38517,8 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "sun-jian",
+      "from": "sun-jian",
+      "to": "sun-quan",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -39056,8 +39061,8 @@
       ]
     },
     {
-      "from": "gongsun-kang",
-      "to": "gongsun-yuan",
+      "from": "gongsun-yuan",
+      "to": "gongsun-kang",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -41351,8 +41356,8 @@
       ]
     },
     {
-      "from": "zhuge-liang",
-      "to": "zhuge-zhan",
+      "from": "zhuge-zhan",
+      "to": "zhuge-liang",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -41823,8 +41828,8 @@
       ]
     },
     {
-      "from": "quan-ji",
-      "to": "quan-shang",
+      "from": "quan-shang",
+      "to": "quan-ji",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -47308,8 +47313,8 @@
       ]
     },
     {
-      "from": "liu-shan",
-      "to": "liu-xuan",
+      "from": "liu-xuan",
+      "to": "liu-shan",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -48165,8 +48170,8 @@
       ]
     },
     {
-      "from": "liu-bei",
-      "to": "liu-xuan",
+      "from": "liu-yan",
+      "to": "liu-xun-zhangzi",
       "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
@@ -48174,7 +48179,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
+          "text": "由 「刘焉 —父子→ 刘璋」、「刘璋 —父子→ 刘循」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -48750,21 +48755,6 @@
       ]
     },
     {
-      "from": "liu-hong",
-      "to": "liu-xuan",
-      "type": "曾祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
       "from": "dong-taihou",
       "to": "liu-bian",
       "type": "同父异母的姐弟（推导）",
@@ -48780,61 +48770,31 @@
       ]
     },
     {
-      "from": "sun-furen",
-      "to": "sun-jian",
-      "type": "姑侄（姑母与侄）（推导）",
+      "from": "sun-jian",
+      "to": "sun-huan",
+      "type": "曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
       "from": "sun-jian",
-      "to": "sun-huan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "to": "sun-he",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-he",
-      "to": "sun-jian",
-      "type": "同父异母的兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-deng",
-      "to": "sun-jian",
-      "type": "同父异母的兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -48842,7 +48802,7 @@
     {
       "from": "sun-jian",
       "to": "sun-liang",
-      "type": "同父异母的兄弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48857,21 +48817,21 @@
     {
       "from": "sun-jian",
       "to": "sun-hao",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "type": "曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-dun",
-      "to": "xiahou-hui",
+      "from": "xiahou-hui",
+      "to": "xiahou-dun",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -48879,14 +48839,14 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯惠」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-dun",
-      "to": "xiahou-he",
+      "from": "xiahou-he",
+      "to": "xiahou-dun",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -48894,14 +48854,14 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯和」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-dun",
-      "to": "xiahou-ba",
+      "from": "xiahou-ba",
+      "to": "xiahou-dun",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -48909,14 +48869,14 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯霸」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-dun",
-      "to": "xiahou-wei",
+      "from": "xiahou-wei",
+      "to": "xiahou-dun",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -48924,7 +48884,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」、「夏侯楙 —养父子→ 夏侯惇」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -48961,21 +48921,6 @@
     },
     {
       "from": "sun-ce",
-      "to": "sun-deng",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-ce",
       "to": "sun-liang",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
@@ -48999,7 +48944,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49155,21 +49100,6 @@
       ]
     },
     {
-      "from": "gan-furen",
-      "to": "liu-xuan",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
       "from": "yuan-feng",
       "to": "yuan-tan",
       "type": "同父异母的兄弟（推导）",
@@ -49239,7 +49169,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "text": "由 「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49254,7 +49184,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49269,22 +49199,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "wu-tai-furen",
-      "to": "sun-deng",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49314,22 +49229,22 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "wu-tai-furen",
-      "to": "sun-shao",
-      "type": "曾祖孙（推导）",
+      "from": "liu-xun",
+      "to": "liu-xun-zhangzi",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「刘焉 —父子→ 刘璋」、「刘璋 —父子→ 刘循」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49427,44 +49342,14 @@
     {
       "from": "gongsun-kang",
       "to": "gongsun-xiu",
-      "type": "祖孙（推导）",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "gongsun-du",
-      "to": "gongsun-yuan",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "gongsun-du",
-      "to": "gongsun-xiu",
-      "type": "曾祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "text": "由 「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49650,38 +49535,8 @@
       ]
     },
     {
-      "from": "liu-feng",
-      "to": "liu-xuan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
       "from": "zhuge-liang",
       "to": "zhuge-shang",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「诸葛亮 —父子→ 诸葛瞻」、「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "zhuge-gui",
-      "to": "zhuge-zhan",
       "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
@@ -49689,14 +49544,29 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「诸葛亮 —父子→ 诸葛瞻」 推导（原文没有直接互动）",
+          "text": "由 「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "zhuge-gui",
-      "to": "zhuge-shang",
+      "from": "zhuge-zhan",
+      "to": "zhuge-gui",
+      "type": "祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「诸葛瞻 —父子→ 诸葛亮」、「诸葛亮 —父子→ 诸葛珪」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "zhuge-shang",
+      "to": "zhuge-gui",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -49704,7 +49574,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「诸葛亮 —父子→ 诸葛瞻」、「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
+          "text": "由 「诸葛瞻 —父子→ 诸葛亮」、「诸葛亮 —父子→ 诸葛珪」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49794,22 +49664,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-furen",
-      "to": "sun-deng",
-      "type": "姑侄（姑母与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50042,14 +49897,14 @@
     {
       "from": "sun-deng",
       "to": "sun-huan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "type": "曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50057,14 +49912,14 @@
     {
       "from": "sun-liang",
       "to": "sun-huan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "type": "叔侄（叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50079,22 +49934,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙桓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-huan",
-      "to": "sun-shao",
-      "type": "堂兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50102,14 +49942,14 @@
     {
       "from": "sun-deng",
       "to": "sun-he",
-      "type": "同父异母的兄弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50130,8 +49970,8 @@
       ]
     },
     {
-      "from": "sun-he",
-      "to": "sun-shao",
+      "from": "sun-shao",
+      "to": "sun-he",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -50139,7 +49979,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50175,21 +50015,6 @@
       ]
     },
     {
-      "from": "liu-yong",
-      "to": "liu-xuan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
       "from": "liu-li",
       "to": "liu-chen",
       "type": "伯叔侄（伯叔父与侄）（推导）",
@@ -50200,21 +50025,6 @@
         {
           "chapter": "",
           "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘谌」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "liu-li",
-      "to": "liu-xuan",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50250,46 +50060,46 @@
       ]
     },
     {
-      "from": "xiahou-mao",
-      "to": "xiahou-hui",
-      "type": "祖孙（推导）",
+      "from": "xiahou-hui",
+      "to": "xiahou-mao",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯惠」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-mao",
-      "to": "xiahou-he",
-      "type": "祖孙（推导）",
+      "from": "xiahou-he",
+      "to": "xiahou-mao",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯和」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "xiahou-mao",
-      "to": "xiahou-ba",
-      "type": "祖孙（推导）",
+      "from": "xiahou-ba",
+      "to": "xiahou-mao",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯霸」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯楙」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50297,14 +50107,14 @@
     {
       "from": "xiahou-mao",
       "to": "xiahou-wei",
-      "type": "祖孙（推导）",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50417,7 +50227,7 @@
     {
       "from": "sun-deng",
       "to": "sun-liang",
-      "type": "同父异母的兄弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -50432,29 +50242,14 @@
     {
       "from": "sun-deng",
       "to": "sun-hao",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "type": "曾祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-deng",
-      "to": "sun-shao",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50469,7 +50264,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯惠」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯惠」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50484,7 +50279,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50499,7 +50294,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯和」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50514,7 +50309,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50529,7 +50324,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「夏侯楙 —父子→ 夏侯渊」、「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
+          "text": "由 「夏侯渊 —父子→ 夏侯威」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -50537,6 +50332,21 @@
     {
       "from": "sun-liang",
       "to": "sun-hao",
+      "type": "叔侄（叔父与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-shao",
+      "to": "sun-liang",
       "type": "伯叔侄（伯叔父与侄）（推导）",
       "style": "dotted",
       "derived": true,
@@ -50544,29 +50354,29 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙河」、「孙河 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙亮」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "sun-liang",
-      "to": "sun-shao",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "from": "quan-hou",
+      "to": "quan-ji",
+      "type": "同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
+          "text": "由 「全尚 —父子→ 全纪」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
     },
     {
-      "from": "quan-ji",
-      "to": "quan-hou",
+      "from": "liu-xuan",
+      "to": "liu-chen",
       "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
@@ -50574,37 +50384,7 @@
       "events": [
         {
           "chapter": "",
-          "text": "由 「全纪 —父子→ 全尚」、「全尚 —父女→ 全后」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-hao",
-      "to": "sun-shao",
-      "type": "堂兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙坚」、「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "liu-chen",
-      "to": "liu-xuan",
-      "type": "同父异母的兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘璿」 推导（原文没有直接互动）",
+          "text": "由 「刘弘 —父子→ 刘备」、「刘备 —父子→ 刘禅」、「刘禅 —父子→ 刘谌」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
