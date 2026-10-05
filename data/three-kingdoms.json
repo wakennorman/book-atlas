@@ -2490,34 +2490,6 @@
       "note": "字公祐"
     },
     {
-      "id": "tao-shang",
-      "name": "陶商",
-      "aliases": [],
-      "generation": 1,
-      "gender": "m",
-      "firstCh": 12,
-      "faction": "qunxiong",
-      "title": "陶谦长子",
-      "desc": "陶谦言其才不堪任",
-      "fate": "不得掌州事",
-      "note": "本传只说「老夫年迈，二子不才，不堪国家重任」——原书**从未点名**两个儿子，「商」出自《三国志·陶谦传》。此处保留史书名，方便读者查得到。",
-      "tier": "minor"
-    },
-    {
-      "id": "tao-ying",
-      "name": "陶应",
-      "aliases": [],
-      "generation": 1,
-      "gender": "m",
-      "firstCh": 12,
-      "faction": "qunxiong",
-      "title": "陶谦次子",
-      "desc": "陶谦言其才不堪任",
-      "fate": "不得掌州事",
-      "note": "同陶商：原书只称「二子」，名见《三国志·陶谦传》。",
-      "tier": "minor"
-    },
-    {
       "id": "he-yi",
       "name": "何仪",
       "aliases": [],
@@ -9444,7 +9416,7 @@
       "title": "魏将",
       "desc": "魏将，张郃副将。",
       "fate": "劫寨被围，得张郃救回。",
-      "note": "原书**未出现**此人（0 次）；见《三国志·张郃传》。⚠ 原有关系事件写「懿令戴陵等打阵，被擒受辱」，而原书里「打阵」0 次 —— 那句不是引文。",
+      "note": "原书**有此人**，第100回司马懿派兵劫寨时写的是「张、戴二人自纵马视之，只见数百辆草车横截去路」「不独张、戴二人所不料」——**只写姓氏「戴」，全名「戴陵」0 次**（全名见《三国志·张郃传》）。⚠ 原 note 写「原书未出现此人」是错的：查的是全名，不是这个人在不在。",
       "tier": "minor"
     },
     {
@@ -9827,20 +9799,6 @@
       "desc": "辽东反魏，改元绍汉",
       "fate": "兴兵入寇，摇动北方",
       "note": "公孙度之孙"
-    },
-    {
-      "id": "gongsun-huang",
-      "name": "公孙晃",
-      "aliases": [],
-      "generation": 3,
-      "gender": "m",
-      "firstCh": 106,
-      "faction": "qunxiong",
-      "title": "",
-      "desc": "公孙康长子，公孙渊之兄",
-      "fate": "渊败后宗族被诛",
-      "note": "原书写公孙康其人（12 次），但**全篇未提他的两个儿子**；「晃」见《三国志·公孙渊传》。本条 4 条关系里 3 条是推导边（原文没有直接互动）。",
-      "tier": "minor"
     },
     {
       "id": "gongsun-xiu",
@@ -16114,34 +16072,6 @@
         }
       ],
       "fromCh": 8
-    },
-    {
-      "from": "tao-qian",
-      "to": "tao-shang",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "陶谦临终言长子商才不堪任",
-          "chapter": "第12章",
-          "place": "xuzhou"
-        }
-      ]
-    },
-    {
-      "from": "tao-qian",
-      "to": "tao-ying",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "陶谦言次子应亦不堪掌州事",
-          "chapter": "第12章",
-          "place": "xuzhou"
-        }
-      ]
     },
     {
       "from": "tao-qian",
@@ -37096,20 +37026,6 @@
       ]
     },
     {
-      "from": "gongsun-kang",
-      "to": "gongsun-huang",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "公孙康二子：长晃、次渊，康死时皆幼",
-          "chapter": "第106章",
-          "place": "xiang-ping"
-        }
-      ]
-    },
-    {
       "from": "gongsun-du",
       "to": "gongsun-gong",
       "type": "父子",
@@ -46212,20 +46128,6 @@
     },
     {
       "from": "gongsun-du",
-      "to": "gongsun-huang",
-      "type": "祖孙（推导）",
-      "kin": "blood",
-      "style": "dotted",
-      "derived": true,
-      "events": [
-        {
-          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙晃」 推导（原文没有直接互动）",
-          "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "gongsun-du",
       "to": "gongsun-xiu",
       "type": "曾祖孙（推导）",
       "kin": "blood",
@@ -46802,34 +46704,6 @@
       "events": [
         {
           "text": "由「孙河 与 孙亮 同为 孙权 的子女」＋「孙河 有子女 孙皓」推导（原文没有直接互动）",
-          "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "gongsun-gong",
-      "to": "gongsun-huang",
-      "type": "伯叔侄（推导）",
-      "kin": "blood",
-      "style": "dotted",
-      "derived": true,
-      "events": [
-        {
-          "text": "由「公孙恭 与 公孙康 同为 公孙度 的子女」＋「公孙康 有子女 公孙晃」推导（原文没有直接互动）",
-          "chapter": ""
-        }
-      ]
-    },
-    {
-      "from": "gongsun-huang",
-      "to": "gongsun-xiu",
-      "type": "伯叔侄（推导）",
-      "kin": "blood",
-      "style": "dotted",
-      "derived": true,
-      "events": [
-        {
-          "text": "由「公孙晃 与 公孙渊 同为 公孙康 的子女」＋「公孙渊 有子女 公孙修」推导（原文没有直接互动）",
           "chapter": ""
         }
       ]
