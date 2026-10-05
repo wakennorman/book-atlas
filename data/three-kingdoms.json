@@ -480,7 +480,7 @@
         "曹皇后"
       ],
       "generation": 1,
-      "gender": "m",
+      "gender": "f",
       "firstCh": 1,
       "faction": "han",
       "title": "中常侍",
@@ -9775,7 +9775,7 @@
       "aliases": [
         "燕王"
       ],
-      "generation": 1,
+      "generation": 3,
       "gender": "m",
       "firstCh": 105,
       "faction": "qunxiong",
@@ -10537,7 +10537,7 @@
         "子通",
         "丞相孙綝"
       ],
-      "generation": 1,
+      "generation": 4,
       "gender": "m",
       "firstCh": 111,
       "faction": "wu",
@@ -39029,8 +39029,8 @@
       ]
     },
     {
-      "from": "gongsun-yuan",
-      "to": "gongsun-kang",
+      "from": "gongsun-kang",
+      "to": "gongsun-yuan",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -39044,7 +39044,7 @@
       ]
     },
     {
-      "from": "gongsun-du",
+      "from": "gongsun-kang",
       "to": "gongsun-gong",
       "type": "父子",
       "kin": "blood",
@@ -40596,8 +40596,8 @@
       ]
     },
     {
-      "from": "wang-jing",
-      "to": "wang-jing-mu",
+      "from": "wang-jing-mu",
+      "to": "wang-jing",
       "type": "母子",
       "kin": "blood",
       "style": "solid",
@@ -43326,8 +43326,8 @@
       ]
     },
     {
-      "from": "han-lingdi",
-      "to": "dong-taihou",
+      "from": "dong-taihou",
+      "to": "han-lingdi",
       "type": "母子",
       "kin": "blood",
       "style": "solid",
@@ -48230,7 +48230,7 @@
     {
       "from": "cao-ang",
       "to": "cao-jie",
-      "type": "同父异母的兄弟（推导）",
+      "type": "同父异母的兄妹（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48245,7 +48245,7 @@
     {
       "from": "cao-jie",
       "to": "cao-zhi",
-      "type": "同父异母的兄弟（推导）",
+      "type": "同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48260,7 +48260,7 @@
     {
       "from": "cao-guiren",
       "to": "cao-jie",
-      "type": "同父异母的姐弟（推导）",
+      "type": "同父异母的姐妹（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48275,7 +48275,7 @@
     {
       "from": "cao-jie",
       "to": "cao-zhang",
-      "type": "同父异母的兄弟（推导）",
+      "type": "同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48290,7 +48290,7 @@
     {
       "from": "cao-jie",
       "to": "cao-xiong",
-      "type": "同父异母的兄弟（推导）",
+      "type": "同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48305,7 +48305,7 @@
     {
       "from": "cao-jie",
       "to": "cao-rui",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "type": "姑侄（姑母与侄）（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48320,7 +48320,7 @@
     {
       "from": "cao-jie",
       "to": "qinghe-gongzhu",
-      "type": "同父异母的兄妹（推导）",
+      "type": "同父异母的姐妹（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48335,7 +48335,7 @@
     {
       "from": "cao-jie",
       "to": "dian-man",
-      "type": "同父异母的兄弟（推导）",
+      "type": "同父异母的姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -48725,7 +48725,7 @@
     {
       "from": "dong-taihou",
       "to": "liu-bian",
-      "type": "同父异母的姐弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -49355,14 +49355,74 @@
     {
       "from": "gongsun-kang",
       "to": "gongsun-xiu",
-      "type": "同父异母的兄弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "text": "由 「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-gong",
+      "type": "祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙恭」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "gongsun-gong",
+      "to": "gongsun-xiu",
+      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-yuan",
+      "type": "祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "gongsun-du",
+      "to": "gongsun-xiu",
+      "type": "曾祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「公孙度 —父子→ 公孙康」、「公孙康 —父子→ 公孙渊」、「公孙渊 —父子→ 公孙修」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]

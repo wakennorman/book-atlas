@@ -639,8 +639,8 @@
   ],
   "relations": [
     {
-      "from": "raskolnikov",
-      "to": "pulkheria",
+      "from": "pulkheria",
+      "to": "raskolnikov",
       "type": "母子",
       "style": "solid",
       "events": [

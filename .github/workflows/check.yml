@@ -230,6 +230,16 @@ jobs:
         # 拿它当门禁会天天误报。这份报告是给人看的，不是判决。
         run: node scripts/audit-relation-actors.mjs
 
+      - name: 亲子边的性别自洽（type 与 gender 必须对得上）
+        # 这是**硬门禁**，与上面两个只读审计不同。
+        # 起因 v0.108：靠它抓出 4 条 —— 3 条亲子边方向反了
+        # （王经母 / 董太后 / 普尔赫莉雅都被填成了儿子），1 条性别填错（曹节）。
+        # 而 audit-kin-direction 抓不到那 3 条：它只查**代号递增**，
+        # 父子**同代**的方向错误它看不见。
+        # 判据可靠：type 的四个值已经把父母性别写死（父子/父女/母子/母女），
+        # gender 是独立标注的，对不上就是错 —— 不需要回原文。
+        run: node scripts/audit-kin-gender.mjs
+
       - name: 搜索命中率审计（别名覆盖 / 译名变体 / 疑似漏人 / 同名）
         run: node scripts/audit-search.mjs --all
 
