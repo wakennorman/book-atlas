@@ -23,3 +23,6 @@ node_modules/
 # 原著正文（extract-epub.mjs 的输出）：**不入版本库**（有版权，而且体积大）。
 # audit-against-text.mjs 需要它时本地跑一次即可，见 docs/新书处理规程.md §四 0.5/0.6。
 .text/
+
+# 审计报告：每次跑都会重生成，进 git 会掩盖真正的代码改动
+reports/
