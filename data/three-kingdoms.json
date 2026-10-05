@@ -2282,7 +2282,7 @@
         "孙郎",
         "孙伯符"
       ],
-      "generation": 1,
+      "generation": 2,
       "gender": "m",
       "firstCh": 8,
       "faction": "wu",
@@ -5154,24 +5154,6 @@
       "note": ""
     },
     {
-      "id": "zhuge-gui",
-      "name": "诸葛珪",
-      "aliases": [
-        "子贡",
-        "名珪",
-        "君贡"
-      ],
-      "generation": 3,
-      "gender": "m",
-      "firstCh": 36,
-      "faction": "han",
-      "title": "泰山郡丞",
-      "desc": "诸葛亮之父，任泰山郡丞早卒",
-      "fate": "早卒",
-      "note": "",
-      "tier": "minor"
-    },
-    {
       "id": "zhuge-xuan",
       "name": "诸葛玄",
       "aliases": [
@@ -7974,7 +7956,7 @@
         "叔武",
         "安东将军"
       ],
-      "generation": 1,
+      "generation": 4,
       "gender": "m",
       "firstCh": 82,
       "faction": "wu",
@@ -8092,7 +8074,7 @@
         "孙和",
         "其父孙和"
       ],
-      "generation": 1,
+      "generation": 3,
       "gender": "m",
       "firstCh": 82,
       "faction": "wu",
@@ -9579,7 +9561,7 @@
       "aliases": [
         "子高"
       ],
-      "generation": 1,
+      "generation": 3,
       "gender": "m",
       "firstCh": 98,
       "faction": "wu",
@@ -10147,7 +10129,7 @@
       "aliases": [
         "会稽王"
       ],
-      "generation": 2,
+      "generation": 3,
       "gender": "m",
       "firstCh": 108,
       "faction": "wu",
@@ -11240,14 +11222,15 @@
         "子烈",
         "吴主孙休"
       ],
-      "generation": 1,
+      "generation": 3,
       "gender": "m",
       "firstCh": 117,
       "faction": "wu",
       "title": "东吴皇帝",
       "desc": "得蜀告急书，发兵相救",
       "fate": "遣丁奉三路援蜀",
-      "note": "文中仅提其名"
+      "note": "文中仅提其名",
+      "birthRank": 6
     },
     {
       "id": "hu-shi",
@@ -11461,7 +11444,7 @@
         "元宗",
         "归命侯"
       ],
-      "generation": 2,
+      "generation": 4,
       "gender": "m",
       "firstCh": 113,
       "faction": "wu",
@@ -12804,7 +12787,7 @@
       "aliases": [
         "太子孙"
       ],
-      "generation": 1,
+      "generation": 4,
       "gender": "m",
       "firstCh": 120,
       "faction": "wu",
@@ -24606,21 +24589,6 @@
           "text": "诸葛均自陈乃孔明之弟",
           "chapter": "第37章",
           "place": "wolong-gang",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
-      "from": "zhuge-liang",
-      "to": "zhuge-gui",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "其父诸葛珪为泰山郡丞，早卒",
-          "chapter": "第36章",
-          "place": "",
           "evidence": "paraphrase"
         }
       ]
@@ -38496,8 +38464,8 @@
       ]
     },
     {
-      "from": "sun-deng",
-      "to": "sun-quan",
+      "from": "sun-quan",
+      "to": "sun-deng",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -48801,6 +48769,21 @@
     },
     {
       "from": "sun-jian",
+      "to": "sun-deng",
+      "type": "祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-jian",
       "to": "sun-liang",
       "type": "祖孙（推导）",
       "style": "dotted",
@@ -48915,6 +48898,21 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母女→ 孙夫人」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "sun-deng",
+      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49200,6 +49198,21 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "wu-tai-furen",
+      "to": "sun-deng",
+      "type": "祖孙（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49550,36 +49563,6 @@
       ]
     },
     {
-      "from": "zhuge-zhan",
-      "to": "zhuge-gui",
-      "type": "祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「诸葛瞻 —父子→ 诸葛亮」、「诸葛亮 —父子→ 诸葛珪」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "zhuge-shang",
-      "to": "zhuge-gui",
-      "type": "伯叔侄（伯叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「诸葛瞻 —父子→ 诸葛亮」、「诸葛亮 —父子→ 诸葛珪」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
       "from": "si-ma-yi",
       "to": "si-ma-jun",
       "type": "祖孙（推导）",
@@ -49665,6 +49648,21 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-furen",
+      "to": "sun-deng",
+      "type": "姑侄（姑母与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49897,7 +49895,7 @@
     {
       "from": "sun-deng",
       "to": "sun-huan",
-      "type": "曾祖孙（推导）",
+      "type": "叔侄（伯父与侄）（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -49942,7 +49940,7 @@
     {
       "from": "sun-deng",
       "to": "sun-he",
-      "type": "祖孙（推导）",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -50227,7 +50225,7 @@
     {
       "from": "sun-deng",
       "to": "sun-liang",
-      "type": "祖孙（推导）",
+      "type": "同父异母的兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -50242,7 +50240,7 @@
     {
       "from": "sun-deng",
       "to": "sun-hao",
-      "type": "曾祖孙（推导）",
+      "type": "叔侄（伯父与侄）（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
@@ -50250,6 +50248,21 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-shao",
+      "to": "sun-deng",
+      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙登」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]

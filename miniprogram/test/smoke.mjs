@@ -131,11 +131,12 @@ ok(inst.data.panel === null, '关闭面板');
 console.log('— 切书 —');
 inst.onBook({ detail: { value: 2 } });
 ok(inst.g.pack.slug === 'three-kingdoms', '切到《三国演义》');
-/* 868 = 871 − 3：v0.100 按「从原著出发」删掉了 3 个只在《三国志》里、
- * 《三国演义》原文 0 次的人物（陶商 / 陶应 / 公孙晃）。
+/* 867 = 871 − 4：
+ *   v0.100 删了 3 个只在《三国志》里、《三国演义》原文 0 次的人物（陶商 / 陶应 / 公孙晃）
+ *   v0.106 又删了 1 个（诸葛珪，原文 0 次，用户裁定"小说没有就算了"）
  * ⚠ 这个数字是**硬编码的期望值**，故意不写成"读数据里的长度" ——
  *   那样写就等于"数据是多少就认为多少"，人数被误删也照样绿。 */
-ok(inst.g.pack.characters.length === 868, '三国 868 人');
+ok(inst.g.pack.characters.length === 867, '三国 867 人');
 inst.render();
 ok(/三国演义/.test(inst.data.status), '状态行跟着书变：' + inst.data.status);
 inst.setChapter(31);
