@@ -8070,9 +8070,7 @@
       "id": "sun-he",
       "name": "孙和",
       "aliases": [
-        "孙和",
-        "孙和",
-        "其父孙和"
+        "次子"
       ],
       "generation": 3,
       "gender": "m",
@@ -8081,7 +8079,7 @@
       "title": "孙桓之父",
       "desc": "本姓俞，得孙策赐姓孙",
       "fate": "未详",
-      "note": "本章仅提及",
+      "note": "孙权次子（「遂立次子孙和为太子」）。⚠ v0.105 曾把孙河（俞氏，孙策赐姓）与本者误并为一人，v0.112 已拆开。",
       "birthRank": 2
     },
     {
@@ -13173,6 +13171,25 @@
       "desc": "与张飞一同守巴西，献计夹击张郃。",
       "fate": "中张郃埋伏，被刺于马下。",
       "generation": 1
+    },
+    {
+      "id": "sun-he-orig",
+      "name": "孙河",
+      "aliases": [
+        "俞河",
+        "名河",
+        "其父名河",
+        "本姓俞氏",
+        "俞氏"
+      ],
+      "generation": 3,
+      "gender": "m",
+      "faction": "wu",
+      "title": "",
+      "desc": "本姓俞氏，孙策爱之赐姓孙，因此系吴王宗族。孙桓之父，生四子桓居其长",
+      "fate": "",
+      "note": "⚠ 原著写作「其父名河，本姓俞氏」——姓是孙策所赐，故原文里「孙河」0 次。与孙权次子「孙和」是两个人，v0.105 曾误并为一人，v0.112 拆开。",
+      "tier": "minor"
     }
   ],
   "relations": [
@@ -26006,23 +26023,6 @@
       ]
     },
     {
-      "from": "wu-tai-furen",
-      "to": "sun-quan",
-      "type": "姨母兼继母",
-      "kin": "step",
-      "style": "solid",
-      "events": [
-        {
-          "text": "吴国太见权寝食不安，问其心事",
-          "chapter": "第43章",
-          "place": "chaisang-jun",
-          "evidence": "paraphrase"
-        }
-      ],
-      "fromCh": 43,
-      "toCh": 44
-    },
-    {
       "from": "liu-bei",
       "to": "zhuge-liang",
       "type": "君臣",
@@ -27225,22 +27225,6 @@
           "evidence": "paraphrase"
         }
       ]
-    },
-    {
-      "from": "sun-quan",
-      "to": "wu-tai-furen",
-      "type": "姨母与外甥",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "国太劝权请周瑜决外事",
-          "chapter": "第44章",
-          "place": "chaisang",
-          "evidence": "paraphrase"
-        }
-      ],
-      "fromCh": 44
     },
     {
       "from": "cheng-pu",
@@ -34006,7 +33990,7 @@
     },
     {
       "from": "sun-ce",
-      "to": "sun-he",
+      "to": "sun-he-orig",
       "type": "赐姓收养",
       "kin": "sworn",
       "style": "solid",
@@ -34020,7 +34004,7 @@
       ]
     },
     {
-      "from": "sun-he",
+      "from": "sun-he-orig",
       "to": "sun-huan",
       "type": "父子",
       "kin": "blood",
@@ -48724,21 +48708,6 @@
     },
     {
       "from": "sun-jian",
-      "to": "sun-huan",
-      "type": "曾祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-jian",
       "to": "sun-he",
       "type": "祖孙（推导）",
       "style": "dotted",
@@ -48823,6 +48792,21 @@
         {
           "chapter": "",
           "text": "由 「吴太夫人 —母女→ 孙夫人」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "sun-he",
+      "type": "伯叔侄（伯叔父与侄）（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "blood",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49093,21 +49077,6 @@
         {
           "chapter": "",
           "text": "由 「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "wu-tai-furen",
-      "to": "sun-huan",
-      "type": "曾祖孙（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
@@ -49843,51 +49812,6 @@
         {
           "chapter": "",
           "text": "由 「曹腾 —养父子→ 曹嵩」、「曹嵩 —父子→ 曹操」、「曹操 —父子→ 曹丕」、「曹丕 —父子→ 曹睿」、「曹睿 —养父子→ 曹芳」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-deng",
-      "to": "sun-huan",
-      "type": "叔侄（伯父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-liang",
-      "to": "sun-huan",
-      "type": "叔侄（叔父与侄）（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "sun-hao",
-      "to": "sun-huan",
-      "type": "同父异母的兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「吴太夫人 —母子→ 孙权」、「孙权 —父子→ 孙和」、「孙和 —父子→ 孙桓」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]
