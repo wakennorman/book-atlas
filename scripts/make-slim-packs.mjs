@@ -116,6 +116,10 @@ function split(book) {
           const x = {};
           put(x, 'chapter', e.chapter);
           put(x, 'place', e.place);
+          /* evidence：v0.102 新增。quote＝逐字原文，paraphrase＝转述，derived＝推导说明。
+           * 不进白名单的话浏览器读不到，界面就没法告诉读者这句到底是原文还是转述 ——
+           * 而这正是「引文存在 ≠ 引文支持关系」那个问题的呈现层出口。 */
+          put(x, 'evidence', e.evidence);
           return x;
         });
       }
@@ -130,6 +134,7 @@ function split(book) {
       put(o, 'order', e.order);
       put(o, 'place', e.place);
       put(o, 'chars', e.chars);
+      put(o, 'evidence', e.evidence);
       return o;
     }),
   };
@@ -156,6 +161,9 @@ function split(book) {
       if (!has(e.text) && !has(e.quote)) return;
       const x = { i: j };
       put(x, 't', e.text);
+      /* evidence 一起进文案包：文案与等级必须同时到浏览器，
+       * 只给一边会出现"有原文标记但没文案"或反之的错配。 */
+      put(x, 'ev', e.evidence);
       put(x, 'q', e.quote);
       out.push(x);
     });

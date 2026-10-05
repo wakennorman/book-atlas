@@ -1028,16 +1028,19 @@
         {
           "text": "乌尔苏拉怕生出猪尾巴的孩子，长期拒绝同房；斗鸡风波后，她与何塞·阿尔卡蒂奥·布恩迪亚圆房，并随他踏上寻找新家园的路。",
           "chapter": "第1章",
-          "place": "riohacha"
+          "place": "riohacha",
+          "evidence": "paraphrase"
         },
         {
           "text": "何塞·阿尔卡蒂奥·布恩迪亚疯后被绑在栗树下，乌尔苏拉一边骂他，一边照料他到死。",
           "chapter": "第4章",
-          "place": "castano"
+          "place": "castano",
+          "evidence": "paraphrase"
         },
         {
           "text": "晚年他只会说拉丁语，为了跟他说话，乌尔苏拉也学会了几句粗浅的拉丁语。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -1051,7 +1054,8 @@
         {
           "text": "普鲁邓希奥·阿基拉尔斗鸡后当众嘲讽老何塞的男性能力，被老何塞一矛刺死；他的亡魂自此出现在布恩迪亚家中。",
           "chapter": "第1章",
-          "place": "riohacha"
+          "place": "riohacha",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1064,11 +1068,13 @@
         {
           "text": "梅尔基亚德斯带来磁铁、放大镜与炼金术；何塞·阿尔卡蒂奥·布恩迪亚把家产熔成金鱼，也从此迷上永动钟表般的执念。",
           "chapter": "第1章",
-          "place": "taller"
+          "place": "taller",
+          "evidence": "paraphrase"
         },
         {
           "text": "何塞·阿尔卡蒂奥·布恩迪亚和梅尔基亚德斯常在作坊里通宵折腾炼金术与天文；梅尔基亚德斯死后，他的亡灵仍留在那间屋里。",
-          "chapter": "第1章"
+          "chapter": "第1章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1081,7 +1087,8 @@
         {
           "text": "大儿子何塞·阿尔卡蒂奥（第二代，绰号「巨人」）继承了父亲的体格与冲动，在迁徙途中出生。",
           "chapter": "第2章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1095,7 +1102,8 @@
         {
           "text": "何塞·阿尔卡蒂奥·布恩迪亚带小儿子奥雷里亚诺去看冰块的那个下午——全书开头的回忆。",
           "chapter": "第1章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1108,7 +1116,8 @@
       "events": [
         {
           "text": "维希塔香替乌尔苏拉照看孩子，是这个家最早的外来帮手之一。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1120,7 +1129,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥和阿玛兰妲跟着维希塔香学说瓜希拉语，把她当半个母亲。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1132,7 +1142,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第二代）少年时与皮拉尔·特内拉相好并让她怀孕；随后他跟吉普赛女郎出走，儿子阿尔卡蒂奥由乌尔苏拉收养。",
-          "chapter": "第2–3章"
+          "chapter": "第2–3章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1144,7 +1155,8 @@
       "events": [
         {
           "text": "哥哥出走后，皮拉尔·特内拉又成了奥雷里亚诺的情人，为他生下奥雷里亚诺·何塞。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1156,11 +1168,13 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第二代，绰号「巨人」）端着猎枪冲出行刑场，救下弟弟奥雷里亚诺；行刑队上尉罗克·卡尼塞罗举手投降：别开枪，你是上帝派来的嘛。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         },
         {
           "text": "没人知道何塞·阿尔卡蒂奥（第二代，绰号「巨人」）救过弟弟奥雷里亚诺的命：他从不向任何人提起阻止行刑那件事。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1173,11 +1187,13 @@
       "events": [
         {
           "text": "奥雷里亚诺还是银匠时，在镇长家见到9岁的蕾梅黛丝·莫科特；两人成婚不久，蕾梅黛丝死于血中毒，腹中双胞胎同死。",
-          "chapter": "第4–5章"
+          "chapter": "第4–5章",
+          "evidence": "paraphrase"
         },
         {
           "text": "婚后她每天早晨给他送一杯黑咖啡到作坊；她死后，卧室里的玩偶和玩具很多年没有人动。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -1190,7 +1206,8 @@
       "events": [
         {
           "text": "阿波利纳尔·莫科特把家搬到马孔多当里正，小女儿蕾梅黛丝·莫科特后来嫁给了奥雷里亚诺。",
-          "chapter": "第4章"
+          "chapter": "第4章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1203,7 +1220,8 @@
       "events": [
         {
           "text": "选举舞弊时阿波利纳尔·莫科特站在政府一边；女婿奥雷里亚诺带人夺了兵营，两家人从此站到了对立面。",
-          "chapter": "第4–5章"
+          "chapter": "第4–5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "inlaw"
@@ -1216,7 +1234,8 @@
       "events": [
         {
           "text": "蕾梅黛丝·莫科特死后，莫科特一家与布恩迪亚家渐渐疏远。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "inlaw"
@@ -1229,7 +1248,8 @@
       "events": [
         {
           "text": "尼卡诺尔·雷伊纳神父靠一杯热巧克力升空募款建教堂；教堂建好时，丽贝卡的婚礼已经作废了。",
-          "chapter": "第4章"
+          "chapter": "第4章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1241,7 +1261,8 @@
       "events": [
         {
           "text": "皮埃特罗·克雷斯比与丽贝卡的婚约一再推迟，后来他转向阿玛兰妲，又被她拒绝，遂自杀。",
-          "chapter": "第4–5章"
+          "chapter": "第4–5章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1253,7 +1274,8 @@
       "events": [
         {
           "text": "意大利琴师皮埃特罗·克雷斯比教丽贝卡与阿玛兰妲跳舞；他与丽贝卡的婚礼因教堂迟迟未建而一拖再拖。",
-          "chapter": "第3–4章"
+          "chapter": "第3–4章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1265,11 +1287,13 @@
       "events": [
         {
           "text": "阿玛兰妲与丽贝卡为皮埃特罗·克雷斯比明争暗斗；阿玛兰妲搞来鸦片酊打算阻止婚礼，蕾梅黛丝·莫科特却因此死去，两人终身互不原谅。",
-          "chapter": "第4–5章"
+          "chapter": "第4–5章",
+          "evidence": "paraphrase"
         },
         {
           "text": "晚年的阿玛兰妲每天擦洗身体、更换黑绷带时都会想起丽贝卡——爱与恨都没让她放下。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "adoptive"
@@ -1282,7 +1306,8 @@
       "events": [
         {
           "text": "原文一面写蕾梅黛丝·莫科特死于血中毒，一面写阿玛兰妲自认把疯狂弄来的鸦片酊偶然放进了蕾梅黛丝的咖啡；阿玛兰妲为此终生自责。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1294,11 +1319,13 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第二代，绰号「巨人」）归来后与丽贝卡狂热相爱；两人不顾家族反对结婚，被乌尔苏拉赶出家门。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         },
         {
           "text": "他在卧室中枪身亡后，丽贝卡的嫌疑最大，但没有谁想得出她的动机——这成了马孔多唯一从未解开的谜团。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -1311,11 +1338,13 @@
       "events": [
         {
           "text": "乌尔苏拉收养了丽贝卡；后来因丽贝卡嫁给何塞·阿尔卡蒂奥（被全家视作哥哥）而将她赶出家门。",
-          "chapter": "第3、5章"
+          "chapter": "第3、5章",
+          "evidence": "paraphrase"
         },
         {
           "text": "多年后乌尔苏拉仍说丽贝卡没有一点坏处；奥雷里亚诺第二想接她回老宅养老，丽贝卡宁可守着自己的孤独，也不肯接受施舍。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "adoptive"
@@ -1329,11 +1358,13 @@
         {
           "text": "何塞·阿尔卡蒂奥（第二代）被母亲乌尔苏拉赶出家门；他死后，血穿过全镇流到了她的厨房。",
           "chapter": "第5、7章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         },
         {
           "text": "乌尔苏拉满镇子找过出走的儿子，找不到；多年后他带着满身纹身回来，她又亲手把他赶出了门。",
-          "chapter": "第2、5章"
+          "chapter": "第2、5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1346,7 +1377,8 @@
       "events": [
         {
           "text": "赫里内勒多·马尔克斯跟着奥雷里亚诺上校南征北战；他爱慕阿玛兰妲，到老也没有娶到她。",
-          "chapter": "第5–8章"
+          "chapter": "第5–8章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1358,11 +1390,13 @@
       "events": [
         {
           "text": "阿玛兰妲照顾赫里内勒多·马尔克斯的起居，又拒绝了他的求婚：我死也不会嫁给你。",
-          "chapter": "第8章"
+          "chapter": "第8章",
+          "evidence": "paraphrase"
         },
         {
           "text": "他每天下午到她的缝纫室坐几个钟头，两人几乎不说话；她踩着缝纫机，等他先开口。",
-          "chapter": "第9章"
+          "chapter": "第9章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1374,7 +1408,8 @@
       "events": [
         {
           "text": "奥雷里亚诺上校带人翻山去营救维克多里奥·麦丁纳将军，赶到时将军已被枪决；部下随后推举上校为总司令。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1386,7 +1421,8 @@
       "events": [
         {
           "text": "格雷戈里奥·史蒂文森上校扮成卖扫帚的老妇穿过封锁，用一条小金鱼证明身份——那是奥雷里亚诺上校亲手做的。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1398,7 +1434,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥不信这名信使的话，把格雷戈里奥·史蒂文森关了起来；兵营被攻破时，才放他出来打最后一仗。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1410,7 +1447,8 @@
       "events": [
         {
           "text": "阿玛兰妲把侄子奥雷里亚诺·何塞抚养长大，又与他厮混；他求婚后出走，战死。",
-          "chapter": "第5–7章"
+          "chapter": "第5–7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1423,11 +1461,13 @@
       "events": [
         {
           "text": "奥雷里亚诺·何塞在妓院遇见皮拉尔·特内拉，得知她是自己的生母，两人成了孤独中的同谋。",
-          "chapter": "第4章"
+          "chapter": "第4章",
+          "evidence": "paraphrase"
         },
         {
           "text": "皮拉尔早给他算过命：他本该和卡梅莉塔·蒙铁尔生下七个孩子，最后老死在她怀里——纸牌算命的失误只给了他一颗从背后穿入的步枪子弹。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1440,7 +1480,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥试图勾引皮拉尔·特内拉；她花钱请圣索菲亚·德拉·彼达替自己「挡」下这场乱伦。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1453,11 +1494,13 @@
       "events": [
         {
           "text": "桑塔索菲亚·德拉·彼达为阿尔卡蒂奥生下美人儿蕾梅黛丝与双胞胎；阿尔卡蒂奥死后，她继续操持家务数十年。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         },
         {
           "text": "他死前最后两小时想到的是她：想到她昨夜替他腌好的鹿肉，想到她披散在肩头的发丝和仿佛出自人工的睫毛。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1469,7 +1512,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥是父亲何塞·阿尔卡蒂奥（第二代）与皮拉尔·特内拉的私生子，出生时父亲已随吉普赛人出走；阿尔卡蒂奥掌权后登门，把父亲强占的土地合法化，条件是让地方当局替父亲收税。",
-          "chapter": "第2–6章"
+          "chapter": "第2–6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1482,7 +1526,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥死前最后的心愿，是给即将出生的女儿取名「乌尔苏拉」；乌尔苏拉奶奶最终给这个女孩取名美人儿蕾梅黛丝。",
-          "chapter": "第6–7章"
+          "chapter": "第6–7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1495,11 +1540,13 @@
       "events": [
         {
           "text": "桑塔索菲亚·德拉·彼达把美人儿蕾梅黛丝和双胞胎一起养在老宅里，直到自己离开这个家。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         },
         {
           "text": "她一天要在浴室里待上两个钟头，桑塔索菲亚怕她出事，守在门口喊她的名字。",
-          "chapter": "第10章"
+          "chapter": "第10章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1512,15 +1559,18 @@
       "events": [
         {
           "text": "阿尔卡蒂奥滥权时，祖母乌尔苏拉当众用皮带抽他，骂他是家族的耻辱。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         },
         {
           "text": "挨了打之后他照旧我行我素；乌尔苏拉想写信向奥雷里亚诺上校告状，还没写成，战争就打到了马孔多。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         },
         {
           "text": "乌尔苏拉挥舞着涂过柏油的马鞭冲进军营，阻止阿尔卡蒂奥枪毙堂阿波利纳尔·摩斯科特；她还当众骂他是「杀人犯」。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1533,7 +1583,8 @@
       "events": [
         {
           "text": "奥雷里亚诺上校临行前把马孔多交给侄子阿尔卡蒂奥：「我们就把马孔多交给你了。」这便是他临行前对阿尔卡蒂奥的全部嘱托，「我们好好地交给你，你争取让它变得更好吧。」（第6章。⚠ v0.102 更正：旧版此处是一句**转述被写成了引文**，拿 epub 全文逐字查不到，已按原文替换。）",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1546,7 +1597,8 @@
       "events": [
         {
           "text": "行刑被阻止后，罗克·卡尼塞罗带着六名士兵跟随奥雷里亚诺上校起事，后来成了参谋长。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1558,7 +1610,8 @@
       "events": [
         {
           "text": "蒙卡达将军被俘后与奥雷里亚诺上校共进午餐；乌尔苏拉带着母亲们求情，奥雷里亚诺上校仍拒绝减刑。",
-          "chapter": "第8章"
+          "chapter": "第8章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1570,11 +1623,13 @@
       "events": [
         {
           "text": "奥雷里亚诺上校的17个儿子，额上都有洗不掉的灰烬十字；某夜他们几乎全部被杀。",
-          "chapter": "第9–13章"
+          "chapter": "第9–13章",
+          "evidence": "paraphrase"
         },
         {
           "text": "安东尼奥·伊莎贝尔神甫用圣灰在兄弟们的额上画十字，本想做个标记；那痕迹洗不掉，乌尔苏拉却说：这样更好，从今往后谁都不会把你们认错。——后来它成了追杀者的靶子。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1587,7 +1642,8 @@
       "events": [
         {
           "text": "上校的儿子们先后回到马孔多认父，在家里住下；乌尔苏拉按他们额上的灰烬十字，认出这是布恩迪亚家的血脉。",
-          "chapter": "第9–11章"
+          "chapter": "第9–11章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1601,7 +1657,8 @@
         {
           "text": "奥雷里亚诺·巴比伦在房间里与梅尔基亚德斯的亡灵对话，学梵文，最终译出羊皮卷。",
           "chapter": "第15–20章",
-          "place": "melquiades-room"
+          "place": "melquiades-room",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1613,7 +1670,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥第二把小奥雷里亚诺领进梅尔基亚德斯的房间，教他识字念书。",
-          "chapter": "第15–16章"
+          "chapter": "第15–16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1626,7 +1684,8 @@
       "events": [
         {
           "text": "乌尔苏拉认定这对双胞胎童年互换过名字，性格与名字正好相反。",
-          "chapter": "第8章"
+          "chapter": "第8章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1639,7 +1698,8 @@
       "events": [
         {
           "text": "乌尔苏拉把孙女美人儿蕾梅黛丝当最省心的孩子养着；她升天那天，家里只剩一条床单在飘。",
-          "chapter": "第14章"
+          "chapter": "第14章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1652,7 +1712,8 @@
       "events": [
         {
           "text": "哥哥奥雷里亚诺第二知道镇上为美人儿蕾梅黛丝死了多少男人，而她本人毫无知觉。",
-          "chapter": "第10–14章"
+          "chapter": "第10–14章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1665,7 +1726,8 @@
       "events": [
         {
           "text": "哥哥何塞·阿尔卡蒂奥第二看着美人儿蕾梅黛丝长大，也看着追求她的男人一个接一个出事。",
-          "chapter": "第10–14章"
+          "chapter": "第10–14章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1678,7 +1740,8 @@
       "events": [
         {
           "text": "奥雷里亚诺第二发财时往家里搬钱搬牲口；乌尔苏拉看着钱堆，却没看到家族得救。",
-          "chapter": "第10–16章"
+          "chapter": "第10–16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1691,11 +1754,13 @@
       "events": [
         {
           "text": "奥雷里亚诺第二与佩特拉·科特斯的激情让牲畜疯狂繁殖，带来巨额财富；家道中落后，佩特拉仍陪着他卖彩票。",
-          "chapter": "第10–16章"
+          "chapter": "第10–16章",
+          "evidence": "paraphrase"
         },
         {
           "text": "家道衰落后，两人靠卖彩票过活：佩特拉管钱收账，奥雷里亚诺第二坐在门廊上招揽生意。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1707,15 +1772,18 @@
       "events": [
         {
           "text": "嘉年华上，奥雷里亚诺第二对「女王」费尔南达·德尔·卡皮奥一见钟情；婚后两人貌合神离，他长期住在情人家。",
-          "chapter": "第10–11章"
+          "chapter": "第10–11章",
+          "evidence": "paraphrase"
         },
         {
           "text": "费尔南达把饭点、长桌和祈祷的规矩都定死了；奥雷里亚诺第二照点回家吃饭，睡觉却回佩特拉那儿。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         },
         {
           "text": "他跟「大象」卡米拉比赛吃东西，吃到失去知觉，被抬回家；费尔南达嫌这件事丢人。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -1728,7 +1796,8 @@
       "events": [
         {
           "text": "佩特拉·科特斯先与何塞·阿尔卡蒂奥第二相好，后来又成了他兄弟的情人。",
-          "chapter": "第10章"
+          "chapter": "第10章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1740,11 +1809,13 @@
       "events": [
         {
           "text": "家道衰落后，佩特拉·科特斯常往布恩迪亚家送吃的；费尔南达又恨她，又不得不收下。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         },
         {
           "text": "佩特拉每周托人送去一篮食物；费尔南达再恨她，也只能收下。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1757,15 +1828,18 @@
         {
           "text": "费尔南达把贵族的规矩带进家门，乌尔苏拉看不惯；一个管家、一个被管，两个人针锋相对。",
           "chapter": "第11章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         },
         {
           "text": "费尔南达给家里立下吃饭的时辰和规矩，乌尔苏拉偏要在厨房里吃；两个人谁也不服谁。",
-          "chapter": "第11章"
+          "chapter": "第11章",
+          "evidence": "paraphrase"
         },
         {
           "text": "乌尔苏拉失明以后仍凭记忆在屋里走动、找到每样东西；费尔南达的规矩管不到她的厨房。",
-          "chapter": "第12章"
+          "chapter": "第12章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "inlaw"
@@ -1779,11 +1853,13 @@
         {
           "text": "奥雷里亚诺第二与何塞·阿尔卡蒂奥第二童年互换名字到分不清；两人同日死去，又被埋进了对方的坟。",
           "chapter": "第8、16章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         },
         {
           "text": "两人从小故意替对方应名，把家里人弄糊涂；乌尔苏拉说，这两个孩子的名字准是被换过了。",
-          "chapter": "第8章"
+          "chapter": "第8章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1796,7 +1872,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥第二在布朗先生的香蕉公司当监工，亲眼看见工人们被机枪扫射、尸体装上火车。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1808,7 +1885,8 @@
       "events": [
         {
           "text": "赫伯特先生乘热气球来到马孔多，吃了一口香蕉就发现了绿色金子；几年后公司开进来，何塞·阿尔卡蒂奥第二进公司当了监工。",
-          "chapter": "第11–12章"
+          "chapter": "第11–12章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1820,7 +1898,8 @@
       "events": [
         {
           "text": "赫伯特先生把香蕉的事带了出去，布朗先生的公司在马孔多落了地。",
-          "chapter": "第11–12章"
+          "chapter": "第11–12章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1833,7 +1912,8 @@
         {
           "text": "马乌里肖·巴比伦身边总有黄蝴蝶；他夜里从浴室顶棚下来赴约，被守卫开枪打瘫，梅梅被送进修道院。",
           "chapter": "第13–14章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -1845,15 +1925,18 @@
       "events": [
         {
           "text": "费尔南达拆散恋情，把女儿梅梅送进修道院；梅梅从此一言不发。",
-          "chapter": "第14章"
+          "chapter": "第14章",
+          "evidence": "paraphrase"
         },
         {
           "text": "梅梅的朋友、衣服、出门时间都被她管着；梅梅只好趁她午睡时悄悄溜出去。",
-          "chapter": "第13章"
+          "chapter": "第13章",
+          "evidence": "paraphrase"
         },
         {
           "text": "梅梅学会了开车、跟几个朋友到处兜风；费尔南达嫌这些姑娘不像淑女，管得更紧。",
-          "chapter": "第12章"
+          "chapter": "第12章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1866,7 +1949,8 @@
       "events": [
         {
           "text": "奥雷里亚诺第二宠着女儿梅梅，由着她的性子来；等她长大，家里已经是费尔南达的规矩在管人。",
-          "chapter": "第12–13章"
+          "chapter": "第12–13章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1879,7 +1963,8 @@
       "events": [
         {
           "text": "梅梅的私生子奥雷里亚诺·巴比伦被送回布恩迪亚家，由外祖母费尔南达藏着养大。",
-          "chapter": "第14–15章"
+          "chapter": "第14–15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1892,11 +1977,13 @@
       "events": [
         {
           "text": "费尔南达为遮丑，把外孙奥雷里亚诺·巴比伦关在屋里；他因此与梅尔基亚德斯的房间和羊皮卷为伴。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         },
         {
           "text": "费尔南达把外孙关在屋里，对外只说家里没有这个人；直到她死，邻居都不知道有这个孩子。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1909,7 +1996,8 @@
       "events": [
         {
           "text": "费尔南达把儿子何塞·阿尔卡蒂奥（第五代）送去罗马学神学；他撒谎多年，只为等遗产。",
-          "chapter": "第12–15章"
+          "chapter": "第12–15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1922,7 +2010,8 @@
       "events": [
         {
           "text": "费尔南达按淑女标准管教小女儿阿玛兰妲·乌尔苏拉，小女儿偏偏天生奔放；费尔南达最后把她送去布鲁塞尔。",
-          "chapter": "第12–15章"
+          "chapter": "第12–15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1935,7 +2024,8 @@
       "events": [
         {
           "text": "奥雷里亚诺第二晚年最疼小女儿阿玛兰妲·乌尔苏拉。",
-          "chapter": "第12–15章"
+          "chapter": "第12–15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1948,7 +2038,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第五代）童年时被姑妈阿玛兰妲爱抚过，此后一直迷恋她。",
-          "chapter": "第12章"
+          "chapter": "第12章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1961,7 +2052,8 @@
       "events": [
         {
           "text": "乌尔苏拉死后，曾孙何塞·阿尔卡蒂奥（第五代）在地窖里翻出她藏的一袋金币，也翻出了自己的死。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -1974,11 +2066,13 @@
       "events": [
         {
           "text": "阿玛兰妲·乌尔苏拉带着丈夫加斯通从布鲁塞尔回到马孔多；加斯通水土不服，回欧洲后再没回来。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         },
         {
           "text": "她从欧洲带回成箱的衣服、唱片和新鲜玩意儿；加斯通想办航空邮政，天天盼着离开马孔多。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -1991,7 +2085,8 @@
       "events": [
         {
           "text": "尼格罗曼塔陪奥雷里亚诺·巴比伦度过老宅里发霉的青春期，也教他一些人情世故。",
-          "chapter": "第15–16章"
+          "chapter": "第15–16章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2003,11 +2098,13 @@
       "events": [
         {
           "text": "加布里埃尔和三个朋友在书店蹭书看、争论世界；后来他离开马孔多，去了巴黎。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         },
         {
           "text": "四个朋友挤在书店里蹭书看、争论世界，直到他们一个个离开马孔多。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2019,11 +2116,13 @@
       "events": [
         {
           "text": "归来的阿玛兰妲·乌尔苏拉把生机带回老宅；她与姨甥奥雷里亚诺·巴比伦相爱，生下家族最后的孩子。",
-          "chapter": "第17–19章"
+          "chapter": "第17–19章",
+          "evidence": "paraphrase"
         },
         {
           "text": "她把从欧洲带回的衣服、唱片和笑话搬进老宅；小奥雷里亚诺第一次觉得，马孔多也能这么亮。",
-          "chapter": "第17章"
+          "chapter": "第17章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2037,7 +2136,8 @@
         {
           "text": "奥雷里亚诺·巴比伦长得像奥雷里亚诺·布恩迪亚上校，也继承了房间里的孤僻与专注。",
           "chapter": "第16章",
-          "place": "melquiades-room"
+          "place": "melquiades-room",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2050,7 +2150,8 @@
       "events": [
         {
           "text": "这个长猪尾巴的孩子是百年里唯一因爱情受孕的后代，出生即被蚂蚁吃掉。",
-          "chapter": "第20章"
+          "chapter": "第20章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2063,7 +2164,8 @@
       "events": [
         {
           "text": "阿玛兰妲·乌尔苏拉生下他后，因产后大出血而死。",
-          "chapter": "第20章"
+          "chapter": "第20章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2076,11 +2178,13 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第五代）回老宅后呼朋唤友、变卖家当，把同住一屋的小奥雷里亚诺当空气；两人几乎不说话。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         },
         {
           "text": "何塞·阿尔卡蒂奥（第五代）把老宅当旅馆，呼朋唤友、变卖家当；小奥雷里亚诺只好缩回梅尔基亚德斯的房间。",
-          "chapter": "第15章"
+          "chapter": "第15章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2093,7 +2197,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥·布恩迪亚按信里的嘱托收留了丽贝卡，让她跟自家的孩子一起长大。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "adoptive"
@@ -2106,11 +2211,13 @@
       "events": [
         {
           "text": "丽贝卡的辈分很乱：她管奥雷里亚诺叫「叔叔」，管阿玛兰妲和阿尔卡蒂奥叫弟弟妹妹，可大家都吃住在一起。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         },
         {
           "text": "奥雷里亚诺上校被押回马孔多等着枪决时，丽贝卡每天凌晨三点就起床，守着墓地方向的那面墙，怕他们悄悄把他处决。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "adoptive"
@@ -2123,11 +2230,13 @@
       "events": [
         {
           "text": "丽贝卡和阿尔卡蒂奥、阿玛兰妲一起长大，直到她嫁给何塞·阿尔卡蒂奥（第二代）被赶出家门。",
-          "chapter": "第3–5章"
+          "chapter": "第3–5章",
+          "evidence": "paraphrase"
         },
         {
           "text": "多年后阿尔卡蒂奥掌了权，端着咖啡到丽贝卡家，把父亲何塞·阿尔卡蒂奥（第二代）占地的官司办成了合法买卖。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "adoptive"
@@ -2140,7 +2249,8 @@
       "events": [
         {
           "text": "阿玛兰妲是家中最小的女儿；何塞·阿尔卡蒂奥（第二代）带着丽贝卡回来结婚那天，她恨透了这两个人，从此再没原谅。",
-          "chapter": "第5章"
+          "chapter": "第5章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2153,15 +2263,18 @@
       "events": [
         {
           "text": "阿玛兰妲与奥雷里亚诺上校是同父同母的兄妹：一个终生不嫁，一个半生打仗，晚年同住一宅却很少说话。",
-          "chapter": "第2章"
+          "chapter": "第2章",
+          "evidence": "paraphrase"
         },
         {
           "text": "他被押回马孔多那天，她挤在人群里看着他，他冲她笑了笑，问：你的手怎么啦？",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         },
         {
           "text": "她记着一件小事：上校死的时候脚上只有作坊里的拖鞋，她不得不给他买了一双新鞋。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2174,7 +2287,8 @@
       "events": [
         {
           "text": "姑侄俩年纪相仿，从小跟着维希塔香学说瓜希拉语，在一间屋子里长大。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2187,7 +2301,8 @@
       "events": [
         {
           "text": "阿玛兰妲终生不嫁、缝寿衣度日，乌尔苏拉既心疼又拿她没办法；一个死在寿衣缝完那天，一个活到一百二十岁。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2201,7 +2316,8 @@
         {
           "text": "阿玛兰妲是老何塞唯一的女儿；老何塞疯掉被绑在栗树下时，她正在这座院子里长大。",
           "chapter": "第4章",
-          "place": "castano"
+          "place": "castano",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2214,11 +2330,13 @@
       "events": [
         {
           "text": "临刑前夜，乌尔苏拉带着干净衣服、他结婚时穿的皮鞋和一包奶油蜜饯，去牢里看他。",
-          "chapter": "第7章"
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         },
         {
           "text": "晚年奥雷里亚诺上校做小金鱼，乌尔苏拉活到一百二十岁；她后来说，奥雷里亚诺上校没有爱的能力。",
-          "chapter": "第8章"
+          "chapter": "第8章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2231,7 +2349,8 @@
       "events": [
         {
           "text": "奥雷里亚诺·何塞是上校与皮拉尔·特内拉的私生子，由阿玛兰妲抚养；长大后他跟着奥雷里亚诺上校打仗，又因迷恋姑妈阿玛兰妲逃了回来。",
-          "chapter": "第4、7章"
+          "chapter": "第4、7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2244,7 +2363,8 @@
       "events": [
         {
           "text": "皮拉尔·特内拉为兄弟俩各生了一个儿子：阿尔卡蒂奥和奥雷里亚诺·何塞既是堂兄弟，又是同母异父的兄弟。",
-          "chapter": "第3章"
+          "chapter": "第3章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2257,7 +2377,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥死时，圣索菲亚正怀着双胞胎；这对双胞胎在他被枪决五个月后才出生。",
-          "chapter": "第6–7章"
+          "chapter": "第6–7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2270,7 +2391,8 @@
       "events": [
         {
           "text": "阿尔卡蒂奥死时，圣索菲亚正怀着双胞胎；这对双胞胎在他被枪决五个月后才出生。",
-          "chapter": "第6–7章"
+          "chapter": "第6–7章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2283,7 +2405,8 @@
       "events": [
         {
           "text": "桑塔索菲亚·德拉·彼达一个人把双胞胎和美人儿蕾梅黛丝带大；阿尔卡蒂奥死后，她继续操持这个家几十年。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2296,7 +2419,8 @@
       "events": [
         {
           "text": "桑塔索菲亚·德拉·彼达一个人把双胞胎和美人儿蕾梅黛丝带大；阿尔卡蒂奥死后，她继续操持这个家几十年。",
-          "chapter": "第6章"
+          "chapter": "第6章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2309,7 +2433,8 @@
       "events": [
         {
           "text": "何塞·阿尔卡蒂奥（第五代）被母亲费尔南达送去罗马读神学；父亲奥雷里亚诺第二晚年只疼小女儿。",
-          "chapter": "第12章"
+          "chapter": "第12章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2322,7 +2447,8 @@
       "events": [
         {
           "text": "梅梅被送走时，弟弟何塞·阿尔卡蒂奥（第五代）还小；此后家里几乎不再提她的名字。",
-          "chapter": "第14章"
+          "chapter": "第14章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2335,7 +2461,8 @@
       "events": [
         {
           "text": "梅梅被送走时，阿玛兰妲·乌尔苏拉还小；很多年后，回到马孔多的阿玛兰妲·乌尔苏拉才知道自己有过一个姐姐。",
-          "chapter": "第14、17章"
+          "chapter": "第14、17章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2348,7 +2475,8 @@
       "events": [
         {
           "text": "奥雷里亚诺·巴比伦从没见过自己的父亲：马乌里肖·巴比伦被打瘫，梅梅被送进修道院，孩子被送回布恩迪亚家。",
-          "chapter": "第14章"
+          "chapter": "第14章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2361,7 +2489,8 @@
       "events": [
         {
           "text": "老得几乎成精的皮拉尔·特内拉鼓励孤寂的小奥雷里亚诺去爱阿玛兰妲·乌尔苏拉。",
-          "chapter": "第17章"
+          "chapter": "第17章",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2373,7 +2502,8 @@
       "events": [
         {
           "text": "奥雷里亚诺·何塞被抱回大宅时，是乌尔苏拉决定把他留下养；乌尔苏拉看着他长成了像老何塞一样的高个子。",
-          "chapter": "第4章"
+          "chapter": "第4章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2386,7 +2516,8 @@
       "events": [
         {
           "text": "圣索菲亚在老宅里操劳半生，乌尔苏拉从没真正把她当自家人；她最后拎着自己的东西，默默走出了这个家。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "inlaw"
@@ -2399,7 +2530,8 @@
       "events": [
         {
           "text": "老何塞只知道向东是无法逾越的山脉——据他的祖父即第一位奥雷里亚诺·布恩迪亚讲，山脉另一侧是古老的城市里奥阿查。",
-          "chapter": "第1章"
+          "chapter": "第1章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2412,7 +2544,8 @@
       "events": [
         {
           "text": "乌尔苏拉晚年分不清过去与现在，在卧室里「遇见」了父亲奥雷里亚诺·伊瓜兰。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2425,7 +2558,8 @@
       "events": [
         {
           "text": "她也在那些亡灵里：瘫痪在摇椅上，晃着一根孔雀翎毛扇风。",
-          "chapter": "第16章"
+          "chapter": "第16章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2438,7 +2572,8 @@
       "events": [
         {
           "text": "乌尔苏拉的姑妈嫁给老何塞的叔父，生下了他；他拖着一条猪尾巴活了四十二年。",
-          "chapter": "第1章"
+          "chapter": "第1章",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2453,7 +2588,8 @@
         {
           "text": "卡塔乌雷与妹妹比西塔西翁（维希塔香）一起从瓜希拉王国逃到马孔多，躲的就是家乡那场失眠症。",
           "chapter": "第2章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2466,7 +2602,8 @@
         {
           "text": "卡塔乌雷和妹妹寄住在布恩迪亚家；他一认出失眠症又回来了，就连夜逃走，乌尔苏拉再也没见过他。",
           "chapter": "第2章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2479,7 +2616,8 @@
         {
           "text": "小奥雷里亚诺几乎每个下午都泡在加泰罗尼亚人的书店里看那些没人买的书，店主由着他看，还给他讲欧洲的事。",
           "chapter": "第12章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2492,7 +2630,8 @@
         {
           "text": "几个加泰罗尼亚人每天下午在书店后间争论，生意冷清，谁也没真打算回故乡。",
           "chapter": "第12章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2505,7 +2644,8 @@
         {
           "text": "阿尔瓦罗和赫尔曼、阿方索把奥雷里亚诺·巴比伦拉进他们的下午：争论、听留声机、用纸牌算命。",
           "chapter": "第12章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2518,7 +2658,8 @@
         {
           "text": "赫尔曼用纸牌给奥雷里亚诺·巴比伦算命，说他哪儿也去不了——这话后来应验了。",
           "chapter": "第12章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2531,7 +2672,8 @@
         {
           "text": "阿方索是那伙人里最年轻的；他们一起在马孔多耗掉一个个下午，直到最后一个一个离开。",
           "chapter": "第13章",
-          "place": "macondo"
+          "place": "macondo",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2544,7 +2686,8 @@
         {
           "text": "阿基莱斯·里卡多上校率政府军攻下马孔多；据守的阿尔卡蒂奥被擒，随后被枪决。",
           "chapter": "第7章",
-          "place": "escuela"
+          "place": "escuela",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2557,7 +2700,8 @@
         {
           "text": "皮埃特罗一人照管音乐学校，弟弟布鲁诺·克雷斯皮负责商店的业务",
           "chapter": "第6章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2571,7 +2715,8 @@
         {
           "text": "布鲁诺·克雷斯皮与安帕萝·摩斯科特结了婚，他的玩具乐器店生意蒸蒸日上，他盖了一座剧院",
           "chapter": "第6章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "marriage"
@@ -2585,7 +2730,8 @@
         {
           "text": "阿波利纳尔·摩斯科特向布恩迪亚家介绍他正好在那里的两个女儿安帕萝和蕾梅黛丝",
           "chapter": "第2章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ],
       "kin": "blood"
@@ -2599,7 +2745,8 @@
         {
           "text": "安帕萝·摩斯科特与丽贝卡·布恩迪亚之间突然萌生的友情",
           "chapter": "第5章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2612,7 +2759,8 @@
         {
           "text": "尼卡诺尔神甫被肝病高热折磨时，由安东尼奥·伊莎贝尔神甫接替他做弥撒",
           "chapter": "第2章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2632,7 +2780,8 @@
         {
           "text": "奥雷里亚诺跟最亲密的朋友马格尼菲科·比斯巴勒和赫里内勒多·马尔克斯在镇上散步",
           "chapter": "第4章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2645,7 +2794,8 @@
         {
           "text": "老何塞去看望阿利黎奥·诺格拉医生，求治并不存在的肝痛",
           "chapter": "第3章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2658,7 +2808,8 @@
         {
           "text": "卡梅莉塔·蒙铁尔求皮拉尔·特内拉把她带进奥雷里亚诺·何塞的房间",
           "chapter": "第6章",
-          "place": ""
+          "place": "",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2671,7 +2822,8 @@
         {
           "text": "维希塔香教阿尔卡蒂奥和阿玛兰妲学说瓜希拉语，把她当半个母亲",
           "chapter": "第3章",
-          "place": "casa"
+          "place": "casa",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -2683,7 +2835,8 @@
       "events": [
         {
           "chapter": null,
-          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；奥雷里亚诺第二 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 奥雷里亚诺第二）⇒ 两人相差 2 代。原文没有直接互动。"
+          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；奥雷里亚诺第二 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 奥雷里亚诺第二）⇒ 两人相差 2 代。原文没有直接互动。",
+          "evidence": "derived"
         }
       ]
     },
@@ -2695,7 +2848,8 @@
       "events": [
         {
           "chapter": null,
-          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；何塞·阿尔卡蒂奥第二 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 何塞·阿尔卡蒂奥第二）⇒ 两人相差 2 代。原文没有直接互动。"
+          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；何塞·阿尔卡蒂奥第二 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 何塞·阿尔卡蒂奥第二）⇒ 两人相差 2 代。原文没有直接互动。",
+          "evidence": "derived"
         }
       ]
     },
@@ -2707,7 +2861,8 @@
       "events": [
         {
           "chapter": null,
-          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；美人儿蕾梅黛丝 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 美人儿蕾梅黛丝）⇒ 两人相差 2 代。原文没有直接互动。"
+          "text": "由族谱推导：奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥·布恩迪亚 是同胞；美人儿蕾梅黛丝 是 何塞·阿尔卡蒂奥·布恩迪亚 的第 2 代晚辈（何塞·阿尔卡蒂奥（第二代） → … → 美人儿蕾梅黛丝）⇒ 两人相差 2 代。原文没有直接互动。",
+          "evidence": "derived"
         }
       ]
     },
@@ -2728,7 +2883,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 何塞·阿尔卡蒂奥（第二代）」、「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2742,7 +2898,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 何塞·阿尔卡蒂奥（第二代）」、「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父女→ 美人儿蕾梅黛丝」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2756,7 +2913,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 何塞·阿尔卡蒂奥（第二代）」、「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2770,7 +2928,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 何塞·阿尔卡蒂奥（第二代）」、「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 何塞·阿尔卡蒂奥第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2784,7 +2943,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 奥雷里亚诺·布恩迪亚上校」、「奥雷里亚诺·布恩迪亚上校 —父子→ 十七个奥雷里亚诺」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2798,7 +2958,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥·布恩迪亚 —父子→ 奥雷里亚诺·布恩迪亚上校」、「奥雷里亚诺·布恩迪亚上校 —父子→ 奥雷里亚诺·何塞」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2812,7 +2973,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父女→ 美人儿蕾梅黛丝」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2826,7 +2988,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2840,7 +3003,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 何塞·阿尔卡蒂奥第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2854,7 +3018,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2868,7 +3033,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2882,7 +3048,8 @@
       "events": [
         {
           "text": "由 「皮拉尔·特内拉 —母子（不相认）→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父子→ 何塞·阿尔卡蒂奥（第五代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2896,7 +3063,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父女→ 美人儿蕾梅黛丝」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2910,7 +3078,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2924,7 +3093,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 何塞·阿尔卡蒂奥第二」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2938,7 +3108,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2952,7 +3123,8 @@
       "events": [
         {
           "text": "由 「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」、「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2966,7 +3138,8 @@
       "events": [
         {
           "text": "由 「费尔南达·德尔·卡皮奥 —母女→ 阿玛兰妲·乌尔苏拉」、「阿玛兰妲·乌尔苏拉 —母子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2980,7 +3153,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」、「梅梅（雷纳塔·蕾梅黛丝） —母子→ 奥雷里亚诺·巴比伦（第六代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -2994,7 +3168,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」、「阿玛兰妲·乌尔苏拉 —母子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3008,7 +3183,8 @@
       "events": [
         {
           "text": "由 「梅梅（雷纳塔·蕾梅黛丝） —母子→ 奥雷里亚诺·巴比伦（第六代）」、「奥雷里亚诺·巴比伦（第六代） —父子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3022,7 +3198,8 @@
       "events": [
         {
           "text": "由 「马乌里肖·巴比伦 —父子→ 奥雷里亚诺·巴比伦（第六代）」、「奥雷里亚诺·巴比伦（第六代） —父子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3036,7 +3213,8 @@
       "events": [
         {
           "text": "由 「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3050,7 +3228,8 @@
       "events": [
         {
           "text": "由 「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3064,7 +3243,8 @@
       "events": [
         {
           "text": "由 「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父子→ 何塞·阿尔卡蒂奥（第五代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3078,7 +3258,8 @@
       "events": [
         {
           "text": "由 「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」、「梅梅（雷纳塔·蕾梅黛丝） —母子→ 奥雷里亚诺·巴比伦（第六代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3092,7 +3273,8 @@
       "events": [
         {
           "text": "由 「阿尔卡蒂奥 —父子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」、「阿玛兰妲·乌尔苏拉 —母子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3106,7 +3288,8 @@
       "events": [
         {
           "text": "由 「桑塔索菲亚·德拉·彼达 —母子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3120,7 +3303,8 @@
       "events": [
         {
           "text": "由 「桑塔索菲亚·德拉·彼达 —母子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3134,7 +3318,8 @@
       "events": [
         {
           "text": "由 「桑塔索菲亚·德拉·彼达 —母子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父子→ 何塞·阿尔卡蒂奥（第五代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3148,7 +3333,8 @@
       "events": [
         {
           "text": "由 「桑塔索菲亚·德拉·彼达 —母子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 梅梅（雷纳塔·蕾梅黛丝）」、「梅梅（雷纳塔·蕾梅黛丝） —母子→ 奥雷里亚诺·巴比伦（第六代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3162,7 +3348,8 @@
       "events": [
         {
           "text": "由 「桑塔索菲亚·德拉·彼达 —母子→ 奥雷里亚诺第二」、「奥雷里亚诺第二 —父女→ 阿玛兰妲·乌尔苏拉」、「阿玛兰妲·乌尔苏拉 —母子→ 长猪尾巴的孩子」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3176,7 +3363,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —养母女→ 丽贝卡」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3190,7 +3378,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母子→ 何塞·阿尔卡蒂奥（第二代）」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3204,7 +3393,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母女→ 阿玛兰妲」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3218,7 +3408,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母子→ 奥雷里亚诺·布恩迪亚上校」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3232,7 +3423,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母子→ 何塞·阿尔卡蒂奥（第二代）」、「何塞·阿尔卡蒂奥（第二代） —父子→ 阿尔卡蒂奥」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3246,7 +3438,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母子→ 奥雷里亚诺·布恩迪亚上校」、「奥雷里亚诺·布恩迪亚上校 —父子→ 十七个奥雷里亚诺」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3260,7 +3453,8 @@
       "events": [
         {
           "text": "由 「奥雷里亚诺·伊瓜兰 —父女→ 乌尔苏拉·伊瓜兰」、「乌尔苏拉·伊瓜兰 —母子→ 奥雷里亚诺·布恩迪亚上校」、「奥雷里亚诺·布恩迪亚上校 —父子→ 奥雷里亚诺·何塞」 推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3274,7 +3468,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥（第二代） 同为 乌尔苏拉·伊瓜兰 的子女」＋「奥雷里亚诺·布恩迪亚上校 有子女 十七个奥雷里亚诺」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3288,7 +3483,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺·布恩迪亚上校 与 何塞·阿尔卡蒂奥（第二代） 同为 乌尔苏拉·伊瓜兰 的子女」＋「奥雷里亚诺·布恩迪亚上校 有子女 奥雷里亚诺·何塞」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3302,7 +3498,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺·布恩迪亚上校 与 丽贝卡 同为 乌尔苏拉·伊瓜兰 的子女」＋「奥雷里亚诺·布恩迪亚上校 有子女 十七个奥雷里亚诺」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3316,7 +3513,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺·布恩迪亚上校 与 丽贝卡 同为 乌尔苏拉·伊瓜兰 的子女」＋「奥雷里亚诺·布恩迪亚上校 有子女 奥雷里亚诺·何塞」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3330,7 +3528,8 @@
       "events": [
         {
           "text": "由「阿玛兰妲 与 奥雷里亚诺·布恩迪亚上校 同为 乌尔苏拉·伊瓜兰 的子女」＋「奥雷里亚诺·布恩迪亚上校 有子女 十七个奥雷里亚诺」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3344,7 +3543,8 @@
       "events": [
         {
           "text": "由「阿尔卡蒂奥 与 奥雷里亚诺·何塞 同为 皮拉尔·特内拉 的子女」＋「阿尔卡蒂奥 有子女 美人儿蕾梅黛丝」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3358,7 +3558,8 @@
       "events": [
         {
           "text": "由「阿尔卡蒂奥 与 奥雷里亚诺·何塞 同为 皮拉尔·特内拉 的子女」＋「阿尔卡蒂奥 有子女 奥雷里亚诺第二」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3372,7 +3573,8 @@
       "events": [
         {
           "text": "由「阿尔卡蒂奥 与 奥雷里亚诺·何塞 同为 皮拉尔·特内拉 的子女」＋「阿尔卡蒂奥 有子女 何塞·阿尔卡蒂奥第二」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3386,7 +3588,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 美人儿蕾梅黛丝 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 梅梅（雷纳塔·蕾梅黛丝）」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3400,7 +3603,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 美人儿蕾梅黛丝 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 阿玛兰妲·乌尔苏拉」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3414,7 +3618,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 美人儿蕾梅黛丝 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 何塞·阿尔卡蒂奥（第五代）」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3428,7 +3633,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 何塞·阿尔卡蒂奥第二 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 梅梅（雷纳塔·蕾梅黛丝）」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3442,7 +3648,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 何塞·阿尔卡蒂奥第二 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 阿玛兰妲·乌尔苏拉」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3456,7 +3663,8 @@
       "events": [
         {
           "text": "由「奥雷里亚诺第二 与 何塞·阿尔卡蒂奥第二 同为 桑塔索菲亚·德拉·彼达 的子女」＋「奥雷里亚诺第二 有子女 何塞·阿尔卡蒂奥（第五代）」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3470,7 +3678,8 @@
       "events": [
         {
           "text": "由「阿玛兰妲·乌尔苏拉 与 梅梅（雷纳塔·蕾梅黛丝） 同为 奥雷里亚诺第二 的子女」＋「阿玛兰妲·乌尔苏拉 有子女 长猪尾巴的孩子」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3484,7 +3693,8 @@
       "events": [
         {
           "text": "由「阿玛兰妲·乌尔苏拉 与 何塞·阿尔卡蒂奥（第五代） 同为 奥雷里亚诺第二 的子女」＋「阿玛兰妲·乌尔苏拉 有子女 长猪尾巴的孩子」推导（原文没有直接互动）",
-          "chapter": ""
+          "chapter": "",
+          "evidence": "derived"
         }
       ]
     },
@@ -3496,7 +3706,8 @@
       "events": [
         {
           "chapter": 10,
-          "text": "原文：「到了星期二，佩特洛尼奥果然拎着一张此前无人知晓其用途的小木凳，下了钟楼，带何塞·阿尔卡蒂奥第二走进附近的一处菜园」"
+          "text": "原文：「到了星期二，佩特洛尼奥果然拎着一张此前无人知晓其用途的小木凳，下了钟楼，带何塞·阿尔卡蒂奥第二走进附近的一处菜园」",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -3508,7 +3719,8 @@
       "events": [
         {
           "chapter": 8,
-          "text": "原文：「尼卡诺尔神甫被肝病高热折磨得奄奄一息，已由科罗奈尔神甫取代」"
+          "text": "原文：「尼卡诺尔神甫被肝病高热折磨得奄奄一息，已由科罗奈尔神甫取代」",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -3520,7 +3732,8 @@
       "events": [
         {
           "chapter": 10,
-          "text": "原文：「帮助“新手”的继任者安东尼奥·伊莎贝尔神甫做弥撒」"
+          "text": "原文：「帮助“新手”的继任者安东尼奥·伊莎贝尔神甫做弥撒」",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -3532,7 +3745,8 @@
       "events": [
         {
           "chapter": 10,
-          "text": "原文第10章：「他对此十分厌烦，一天清早心血来潮，拿起一箱钞票、一罐糨糊和一把刷子，哼着好汉弗朗西斯科的老歌把家中里里外外、上上下下贴满了一比索的纸币」——这里的「他」是奥雷里亚诺第二（同段后文点名「这时奥雷里亚诺第二已经从立面到厨房全部裱糊完毕」）。原文第20章：「奥雷里亚诺第二最后一次拉起手风琴，演奏好汉弗朗西斯科已被人遗忘的歌曲，只是他再也无法伴唱。」"
+          "text": "原文第10章：「他对此十分厌烦，一天清早心血来潮，拿起一箱钞票、一罐糨糊和一把刷子，哼着好汉弗朗西斯科的老歌把家中里里外外、上上下下贴满了一比索的纸币」——这里的「他」是奥雷里亚诺第二（同段后文点名「这时奥雷里亚诺第二已经从立面到厨房全部裱糊完毕」）。原文第20章：「奥雷里亚诺第二最后一次拉起手风琴，演奏好汉弗朗西斯科已被人遗忘的歌曲，只是他再也无法伴唱。」",
+          "evidence": "paraphrase"
         }
       ]
     },
@@ -3544,7 +3758,8 @@
       "events": [
         {
           "chapter": 20,
-          "text": "原文：「花街柳巷最后一家营业的舞厅里，手风琴乐队弹唱起主教的侄子，好汉弗朗西斯科的绝艺传人拉斐尔·埃斯卡洛纳的歌曲」"
+          "text": "原文：「花街柳巷最后一家营业的舞厅里，手风琴乐队弹唱起主教的侄子，好汉弗朗西斯科的绝艺传人拉斐尔·埃斯卡洛纳的歌曲」",
+          "evidence": "paraphrase"
         }
       ]
     }
@@ -3596,7 +3811,8 @@
       "impact": "马孔多诞生；「第一个人被绑在树上」的宿命开始。",
       "quote": "家族的第一个人被绑在树上。",
       "ch": 1,
-      "place": "riohacha"
+      "place": "riohacha",
+      "evidence": "paraphrase"
     },
     {
       "id": "e02",
@@ -3612,7 +3828,8 @@
       "summary": "吉普赛人梅尔基亚德斯带来磁铁、放大镜与炼金术；老何塞把家产熔成金鱼，还带小儿子奥雷里亚诺去见识冰块。",
       "impact": "科学狂热开始；冰块成为奥雷里亚诺上校一生的锚点（全书开头）。",
       "ch": 1,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e03",
@@ -3629,7 +3846,8 @@
       "summary": "失眠症先在布恩迪亚家传开，继而全村失眠、遗忘；人们给每样东西贴上名字，梅尔基亚德斯带回药水才治好了这场时疫。",
       "impact": "「记住」成为全书主题之一。",
       "ch": 2,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e04",
@@ -3643,7 +3861,8 @@
       "summary": "何塞·阿尔卡蒂奥·布恩迪亚（老何塞）陷入时间循环的幻觉，被家人绑在院子里的栗树下，直到死去。",
       "impact": "「家族的第一个人被绑在树上」应验。",
       "ch": 4,
-      "place": "castano"
+      "place": "castano",
+      "evidence": "paraphrase"
     },
     {
       "id": "e05",
@@ -3657,7 +3876,8 @@
       "summary": "吉普赛人梅尔基亚德斯死去，留下一卷用梵文写成的羊皮卷，预言了布恩迪亚家族百年的命运。",
       "impact": "终局的伏笔埋下。",
       "ch": 4,
-      "place": "melquiades-room"
+      "place": "melquiades-room",
+      "evidence": "paraphrase"
     },
     {
       "id": "e06",
@@ -3673,7 +3893,8 @@
       "summary": "乌尔苏拉收养了自称表亲的女孩丽贝卡；丽贝卡带着父母的骨灰罐，有吃土癖，夜里哭闹不止。",
       "impact": "家族收养她；两姐妹的战争埋下种子。",
       "ch": 3,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e07",
@@ -3690,7 +3911,8 @@
       "summary": "意大利琴师皮埃特罗·克雷斯皮教丽贝卡与阿玛兰妲跳舞；他与丽贝卡订婚，婚礼因教堂迟迟未建而一拖再拖，尼卡诺尔·雷伊纳神甫靠升空募款建教堂。",
       "impact": "阿玛兰妲的嫉妒疯长。",
       "ch": 3,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e08",
@@ -3705,7 +3927,8 @@
       "summary": "何塞·阿尔卡蒂奥（第二代，绰号「巨人」）结束多年流浪回到家，丽贝卡当即选择了他。",
       "impact": "姐妹彻底反目；两人被乌尔苏拉赶出家门。",
       "ch": 4,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e09",
@@ -3721,7 +3944,8 @@
       "summary": "原文一面写蕾梅黛丝·摩斯科特死于「血中毒」，一面写阿玛兰妲自认把搞来的鸦片酊偶然放进了蕾梅黛丝的咖啡——她本想阻止丽贝卡的婚礼；蕾梅黛丝与腹中双胞胎一同死去。",
       "impact": "奥雷里亚诺的温柔随之终结；阿玛兰妲终生自责。",
       "ch": 5,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e10",
@@ -3737,7 +3961,8 @@
       "summary": "保守党在选举中舞弊；奥雷里亚诺·布恩迪亚带人夺下马孔多的军营，二十年内战由此开始。",
       "impact": "阿尔卡蒂奥被留在马孔多守镇。",
       "ch": 5,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e11",
@@ -3752,7 +3977,8 @@
       "summary": "奥雷里亚诺·布恩迪亚上校被押回马孔多执行枪决；行刑前，他想起父亲老何塞带他去看冰块的那个下午。",
       "impact": "全书最著名的一幕。",
       "ch": 7,
-      "place": "cementerio"
+      "place": "cementerio",
+      "evidence": "paraphrase"
     },
     {
       "id": "e12",
@@ -3771,7 +3997,8 @@
       "summary": "阿尔卡蒂奥从梅尔基亚德斯一本书的插图获得灵感，穿上带饰带和元帅肩章的制服：他推行十八岁以上男子的义务兵役，强迫成年男子佩戴红袖章，把下午六点后还在街上的牲畜征作公用，让行刑队在广场上练习射击稻草人；一名小号手因「藐视当局」被他下令枪决。乌尔苏拉挥舞涂了柏油的马鞭冲进军营，阻止他枪毙堂阿波利纳尔·摩斯科特。",
       "impact": "政府军反攻，抵抗半小时被粉碎，阿尔卡蒂奥被枪决。（范晔译本作「十个月」，旧译本作「十一个月」。）",
       "ch": 6,
-      "place": "escuela"
+      "place": "escuela",
+      "evidence": "paraphrase"
     },
     {
       "id": "e13",
@@ -3786,7 +4013,8 @@
       "summary": "行刑枪口举起时，何塞·阿尔卡蒂奥（第二代，绰号「巨人」，上校的哥哥）端着猎枪冲过街道；行刑队上尉罗克·卡尼塞罗举手投降：「别开枪，你是上帝派来的嘛。」",
       "impact": "奥雷里亚诺上校活了下来，战争继续。",
       "ch": 7,
-      "place": "cementerio"
+      "place": "cementerio",
+      "evidence": "paraphrase"
     },
     {
       "id": "e14",
@@ -3801,7 +4029,8 @@
       "summary": "何塞·阿尔卡蒂奥（第二代，绰号「巨人」）在卧室被枪杀，血穿过整条街流到母亲乌尔苏拉的厨房；凶手是谁，至今不明。",
       "impact": "全书唯一没解开的秘密。",
       "ch": 7,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e15",
@@ -3816,7 +4045,8 @@
       "summary": "乌尔苏拉带着母亲们为蒙卡达将军求情，奥雷里亚诺·布恩迪亚上校仍然拒绝减刑。",
       "impact": "乌尔苏拉断定：「你不爱自己的亲人。」",
       "ch": 8,
-      "place": "escuela"
+      "place": "escuela",
+      "evidence": "paraphrase"
     },
     {
       "id": "e16",
@@ -3830,7 +4060,8 @@
       "summary": "二十年战争以尼兰德停战协定收场；奥雷里亚诺·布恩迪亚上校朝自己的胸口开了一枪，又奇迹般活了下来。",
       "impact": "战争结束，做小金鱼的孤寂晚年开始。",
       "ch": 9,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e30",
@@ -3845,7 +4076,8 @@
       "summary": "奥雷里亚诺·布恩迪亚上校的17个私生子先后回到马孔多认父，他们额上都有洗不掉的灰烬十字，在家里住下。",
       "impact": "家族短暂热闹，随后是灭顶之灾。",
       "ch": 9,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e17",
@@ -3859,7 +4091,8 @@
       "summary": "一个星期里，上校的十七个儿子「像兔子般被暗藏的凶手瞄准额间的灰烬十字一一猎杀」：奥雷里亚诺·特里斯特晚上七点从母亲家出来，被黑暗中的一发子弹打穿脑门；奥雷里亚诺·森特诺被发现死在工厂常挂的吊床上，眉间插着一把没至手柄的冰锥；奥雷里亚诺·塞拉多在灯火通明的土耳其人大街上被一枪放倒，跌进一锅沸腾的黄油里；奥雷里亚诺·阿卡亚听见敲门喊「有人在杀你的兄弟」，开门便被毛瑟枪子弹爆开了脑袋。只有最年长的奥雷里亚诺·阿玛多躲过枪击，翻出院墙消失在雨林里，从此再无消息。",
       "impact": "家族与战争的血债。",
       "ch": 12,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e29",
@@ -3876,7 +4109,8 @@
       "summary": "美国佬赫伯特先生乘热气球来到马孔多，吃了一口香蕉就发现了「绿色金子」；上校的儿子奥雷里亚诺·特里斯特随后把火车带回了镇子。",
       "impact": "香蕉公司和它的剥削随之落地。",
       "ch": 11,
-      "place": "bananera"
+      "place": "bananera",
+      "evidence": "paraphrase"
     },
     {
       "id": "e18",
@@ -3891,7 +4125,8 @@
       "summary": "火车开进马孔多，布朗先生的香蕉公司圈地建园；何塞·阿尔卡蒂奥第二进公司当了监工。",
       "impact": "繁荣与剥削同时到来。",
       "ch": 12,
-      "place": "estacion"
+      "place": "estacion",
+      "evidence": "paraphrase"
     },
     {
       "id": "e19",
@@ -3905,7 +4140,8 @@
       "summary": "三千多名罢工工人被香蕉公司的机枪扫射，尸体用两百节车厢运走、扔进海里；何塞·阿尔卡蒂奥第二藏在车厢里活了下来。",
       "impact": "官方宣称什么都没发生；何塞·阿尔卡蒂奥第二从此躲进房间。",
       "ch": 15,
-      "place": "bananera"
+      "place": "bananera",
+      "evidence": "paraphrase"
     },
     {
       "id": "e20",
@@ -3919,7 +4155,8 @@
       "summary": "美人儿蕾梅黛丝抓着一条床单，随风飞上天空，从此消失。",
       "impact": "马孔多最后的奇迹。",
       "ch": 14,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e21",
@@ -3935,7 +4172,8 @@
       "summary": "大雨下了四年十一个月零两天，马孔多被泡烂，香蕉公司撤走，牲畜死光。",
       "impact": "家族与小镇一起衰败。",
       "ch": 16,
-      "place": "macondo"
+      "place": "macondo",
+      "evidence": "paraphrase"
     },
     {
       "id": "e22",
@@ -3948,7 +4186,8 @@
       "summary": "乌尔苏拉在雨季后死去，年约115–122岁，临终前缩成了一个婴儿大小。",
       "impact": "家族的支柱倒了。",
       "ch": 16,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e23",
@@ -3962,7 +4201,8 @@
       "summary": "奥雷里亚诺第二与何塞·阿尔卡蒂奥第二这对孪生兄弟在同一天死在各自的房间；因为童年互换过名字，葬礼上又被埋进了对方的坟。",
       "impact": "循环与错位的注脚。",
       "ch": 17,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e24",
@@ -3977,7 +4217,8 @@
       "summary": "汽修学徒马乌里肖·巴比伦被守卫开枪打瘫；梅梅（雷纳塔·蕾梅黛丝）被母亲费尔南达送进修道院，从此一言不发。",
       "impact": "第六代奥雷里亚诺·巴比伦由此出生。",
       "ch": 13,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e25",
@@ -3991,7 +4232,8 @@
       "summary": "第五代何塞·阿尔卡蒂奥翻出乌尔苏拉藏起的一袋金币，被觊觎金币的年轻人杀害。",
       "impact": "家族倒数第二根支柱倒下。",
       "ch": 15,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e26",
@@ -4005,7 +4247,8 @@
       "summary": "从布鲁塞尔归来的阿玛兰妲·乌尔苏拉让老宅重新有了生气；她与姨甥奥雷里亚诺·巴比伦相爱，生下了百年里唯一因爱情受孕的孩子。",
       "impact": "乱伦的诅咒应验。",
       "ch": 18,
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e27",
@@ -4022,7 +4265,8 @@
       "impact": "「家族的最后一个人正被蚂蚁吃掉。」",
       "quote": "遭受百年孤独的家族，注定不会在大地上第二次出现。",
       "ch": 20,
-      "place": "melquiades-room"
+      "place": "melquiades-room",
+      "evidence": "paraphrase"
     },
     {
       "id": "e31",
@@ -4036,7 +4280,8 @@
       ],
       "summary": "阿玛兰妲宣布自己将在傍晚启程，替全镇人给死者带信，到下午三点客厅里已放着整整一箱书信；她请木匠量尺寸做棺材、把物品分给穷人，还当众请乌尔苏拉检查自己的贞洁（「我的良心是清白的」）。她织寿衣时白天织、夜里拆——不是为了击败孤独，而是为了持守孤独；寿衣缝完那天，她死在自己的床上。",
       "impact": "寿衣缝完之日，就是她的死期；她把一生的孤独一针一线缝了进去。",
-      "place": "casa"
+      "place": "casa",
+      "evidence": "paraphrase"
     },
     {
       "id": "e32",
@@ -4052,7 +4297,8 @@
       ],
       "summary": "天亮时军事法庭即时审判，阿尔卡蒂奥在公墓的墙前被枪决。他本想保护乌尔苏拉而投降；死前两小时，他发现童年起折磨他的恐惧消失了，只是严格盘点过往，发现「实际上自己是多么热爱那些曾经恨得最深的人」。他没做什么忏悔，喝过一杯黑咖啡便听候行刑——行刑队的首领是擅长紧急枪决的罗格·卡尔尼塞罗。",
       "impact": "他死时女儿八个月大、还没取名；桑塔索菲亚怀着双胞胎，孩子在他死后五个月才出生。",
-      "place": "cementerio"
+      "place": "cementerio",
+      "evidence": "paraphrase"
     }
   ],
   "places": [
