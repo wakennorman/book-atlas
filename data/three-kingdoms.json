@@ -1699,7 +1699,9 @@
       "id": "ma-teng",
       "name": "马腾",
       "aliases": [
-        "寿成"
+        "寿成",
+        "报父仇",
+        "尊人"
       ],
       "generation": 1,
       "gender": "m",
@@ -1830,8 +1832,10 @@
     },
     {
       "id": "li-bie",
-      "name": "李别",
-      "aliases": [],
+      "name": "李利",
+      "aliases": [
+        "李别"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 10,
@@ -1839,7 +1843,7 @@
       "title": "李傕之侄",
       "desc": "随军窥探，回告樊稠之事",
       "fate": "告发樊稠放走韩遂",
-      "note": "",
+      "note": "※ v0.120 改名：李别 → 李利。正文「李利」4 次；「李别」仅第120回注释 1 次，注释自称「原作李别，据史书改」。与 v0.119 关纯→闵纯 同类。（正文用「李利」，「李别」是第120回注释里的写法。）",
       "tier": "minor"
     },
     {
@@ -6021,8 +6025,10 @@
     },
     {
       "id": "liu-xi",
-      "name": "刘熙",
-      "aliases": [],
+      "name": "刘靖",
+      "aliases": [
+        "刘熙"
+      ],
       "generation": 2,
       "gender": "m",
       "firstCh": 48,
@@ -6030,7 +6036,7 @@
       "title": "刘馥之子",
       "desc": "请父尸归葬",
       "fate": "",
-      "note": "",
+      "note": "※ v0.120 改名：刘熙 → 刘靖。正文作「刘靖」；「刘熙」只在第120回版本说明里，该说明自己讲这是更正（刘熙本为刘馥之孙）。（正文用「刘靖」，「刘熙」是第120回注释里的写法。）",
       "tier": "minor"
     },
     {
@@ -9391,8 +9397,10 @@
     },
     {
       "id": "dai-ling",
-      "name": "戴陵",
-      "aliases": [],
+      "name": "戴凌",
+      "aliases": [
+        "戴陵"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 99,
@@ -9400,7 +9408,7 @@
       "title": "魏将",
       "desc": "魏将，张郃副将。",
       "fate": "劫寨被围，得张郃救回。",
-      "note": "原书**有此人**，第100回司马懿派兵劫寨时写的是「张、戴二人自纵马视之，只见数百辆草车横截去路」「不独张、戴二人所不料」——**只写姓氏「戴」，全名「戴陵」0 次**（全名见《三国志·张郃传》）。⚠ 原 note 写「原书未出现此人」是错的：查的是全名，不是这个人在不在。",
+      "note": "原书**有此人**，第100回司马懿派兵劫寨时写的是「张、戴二人自纵马视之，只见数百辆草车横截去路」「不独张、戴二人所不料」——**只写姓氏「戴」，全名「戴陵」0 次**（全名见《三国志·张郃传》）。⚠ 原 note 写「原书未出现此人」是错的：查的是全名，不是这个人在不在。 ※ v0.120 改名：戴陵 → 戴凌。正文「戴凌」16 次；「戴陵」0 次。数据用了「陵」。（正文用「戴凌」，「戴陵」是第120回注释里的写法。）",
       "tier": "minor"
     },
     {
@@ -16361,7 +16369,7 @@
       "style": "dashed",
       "events": [
         {
-          "text": "刘表以孙坚尸换回黄祖，罢兵",
+          "text": "刘表遣桓阶与孙策相约，以孙坚尸首换回黄祖，两家罢兵",
           "chapter": "第8章",
           "place": "jing-zhou",
           "evidence": "paraphrase"
@@ -16376,7 +16384,7 @@
       "style": "solid",
       "events": [
         {
-          "text": "刘表不忍弃黄祖，以尸相换",
+          "text": "刘表曰「吾有黄祖在彼营中，安忍弃之」，遂以孙坚尸首换回黄祖",
           "chapter": "第8章",
           "place": "jing-zhou",
           "evidence": "paraphrase"
@@ -16392,7 +16400,7 @@
       "style": "solid",
       "events": [
         {
-          "text": "蒯良劝刘表乘虚取江东",
+          "text": "蒯良劝刘表乘孙坚新丧、其子皆幼之际进兵江东，表不从",
           "chapter": "第8章",
           "place": "jing-zhou",
           "evidence": "paraphrase"
@@ -17097,13 +17105,14 @@
       "events": [
         {
           "text": "袁绍遣颜良助曹操攻吕布",
-          "chapter": "第13章",
+          "chapter": 22,
           "place": "",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 22
         }
       ],
-      "fromCh": 13,
-      "toCh": 18
+      "fromCh": 22,
+      "toCh": 23
     },
     {
       "from": "yuan-shao",
@@ -17113,13 +17122,14 @@
       "events": [
         {
           "text": "颜良领兵五万往助曹操",
-          "chapter": "第13章",
+          "chapter": 22,
           "place": "",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 22
         }
       ],
-      "fromCh": 13,
-      "toCh": 22
+      "fromCh": 22,
+      "toCh": 23
     },
     {
       "from": "cao-cao",
@@ -19379,26 +19389,12 @@
       "events": [
         {
           "text": "操诬杨彪通袁术，收之下狱",
-          "chapter": "第20章",
+          "chapter": 22,
           "place": "xudu",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 22
         }
       ]
-    },
-    {
-      "from": "cao-cao",
-      "to": "man-chong",
-      "type": "君臣（命案）",
-      "style": "solid",
-      "events": [
-        {
-          "text": "操命满宠按治杨彪",
-          "chapter": "第20章",
-          "place": "xudu",
-          "evidence": "paraphrase"
-        }
-      ],
-      "fromCh": 20
     },
     {
       "from": "kong-rong",
@@ -19408,13 +19404,14 @@
       "events": [
         {
           "text": "孔融谏操，杨彪得免官归田",
-          "chapter": "第20章",
+          "chapter": 22,
           "place": "xudu",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 22
         }
       ],
-      "fromCh": 20,
-      "toCh": 22
+      "fromCh": 22,
+      "toCh": 23
     },
     {
       "from": "cao-cao",
@@ -19424,9 +19421,10 @@
       "events": [
         {
           "text": "赵彦劾操专横，操收杀之",
-          "chapter": "第20章",
+          "chapter": 22,
           "place": "xudu",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 22
         }
       ]
     },
@@ -38339,9 +38337,10 @@
       "events": [
         {
           "text": "懿令戴陵等打阵，被擒受辱。",
-          "chapter": "第100章",
+          "chapter": 99,
           "place": "wei-bin",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 99
         }
       ]
     },
@@ -42877,9 +42876,10 @@
       "events": [
         {
           "text": "孙静引诸子谏兄勿兴兵伐刘表",
-          "chapter": "第7章",
+          "chapter": 15,
           "place": "jiang-dong",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 15
         }
       ]
     },
@@ -47153,10 +47153,11 @@
       "style": "solid",
       "events": [
         {
-          "text": "夏侯玄被召，夏侯霸闻而反",
-          "chapter": "第107章",
+          "text": "夏侯玄曰「臣叔夏侯霸降蜀，因惧司马兄弟谋害故耳」；三人谋诛司马师，事泄，玄与李丰、张缉俱被腰斩，灭其三族",
+          "chapter": "第109章",
           "place": "",
-          "evidence": "paraphrase"
+          "evidence": "paraphrase",
+          "chapterNum": 109
         }
       ]
     },
