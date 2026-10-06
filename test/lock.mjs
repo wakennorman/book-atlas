@@ -88,6 +88,29 @@ ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.d
  *
  * ⇒ `Input.*` 给 300 秒（覆盖门禁里实测的最坏值），其余 30 秒
  *   （纯读状态的命令超时就该立刻红掉，不该干等）。
+ *
+ * ★ v0.121 定位了（一次性探针 test/_probe-cdp.mjs，用完即删）：
+ *   同会话内交替发两类命令，结果 ——
+ *     Runtime.evaluate          0–2 ms
+ *     Input.*（点**空白处**）   1–7 ms
+ *     Input.*（点**真实图元**） 1–3 ms
+ *     而**应用侧** selectCharacter 同步耗时：163 ms
+ *
+ *   ⇒ **CDP 本身没有任何固有开销**（两个假设①input 队列、②合成器节流都不成立：
+ *     空白处与真实图元都是毫秒级，没有"排队等帧"的迹象）。
+ *     真正慢的是**应用侧那段同步工作** —— 点击 → selectCharacter →
+ *     navToPanel（滚动）+ 高亮 + setOption，全程同步跑在输入事件处理器里。
+ *     CDP 看到的耗时 = 这段工作 × 当下负载放大。
+ *
+ *   这解释了原来那条观察的悖论：
+ *     「应用侧 setOption 只有 21.7ms」量的是**渲染耗时**，
+ *     「门禁里 Input 超 120 秒」量的是**排队 + 执行 + 负载放大**，
+ *     两者不是同一段耗时，21.7ms 并不能推出"门禁里也只该用 21.7ms"。
+ *
+ *   ⇒ 300 秒这个值**不能靠调小解决**：它覆盖的是机器负载，不是代码。
+ *     机器空的时候（独立跑）实测 67/0、67 过 0 挂，全是毫秒级。
+ *   ⇒ 真要根治得让那段同步工作分片（把长任务挪出输入事件处理器），
+ *     那是**改应用**，不是改测试 —— 超出"定位"范围，此处如实记下不动手。
  */
 const CDP_TIMEOUT = (method) => (String(method).startsWith('Input.') ? 300000 : 30000);
 const send = (method, params = {}) => new Promise((resolve, reject) => {
