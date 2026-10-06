@@ -13188,7 +13188,7 @@
       "title": "",
       "desc": "本姓俞氏，孙策爱之赐姓孙，因此系吴王宗族。孙桓之父，生四子桓居其长",
       "fate": "",
-      "note": "⚠ 原著写作「其父名河，本姓俞氏」——姓是孙策所赐，故原文里「孙河」0 次。与孙权次子「孙和」是两个人，v0.105 曾误并为一人，v0.112 拆开。",
+      "note": "⚠ 原著写作「其父名河，本姓俞氏」——姓是孙策所赐，故原文里「孙河」0 次。与孙权次子「孙和」是两个人，v0.105 曾误并为一人，v0.112 拆开。⚠ 原著从未交代孙河的父亲是谁（历史上是孙贲，小说没写），所以他在族谱里的绝对代号无从得知：现在 gen3 / 其子孙桓 gen4，只为了满足\"父代号 < 子代号\"。这个值**只影响布局，不影响推导** —derive-kin 与 check-kin-terms 都只读亲子边，不读 generation。",
       "tier": "minor"
     }
   ],
@@ -46273,21 +46273,6 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "sun-shao",
-      "type": "赐姓养侄孙",
-      "kin": "sworn",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孙权亲往辕门救下被斩的孙韶",
-          "chapter": "第86章",
-          "place": "nan-xu",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
       "from": "sun-shao",
       "to": "xu-sheng",
       "type": "违令对立",
@@ -49077,6 +49062,21 @@
         {
           "chapter": "",
           "text": "由 「孙权 —父子→ 孙和」、「孙和 —父子→ 孙皓」 推导（原文没有直接互动）",
+          "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "sun-quan",
+      "to": "sun-shao",
+      "type": "养同父异母的兄弟（推导）",
+      "style": "dotted",
+      "derived": true,
+      "kin": "adoptive",
+      "events": [
+        {
+          "chapter": "",
+          "text": "由 「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]

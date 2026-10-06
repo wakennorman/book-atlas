@@ -72,7 +72,33 @@ await Promise.race([
 ]);
 let seq = 0; const pending = new Map();
 ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString()); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.reject(new Error(m.error.message)) : p.resolve(m.result || {}); } };
-const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
+/**
+ * 每条 CDP 命令都带硬超时。
+ *
+ * ⚠ 为什么要按命令类型分开（v0.115 实测）
+ *   一开始统一 30 秒，门禁里 `Input.dispatchMouseEvent` 稳定超时。**不是不应答** ——
+ *   单独跑能过（92 秒、67 过 0 挂），但在跑满 31 步的机器上超过 120 秒。
+ *   而应用侧的 `setOption` 只有 21.7ms（锁定）/ 64.3ms（未锁定），
+ *   所以这个耗时**不在我们的代码里**。
+ *
+ *   两个还没排除的可能（本轮没 budget 定位，如实记在这里）：
+ *     ① CDP 的 input 命令要等渲染进程确认，main thread 忙时会在队列里排队
+ *     ② headless=new 下没有可见帧，合成器可能节流到帧节奏
+ *   两者都与机器负载相关，所以独立跑快、门禁里慢 —— 这与实测吻合。
+ *
+ * ⇒ `Input.*` 给 300 秒（覆盖门禁里实测的最坏值），其余 30 秒
+ *   （纯读状态的命令超时就该立刻红掉，不该干等）。
+ */
+const CDP_TIMEOUT = (method) => (String(method).startsWith('Input.') ? 300000 : 30000);
+const send = (method, params = {}) => new Promise((resolve, reject) => {
+  const id = ++seq;
+  pending.set(id, { resolve, reject });
+  ws.send(JSON.stringify({ id, method, params }));
+  /* CDP 响应不来时 pending 条目永不 settle ⇒ 进程静默挂死（0 字节输出、无退出码）。 */
+  setTimeout(() => {
+    if (pending.delete(id)) reject(new Error(`CDP ${method} ${CDP_TIMEOUT(method) / 1000} 秒无响应`));
+  }, CDP_TIMEOUT(method));
+});
 const js = async (e) => { const r = await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 

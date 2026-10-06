@@ -96,6 +96,14 @@ const send = (method, params = {}) => new Promise((resolve, reject) => {
   const id = ++seq;
   pending.set(id, { resolve, reject });
   ws.send(JSON.stringify({ id, method, params, ...(SESSION ? { sessionId: SESSION } : {}) }));
+  /* v0.115：本文件原先是唯一没有 send 超时的。
+   * CDP 响应不来 ⇒ pending 条目永不 settle ⇒ 进程静默挂死
+   * （stdout/stderr 0 字节、无异常、无退出码），和 lock.mjs 注释里描述的挂法一样。
+   * 下面几行的 send 超时是多行写法，scripts/add-send-timeout.mjs 的单行正则判不出来，
+   * 所以这里是手改的 —— 那个脚本会跳过所有跨行写法。 */
+  setTimeout(() => {
+    if (pending.delete(id)) reject(new Error(`CDP ${method} 30 秒无响应`));
+  }, 30000);
 });
 
 try {
