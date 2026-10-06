@@ -2216,7 +2216,7 @@
       "title": "越骑校尉",
       "desc": "死于长安国难",
       "fate": "死于国难",
-      "note": "此指邓艾部将，或与董卓部将王颀同名",
+      "note": "此指邓艾部将，或与董卓部将王颀同名 ※ 已与第116回「天水太守王颀」（邓艾部将）拆分 —— 二人相隔 65 年（190 vs 255），是两个人。",
       "tier": "minor"
     },
     {
@@ -6557,7 +6557,8 @@
       "id": "lou-zibo",
       "name": "娄子伯",
       "aliases": [
-        "梦梅居士"
+        "梦梅居士",
+        "子伯"
       ],
       "generation": 1,
       "gender": "m",
@@ -8847,9 +8848,7 @@
     {
       "id": "zhu-rong-furen",
       "name": "祝融夫人",
-      "aliases": [
-        "夫人"
-      ],
+      "aliases": [],
       "generation": 1,
       "gender": "f",
       "firstCh": 90,
@@ -11719,16 +11718,18 @@
     },
     {
       "id": "guan-chun",
-      "name": "关纯",
-      "aliases": [],
+      "name": "闵纯",
+      "aliases": [
+        "关纯"
+      ],
       "generation": 1,
       "gender": "m",
       "firstCh": 7,
       "faction": "qunxiong",
       "title": "韩馥别驾",
-      "desc": "请袁绍入州，刺绍被文丑杀",
+      "desc": "韩馥别驾。奉命去请袁绍入主冀州；事泄后与耿武伏城外行刺，被文丑砍死。",
       "fate": "被文丑砍死",
-      "note": "",
+      "note": "原文作「闵纯」（第7回正文 4 处）。别名「关纯」是第120回注释据史料所改的写法，注释自称系古本抄写讹误。firstCh=7（第7回）。",
       "tier": "minor"
     },
     {
@@ -13272,6 +13273,21 @@
       "title": "曹芳皇后",
       "desc": "曹芳之皇后，张缉之女（曹芳称张缉为皇丈）。",
       "note": "出处：「「缉乃张皇后之父，曹芳之皇丈也」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "wang-qi-tianshui",
+      "name": "王颀",
+      "aliases": [
+        "王颀（天水太守）"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "title": "天水太守 / 邓艾部将",
+      "faction": "wei",
+      "desc": "邓艾伐蜀时为天水太守，奉命引兵一万五千攻沓中，为姜维所破。",
+      "firstCh": 116,
+      "note": "出处：「又遣天水太守王颀，引兵一万五千，从左攻沓中」「邓艾封师纂为益州刺史，牵弘、王颀等各领州郡」。⚠ 与第9回越骑校尉王颀**非同一人**（相隔 65 年），原先被并成一个人。",
       "tier": "minor"
     }
   ],
@@ -50523,6 +50539,634 @@
           "chapter": "",
           "text": "由 「吉平 —父子→ 吉穆」 推导（原文没有直接互动）",
           "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "liu-yan",
+      "to": "zou-jing",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 1,
+      "toCh": 2,
+      "events": [
+        {
+          "chapter": 1,
+          "place": "",
+          "text": "刘焉令邹靖引刘玄德为先锋破贼，邹靖引见太守刘焉",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "hua-xiong",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 5,
+      "toCh": 6,
+      "events": [
+        {
+          "chapter": 5,
+          "place": "",
+          "text": "加为骁骑校尉，同李肃胡轸赵岑赴关迎敌，连斩鲍忠俞涉潘凤祖茂",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "li-meng",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 9,
+      "toCh": 10,
+      "events": [
+        {
+          "chapter": 9,
+          "place": "",
+          "text": "董卓余党，在长安为内应偷开城门；后为校尉，请兵万人迎敌西凉",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "dong-zhuo",
+      "to": "wang-fang",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 9,
+      "toCh": 10,
+      "events": [
+        {
+          "chapter": 9,
+          "place": "",
+          "text": "董卓余党，与李蒙同在长安为内应，后同请兵万人迎敌西凉",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "ma-chao",
+      "to": "li-meng",
+      "type": "生擒",
+      "style": "solid",
+      "fromCh": 10,
+      "toCh": 11,
+      "events": [
+        {
+          "chapter": 10,
+          "place": "",
+          "text": "马超生擒李蒙，迨至隘口把李蒙斩首号令",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "kong-rong",
+      "to": "guan-hai",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 11,
+      "toCh": 12,
+      "events": [
+        {
+          "chapter": 11,
+          "place": "",
+          "text": "管亥部领群寇数万围北海索粮，一刀砍宗宝于马下，孔融拒不发粮",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "dong-cheng",
+      "to": "qin-qingtong",
+      "type": "家奴",
+      "style": "solid",
+      "fromCh": 23,
+      "toCh": 24,
+      "events": [
+        {
+          "chapter": 23,
+          "place": "",
+          "text": "家奴秦庆童与侍妾云英私语被杖，怀恨逃入曹操府首告衣带诏",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "yuan-shao",
+      "to": "sui-yuanjin",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 30,
+      "toCh": 31,
+      "events": [
+        {
+          "chapter": 30,
+          "place": "",
+          "text": "遣淳于琼部领督将眭元进等引二万人马守乌巢",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "yuan-shao",
+      "to": "zhao-rui",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 30,
+      "toCh": 31,
+      "events": [
+        {
+          "chapter": 30,
+          "place": "",
+          "text": "遣淳于琼部领督将赵睿等引二万人马守乌巢",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-yi",
+      "to": "gui-lan",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 38,
+      "toCh": 39,
+      "events": [
+        {
+          "chapter": 38,
+          "place": "",
+          "text": "丹阳督将妫览与郡丞戴员常欲杀翊，结边洪为心腹共谋杀翊",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-yi",
+      "to": "dai-yuan",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 38,
+      "toCh": 39,
+      "events": [
+        {
+          "chapter": 38,
+          "place": "",
+          "text": "丹阳督将妫览与郡丞戴员常欲杀翊，二人归罪边洪斩之于市",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "cao-cao",
+      "to": "lou-zibo",
+      "type": "求计",
+      "style": "solid",
+      "fromCh": 59,
+      "toCh": 60,
+      "events": [
+        {
+          "chapter": 59,
+          "place": "",
+          "text": "京兆隐士娄子伯（梦梅居士）见曹操，献泼水冻城之计；操厚赏之，辞去",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-xu",
+      "to": "yang-fu",
+      "type": "姑表兄弟",
+      "style": "solid",
+      "fromCh": 64,
+      "toCh": 65,
+      "events": [
+        {
+          "chapter": 64,
+          "place": "",
+          "text": "杨阜过历城见抚夷将军姜叙，叙与阜是姑表兄弟，叙之母是阜之姑；后姜叙与杨阜同举兵讨马超",
+          "evidence": "paraphrase"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "zhang-lu",
+      "to": "yang-ang",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 67,
+      "toCh": 68,
+      "events": [
+        {
+          "chapter": 67,
+          "place": "",
+          "text": "张鲁遣大将杨昂、杨任劫曹寨，后杨昂追曹操中计，被张郃所杀",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhang-lu",
+      "to": "chang-qi",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 67,
+      "toCh": 68,
+      "events": [
+        {
+          "chapter": 67,
+          "place": "",
+          "text": "杨任遣部将昌奇出马战夏侯渊，不三合被斩",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhuge-liang",
+      "to": "zhang-ni",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 87,
+      "toCh": 88,
+      "events": [
+        {
+          "chapter": 87,
+          "place": "",
+          "text": "孔明遣张嶷、张翼伏兵山路，擒南蛮董荼那；后镇抚将军关内侯",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "meng-huo",
+      "to": "zhu-rong-furen",
+      "type": "夫妻",
+      "style": "solid",
+      "fromCh": 90,
+      "toCh": 91,
+      "events": [
+        {
+          "chapter": 90,
+          "place": "",
+          "text": "孟获妻祝融夫人，善飞刀，骑卷毛赤兔；孔明七擒孟获皆其解围",
+          "evidence": "paraphrase"
+        }
+      ],
+      "kin": "marriage"
+    },
+    {
+      "from": "yang-feng-man",
+      "to": "meng-huo",
+      "type": "加害",
+      "style": "solid",
+      "fromCh": 89,
+      "toCh": 90,
+      "events": [
+        {
+          "chapter": 89,
+          "place": "",
+          "text": "银冶洞二十一洞主杨锋设宴，以二子把盏为质，擒孟获、孟优、朵思献孔明",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "mu-lu-dawang",
+      "to": "zhu-rong-furen",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 90,
+      "toCh": 91,
+      "events": [
+        {
+          "chapter": 90,
+          "place": "",
+          "text": "八纳洞主木鹿大王许孟获报仇，引猛兽出，与蜀军战至死于乱军",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "mu-lu-dawang",
+      "to": "meng-huo",
+      "type": "加害",
+      "style": "solid",
+      "fromCh": 90,
+      "toCh": 91,
+      "events": [
+        {
+          "chapter": 90,
+          "place": "",
+          "text": "八纳洞主木鹿大王为孟获报仇引兵出，死于乱军之中",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "meng-huo",
+      "to": "wu-tu-gu",
+      "type": "同盟",
+      "style": "solid",
+      "fromCh": 90,
+      "toCh": 91,
+      "events": [
+        {
+          "chapter": 90,
+          "place": "",
+          "text": "孟获投乌戈国见兀突骨，再拜哀告，兀突骨许以起本洞之兵报仇，率三万藤甲军助战",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-wei",
+      "to": "yin-shang",
+      "type": "交厚",
+      "style": "solid",
+      "fromCh": 93,
+      "toCh": 94,
+      "events": [
+        {
+          "chapter": 93,
+          "place": "",
+          "text": "姜维语孔明「天水城中，尹赏、梁绪与某至厚」，令其内乱；后迎孔明入城降蜀",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "yue-jin",
+      "to": "yue-lin",
+      "type": "父子",
+      "style": "solid",
+      "fromCh": 98,
+      "toCh": 99,
+      "events": [
+        {
+          "chapter": 98,
+          "place": "",
+          "text": "真又令张辽子张虎为先锋，乐进子乐綝为副先锋，同守头营",
+          "evidence": "paraphrase"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "gongsun-yuan",
+      "to": "bei-yan",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 106,
+      "toCh": 107,
+      "events": [
+        {
+          "chapter": 106,
+          "place": "",
+          "text": "渊令大将军卑衍为元帅，杨祚为先锋，起辽兵十五万杀奔中原",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-quan",
+      "to": "lv-dai",
+      "type": "君臣",
+      "style": "solid",
+      "fromCh": 108,
+      "toCh": 109,
+      "events": [
+        {
+          "chapter": 108,
+          "place": "",
+          "text": "孙权病危，召太傅诸葛恪、大司马吕岱至榻前嘱以后事",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "cao-fang",
+      "to": "zhang-ji-wei",
+      "type": "托付",
+      "style": "solid",
+      "fromCh": 109,
+      "toCh": 110,
+      "events": [
+        {
+          "chapter": 109,
+          "place": "",
+          "text": "曹芳咬破指尖写血诏授与张缉，托其诛司马师；事发后张缉被搜出龙凤汗衫",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhang-ji-wei",
+      "to": "zhang-huanghou",
+      "type": "父女",
+      "style": "solid",
+      "fromCh": 109,
+      "toCh": 110,
+      "events": [
+        {
+          "chapter": 109,
+          "place": "",
+          "text": "缉乃张皇后之父，曹芳之皇丈也",
+          "evidence": "paraphrase"
+        }
+      ],
+      "kin": "blood"
+    },
+    {
+      "from": "guo-huai",
+      "to": "mi-dang",
+      "type": "收降",
+      "style": "solid",
+      "fromCh": 109,
+      "toCh": 110,
+      "events": [
+        {
+          "chapter": 109,
+          "place": "",
+          "text": "迷当被魏兵生擒，见郭淮，伏罪；淮说之当前部解铁笼山之围",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "cao-fang",
+      "to": "li-feng-wei",
+      "type": "君臣",
+      "style": "solid",
+      "fromCh": 109,
+      "toCh": 110,
+      "events": [
+        {
+          "chapter": 109,
+          "place": "",
+          "text": "曹芳退入后殿，左右止有三人：太常夏侯玄、中书令李丰、光禄大夫张缉",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-chen",
+      "to": "liu-cheng",
+      "type": "斩杀",
+      "style": "solid",
+      "fromCh": 113,
+      "toCh": 114,
+      "events": [
+        {
+          "chapter": 113,
+          "place": "",
+          "text": "孙綝围大内，将全尚、刘丞并其家小拿下，先将全尚、刘丞等杀讫",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "deng-ai",
+      "to": "zheng-lun",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 113,
+      "toCh": 114,
+      "events": [
+        {
+          "chapter": 113,
+          "place": "",
+          "text": "唤副将郑伦引五百掘子军从地道拥出，为邓艾先锋；被廖化一刀斩于马下",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-wei",
+      "to": "wang-han",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 115,
+      "toCh": 116,
+      "events": [
+        {
+          "chapter": 115,
+          "place": "",
+          "text": "姜维以王含、蒋斌为左军，守乐城；汉中失守，开门而降",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-wei",
+      "to": "jiang-bin",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 115,
+      "toCh": 116,
+      "events": [
+        {
+          "chapter": 115,
+          "place": "",
+          "text": "姜维以王含、蒋斌为左军；蒋斌守汉城，汉中失守开门而降",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhuge-dan",
+      "to": "zeng-xuan",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 112,
+      "toCh": 113,
+      "events": [
+        {
+          "chapter": 112,
+          "place": "",
+          "text": "诸葛诞守将曾宣献了寿春北门，放魏兵入城；诞兵败被胡奋斩杀",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "si-ma-zhao",
+      "to": "zeng-xuan",
+      "type": "内应",
+      "style": "solid",
+      "fromCh": 112,
+      "toCh": 113,
+      "events": [
+        {
+          "chapter": 112,
+          "place": "",
+          "text": "司马昭围寿春，守将曾宣献北门放魏兵入城，诸葛诞因此兵败而死",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "li-jue",
+      "to": "wang-qi",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 9,
+      "toCh": 10,
+      "events": [
+        {
+          "chapter": 9,
+          "place": "",
+          "text": "李傕郭汜纵兵大掠长安，太常卿种拂太仆鲁馗大鸿胪周奂城门校尉崔烈越骑校尉王颀皆死于国难",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "deng-ai",
+      "to": "wang-qi-tianshui",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 116,
+      "toCh": 117,
+      "events": [
+        {
+          "chapter": 116,
+          "place": "",
+          "text": "邓艾遣天水太守王颀引兵一万五千从左攻沓中；后与牵弘各领州郡",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-wei",
+      "to": "wang-qi-tianshui",
+      "type": "交战",
+      "style": "solid",
+      "fromCh": 116,
+      "toCh": 117,
+      "events": [
+        {
+          "chapter": 116,
+          "place": "",
+          "text": "姜维与天水太守王颀接战，不三合颀大败而走",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "han-fu",
+      "to": "guan-chun",
+      "type": "君臣",
+      "style": "solid",
+      "fromCh": 7,
+      "toCh": 8,
+      "events": [
+        {
+          "chapter": 7,
+          "place": "",
+          "text": "韩馥差别驾闵纯去请袁绍入主冀州；事泄后与耿武伏城外行刺，被文丑砍死",
+          "evidence": "paraphrase"
         }
       ]
     }

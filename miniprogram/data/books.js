@@ -19,7 +19,7 @@ module.exports = {
       "title": "三国演义",
       "author": "罗贯中",
       "file": "./three-kingdoms.js",
-      "kb": 1075
+      "kb": 1084
     }
   ]
 };

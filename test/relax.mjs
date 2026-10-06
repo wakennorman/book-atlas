@@ -110,23 +110,52 @@ try {
     return { coincident: groups.length, worst: groups.reduce((a, g) => Math.max(a, g.length), 0), overlap, finite, n: a.length };
   }`);
 
-  /* ---- ① 真实数据里的孤立人物 ---- */
+  /* ---- ① 零关系人物不能叠在同一个点上 ----
+   *
+   * ⚠ v0.118 改过：原来断言 `orphan >= 30`，靠**真实数据里恰好有 35 个孤立人物**当输入。
+   *   v0.118 把那 35 个人都连上了（补了 39 条边），三国只剩 **1 个**孤立人物
+   *   （裴绪 —— 原文明说他是孔明心腹假扮的，不该连），断言随之失败。
+   *
+   * 这条测试要验的是**落位算法**的性质（孤立人物不能全叠在重心），
+   * 不是"数据里恰好有多少孤立人物"。让真实数据的数量决定测试成败，
+   * 等于把算法的正确性绑在一个会随数据变动的计数上 ——
+   * 下次再补几条边，同一个测试又会红，而算法一点问题都没有。
+   *
+   * ⇒ 改成**自己造** 40 个孤立人物：性质照样验，且不再受数据变动影响。
+   *   真实数据里剩几个（当前 1 个）只作为附带信息打印，不参与判定。
+   */
   console.log('\n▶ ① 零关系人物不能叠在同一个点上');
   const iso = await js(`(() => {
     const st = window.__ba.state;
     const deg = new Set();
     for (const r of st.book.relations) { deg.add(r.from); deg.add(r.to); }
-    const orphan = st.book.characters.filter((c) => !deg.has(c.id)).map((c) => c.id);
+    const realOrphan = st.book.characters.filter((c) => !deg.has(c.id)).map((c) => c.id);
+
+    /* 造 40 个真的没有一条关系的人物，并从关系里排除（保证它们确属"零关系"） */
+    const N = 40;
+    const fake = [];
+    for (let i = 0; i < N; i++) {
+      const id = '__probe_orphan_' + i;
+      st.book.characters.push({ id, name: '探针孤儿' + i, aliases: [], generation: 1, gender: 'm' });
+      fake.push(id);
+    }
+    const orphan = realOrphan.concat(fake);
     for (const id of orphan) st.pos.delete(id);
+
     // 先算出「旧实现会放成什么样」：全部丢到同一个全局重心 ⇒ 必然全部重合
     let cx = 0, cy = 0, n = 0;
     for (const p of st.pos.values()) { cx += p.x; cy += p.y; n++; }
     cx /= (n || 1); cy /= (n || 1);
     const oldWould = new Set(orphan.map(() => cx + ',' + cy)).size;
     window.__ba._fillMissing();
-    return { orphan: orphan.length, oldWould, after: window.__probe() };
+
+    const after = window.__probe();
+    // 还原现场，别把探针人物漏给后面的用例
+    st.book.characters = st.book.characters.filter((c) => !c.id.startsWith('__probe_orphan_'));
+    for (const id of orphan) st.pos.delete(id);
+    return { real: realOrphan.length, orphan: orphan.length, oldWould, after };
   })()`);
-  ok(iso.orphan >= 30, `三国里确实有 ${iso.orphan} 个零关系人物（所以这不是假想输入）`);
+  ok(iso.orphan >= 40, `造了 ${iso.orphan} 个零关系人物（其中真实数据 ${iso.real} 个 + 探针 40 个）`);
   ok(iso.oldWould === 1,
     `旧实现会把它们全放到同一个重心 ⇒ ${iso.orphan} 个人共用 ${iso.oldWould} 个坐标`);
   ok(iso.after.coincident === 0,
