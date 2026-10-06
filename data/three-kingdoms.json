@@ -296,9 +296,12 @@
     },
     {
       "id": "zhu-jun",
-      "name": "朱儁",
+      "name": "朱隽",
       "aliases": [
-        "公伟"
+        "公伟",
+        "朱儁",
+        "隽",
+        "朱俊"
       ],
       "generation": 1,
       "gender": "m",
@@ -307,7 +310,7 @@
       "title": "中郎将",
       "desc": "与皇甫嵩共讨颍川黄巾",
       "fate": "火攻得胜，会曹操援军",
-      "note": ""
+      "note": "⚠「公伟」与「会稽郡人」出自卷末《三国群英谱》，**正文未写**；正文一律作「朱隽（读如俊）」。v0.117 合并了 v0.116 误建的同一人。"
     },
     {
       "id": "cao-cao",
@@ -13203,20 +13206,6 @@
       "title": "汉室宗亲 / 扬州刺史",
       "desc": "字正礼，东莱牟平人，汉室宗亲。刘繇急鸣金收军，撤去曲阿。",
       "note": "出处：「「却说刘繇字正礼，东莱牟平人也，汉室宗亲」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
-      "tier": "minor"
-    },
-    {
-      "id": "zhu-jun-han",
-      "name": "朱隽",
-      "aliases": [
-        "隽",
-        "朱俊"
-      ],
-      "generation": 1,
-      "gender": "m",
-      "title": "中郎将 / 太仆",
-      "desc": "汉灵帝时与卢植、皇甫嵩各引精兵分三路讨黄巾。",
-      "note": "出处：「「一面遣中郎将卢植、皇甫嵩、朱隽（读如俊）各引精兵分三路讨之」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
       "tier": "minor"
     },
     {
@@ -37892,7 +37881,7 @@
     },
     {
       "from": "yang-fu",
-      "to": "yang-ling",
+      "to": "yang-ling-nan",
       "type": "族兄弟",
       "kin": "blood",
       "style": "solid",
@@ -37952,7 +37941,7 @@
     },
     {
       "from": "cui-liang",
-      "to": "yang-ling",
+      "to": "yang-ling-nan",
       "type": "交厚好友",
       "style": "solid",
       "events": [
@@ -48232,6 +48221,102 @@
           "chapter": 52,
           "place": "",
           "text": "桂阳太守赵范麾下管军校尉鲍隆，曾射杀双虎",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-dai",
+      "to": "liu-yao",
+      "type": "兄弟",
+      "kin": "blood",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "text": "刘繇是兖州刺史刘岱之弟，兄长。",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "liu-yao",
+      "type": "敌对",
+      "kin": "sworn",
+      "style": "dashed",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "text": "张昭张纮商议攻击刘繇；两军会于牛渚滩上、神亭岭下交战。",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "yuan-shu",
+      "to": "liu-yao",
+      "type": "敌对",
+      "kin": "sworn",
+      "style": "dashed",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "text": "刘繇旧为扬州刺史，屯于寿春，被袁术赶过江东，遂屯曲阿。",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "taishi-ci",
+      "type": "主将部将",
+      "kin": "sworn",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "text": "太史慈来见刘繇，繇留于帐下；后慈不候刘繇将令，自出为前部先锋。",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhu-jun",
+      "to": "lu-zhi",
+      "type": "同僚",
+      "kin": "sworn",
+      "style": "solid",
+      "fromCh": 1,
+      "toCh": 2,
+      "events": [
+        {
+          "chapter": 1,
+          "text": "何进遣中郎将卢植、皇甫嵩、朱隽各引精兵分三路讨黄巾。",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "han-xuan",
+      "to": "yang-ling",
+      "type": "主将部将",
+      "kin": "sworn",
+      "style": "solid",
+      "fromCh": 53,
+      "toCh": 54,
+      "events": [
+        {
+          "chapter": 53,
+          "text": "管军校尉杨龄、韩玄部将，奉命引军一千出城迎战关羽，为关羽所斩。",
           "evidence": "paraphrase"
         }
       ]
