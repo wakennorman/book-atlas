@@ -7957,7 +7957,7 @@
       "title": "左都督",
       "desc": "请兵破蜀，弓马熟娴，年二十五",
       "fate": "败走彝陵被围，遣人求救",
-      "note": ""
+      "note": "※ v0.127 原先与「孙权」之间有两条边（孙权—族叔侄→孙桓 / 孙桓—叔侄→孙权），type 同义反复且 kin 矛盾（adoptive vs blood），等于把同一件事画两遍。已删前者。被删边上记的事件：「孙桓请兵破蜀，孙权许之」。"
     },
     {
       "id": "li-yi",
@@ -21590,7 +21590,7 @@
       "from": "guan-yu",
       "to": "guan-ping",
       "type": "养父子（关羽收关平为义子）",
-      "kin": "sworn",
+      "kin": "adoptive",
       "style": "solid",
       "events": [
         {
@@ -34147,27 +34147,10 @@
       ]
     },
     {
-      "from": "sun-quan",
-      "to": "sun-huan",
-      "type": "族叔侄",
-      "kin": "adoptive",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孙桓请兵破蜀，孙权许之",
-          "chapter": "第82章",
-          "place": "jiang-dong",
-          "evidence": "paraphrase"
-        }
-      ],
-      "fromCh": 82,
-      "toCh": 83
-    },
-    {
       "from": "sun-ce",
       "to": "sun-he-orig",
       "type": "赐姓收养",
-      "kin": "sworn",
+      "kin": "adoptive",
       "style": "solid",
       "events": [
         {
@@ -37104,7 +37087,6 @@
       "from": "che-li-ji",
       "to": "ya-dan",
       "type": "君臣",
-      "kin": "blood",
       "style": "solid",
       "events": [
         {
