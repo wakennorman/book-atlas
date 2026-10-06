@@ -331,6 +331,29 @@ try {
   await goto('three-kingdoms', 500);
   await setView('gen-v');
   await wait(600);
+  /* ⚠ v0.119 补：把 zoom 拉回 1，否则下面的合成拖动**必然**失效。
+   *
+   * 现象：④ 的 9 次重试里 viewCenter 一次都没动（每次都停在 [-402.9, 120.1]），
+   * 墨迹 83% 可见、按钮不亮。基线（v0.118）同一条断言是过的 —— 靠 8 次里蒙对 1 次。
+   *
+   * 定位过程（test/_probe-drag.mjs，一次性探针，已删）：
+   *   ① 复现 roam 的完整前置后，viewCenter 卡住不动；
+   *   ② 查 state：nodeDrag=false、frozen=true、view=gen-h、clickLock=false —— 都不是元凶；
+   *   ③ 注意到 `goto()` 是 Page.navigate 到**同一个 URL**，
+   *      而 ③ 末尾的 wheel(120) 把 zoom 推到了 **1.75** —— 状态被带进了 ④；
+   *   ④ 点一次「重置视野」（zoom 1.75 → 1，viewCenter → [0,0]），
+   *      **同一个 dragBy 立刻生效**：viewCenter → -1257，按钮亮起。
+   *
+   * ⇒ 应用没坏，是**合成拖动在高 zoom 下不可靠**（与下面注释说的
+   *   "中间某一步落在节点/线上 ⇒ 被当成拖元素" 是同一类输入不可靠）。
+   *   而"点重置视野"正是用户随时能做的操作，用它把输入带回可靠状态是正当的。
+   *
+   * 为什么放在 setView 之后：setView 会跑各自的 forceLayout 并设 zoom，
+   * 复位必须在它**之后**，否则又被覆盖。
+   * 不动断言、不加重试上限 —— 只把输入修好。 */
+  await js(`document.getElementById('view-reset-btn').click()`);
+  await wait(1500);
+  console.log(`    复位视野后 zoom=${await js(`window.__ba.state.zoom`)}`);
   /* ⚠ 这一次合成拖动**本身就不稳**，所以最多重试 3 次（v93）。
      *
      * 现象：拖 1400px 之后 viewCenter 只挪到 -118（几乎没动），墨迹仍 100% 可见，按钮不亮。

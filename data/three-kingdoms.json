@@ -13206,8 +13206,11 @@
       "gender": "m",
       "title": "汉室宗亲 / 扬州刺史",
       "desc": "字正礼，东莱牟平人，汉室宗亲。刘繇急鸣金收军，撤去曲阿。",
-      "note": "出处：「「却说刘繇字正礼，东莱牟平人也，汉室宗亲」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
-      "tier": "minor"
+      "note": "出处：「「却说刘繇字正礼，东莱牟平人也，汉室宗亲」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。 ※ firstCh=15（据原文定位短语「却说刘繇字正礼，东莱牟平」换算，非\"按名字首次出现\"那种不可靠算法）。",
+      "tier": "minor",
+      "firstCh": 15,
+      "faction": "wu",
+      "fate": "兵败后与笮融走豫章，投刘表去了"
     },
     {
       "id": "zhao-fan",
@@ -13288,6 +13291,90 @@
       "desc": "邓艾伐蜀时为天水太守，奉命引兵一万五千攻沓中，为姜维所破。",
       "firstCh": 116,
       "note": "出处：「又遣天水太守王颀，引兵一万五千，从左攻沓中」「邓艾封师纂为益州刺史，牵弘、王颀等各领州郡」。⚠ 与第9回越骑校尉王颀**非同一人**（相隔 65 年），原先被并成一个人。",
+      "tier": "minor"
+    },
+    {
+      "id": "zhang-ying",
+      "name": "张英",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇部将 / 骁将",
+      "faction": "wu",
+      "desc": "刘繇部将，屯兵牛渚积粮十万于邸阁。牛渚一战寨中遭陈武蒋钦放火，弃牛渚逃。",
+      "fate": "拨马回走，被陈武一枪刺死",
+      "firstCh": 15,
+      "note": "出处：「「部将张英曰：某领一军，屯于牛渚，纵有百万之兵，亦不能近」」。",
+      "tier": "minor"
+    },
+    {
+      "id": "ze-rong",
+      "name": "笮融",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇谋士",
+      "faction": "wu",
+      "desc": "刘繇谋士。与薛礼同劝刘繇免斩张英。后与刘繇合兵取牛渚。",
+      "fate": "与刘繇走豫章，投刘表去了",
+      "firstCh": 15,
+      "note": "出处：「「谋士笮（读如责）融、薛礼劝免」」。",
+      "tier": "minor"
+    },
+    {
+      "id": "xue-li",
+      "name": "薛礼",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇谋士 / 守将",
+      "faction": "wu",
+      "desc": "刘繇谋士。与笮融同劝免张英；后奉命屯兵零陵城拒敌，孙策攻秣陵时据城死守。",
+      "fate": "死于乱军中",
+      "firstCh": 15,
+      "note": "出处：「「谋士笮（读如责）融、薛礼劝免」」。",
+      "tier": "minor"
+    },
+    {
+      "id": "yu-mi",
+      "name": "于糜",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇部将",
+      "faction": "wu",
+      "desc": "刘繇部将。牛渚之战出马迎战孙策。",
+      "fate": "不三合被策生擒过去，策到门旗下，已被挟死",
+      "firstCh": 15,
+      "note": "出处：「「乃部将于糜也」」。",
+      "tier": "minor"
+    },
+    {
+      "id": "fan-neng",
+      "name": "樊能",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇部将",
+      "faction": "wu",
+      "desc": "刘繇部将。见于糜被擒，挺枪来赶孙策。",
+      "fate": "惊骇倒翻身撞下马来，破头而死",
+      "firstCh": 15,
+      "note": "出处：「「繇将樊能见捉了于糜，挺枪来赶」」。",
+      "tier": "minor"
+    },
+    {
+      "id": "chen-heng",
+      "name": "陈横",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "刘繇部将 / 骁将",
+      "faction": "wu",
+      "desc": "刘繇部将，与骁将张英同为将。秣陵之战与张英杀出城来追孙策。",
+      "fate": "被蒋钦一箭射死",
+      "firstCh": 15,
+      "note": "出处：「「与骁将张英、陈横杀出城来追之」」。",
       "tier": "minor"
     }
   ],
@@ -51166,6 +51253,198 @@
           "chapter": 7,
           "place": "",
           "text": "韩馥差别驾闵纯去请袁绍入主冀州；事泄后与耿武伏城外行刺，被文丑砍死",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "zhang-ying",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "部将张英领一军屯牛渚，积粮十万于邸阁；后屯兵零陵城拒敌",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "ze-rong",
+      "type": "谋士",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "谋士笮融与薛礼劝免败回的张英",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "xue-li",
+      "type": "谋士",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "谋士薛礼与笮融劝免败回的张英",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "yu-mi",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "牛渚之战部将于糜出马迎战孙策",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "fan-neng",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "见於糜被擒，部将樊能挺枪来赶孙策",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "liu-yao",
+      "to": "chen-heng",
+      "type": "部将",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "骁将陈横与张英同为刘繇部将，秣陵之战杀出城来追孙策",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "zhang-ying",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "牛渚滩上两军会战，孙策出马，张英大骂；后张英中陈武枪而死",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "xue-li",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "孙策亲到城壕招谕薛礼投降，薛礼城上暗放冷箭射中孙策左腿",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-ce",
+      "to": "ze-rong",
+      "type": "敌对",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "刘繇会合笮融去取牛渚，二人出马迎敌，兵败后同走豫章",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "ze-rong",
+      "to": "xue-li",
+      "type": "同僚",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "刘繇令二者会合军马，急往秣陵接应",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "chen-wu",
+      "to": "zhang-ying",
+      "type": "斩杀",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "张英拨马回走，被陈武一枪刺死",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "jiang-qin",
+      "to": "chen-heng",
+      "type": "射杀",
+      "style": "solid",
+      "fromCh": 15,
+      "toCh": 16,
+      "events": [
+        {
+          "chapter": 15,
+          "place": "",
+          "text": "陈横被蒋钦一箭射死",
           "evidence": "paraphrase"
         }
       ]
