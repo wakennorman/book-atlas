@@ -26,3 +26,6 @@ node_modules/
 
 # 审计报告：每次跑都会重生成，进 git 会掩盖真正的代码改动
 reports/
+_y*.mjs
+_*.mjs
+
