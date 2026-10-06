@@ -152,7 +152,6 @@
       "aliases": [
         "卡捷莉娜·伊凡诺芙娜·玛尔美拉多娃",
         "卡捷琳娜",
-        "卡捷莉娜",
         "卡捷莉娜·伊万诺夫娜·玛尔美拉多娃",
         "卡佳",
         "卡捷琳娜·伊万诺夫娜",
@@ -319,9 +318,7 @@
       "title": "女仆",
       "desc": "给罗佳端饭、报信，是唯一敢随意跟他说话的人。",
       "fate": "继续在底层替人做事。",
-      "aliases": [
-        "娜斯达霞"
-      ]
+      "aliases": []
     },
     {
       "id": "amalia",
@@ -365,9 +362,7 @@
       "title": "警察分局办事员",
       "desc": "在酒馆里被罗佳一句「要是我杀了那个老太婆呢」吓得变了脸色。",
       "fate": "一直记着罗佳这张脸。",
-      "aliases": [
-        "扎麦托夫"
-      ]
+      "aliases": []
     },
     {
       "id": "nikodim",
@@ -1425,6 +1420,48 @@
           "chapter": "",
           "text": "由 「卡捷莉娜 —母女→ 廖尼娅」 推导（原文没有直接互动）",
           "evidence": "derived"
+        }
+      ]
+    },
+    {
+      "from": "nikodim",
+      "to": "ilya",
+      "type": "同僚",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "尼科丁佛米奇带着亲切的好意对伊里亚彼得罗维奇说\"又冒火了，又大发雷霆了\"；局长亦称其绰号\"炮筒子中尉\"",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "nikodim",
+      "to": "raskolnikov",
+      "type": "辩护",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "尼科丁佛米奇对罗季昂说\"我要跟您说，他是个极其高尚的人，然而又是炮筒子…说到底，他那颗心是金子的\"",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "ilya",
+      "to": "raskolnikov",
+      "type": "责备",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "伊里亚彼得罗维奇当着罗季昂的面大发雷霆，厉声训斥丽扎维达\"你是存心要进拘留所吗\"",
+          "evidence": "paraphrase"
         }
       ]
     }
