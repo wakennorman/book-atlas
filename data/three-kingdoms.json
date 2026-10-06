@@ -1700,7 +1700,6 @@
       "name": "马腾",
       "aliases": [
         "寿成",
-        "报父仇",
         "尊人"
       ],
       "generation": 1,
@@ -54191,7 +54190,8 @@
         "zhang-rang",
         "cao-jie",
         "yuan-shao",
-        "liu-bian"
+        "liu-bian",
+        "liu-xie"
       ],
       "phase": "p1",
       "order": 15,
@@ -54206,7 +54206,8 @@
       "chars": [
         "dong-zhuo",
         "han-lingdi",
-        "liu-bian"
+        "liu-bian",
+        "liu-xie"
       ],
       "phase": "p1",
       "order": 16,
@@ -54222,7 +54223,8 @@
         "dong-zhuo",
         "lu-zhi",
         "lv-bu",
-        "ding-yuan"
+        "ding-yuan",
+        "liu-xie"
       ],
       "phase": "p1",
       "order": 17,
@@ -57326,7 +57328,8 @@
         "sun-quan",
         "sun-yi",
         "gui-lan",
-        "dai-yuan"
+        "dai-yuan",
+        "xu-shi"
       ],
       "phase": "p3",
       "order": 29,
@@ -58281,7 +58284,9 @@
       "chars": [
         "zhao-yun",
         "liu-bei",
-        "zhuge-liang"
+        "zhuge-liang",
+        "zhao-fan",
+        "chen-ying"
       ],
       "phase": "p4",
       "order": 11,
@@ -62211,7 +62216,8 @@
         "zhuge-liang",
         "xiahou-mao",
         "cui-liang",
-        "zhang-bao-zhangfei"
+        "zhang-bao-zhangfei",
+        "yang-ling-nan"
       ],
       "phase": "p5",
       "order": 39,
@@ -63386,7 +63392,8 @@
       "impact": "淮南之乱起，司马师带病亲征。",
       "chars": [
         "si-ma-shi",
-        "wen-qin"
+        "wen-qin",
+        "guanqiu-jian"
       ],
       "phase": "p6",
       "order": 31,
@@ -63880,7 +63887,8 @@
         "wang-qi",
         "si-ma-zhao",
         "deng-ai",
-        "zhong-hui"
+        "zhong-hui",
+        "wang-qi-tianshui"
       ],
       "phase": "p6",
       "order": 81,
