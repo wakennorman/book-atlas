@@ -356,10 +356,57 @@ function validate(file) {
 
   // ---------- 文案规范检查（v0.3 起：防「主语跳来跳去 / 称谓不明 / 提到的人不在 chars 里」） ----------
   const KIN_WORD = /(哥哥|弟弟|姐姐|妹妹|父亲|母亲|儿子|女儿|丈夫|妻子|叔叔|姑姑|侄子|侄女|祖父|祖母|外公|外婆|曾祖|孙子|孙女)/;
-  const nameIndex = chars.map((c) => ({ id: c.id, n: [c.name, ...(c.aliases || [])].filter(Boolean) }));
+  /* ---------- v0.129：别名里挂在 2+ 人身上的那些，不参与"文案提到谁"的匹配 ----------
+   *
+   * 为什么要改判据（这是改**工具**不是改数据，理由是判据本身错了）：
+   *
+   * 这条检查问的是「文案里提到的人，是不是漏进 `chars` 了」。
+   * 要回答这个问题，靠的必须是**能指认某个人**的名字形式。
+   *
+   * 而「太后」「丞相」「都督」「魏王」「大将军」「陈留王」这类**不是人名** ——
+   * 它们是官职/朝代号，原文里同一回里可以指好几个人，甚至指事件主角以外的人：
+   *   · e-44-2「封**瑜**为大都督」  → 都督是**周瑜**，但那条告警说的是「司马懿」
+   *   · e-120-4「命**杜预**为大都督」→ 都督是杜预，告警说的是「司马懿」和「周瑜」
+   *   · e-79-6「禅位于魏王**曹丕**」→ 魏王是曹丕，告警说的是「曹操」
+   *   · e-107-4「**魏主曹芳**封…」   → 魏主是曹芳，同一回里报出 曹丕/曹睿/曹髦/曹奂 四条
+   *
+   * ⇒ 三国书 43 条「文案提到 X 但 chars 未包含」**全部**是这类误报，
+   *   逐条核过，一条真漏都没有。
+   *
+   * ## 判据怎么定（自维护，不手维护官职表）
+   *
+   * ★ **一个别名如果挂在 2 个以上人物身上，它就不可能是"指认某个人"的名字形式** ——
+   *   不管它是官职（丞相/都督）、朝号（魏王/陈留王）、并称（二夫人）、
+   *   还是两个人本来就同名的字（奉孝=郭嘉/刘理、公明=徐晃/管辂）。
+   *   用它去判断"文案提到了谁"必然出错。
+   *
+   * ⇒ 所以直接按"这个别名挂在几个人身上"来筛，**不维护官职词表**（那会烂掉）。
+   *
+   * ## 但**本名**即使重名也保留在匹配里
+   *
+   * 「王颀」有两个（v0.121 定性为原文里就同名）、「吴氏」也有两个。
+   * 这时文案提到「王颀」，**两个都该在 chars 里**（或都不该），
+   * 报出来是有意义的 ⇒ 本名不参与这个筛选。
+   */
+  const aliasOwners = new Map();
+  for (const c of chars) {
+    for (const a of c.aliases || []) {
+      if (!a) continue;
+      if (!aliasOwners.has(a)) aliasOwners.set(a, new Set());
+      aliasOwners.get(a).add(c.id);
+    }
+  }
+  const sharedAliases = new Set([...aliasOwners].filter(([, who]) => who.size > 1).map(([a]) => a));
+  const nameIndex = chars.map((c) => ({
+    id: c.id,
+    // 本名恒保留；别名只留**独享**的
+    n: [c.name, ...(c.aliases || [])].filter((x) => x && !sharedAliases.has(x)),
+  }));
   const hasName = (text) => nameIndex.some((x) => x.n.some((nn) => text.includes(nn)));
   const sentences = (s) => String(s || '').split(/[。；！？]/).map((x) => x.trim()).filter(Boolean);
   const firstSentence = (s) => sentences(s)[0] || '';
+  /* v0.129：共用称谓命中记账（这些不报"漏人"，但要看得见） */
+  const skippedShared = [];
 
   for (const e of events) {
     const where = `事件 ${e.id}`;
@@ -380,6 +427,11 @@ function validate(file) {
         warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
       }
     }
+    /* 用了共用称谓的，**不报但要记账** —— 静默跳过会让"改好了"和"没检查"看起来一样。
+     * 顺手把原文那句记下来，好让最后那条提示能举**本书真实**的例子，而不是写死某一本的。 */
+    for (const a of sharedAliases) {
+      if (mentions(a)) skippedShared.push({ where, form: a, text });
+    }
     if (/^[他她]/.test(firstSentence(text))) {
       warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`);
     }
@@ -397,6 +449,26 @@ function validate(file) {
   }
 
   console.log(`  角色 ${chars.length} · 关系 ${rels.length} · 事件 ${events.length} ⇒ ${errors ? 'FAIL' : 'OK'}（${errors} error / ${warns} warning）`);
+  /* v0.129：把"跳过了什么"显式打出来 —— 静默跳过会让"改好了"和"没检查"长得一样 */
+  if (sharedAliases.size) {
+    const byForm = new Map();
+    for (const s of skippedShared) byForm.set(s.form, (byForm.get(s.form) || 0) + 1);
+    const top = [...byForm].sort((a, b) => b[1] - a[1]).slice(0, 8)
+      .map(([f, n]) => `${f}×${n}`).join('、');
+    console.log(`  ℹ 共用称谓 ${sharedAliases.size} 个（挂在 2+ 人身上，不是"指认某个人"的名字形式）`
+      + `，已跳过人物匹配：${[...sharedAliases].slice(0, 10).join('、')}${sharedAliases.size > 10 ? ' …' : ''}`);
+    console.log(`    本书文案里实际命中 ${skippedShared.length} 处（${top || '无'}）`);
+    /* 举**本书真实**的一例（不写死某一本 —— 否则换一本书这句话就变成假话） */
+    const one = skippedShared.find((s) => byForm.get(s.form) === Math.max(...byForm.values()));
+    if (one) {
+      const at = one.text.indexOf(one.form);
+      const around = one.text.slice(Math.max(0, at - 8), at + one.form.length + 8);
+      const owners = [...aliasOwners.get(one.form)]
+        .map((id) => (chars.find((c) => c.id === id) || {}).name).join('、');
+      console.log(`    ⚠ 这些**不能**用来判断"漏没漏人"：${one.where}「…${around}…」里的「${one.form}」`
+        + `同时挂在 ${owners} 身上，光看它指不出是谁。`);
+    }
+  }
 }
 
 const args = process.argv.slice(2);
