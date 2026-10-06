@@ -4874,7 +4874,8 @@
       "id": "cai-furen",
       "name": "蔡夫人",
       "aliases": [
-        "继母"
+        "继母",
+        "蔡氏"
       ],
       "generation": 1,
       "gender": "f",
@@ -13189,6 +13190,99 @@
       "desc": "本姓俞氏，孙策爱之赐姓孙，因此系吴王宗族。孙桓之父，生四子桓居其长",
       "fate": "",
       "note": "⚠ 原著写作「其父名河，本姓俞氏」——姓是孙策所赐，故原文里「孙河」0 次。与孙权次子「孙和」是两个人，v0.105 曾误并为一人，v0.112 拆开。⚠ 原著从未交代孙河的父亲是谁（历史上是孙贲，小说没写），所以他在族谱里的绝对代号无从得知：现在 gen3 / 其子孙桓 gen4，只为了满足\"父代号 < 子代号\"。这个值**只影响布局，不影响推导** —derive-kin 与 check-kin-terms 都只读亲子边，不读 generation。",
+      "tier": "minor"
+    },
+    {
+      "id": "liu-yao",
+      "name": "刘繇",
+      "aliases": [
+        "正礼"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "title": "汉室宗亲 / 扬州刺史",
+      "desc": "字正礼，东莱牟平人，汉室宗亲。刘繇急鸣金收军，撤去曲阿。",
+      "note": "出处：「「却说刘繇字正礼，东莱牟平人也，汉室宗亲」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "zhu-jun-han",
+      "name": "朱隽",
+      "aliases": [
+        "隽",
+        "朱俊"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "title": "中郎将 / 太仆",
+      "desc": "汉灵帝时与卢植、皇甫嵩各引精兵分三路讨黄巾。",
+      "note": "出处：「「一面遣中郎将卢植、皇甫嵩、朱隽（读如俊）各引精兵分三路讨之」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "zhao-fan",
+      "name": "赵范",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "桂阳太守",
+      "desc": "桂阳太守。与管军校尉陈应、鲍隆同守桂阳。",
+      "note": "出处：「「早有探马报知桂阳太守赵范」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "chen-ying",
+      "name": "陈应",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "管军校尉",
+      "desc": "桂阳岭山乡猎户出身，使飞叉。与鲍隆诈降赵云。",
+      "note": "出处：「「管军校尉陈应、鲍隆愿领兵出战。原来二人都是桂阳岭山乡猎户出身，陈应会使飞叉」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "bao-long",
+      "name": "鲍隆",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "管军校尉",
+      "desc": "桂阳岭山乡猎户出身，曾射杀双虎。与陈应诈降赵云。",
+      "note": "出处：「「管军校尉陈应、鲍隆愿领兵出战」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "yang-ling-nan",
+      "name": "杨陵",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "title": "南安太守",
+      "desc": "杨阜之族弟，与崔谅交厚。孔明借崔谅之议赚其献城。",
+      "note": "出处：「「此人乃杨阜之族弟杨陵也，与某邻郡，交契甚厚」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "xu-shi",
+      "name": "徐氏",
+      "aliases": [],
+      "generation": 1,
+      "gender": "f",
+      "title": "孙翊之妻",
+      "desc": "孙翊之妻，美而慧，极善卜《易》。孙翊被妫览、戴员谋杀后智退二贼。",
+      "note": "出处：「「翊妻徐氏美而慧，极善卜《易》」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
+      "tier": "minor"
+    },
+    {
+      "id": "zhang-huanghou",
+      "name": "张皇后",
+      "aliases": [],
+      "generation": 1,
+      "gender": "f",
+      "title": "曹芳皇后",
+      "desc": "曹芳之皇后，张缉之女（曹芳称张缉为皇丈）。",
+      "note": "出处：「「缉乃张皇后之父，曹芳之皇丈也」」。⚠ firstCh 未填 —— 按名字首次出现自动换算不可靠（5 个已有角色只对上 3 个），不写错的。",
       "tier": "minor"
     }
   ],
@@ -48087,6 +48181,57 @@
         {
           "text": "「时张飞自与雷同守把巴西」；张飞令雷同引兵五千去诈败奇兵夹攻张郃，「张郃复回，刺雷同于马下」。",
           "chapter": "第70回",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "sun-yi",
+      "to": "xu-shi",
+      "type": "夫妻",
+      "kin": "marriage",
+      "style": "solid",
+      "fromCh": 38,
+      "toCh": 39,
+      "events": [
+        {
+          "chapter": 38,
+          "place": "",
+          "text": "翊妻徐氏美而慧，极善卜《易》，智退妫览、戴员",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhao-fan",
+      "to": "chen-ying",
+      "type": "主将部将",
+      "kin": "marriage",
+      "style": "solid",
+      "fromCh": 52,
+      "toCh": 53,
+      "events": [
+        {
+          "chapter": 52,
+          "place": "",
+          "text": "桂阳太守赵范麾下管军校尉陈应，使飞叉",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "zhao-fan",
+      "to": "bao-long",
+      "type": "主将部将",
+      "kin": "marriage",
+      "style": "solid",
+      "fromCh": 52,
+      "toCh": 53,
+      "events": [
+        {
+          "chapter": 52,
+          "place": "",
+          "text": "桂阳太守赵范麾下管军校尉鲍隆，曾射杀双虎",
           "evidence": "paraphrase"
         }
       ]
