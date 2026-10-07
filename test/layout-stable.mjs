@@ -256,11 +256,8 @@ try {
 
   console.log('\n▶ ② 「自由」视图的结果不能取决于你之前去过哪些视图');
   console.log('    （这是"每次打开人物位置都不一样"的直接来源：以前大书会拿当前布局坐标当力导向的热启动）');
-  const PIN = `(() => {
-      let s = document.getElementById('ba-test-pin');
-      if (!s) { s = document.createElement('style'); s.id = 'ba-test-pin'; document.head.appendChild(s); }
-      s.textContent = '#graph { height: ${PIN_H}px !important; }';
-    })()`;
+  /* v0.130：这里原来还有一个 PIN（钉死 #graph 高度），在两次布局**之后**才注入，
+   * 已删除 —— 它会把"适配差异"混进本节要测的"布局确定性"，详见下面 grabRaw 的注释。 */
   const hist = await (async () => {
     const CDP_PORT = await freePort();
     sweepStaleProfiles();
@@ -282,6 +279,42 @@ try {
     const js = async (e) => { const r = await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
     const grab = () => js(`(() => { const st = window.__ba.state; const m = {};
       for (const [id, p] of st.pos) m[id] = [p.x, p.y]; return m; })()`);
+    /* v0.130：量**未适配**的力导向原始坐标，而不是 st.pos。
+     *
+     * 起因（一次性探针实测，用完即删）：
+     *   ② 这一节原来测 st.pos，4 跑 3 过 1 挂，失败时是「0/881 相同（最大差 14.69）」——
+     *   **一个都没对上**，看着像布局彻底不确定，其实不是。
+     *   探针把两次逐位对比后：
+     *     · 力导向输入规模一致（n=327 / links=1540）、pos 键顺序一致
+     *     · 坐标相对差只有 **1.7e-16**（纯浮点末位）⇒ **布局本身是确定的**
+     *     · 差的是 `state.fitLast`：一边 0.15002830947987972、另一边 1.0
+     *
+     *   根因：`fitPositions()` 会把画布尺寸**写进** state.pos（第 1621 行
+     *   `state.pos.set(id, {x:(p.x-cx)*s, y:(p.y-cy)*s})`），而它是**累积**的
+     *   （`state.fit.s = prev.s * s`），每次 ResizeObserver / onResize 都再乘一遍 s。
+     *   本节的 PIN 是在**布局跑完之后**才注入 #graph 的高度 ⇒ 注入会触发
+     *   ResizeObserver → onResize → fitPositions 再跑一遍。甲乙两次"布局后各自注入
+     *   PIN、且注入相对 onResize 的时序不同"⇒ s 被乘的次数不同 ⇒ 整体缩放不同。
+     *   ResizeObserver 回调与 sleep(1200) 是竞态 ⇒ 时好时坏 ⇒ flaky。
+     *
+     * ⇒ 这一节要证明的是"**布局**不该取决于浏览历史"，那就该量布局本身；
+     *   `__ba.forceLayout()` 是固定种子+固定轮数的纯函数，直接调它对拍最干净，
+     *   完全不受画布尺寸、ResizeObserver、累积缩放影响。 */
+    const grabRaw = () => js(`(() => {
+      const ba = window.__ba, st = ba.state;
+      const ids = [...st.pos.keys()].filter((id) => !String(id).startsWith('__gen_'));
+      const idx = new Map(ids.map((id, i) => [id, i]));
+      const links = [];
+      for (const e of st.book.relations) {
+        const a = idx.get(e.from), b = idx.get(e.to);
+        if (a === undefined || b === undefined || a === b) continue;
+        links.push([a, b]);
+      }
+      const { xs, ys } = ba.forceLayout(ids.length, links);
+      const m = {};
+      ids.forEach((id, i) => { m[id] = [xs[i], ys[i]]; });
+      return m;
+    })()`);
     const boot = async () => {
       await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=three-kingdoms` });
       for (let i = 0; i < 300; i++) { if (await js(`!!(window.__ba && window.__ba.state.chart && window.__ba.state.book.characters.length>500)`).catch(() => false)) break; await sleep(100); }
@@ -292,19 +325,19 @@ try {
     const out = {};
     try {
       await send('Page.enable'); await send('Runtime.enable');
-      const PIN2 = PIN;
+      /* v0.130：不再注入 PIN、也不再量 st.pos —— 理由见 grabRaw 的注释。
+       * 保留 PIN2 这段会把"适配差异"混进本该测"布局确定性"的断言里（见上面的实测）。
+       * 仍要切视图，因为甲乙的区别正是"逛过 gen-v/gen-h 与否"。 */
       // 甲：先逛「分组·纵」→「分组·横」，最后才进「自由」
       await boot();
       await js(`document.querySelector('[data-view="gen-v"]').click()`); await sleep(5000);
       await js(`document.querySelector('[data-view="gen-h"]').click()`); await sleep(5000);
       await js(`document.querySelector('[data-view="force"]').click()`); await sleep(4000);
-      await js(PIN2); await sleep(1200);          // 同上：钉死画布再抓，否则量到的是适配差异
-      out.viaHistory = await grab();
+      out.viaHistory = await grabRaw();
       // 乙：重新打开，一进来就直接进「自由」
       await boot();
       await js(`document.querySelector('[data-view="force"]').click()`); await sleep(4000);
-      await js(PIN2); await sleep(1200);
-      out.direct = await grab();
+      out.direct = await grabRaw();
     } finally {
       try { ws.close(); } catch { }
       try { proc.kill(); } catch { }
