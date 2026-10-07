@@ -51,6 +51,10 @@
                              // ⚠ 不是 state.zoom、也不是 state.fitLast —— ECharts 会把数据包围盒
                              //   等比塞进画布再乘 zoom，只有这个是真实的（memory/echarts-graph-auto-fits-data-bbox.md）
     viewCenter: [0, 0],      // 视角中心（graph series 的 center；0,0 = 节点云中心）
+    fullscreen: false,        // v0.131：是否全屏（body.fullscreen；不用 Fullscreen API，见 toggleFullscreen 注释）
+    sideHidden: false,        // v0.131：全屏时右栏是否折叠（body.side-hidden）
+    fsSettleTimer: null,       // v0.131：切换全屏后补施加视野的定时器（切一次会引发两轮 resize 复位，见 keepViewAcrossFullscreen）
+    fsSettleTimer2: null,      // v0.131：同上，第二次（只补一次仍会被第二轮冲掉）
     labelTimer: null,
     pendingView: null,   // v93：刚恢复的"上次视野"，用来扛过随后那次 resize 复位
     viewMemTimer: null,   // v92：拖动后延迟写"上次视野"的定时器
@@ -1726,6 +1730,11 @@
   function applyViewHeight() {
     const el = document.getElementById('graph');
     if (!el || !state.book) return;
+    /* v0.131 全屏：高度交给 CSS（`body.fullscreen #graph { height: 100% }`）。
+       ⚠ 这里必须**先 return**，否则会给 el.style.height 写一个 px 值，
+       和 CSS 的 100% 打架 —— 谁后算谁赢，表现就是"全屏时图没铺满/被顶出一条空白"。
+       顺带把之前写进去的 inline height 清掉，别留脏值。 */
+    if (state.fullscreen) { el.style.height = ''; return; }
     // 现在布局是世界坐标 + 自动适配缩放，容器只要给一个舒服的高度就够了：
     // 千万不能再按人数把容器撑到上万像素（那样画布中心会被推到屏幕外，看起来就是"点了没反应"）
     // 手机上再矮一点：一屏里能同时看到工具栏和图
@@ -1740,6 +1749,118 @@
     const docTop = el.getBoundingClientRect().top + (window.scrollY || 0);
     const avail = Math.max(300, window.innerHeight - docTop - 24);
     el.style.height = avail + 'px';
+  }
+
+  /* ---------------- v0.131 全屏 / 右栏折叠 ----------------
+   *
+   * 为什么不用 Fullscreen API（requestFullscreen）：
+   *   ① 它只能把**一个元素**塞进全屏。而这里要联动的是「画布 + 浮化工具条 + 可折叠右栏」
+   *      三者，还要把 topbar/footer 单独处理 —— 用 API 反而更绕。
+   *   ② 更要紧：**Headless Chrome 下 requestFullscreen() 经常直接 reject**
+   *      （要用户手势、要合成器帧）。而这个项目的门禁有一整套 headless 测试，
+   *      用 API 就等于这条功能**没法测**。CSS 类切换行为确定、可测。
+   *
+   * ⚠ 全程不动 data/*.json、也不改布局坐标 —— 只切 CSS 类 + 存/还原视野。
+   */
+  /* 切换后把「切换那一刻的视野」稳在原地。
+   *
+   * ⚠⚠ 踩了两个坑，才落到这个写法：
+   *   ① 直接 set zoom/center + setOption —— **会被冲掉**（zoom 2.6 → 1）。
+   *      原因是**异步**：撤掉 body.fullscreen 后，尺寸变化要等 ResizeObserver
+   *      回调才被量到，那个回调走 onResize → resetRoam(false)，归 1 / [0,0]。
+   *      我设的值写在 resetRoam **之前**，于是被覆盖。
+   *   ② 改用 state.pendingView（v93 那套）—— **还是**被冲掉。
+   *      真因：resetRoam 里 `state.pendingView = null` 是**读完就清**，
+   *      只有第一轮 resize 吃得到。而切换全屏会触发**两轮**：
+   *        · 撤/加 body.fullscreen，容器布局变一次
+   *        · onResize 里 applyViewHeight() 又写一次 #graph 高度 → 再一轮
+   *      第二轮读到 null 就复位了。
+   *      （resetRoam 的注释写着"这段时间内不管来几轮 resize 都用那个视野"，
+   *        但代码没实现这个意图 —— 那是另一处的事，本轮不动它，免得动到共享行为。）
+   *
+   *   ⇒ 在 settle 窗口内**重复施加**两次，兜住那两轮。
+   *     顺便每次都重置 pendingView 的有效期，让后续几轮 resetRoam 也认它。
+   */
+  function keepViewAcrossFullscreen(v) {
+    if (!v || !state.chart) return;
+    const reapply = () => {
+      if (!state.chart) return;
+      applyZoom(v.zoom, v.center);
+      state.pendingView = { z: v.zoom, c: v.center.slice(), until: Date.now() + 3000 };
+    };
+    reapply();
+    clearTimeout(state.fsSettleTimer);
+    clearTimeout(state.fsSettleTimer2);
+    state.fsSettleTimer = setTimeout(reapply, 260);
+    state.fsSettleTimer2 = setTimeout(reapply, 700);
+  }
+
+  function toggleFullscreen(on) {
+    const next = on == null ? !state.fullscreen : !!on;
+    if (next === state.fullscreen) return;
+    state.fullscreen = next;
+
+    /* 记下"此刻用户正在看的视野"。
+     *
+     * ⚠ 这里记的是**切换那一刻**的视野，不是"进全屏前的"——
+     *   第一版存的是进全屏前的值，结果用户在全屏里放大看完细节、
+     *   一退出就被还原回去了。那是**设计错**不是实现错：退出的语义应该是
+     *   "换个看法继续看同一处东西"，而不是"丢弃你刚才的调整"。 */
+    const keep = { zoom: state.zoom, center: (state.viewCenter || [0, 0]).slice() };
+
+    if (next) state.sideHidden = false;    // 每次进全屏先展开右栏，不继承上次折叠态
+
+    document.body.classList.toggle('fullscreen', next);
+    document.body.classList.toggle('side-hidden', next && state.sideHidden);
+    const btn = document.getElementById('fullscreen-btn');
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⛶ 退出全屏' : '⛶ 全屏';
+      btn.title = next ? '退出全屏（Esc）' : '全屏展示（Esc 退出）';
+    }
+    // 右栏折叠按钮只在全屏里有意义（全屏外右栏本来就一直显示）
+    const sb = document.getElementById('side-btn');
+    if (sb) sb.hidden = !next;
+
+    // 尺寸已经变了（CSS 类已生效），让 chart 按新容器量一次
+    if (state.chart) state.chart.resize();
+    applyViewHeight();
+    keepViewAcrossFullscreen(keep);
+    updateOffscreenHint();
+    try { saveViewMemory(); } catch (e) { /* 隐私模式下忽略 */ }
+    announce(state.fullscreen ? '已进入全屏，Esc 退出' : '已退出全屏');
+  }
+
+  /** 右栏折叠/展开（仅全屏内） */
+  function toggleSideHidden() {
+    if (!state.fullscreen) return;
+    state.sideHidden = !state.sideHidden;
+    document.body.classList.toggle('side-hidden', state.sideHidden);
+    const sb = document.getElementById('side-btn');
+    if (sb) {
+      sb.setAttribute('aria-expanded', String(!state.sideHidden));
+      sb.textContent = state.sideHidden ? '▥ 右栏' : '▤ 右栏';
+      sb.title = state.sideHidden ? '展开右栏' : '折叠右栏';
+    }
+    if (state.chart) state.chart.resize();
+    applyViewHeight();
+    updateOffscreenHint();
+    announce(state.sideHidden ? '右栏已折叠' : '右栏已展开');
+  }
+
+  /** 绑全屏相关的事件。放一起，方便看出它们互相怎么配合。 */
+  function bindFullscreenUI() {
+    const fb = document.getElementById('fullscreen-btn');
+    if (fb) fb.addEventListener('click', () => toggleFullscreen());
+    const sb = document.getElementById('side-btn');
+    if (sb) sb.addEventListener('click', () => toggleSideHidden());
+    /* Esc 退出全屏。
+     * ⚠ 这个项目的 Esc 已经被「取消选中 / 退出锁定」占用了
+     *   （见 graph-kb-hint：「Esc 取消选中」）。所以这里加 `if (!state.fullscreen) return;`，
+     *   保证只有真在全屏时才拦截 —— 不全屏时 Esc 的行为完全不变。 */
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.fullscreen) { e.preventDefault(); toggleFullscreen(false); }
+    });
   }
 
   function buildGenerationPositions(view) {
@@ -5279,6 +5400,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (eb) eb.hidden = true;      // 单文件版：再导出会依赖 index.html / 资源，直接藏掉
   }
   bindUI();
+  bindFullscreenUI();   // v0.131：全屏 / 右栏折叠（要在 boot 之前挂好，
+                        //   因为进全屏时会立刻 resize+量高度，早一刻少一帧闪动）
   boot();
 
   // 调试/自动化用的只读入口（控制台里可以查状态、也能脚本化聚焦与过滤）
@@ -5290,6 +5413,15 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     // 需要能脚本化地改 zoom/center 与切换布局（test/lock.mjs、诊断脚本用）。
     applyZoom: (z, c) => applyZoom(z, c),
     setView: (v) => setView(v),
+    /* v0.131 全屏（供 test/fullscreen.mjs 脚本化驱动 —— 走真实用户路径，
+       即同一个 toggleFullscreen，不是另开一条"测试专用"通道） */
+    toggleFullscreen: (on) => { toggleFullscreen(on); return state.fullscreen; },
+    toggleSideHidden: () => { toggleSideHidden(); return state.sideHidden; },
+    fullscreenState: () => ({
+      fullscreen: state.fullscreen, sideHidden: state.sideHidden,
+      zoom: state.zoom, center: (state.viewCenter || []).slice(),
+      bodyClass: document.body.className,
+    }),
     /** 聚焦集合（v85：供 test/parity.mjs 做三份实现对拍；只读，不改状态） */
     focusSet: () => { const s = focusSet(); return s ? [...s] : null; },
     // v89：锁定可见集合的两份口径（供 test/parity.mjs 与 graph-core / 小程序对拍）

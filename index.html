@@ -149,6 +149,16 @@
 
     <div id="focus-bar" class="focus-bar" hidden></div>
     <div id="lock-bar" class="focus-bar" hidden></div>
+    <!-- v0.131 全屏：两个浮动按钮都挂在画布上（不进工具条）——
+         全屏时工具条会浮化成半透明层，按钮跟着它一起浮着，鼠标移上去才完全显现。
+         · fullscreen-btn 进出全屏（Esc 同效）
+         · side-btn      全屏时折叠／展开右栏（全屏外隐藏，因为右栏本来就一直在） -->
+    <div class="graph-float-tools">
+      <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="true"
+              aria-controls="side-panel" title="折叠／展开右栏">▤ 右栏</button>
+      <button id="fullscreen-btn" class="graph-float-btn" type="button"
+              aria-pressed="false" title="全屏展示（Esc 退出）">⛶ 全屏</button>
+    </div>
     <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
     <!-- v90：画布被拖到视野外时的自救出口。无限画布没有边界，用户很容易把整张图拖出屏幕，
          而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
@@ -174,7 +184,7 @@
     </div>
   </section>
 
-  <aside class="side">
+  <aside class="side" id="side-panel">
     <div id="panel" class="panel">
       <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 拖拽可移动节点</p>
     </div>
