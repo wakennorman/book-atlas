@@ -582,6 +582,49 @@ main > *, .side > * { min-width: 0; }
 .ch-teaser b { color: var(--ink); }
 .ch-foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+/* v0.134 拆书（章节模式 / 全书模式）
+ *
+ * 放在章节面板里而不是新开一个 tab —— 全屏模式下右栏限宽 380px，
+ * 加 tab 条会挤走正文，而拆书本身是「读」的内容，不该抢控制区的位置。
+ * 视觉上刻意与其它章节分区区分开（左侧竖线 + 浅底），让人一眼看出
+ * 「这部分是解读，不是从数据里直接算出来的」。 */
+.anno-sec {
+  margin-top: 12px; padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+}
+.anno-tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.anno-tab {
+  font: inherit; font-size: 12px; cursor: pointer;
+  padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+}
+.anno-tab:hover { border-color: var(--accent); color: var(--ink); }
+.anno-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.anno-item + .anno-item { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.anno-item h4 { margin: 0 0 4px; font-size: 13px; color: var(--ink); font-weight: 600; line-height: 1.5; }
+.anno-item p { margin: 0; line-height: 1.75; color: var(--ink); }
+/* 引用：可点回去逐条核对。这是「不编造」在界面上的出口，不能只是灰字。 */
+.anno-refs { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+.anno-ref {
+  font: inherit; font-size: 11.5px; cursor: pointer;
+  padding: 2px 7px; border-radius: var(--radius-s);
+  border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+}
+.anno-ref:hover { border-color: var(--accent); color: var(--accent); }
+/* 依据标签：区分「原文依据」与「整理者推断」，两者视觉上必须一眼能分开 */
+.anno-basis { margin-top: 6px; font-size: 11.5px; color: var(--muted); display: flex; gap: 6px; align-items: baseline; }
+.anno-tag {
+  flex: none; font-size: 10.5px; padding: 1px 6px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--bg); white-space: nowrap;
+}
+.anno-basis.inferred .anno-tag { border-color: var(--warn, #b8860b); color: var(--warn, #b8860b); }
+/* ⚠ 深色模式下 color-mix 的浅底会吃掉对比度，这里统一压一档 */
+@media (prefers-color-scheme: dark) {
+  .anno-sec { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+}
+
 /* 时间旅行（把图谱拨回第 N 章） */
 .ch-time { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
 .ch-time input[type="range"] { flex: 1 1 120px; min-width: 90px; accent-color: var(--accent); }

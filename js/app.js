@@ -105,6 +105,9 @@
     chipEls: null,           // .event-chip 的缓存 NodeList（同上）
     loadSeq: 0,              // v85：loadBook 的请求序号，快速切书时用来丢弃过期响应
     textStatus: null,        // v85：文案包状态 { slug, status: 'idle'|'done'|'failed' }，**按书记**
+    anno: null,           // v0.134：拆书标注 { schema, slug, items[], global[] }
+    annoStatus: null,     // v0.134：同上；'idle'|'done'|'absent'（没写拆书）|'failed'，**按书记**
+    annoMode: 'chapter',  // v0.134：拆书面板模式 —— 'chapter' 本章 / 'global' 全书
     relIndexOf: null,      // v88：关系对象 → relations 下标，给图上每条线做身份标识（见 findRel）
     relIdxBook: null,      // v88：relIndexOf 是按哪本书建的缓存（换书要重建）
   };
@@ -298,6 +301,47 @@
         if (state.book && state.book.meta?.slug !== slug) return;
         state.textStatus = { slug, status: 'failed' };
         console.warn(`《${slug}》的文案包没拿到（${(e && e.message) || e}）—— 人物描述与结局会缺失，图与剧透判定不受影响。`);
+      }
+    });
+  }
+
+  /* ---------------- v0.134 拆书标注（data/annotations/<slug>.json） ----------------
+   *
+   * ⚠ 为什么**直接 fetch 源文件**、不过 make-slim-packs：
+   *   这个项目吃过生成物的亏（memory/book-atlas-slim-packs-are-what-web-actually-loads）：
+   *   改了 data/*.json 忘了跑 build，网页端读的还是旧生成物 ⇒ 又一个
+   *   「改了等于没改」的坑。拆书标注体量小（三国 18 条约 9KB）、只在打开章节面板时才用，
+   *   所以直接读 data/annotations/<slug>.json —— **浏览器读的就是真源**。
+   *
+   * 状态与文案包一样**按书记**（{slug, status}）；失败只影响拆书分区，
+   * 不影响图、文案与剧透判定。 */
+  function prefetchAnnotations(slug, meta, seq) {
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    idle(async () => {
+      if (typeof seq === 'number' && seq !== state.loadSeq) return;
+      /* ⚠ 体裁判定必须读**书的** meta，不是传进来的那个 meta ——
+       *   传进来的是 books.json 里的**注册表条目**（只有 file / graphFile / textFile / links），
+       *   而 meta.type 写在 data/<slug>.json 的 meta 里。
+       *   第一版在函数开头判 `meta.type !== '叙事类'` ⇒ 恒为真 ⇒ 一次请求都没发过，
+       *   界面表现是「拆书分区不出现」—— 和没接一样，且没有任何报错。 */
+      if (!state.book || state.book.meta?.slug !== slug) return;
+      if (state.book.meta.type !== '叙事类') return;      // 非叙事类暂不支持拆书
+      try {
+        const r = await fetch(`data/annotations/${slug}.json`, { cache: 'no-cache' });
+        /* 404 是**正常路径**：一本书可能还没写拆书内容。那时右栏不显示该分区，
+         * 不是错误，所以静默处理，不弹 warn 吓人。 */
+        if (!r.ok) { state.annoStatus = { slug, status: 'absent' }; return; }
+        const data = await r.json();
+        if (typeof seq === 'number' && seq !== state.loadSeq) return;
+        if (!state.book || state.book.meta?.slug !== slug) return;
+        state.anno = data;
+        state.annoStatus = { slug, status: 'done' };
+        renderChapter();
+      } catch (e) {
+        if (typeof seq === 'number' && seq !== state.loadSeq) return;
+        if (state.book && state.book.meta?.slug !== slug) return;
+        state.annoStatus = { slug, status: 'failed' };
+        console.warn(`《${slug}》的拆书标注没拿到（${(e && e.message) || e}）—— 章节面板里不显示拆书分区，其余不受影响。`);
       }
     });
   }
@@ -684,6 +728,8 @@
       // ★ 必须在所有 await 之后再发起预取：那时 state.book 才是这本书，
       //   否则 idle 回调可能在 state.book 提交前就跑，attachText 会拿旧书做校验而拒绝。
       prefetchText(slug, meta, seq);
+      // v0.134：拆书标注。与文案包同一个时机（idle 预取），且同样必须在所有 await 之后发起。
+      prefetchAnnotations(slug, meta, seq);
     } else {
       const res = await fetch(meta.file, { cache: 'no-cache' });
       book = await res.json();
@@ -722,6 +768,10 @@
     state.kbCursor = null;                 // 换书后键盘光标重置
     state.symCache = null;                 // 换书后要重算节点尺寸缓存
     state.textStatus = { slug, status: 'idle' };  // v85：文案状态按书记，换书即重置（见 attachText）
+    // v0.134：拆书标注同样按书记，换书即重置 —— 否则 A 书的拆书会挂在 B 书的章节面板上。
+    state.anno = null;
+    state.annoStatus = { slug, status: 'idle' };
+    state.annoMode = 'chapter';
     state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
     try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
@@ -3927,6 +3977,95 @@
     // 这里不再逐个挂 listener —— 三国一次就是 702 个。
   }
 
+  /* ---------------- v0.134 拆书：章节模式 + 全局模式 ----------------
+   *
+   * 两种模式：
+   *   chapter —— 第 N 章的拆解条目（一章可多条，按文件里的顺序）
+   *   global  —— 全书层面的拆解（结构、反复出现的技术等）
+   * 章节模式受剧透保护约束（拆书内容本身就是剧透）。
+   */
+  function annotationsReady() {
+    return !!(state.anno && Array.isArray(state.anno.items));
+  }
+  /** 这一章有几条拆解；没写就是没写，不编 */
+  function annoOfChapter(n) {
+    if (!annotationsReady()) return [];
+    return state.anno.items.filter((it) => it.ch === n);
+  }
+  /** 拆书的覆盖进度 —— 如实告诉读者「写到哪里了」，不假装全书都拆完了 */
+  function annoCoverage(total) {
+    if (!annotationsReady()) return null;
+    const chs = new Set(state.anno.items.map((it) => it.ch));
+    return { written: chs.size, total: Math.max(total, ...chs) };
+  }
+
+  function renderAnnotations(n, total) {
+    if (!annotationsReady()) return '';
+    const g = Array.isArray(state.anno.global) ? state.anno.global : [];
+    const mode = state.annoMode === 'global' ? 'global' : 'chapter';
+    const tabs = `
+      <div class="anno-tabs" role="tablist" aria-label="拆书视角">
+        <button type="button" role="tab" class="anno-tab${mode === 'chapter' ? ' active' : ''}" aria-selected="${mode === 'chapter'}" data-anno-mode="chapter">本章拆解</button>
+        <button type="button" role="tab" class="anno-tab${mode === 'global' ? ' active' : ''}" aria-selected="${mode === 'global'}" data-anno-mode="global">全书拆解${g.length ? `（${g.length}）` : ''}</button>
+      </div>`;
+
+    if (mode === 'global') {
+      if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">这本书还没写全书层面的拆解。</p></div>`;
+      return `<div class="ch-sec anno-sec">${tabs}
+        ${g.map((x) => `<div class="anno-item"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p>${annoBasis(x)}</div>`).join('')}
+      </div>`;
+    }
+
+    /* 章节模式。未解锁的章不显示拆解 —— 拆书内容本身就是剧透。
+     * ⚠ 但**覆盖进度仍然要显示**：不然读者看到的是「这一章什么都没有」，
+     *   分不清是"还没解锁"还是"这本没拆"。 */
+    if (lockedCh(n)) {
+      const cov0 = annoCoverage(total);
+      return `<div class="ch-sec anno-sec">${tabs}
+        <p class="hint">已拆 ${cov0.written} / ${cov0.total} 章${cov0.written < cov0.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>
+        <p class="hint">这一章还没解锁，拆书内容同样先锁起来。</p></div>`;
+    }
+    const cov = annoCoverage(total);
+    const head = `<p class="hint">已拆 ${cov.written} / ${cov.total} 章${cov.written < cov.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>`;
+    const items = annoOfChapter(n);
+    if (!items.length) {
+      return `<div class="ch-sec anno-sec">${tabs}${head}
+        <p class="hint">第 ${n} 章的拆解还没写。全书已有 ${state.anno.items.length} 条。</p></div>`;
+    }
+    return `<div class="ch-sec anno-sec">${tabs}${head}
+      ${items.map((it) => `<div class="anno-item">
+        <h4>${esc(it.title)}</h4>
+        <p>${esc(it.body)}</p>
+        ${annoRefs(it)}
+        ${annoBasis(it)}
+      </div>`).join('')}
+    </div>`;
+  }
+
+  /** 依据标签：把「原文」和「整理者推断」在界面上分开，不混为一谈 */
+  function annoBasis(it) {
+    const b = String(it.basis || '');
+    const inferred = /推断|整理/.test(b);
+    const rest = b.replace(/^(整理者推断|原文依据)/, '').replace(/^[（(]/, '').replace(/[)）]$/, '').trim();
+    return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${inferred ? '整理者推断' : '原文依据'}</span>${esc(rest)}</p>`;
+  }
+
+  /** 引用的事件/人物：可点回去逐条核对 —— 「不编造」在界面上的出口 */
+  function annoRefs(it) {
+    const evs = Array.isArray(it.events) ? it.events : [];
+    const chs = Array.isArray(it.chars) ? it.chars : [];
+    if (!evs.length && !chs.length) return '';
+    const evHtml = evs.map((id) => {
+      const e = state.book.events.find((x) => x.id === id);
+      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc(e.summary || e.name)}">⚡ ${esc(e.name)}</button>` : '';
+    }).join('');
+    const chHtml = chs.map((id) => {
+      const c = state.byId.get(id);
+      return c ? `<button class="anno-ref" type="button" data-goto="${esc(id)}" title="${esc(c.title || '')}">👤 ${esc(c.name)}</button>` : '';
+    }).join('');
+    return (evHtml || chHtml) ? `<p class="anno-refs">${evHtml}${chHtml}</p>` : '';
+  }
+
   /* ---------------- 章节视图：第 N 章的世界 ---------------- */
   /** 把"这一章发生了什么"从数据里切出来（零新数据：firstCh / relations[].events[].chapter / events[].ch / places[].firstCh） */
   function chapterDigest(n) {
@@ -4055,7 +4194,8 @@
         <div class="ch-locked">🔒 <b>第 ${n} 章还没解锁</b>
           <p class="hint">你现在读到第 ${state.progress} 章——这一章的出场人物、关系与事件先锁起来，读完再来。</p>
           <button class="primary tiny" type="button" data-ch-mark="${n}">我已读到第 ${n} 章 →</button>
-        </div>`;
+        </div>
+        ${renderAnnotations(n, total)}`;
     } else {
       const d = chapterDigest(n);
       const nd = chapterDigest(n + 1);
@@ -4075,12 +4215,20 @@
         ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
         ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
         ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
+        ${renderAnnotations(n, total)}
         <div class="ch-teaser">${teaser}</div>
         <div class="ch-foot">${mark}
           ${d.events.length ? '<button class="ghost tiny" type="button" data-ch-timeline="1">在时间轴里看本章事件</button>' : ''}
         </div>`;
     }
     body.querySelectorAll('[data-ch-mark]').forEach((btn) => btn.addEventListener('click', () => applySpoiler(true, Number(btn.dataset.chMark))));
+    /* v0.134：拆书视角切换。模式只存内存（不写 localStorage）——
+     * 它是"这一眼想看什么"，不是阅读进度，持久化反而会让下次打开莫名其妙停在全书视角。 */
+    body.querySelectorAll('[data-anno-mode]').forEach((btn) => btn.addEventListener('click', () => {
+      state.annoMode = btn.dataset.annoMode === 'global' ? 'global' : 'chapter';
+      renderChapter();
+      announce(state.annoMode === 'global' ? '已切到全书拆解' : `已切到第 ${state.chapter} 章拆解`);
+    }));
     body.querySelectorAll('[data-ch-timeline]').forEach((btn) => btn.addEventListener('click', () => {
       const id = (state.book.events.find((e) => e.ch === state.chapter && (!state.placeFilter || e.place === state.placeFilter)) || {}).id;
       const chip = id ? document.querySelector(`.event-chip[data-event="${id}"]`) : null;
