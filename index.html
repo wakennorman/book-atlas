@@ -149,21 +149,30 @@
 
     <div id="focus-bar" class="focus-bar" hidden></div>
     <div id="lock-bar" class="focus-bar" hidden></div>
-    <!-- v0.131 全屏：三个浮动按钮都挂在画布上（不进工具条）。
-         全屏时工具条浮在画布上（默认收起，点 ⚙ 才展开），所以这三个按钮是
-         收起状态下**唯一**的操作入口，必须常驻可见。
-         · tools-btn     展开／收起工具条（仅全屏内显示）
-         · side-btn      展开／收起右栏（仅全屏内显示，默认收起）
-         · fullscreen-btn 进出全屏（Esc 同效） -->
-    <div class="graph-float-tools">
-      <button id="tools-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
-              aria-controls="pane-head-tools" title="展开工具条（搜索 / 视图 / 过滤）">⚙ 工具</button>
-      <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
-              aria-controls="side-panel" title="展开右栏">▤ 右栏</button>
-      <button id="fullscreen-btn" class="graph-float-btn" type="button"
-              aria-pressed="false" title="全屏展示（Esc 退出）">⛶ 全屏</button>
+    <!-- v0.132 按钮位置：浮动按钮组包在**只含画布**的 .graph-stage 里。
+         ⚠ 第一版（v0.131）把 .graph-float-tools 直接挂在 .graph-pane 下、用
+         `top: 10px` 定位，而工具条也在 pane 顶部 ⇒ 按钮视觉上落在
+         「按地点筛选」那一行，读起来像**又一个筛选控件**，不知道是全屏。
+         用户原话：「这样不知道是什么的全屏」。
+         ⇒ 加一层 .graph-stage（position: relative，只包 #graph），
+           按钮的 top/right 就相对**画布**而不是面板顶部，位置语义才对。 -->
+    <div class="graph-stage">
+      <!-- v0.131 全屏：三个浮动按钮都挂在画布上（不进工具条）。
+           全屏时工具条浮在画布上（默认收起，点 ⚙ 才展开），所以这三个按钮是
+           收起状态下**唯一**的操作入口，必须常驻可见。
+           · tools-btn       展开／收起工具条（仅全屏内显示）
+           · side-btn        展开／收起右栏（仅全屏内显示，默认收起）
+           · fullscreen-btn  进出全屏（Esc 同效） -->
+      <div class="graph-float-tools">
+        <button id="tools-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
+                aria-controls="pane-head-tools" title="展开工具条（搜索 / 视图 / 过滤）">⚙ 工具</button>
+        <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
+                aria-controls="side-panel" title="展开右栏">▤ 右栏</button>
+        <button id="fullscreen-btn" class="graph-float-btn" type="button"
+                aria-pressed="false" title="全屏展示（Esc 退出）">⛶ 全屏</button>
+      </div>
+      <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
     </div>
-    <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
     <!-- v90：画布被拖到视野外时的自救出口。无限画布没有边界，用户很容易把整张图拖出屏幕，
          而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
     <button id="offview-btn" class="offview-btn" type="button" hidden>🧭 画布拖到视野外了 · 点这里复位</button>

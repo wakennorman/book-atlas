@@ -830,9 +830,19 @@ button.spoiler-opt:hover {
      .pane-head       全屏内浮化       —— 半透明浮层，悬停/聚焦才完全显现
    ========================================================================== */
 
-/* ---- 画布上的浮动按钮组（非全屏时也是浮在图右上角）---- */
+/* ---- 画布上的浮动按钮组 ----
+ * v0.132：位置语义修正。
+ * 第一版按钮挂在 .graph-pane 下、top:10px，而工具条也在 pane 顶部
+ * ⇒ 按钮落在「按地点筛选」同一行，读起来像又一个筛选控件（用户原话：
+ *   「这样不知道是什么的全屏」）。
+ * 现在 .graph-stage 只包住 #graph 并 position:relative，按钮的 top/right
+ * 相对**画布**定位，视觉上明确"在图里"。
+ * ⚠ 为什么放右下角而不是右上角：ECharts 的 roam（拖动平移）绑在整块画布上，
+ *   按钮压在图的上方容易挡住最上面一排节点；右下角是"图注区"，
+ *   节点密度最低的位置（见 applyViewHeight 里 padX/padY 的图注通道设计）。 */
+.graph-stage { position: relative; }
 .graph-float-tools {
-  position: absolute; top: 10px; right: 12px; z-index: 40;
+  position: absolute; bottom: 12px; right: 12px; z-index: 40;
   display: flex; gap: 8px; align-items: center;
 }
 .graph-float-btn {
@@ -851,9 +861,6 @@ button.spoiler-opt:hover {
 .graph-float-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .graph-float-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 .graph-float-btn[hidden] { display: none; }
-
-/* ---- 非全屏时：浮动按钮要压在图上，所以图容器要能当定位上下文 ---- */
-.graph-pane { position: relative; }
 
 /* ============================ 全屏态 ============================ */
 
@@ -880,6 +887,15 @@ body.fullscreen .graph-pane {
   border-radius: 0; border: 0; box-shadow: none;
   background: var(--panel);
 }
+
+/* ⚠ v0.132：#graph 被包进 .graph-stage 之后，#graph 的 `height: 100%` 改由
+   **.graph-stage** 当参照 —— 而 .graph-stage 默认高度是 auto（由内容撑），
+   于是 #graph 拿到 auto，全屏时画布直接塌成 0（实测 0/907，测试当场报红）。
+   ⇒ .graph-stage 自己也必须撑满。flex:1 吃下 pane 的剩余高度；
+   min-height:0 是 flex 子项的必需项（没有它内容会把 flex 容器顶开）。
+   非全屏时保持 auto，让它跟着 #graph 的 inline height 走。 */
+.graph-stage { min-height: 0; }
+body.fullscreen .graph-stage { flex: 1 1 auto; height: 100%; }
 
 /* 画布本身：全屏时高度交给 CSS 100%，不再由 applyViewHeight() 写 inline height
    （两者同时生效会打架 —— JS 写 px、CSS 写 100%，谁后算谁赢）。 */
@@ -931,7 +947,7 @@ body.fullscreen .pathbar { display: none; }
 
 /* 移动端：全屏本来就窄，浮动按钮压小一点，别遮住画布太多 */
 @media (max-width: 700px) {
-  .graph-float-tools { top: 8px; right: 8px; gap: 6px; }
+  .graph-float-tools { bottom: 8px; right: 8px; gap: 6px; }
   .graph-float-btn { padding: 6px 10px; font-size: 11.5px; }
   body.fullscreen .pane-head { top: 46px; left: 8px; right: 8px; padding: 8px 10px; }
 }

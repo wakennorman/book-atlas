@@ -64,6 +64,26 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let passed = 0, failed = 0;
 const ok = (c, m) => { if (c) { passed++; console.log(`  ✓ ${m}`); } else { failed++; console.error(`  ✗ ${m}`); } };
 
+/* v0.132：浮动按钮的**位置语义**断言。
+ * 起因：v0.131 按钮挂在 .graph-pane 下、top:10px，和工具条同一行 ⇒
+ * 视觉上落在「按地点筛选」旁边，用户读成"又一个筛选控件"，不知道是全屏。
+ * ⇒ 现在包在只含 #graph 的 .graph-stage 里，必须断言按钮**落在画布矩形内**。 */
+const floatPos = () => js(`(() => {
+  const ft = document.querySelector('.graph-float-tools');
+  const g = document.getElementById('graph').getBoundingClientRect();
+  const f = ft.getBoundingClientRect();
+  const cs = getComputedStyle(ft);
+  return {
+    insideX: f.left >= g.left - 1 && f.right <= g.right + 1,
+    insideY: f.top >= g.top - 1 && f.bottom <= g.bottom + 1,
+    offsetParent: ft.offsetParent ? ft.offsetParent.className : null,
+    btnBottomGap: Math.round(g.bottom - f.bottom),
+    graphTop: Math.round(g.top), graphBottom: Math.round(g.bottom),
+    ftTop: Math.round(f.top), ftLeft: Math.round(f.left),
+    position: cs.position,
+  };
+})()`);
+
 const readState = () => js('window.__ba.fullscreenState()');
 const geom = () => js(`(() => {
   const g = document.getElementById('graph');
@@ -140,6 +160,16 @@ try {
   const toolsHiddenAtStart = await js(`document.getElementById('tools-btn').hidden`);
   ok(toolsHiddenAtStart === true, '不在全屏时，工具条折叠按钮是隐藏的（工具条本来就在文档流里）');
   ok(g.inlineHeight !== '(空)', `不在全屏时画布高度由 JS 写 inline（当前 ${g.inlineHeight}）`);
+
+  /* v0.132：按钮必须落在画布内，不能和工具条混在一行 */
+  console.log('\n▶ ①b 浮动按钮落在**画布内**（v0.132 位置修正）');
+  let fp = await floatPos();
+  ok(fp.offsetParent === 'graph-stage', `按钮的定位上下文是 .graph-stage（当前 ${fp.offsetParent}）`);
+  ok(fp.position === 'absolute', `按钮是 absolute 定位（${fp.position}）`);
+  ok(fp.insideX, `按钮横向在画布内（按钮 ${fp.ftLeft}，画布右边 ${Math.round(fp.ftLeft + 0)}）`);
+  ok(fp.insideY, `★ 按钮纵向在画布内（按钮 top=${fp.ftTop}，画布 ${fp.graphTop}~${fp.graphBottom}）—— 这一条正是 v0.131 违反的`);
+  /* 关键回归点：按钮不能和工具条同一行。工具条在画布上方，按钮在画布内 ⇒ 必然 ftTop > graphTop。 */
+  ok(fp.ftTop > fp.graphTop, `按钮在画布**内部**而非工具条那一行（按钮 ${fp.ftTop} > 画布顶 ${fp.graphTop}）`);
 
   console.log('\n▶ ② 进全屏：class + 画布铺满 + 高度交给 CSS');
   /* 先给一个非默认视野，用来验证"进全屏"这一步本身不改用户的视角 */
