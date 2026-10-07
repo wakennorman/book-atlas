@@ -169,15 +169,24 @@ try {
   } else { ok(false, '没找到人物引用'); }
 
   head('没写的章：必须明说「还没写」');
-  await gotoChapter(60);
-  const c60 = await annoDom();
-  ok(c60.present, '拆书分区仍然在（覆盖进度要常驻）');
-  ok(/还没写/.test(c60.secText), `第 60 章明说没写：${(c60.secText.match(/第 60 章[^\n]*/) || [''])[0].trim()}`);
+  /* ⚠ 章号必须**动态挑**，不能写死。
+   *   写死过一版（钉第 60 章），结果第 60 回一补上拆解，这条断言立刻变成
+   *   在测一个已经不存在的事实 —— 而且它是在测「文案」，不是在测「第 60 章」。
+   *   所以：直接从已加载的标注里找第一个**没有**章节条目的章。 */
+  const written = new Set(await js(`(window.__ba.state.anno?.items || []).map(i => i.ch)`));
+  const total = await js(`window.__ba.state.book.meta.chapters`);
+  let emptyCh = 0;
+  for (let n = 1; n <= total; n++) { if (!written.has(n)) { emptyCh = n; break; } }
+  ok(emptyCh > 0, `找到一个没写拆解的章来验文案（第 ${emptyCh} 章；已写 ${written.size} 章 / 全书 ${total} 回）`);
+  await gotoChapter(emptyCh);
+  const cEmpty = await annoDom();
+  ok(cEmpty.present, '拆书分区仍然在（覆盖进度要常驻）');
+  ok(/还没写/.test(cEmpty.secText), `第 ${emptyCh} 章明说没写：${(cEmpty.secText.match(/第 \d+ 章[^\n]*/) || [''])[0].trim()}`);
   /* ⚠ 不能断言「文案里没有『无需拆解』」—— 我自己的提示语里就含这四个字
      *   （「其余章节还没写，不是「无需拆解」」）。要判的是**说法**：
      *   说的是"还没写"还是"不需要"。 */
-  ok(/还没写/.test(c60.secText) && !/本章无需/.test(c60.secText), '说的是「还没写」，不是「本章无需拆解」');
-  ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(c60.secText), '覆盖进度仍在');
+  ok(/还没写/.test(cEmpty.secText) && !/本章无需/.test(cEmpty.secText), '说的是「还没写」，不是「本章无需拆解」');
+  ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(cEmpty.secText), '覆盖进度仍在');
 
   head('全书模式');
   await js(`document.querySelector('.anno-tab[data-anno-mode="global"]').click()`);
@@ -189,10 +198,10 @@ try {
   await js(`document.querySelector('.anno-tab[data-anno-mode="chapter"]').click()`);
   await wait(700);
   const back = await annoDom();
-  /* 第 60 章本来就没写 ⇒ 0 条才是对的；这条断言的是"切回来没有串内容"：
+  /* 第 ${emptyCh} 章本来就没写 ⇒ 0 条才是对的；这条断言的是"切回来没有串内容"：
    *   如果切模式时把 global 的条目留在 chapter 视图里，这里会是 2 条。 */
   ok(back.tabs[0].active && back.items.length === 0,
-    `切回本章：第 60 章无条目 ⇒ ${back.items.length} 条（若是 2 条，说明 global 的内容串进来了）`);
+    `切回本章：第 ${emptyCh} 章无条目 ⇒ ${back.items.length} 条（若是 2 条，说明 global 的内容串进来了）`);
 
   head('剧透保护对拆书同样生效');
   await js(`(() => { const b = document.getElementById('spoiler-on'); if (b) b.click(); return !!b; })()`).catch(() => {});
