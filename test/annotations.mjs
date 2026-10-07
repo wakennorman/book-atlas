@@ -203,7 +203,11 @@ try {
   const inline = await js(`(() => {
     const A = window.__ba.state.anno;
     const dataIds = [...new Set([...A.items, ...A.global]
-      .flatMap((i) => String(i.body).match(/e-\\d+-\\d+/g) || []))];
+      .flatMap((i) => String(i.body).match(/e-?\\d[\\w-]*/g) || [])
+      /* ⚠ id 形态**不能写死**：三国 e-1-3 / 罪与罚 e1 / 百年孤独 e01。
+       *   v0.142 第一版写死 /e-\\d+-\\d+/，结果后两本的行内引用一个都不成按钮
+       *   （测试报 null 才暴露）—— 断言本身也有同一个毛病，一起改成形态无关。 */
+      .filter((id) => (window.__ba.state.book.events || []).some((e) => e.id === id)))];
     const chs = [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b);
     const sel = document.getElementById('ch-select');
     const seen = new Set(); const bad = [];
@@ -216,7 +220,7 @@ try {
       }
       /* 每个 item 单独核：它正文里出现的 id，是否都成了按钮 */
       for (const p of sec.querySelectorAll('.anno-item p')) {
-        const inText = new Set(String(p.textContent).match(/e-\\d+-\\d+/g) || []);
+        const inText = new Set(String(p.textContent).match(/e-?\\d[\\w-]*/g) || []);
         const inBtn = new Set([...p.querySelectorAll('.anno-inline-ref[data-event]')].map((b) => b.dataset.event));
         for (const id of inText) if (!inBtn.has(id) && bad.length < 6) bad.push({ ch, id, why: '正文里有但不是按钮' });
       }
@@ -274,7 +278,7 @@ try {
 
   /* ⚠ 我这两段扫描把 #ch-select 留在了最后一次遍历的章（第 119 回），
    *   而下面「切回本章」要验的是 emptyCh。**必须先把章节拨回去**，
-   *   否则那条断言是在测一个我刚改掉的���态（第一版就是这样红的）。
+   *   否则那条断言是在测一个我刚改掉的状态（第一版就是这样红的）。
    *   —— 这是我自己制造的污染，不是产品缺陷。 */
   await gotoChapter(emptyCh);
 
@@ -309,7 +313,17 @@ try {
   ok((lk.items || []).length === 0, `未解锁时一条拆书正文都没渲染（实际 ${(lk.items || []).length} 条）`);
   ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(lkText), '锁着的时候覆盖进度仍然可见（读者知道有这功能）');
 
-  head('没写拆书的书：不显示分区，也不报错');
+  /* ⚠⚠ 这一段原来叫「没写拆书的书」—— 现在《罪与罚》**写了 20 条**，
+   *   而断言还停在「没写拆书 ⇒ 不显示分区」。若照原样跑，它会因为
+   *   「分区出现了」而红，而**红的原因不是产品坏了，是我把书写完了没改断言**。
+   *   ⇒ 它现在必须真去断言《罪与罚》的拆书能加载、能渲染、id 属于它自己。
+   *
+   *   这条断言存在的直接原因：v0.142 我把《罪与罚》的 20 条
+   *   **灌进了 three-kingdoms.json**，而当时拼接脚本每一步校验都过了
+   *   （人名解析 OK / parse OK / 条数对得上 / 原内容未改动），
+   *   是 check-annotations 才报出 74 处「《three-kingdoms》里不存在」。
+   *   ⇒ 跨书写入这种错，**只有「每本书的 id 都属于它自己」这条断言能拦**。 */
+  head('《罪与罚》：拆书能加载，且 id 都属于它自己（不是三国的）');
   const errs = [];
   ws.addEventListener('message', () => {});
   await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=crime-and-punishment` });
@@ -318,11 +332,68 @@ try {
     await wait(100);
   }
   await wait(3000);
+  /* 默认停在第 1 回 —— 《罪与罚》第 1 回没有拆书内容。
+   *   要求：明说「还没写」，而不是不显示分区或显示空壳。 */
   const other = await annoDom();
-  const otherSt = await js(`(() => ({ status: window.__ba.state.annoStatus, has: !!window.__ba.state.anno, type: window.__ba.state.book.meta.type }))()`);
+  const otherSt = await js(`(() => ({
+    status: window.__ba.state.annoStatus, has: !!window.__ba.state.anno,
+    type: window.__ba.state.book.meta.type, slug: window.__ba.state.anno && window.__ba.state.anno.slug,
+    nItems: window.__ba.state.anno ? window.__ba.state.anno.items.length : 0,
+    nGlobal: window.__ba.state.anno ? window.__ba.state.anno.global.length : 0,
+  }))()`);
   ok(otherSt.type === '叙事类', `罪与罚的 meta.type 也是叙事类（${JSON.stringify(otherSt.type)}）`);
-  ok(otherSt.status && otherSt.status.status !== 'done', `没写拆书 ⇒ 状态如实是 ${JSON.stringify(otherSt.status)}`);
-  ok(!other.present, '章节面板里没有拆书分区（不是显示一个空壳）');
+  ok(otherSt.status && otherSt.status.status === 'done', `拆书已加载（${JSON.stringify(otherSt.status)}）`);
+  ok(otherSt.slug === 'crime-and-punishment', `标注文件自称 crime-and-punishment（实际 ${JSON.stringify(otherSt.slug)}）`);
+  ok(otherSt.nItems >= 15, `《罪与罚》有 ${otherSt.nItems} 条章节条目 + ${otherSt.nGlobal} 条全局`);
+  ok(other.present && (other.items || []).length === 0,
+    `《罪与罚》第 1 回（没写）显示分区但 0 条（present=${other.present}，items=${(other.items || []).length}）`);
+  ok(/还没写/.test(other.hint ? other.hint.join('') : (other.secText || '')),
+    `《罪与罚》没写的章明说「还没写」：${((other.hint || []).join('') || other.secText || '').match(/[^\n]*还没写[^\n]*/) ? ((other.hint || []).join('') || other.secText || '').match(/[^\n]*还没写[^\n]*/)[0].trim() : '（没找到）'}`);
+
+  /* ★ 关键断言：标注里的每个 id 必须真属于《罪与罚》。
+   *   这条直接对应 v0.142 那次跨书写入事故 —— 灌错书时每个 id 都不在这本里。 */
+  const idsOwn = await js(`(() => {
+    const A = window.__ba.state.anno, B = window.__ba.state.book;
+    const charIds = new Set(B.characters.map(c => c.id));
+    const evIds = new Set(B.events.map(e => e.id));
+    let nChar = 0, nEv = 0;
+    const foreign = [];
+    for (const it of A.items) {
+      for (const c of it.chars || []) { nChar++; if (!charIds.has(c)) foreign.push('人物 ' + c); }
+      for (const e of it.events || []) { nEv++; if (!evIds.has(e)) foreign.push('事件 ' + e); }
+    }
+    return { nChar, nEv, foreign: foreign.slice(0, 6), total: foreign.length };
+  })()`);
+  ok(idsOwn.nChar + idsOwn.nEv > 40, `扫到了足够的引用（人物 ${idsOwn.nChar} + 事件 ${idsOwn.nEv}）`);
+  ok(idsOwn.total === 0,
+    `每个 id 都属于《罪与罚》（混入 ${idsOwn.total} 个外来的${idsOwn.total ? '：' + JSON.stringify(idsOwn.foreign) : ''}）`);
+
+  /* 界面真的渲染出正文，且行内引用可点（同一套机制在第二本书上也成立）。
+   * ⚠ 期望值从数据里取，不写死 'e1' —— 否则换一本 id 形态不同的书就会假红。 */
+  await gotoChapter(6);
+  const crimeSec = await annoDom();
+  ok(crimeSec.present, '《罪与罚》第 6 回显示了拆书分区');
+  ok((crimeSec.items || []).length >= 1, `第 6 回渲染出 ${(crimeSec.items || []).length} 条`);
+  const wantInline = await js(`(() => {
+    const A = window.__ba.state.anno;
+    const it = A.items.find((x) => x.ch === 6);
+    /* ⚠ match() 可能是 null —— 直接 [0] 会抛 TypeError，整条测试就停在这里。
+       *   （第一版就这么红的：报出来的是取值崩了，不是「按钮没渲染」。） */
+    const hit = it ? String(it.body).match(/e-?\\d[\\w-]*/g) : null;
+    return hit && hit.length ? hit[0] : null;
+  })()`);
+  const crimeInline = await js(`(() => {
+    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) return null;
+    const btn = sec.querySelector('p .anno-inline-ref[data-event]');
+    return btn ? btn.dataset.event : null;
+  })()`);
+  ok(crimeInline === wantInline, `《罪与罚》的行内引用也渲染成可点按钮（实际 ${JSON.stringify(crimeInline)}，期望 ${JSON.stringify(wantInline)}）`);
+  if (wantInline) {
+  await js(`document.querySelector('#chapter-body p .anno-inline-ref[data-event="${wantInline}"]').click()`);
+  await wait(700);
+  const crimeOpened = await js(`window.__ba.state.activeEvent`);
+  ok(crimeOpened === wantInline, `点了打开《罪与罚》的事件（activeEvent=${JSON.stringify(crimeOpened)}，期望 ${JSON.stringify(wantInline)}）`);
+  }
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {
   failed++;

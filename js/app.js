@@ -4056,7 +4056,13 @@
   function annoBody(text) {
     return esc(String(text == null ? '' : text))
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/e-\d+-\d+/g, (id) => {
+      /* ⚠⚠⚠ 不能写死 id 形态。
+       *   三国是 `e-1-3`、罪与罚是 `e1`、百年孤独是 `e01` —— 三种形态都真实存在。
+       *   我第一版写 `/e-\d+-\d+/`，于是后两本的正文行内引用**一个都点不开**
+       *   （测试直接报 null 才暴露）。
+       *   正确口径：**从这本书自己的 events 里抽出「像 id 的串」，再回查表**，
+       *   不猜任何一本书的 id 规则。 */
+      .replace(/e-?\d[\w-]*/g, (id) => {
         const e = state.book.events.find((x) => x.id === id);
         if (!e) return id; // 数据里没有就保持纯文本，不要造出一个点不动的按钮
         return `<button class="anno-inline-ref" type="button" data-event="${esc(id)}"`
