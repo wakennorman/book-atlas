@@ -62,7 +62,7 @@
 
 <main>
   <section class="pane graph-pane">
-    <div class="pane-head">
+    <div class="pane-head" id="pane-head-tools">
       <div class="search-wrap">
         <span class="combo" id="search-combo">
           <input id="search-input" type="search" placeholder="搜单个人物…" autocomplete="off">
@@ -149,13 +149,17 @@
 
     <div id="focus-bar" class="focus-bar" hidden></div>
     <div id="lock-bar" class="focus-bar" hidden></div>
-    <!-- v0.131 全屏：两个浮动按钮都挂在画布上（不进工具条）——
-         全屏时工具条会浮化成半透明层，按钮跟着它一起浮着，鼠标移上去才完全显现。
-         · fullscreen-btn 进出全屏（Esc 同效）
-         · side-btn      全屏时折叠／展开右栏（全屏外隐藏，因为右栏本来就一直在） -->
+    <!-- v0.131 全屏：三个浮动按钮都挂在画布上（不进工具条）。
+         全屏时工具条浮在画布上（默认收起，点 ⚙ 才展开），所以这三个按钮是
+         收起状态下**唯一**的操作入口，必须常驻可见。
+         · tools-btn     展开／收起工具条（仅全屏内显示）
+         · side-btn      展开／收起右栏（仅全屏内显示，默认收起）
+         · fullscreen-btn 进出全屏（Esc 同效） -->
     <div class="graph-float-tools">
-      <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="true"
-              aria-controls="side-panel" title="折叠／展开右栏">▤ 右栏</button>
+      <button id="tools-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
+              aria-controls="pane-head-tools" title="展开工具条（搜索 / 视图 / 过滤）">⚙ 工具</button>
+      <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
+              aria-controls="side-panel" title="展开右栏">▤ 右栏</button>
       <button id="fullscreen-btn" class="graph-float-btn" type="button"
               aria-pressed="false" title="全屏展示（Esc 退出）">⛶ 全屏</button>
     </div>

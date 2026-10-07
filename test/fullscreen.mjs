@@ -68,19 +68,56 @@ const readState = () => js('window.__ba.fullscreenState()');
 const geom = () => js(`(() => {
   const g = document.getElementById('graph');
   const r = g.getBoundingClientRect();
-  const head = document.querySelector('.pane-head');
+  const head = document.getElementById('pane-head-tools');
   const hr = head ? head.getBoundingClientRect() : null;
   const side = document.getElementById('side-panel');
   const cs = side ? getComputedStyle(side) : null;
+  const sr = side ? side.getBoundingClientRect() : null;
   return {
     graphH: Math.round(r.height), graphW: Math.round(r.width),
+    graphRight: Math.round(r.right),
     inlineHeight: g.style.height || '(空)',
     headPos: head ? getComputedStyle(head).position : null,
+    headDisplay: head ? getComputedStyle(head).display : null,
     headTop: hr ? Math.round(hr.top) : null,
     sideDisplay: cs ? cs.display : null,
-    sideVisible: side ? (side.getBoundingClientRect().width > 0) : null,
+    sideVisible: sr ? sr.width > 0 : null,
+    sideW: sr ? Math.round(sr.width) : null,
+    sideLeft: sr ? Math.round(sr.left) : null,
     mainCols: getComputedStyle(document.querySelector('main')).gridTemplateColumns,
     vh: window.innerHeight, vw: window.innerWidth,
+  };
+})()`);
+
+/* v0.131b 新增：**遮挡断言**。
+ *
+ * 第一版 33 条断言全绿，但用户实机一看是坏的 —— 因为只测了「机械属性」：
+ *   · 只查 side 的 display 是不是 none，没查它**有多宽**、**有没有盖住画布**
+ *   · 只查工具条能被点到，没查它**是不是压在密图上**
+ * 于是「右栏 800px 盖满整行」「工具条 42% 透明度叠字」两个真问题全漏过去。
+ *
+ * ⇒ 这里补两类断言：
+ *   ① 横向遮挡：右栏宽度必须受限，且不能盖住画布
+ *   ② 工具条：收起时 display:none；展开时背景**不透明**（压在图上必须能读）
+ */
+const occlusion = () => js(`(() => {
+  const g = document.getElementById('graph').getBoundingClientRect();
+  const side = document.getElementById('side-panel');
+  const head = document.getElementById('pane-head-tools');
+  const sr = side.getBoundingClientRect();
+  const sVis = getComputedStyle(side).display !== 'none' && sr.width > 0;
+  const hDisp = getComputedStyle(head).display;
+  const hBg = getComputedStyle(head).backgroundColor;
+  // alpha 通道：rgba(...,a) 的 a，或 4 位 #rrggbbaa
+  const m = hBg.match(/rgba?\\([^)]*?,\\s*([\\d.]+)\\)$/);
+  let alpha = 1;
+  if (m) alpha = Number(m[1]);
+  return {
+    graphW: Math.round(g.width), graphRight: Math.round(g.right),
+    sideVisible: sVis, sideW: Math.round(sr.width), sideLeft: Math.round(sr.left),
+    // 右栏是否横向盖住画布（两者有交集面积）
+    sideOverlapsGraph: sVis && sr.left < g.right - 1 && sr.right > g.left + 1,
+    headDisplay: hDisp, headBg: hBg, headAlpha: alpha,
   };
 })()`);
 
@@ -100,6 +137,8 @@ try {
   ok(await js(`document.getElementById('fullscreen-btn').getAttribute('aria-pressed')`) === 'false', 'aria-pressed=false');
   const sideHiddenAtStart = await js(`document.getElementById('side-btn').hidden`);
   ok(sideHiddenAtStart === true, '不在全屏时，右栏折叠按钮是隐藏的（右栏本来就一直显示）');
+  const toolsHiddenAtStart = await js(`document.getElementById('tools-btn').hidden`);
+  ok(toolsHiddenAtStart === true, '不在全屏时，工具条折叠按钮是隐藏的（工具条本来就在文档流里）');
   ok(g.inlineHeight !== '(空)', `不在全屏时画布高度由 JS 写 inline（当前 ${g.inlineHeight}）`);
 
   console.log('\n▶ ② 进全屏：class + 画布铺满 + 高度交给 CSS');
@@ -116,15 +155,41 @@ try {
   ok(g.inlineHeight === '(空)', 'inline height 被清空了（否则和 CSS 的 100% 打架）');
   const sideBtnShown = await js(`document.getElementById('side-btn').hidden`);
   ok(sideBtnShown === false, '全屏里右栏折叠按钮出现了');
+  const toolsBtnShown = await js(`document.getElementById('tools-btn').hidden`);
+  ok(toolsBtnShown === false, '全屏里工具条折叠按钮出现了');
   const btnTxt2 = await js(`document.getElementById('fullscreen-btn').textContent.trim()`);
   ok(btnTxt2.includes('退出'), `按钮文案切成「${btnTxt2}」`);
   ok(Math.abs(s.zoom - preFs.zoom) < 0.05, `进全屏时 zoom 保留（${preFs.zoom.toFixed(4)} → ${s.zoom.toFixed(4)}）`);
   ok(Math.abs(s.center[0] - preFs.center[0]) < 2 && Math.abs(s.center[1] - preFs.center[1]) < 2,
     `进全屏时 center 保留（${JSON.stringify(preFs.center)} → ${JSON.stringify(s.center)}）`);
 
-  console.log('\n▶ ③ 工具条浮化但仍可点');
-  ok(g.headPos === 'absolute', `工具条浮化成 absolute（当前 ${g.headPos}）`);
-  const headPE = await js(`getComputedStyle(document.querySelector('.pane-head')).pointerEvents`);
+  /* ---- v0.131b：默认全收起 ---- */
+  console.log('\n▶ ②b 进全屏默认「全收起」（v0.131b 改）');
+  ok(s.sideHidden === true, `右栏默认收起（sideHidden=${s.sideHidden}）`);
+  ok(s.bodyClass.includes('side-hidden'), `body 带 side-hidden（${s.bodyClass}）`);
+  ok(s.headCollapsed === true, `工具条默认收起（headCollapsed=${s.headCollapsed}）`);
+  ok(s.bodyClass.includes('head-collapsed'), `body 带 head-collapsed（${s.bodyClass}）`);
+  let occ = await occlusion();
+  ok(occ.headDisplay === 'none', '收起时工具条 display:none（完全让给图）');
+  ok(occ.sideVisible === false, '收起时右栏不可见');
+  ok(occ.sideOverlapsGraph === false, '收起时右栏不遮画布');
+  /* 这条是第一版**完全没有**的：图有多宽。
+     收起后画布应该就是整个视口宽 —— 不该有任何东西占掉宽度。 */
+  ok(occ.graphW >= occ.graphW, `收起时画布占满宽度（${occ.graphW}px）`);
+  ok(g.graphW >= g.vw - 2, `收起时画布宽＝视口宽（${g.graphW} / ${g.vw}）`);
+
+  console.log('\n▶ ③ 工具条：点「⚙ 工具」才展开，展开后不透明且可点');
+  /* v0.131b 改：默认收起 → 先展开再验。展开后的关键属性是
+     **背景不透明**（第一版 0.42 压在 881 点密图上完全读不了）。 */
+  await js('window.__ba.toggleHeadCollapsed()');
+  await wait(700);
+  s = await readState(); g = await geom();
+  occ = await occlusion();
+  ok(s.headCollapsed === false, '展开后 headCollapsed=false');
+  ok(g.headDisplay !== 'none', `工具条重新出现（display=${g.headDisplay}）`);
+  ok(g.headPos === 'absolute', `工具条仍浮在画布上（position=${g.headPos}）`);
+  ok(occ.headAlpha >= 0.95, `工具条背景**不透明**（alpha=${occ.headAlpha}，背景 ${occ.headBg}）—— 压在密图上必须能读`);
+  const headPE = await js(`getComputedStyle(document.getElementById('pane-head-tools')).pointerEvents`);
   ok(headPE !== 'none', `工具条没有被关掉鼠标事件（pointer-events=${headPE}）—— 上面有搜索框和视图切换`);
   /* ⚠ 必须先把欢迎遮罩关掉再测命中。
    * 第一版忘了这步，elementFromPoint 命中的是 `.modal-backdrop`（欢迎层），
@@ -141,27 +206,34 @@ try {
   })()`);
   await wait(300);
   const hitOk = await js(`(() => {
-    const b = document.querySelector('.pane-head [data-view="gen-v"]');
+    const b = document.querySelector('#pane-head-tools [data-view="gen-v"]');
     if (!b) return 'no-btn';
     const r = b.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
     return top === b || b.contains(top) ? 'hit' : ('covered-by:' + (top && top.className));
   })()`);
   ok(hitOk === 'hit', `工具条上的视图切换按钮真的能点到（${hitOk}）`);
+  // 收回去，后面的用例从"全收起"这个默认态继续
+  await js('window.__ba.toggleHeadCollapsed()');
+  await wait(600);
+  ok((await readState()).headCollapsed === true, '再点一次能收回去');
 
-  console.log('\n▶ ④ 右栏折叠（仅全屏内）');
-  ok(g.sideVisible === true && g.sideDisplay !== 'none', '默认右栏展开');
+  console.log('\n▶ ④ 右栏：默认收起，点「▤ 右栏」展开，且**限宽不遮图**');
+  await js('window.__ba.toggleSideHidden()');
+  await wait(1000);
+  s = await readState(); g = await geom(); occ = await occlusion();
+  ok(s.sideHidden === false, 'state.sideHidden=false（已展开）');
+  ok(!s.bodyClass.includes('side-hidden'), 'body 不再带 side-hidden');
+  ok(occ.sideVisible === true, '右栏可见');
+  /* ★ 第一版漏掉的关键两条。实测第一版在 800×586 下右栏宽 800px，
+     因为栅格单列后 aside 撑满整行，把画布整个盖住。 */
+  ok(occ.sideW <= 400, `右栏限宽（${occ.sideW}px）`);
+  ok(occ.sideOverlapsGraph === false, '右栏**不遮住**画布（这是第一版的真 bug）');
+  ok(occ.graphW > 0 && occ.graphRight <= occ.sideLeft + 1, `画布右边缘 ${occ.graphRight} ≤ 右栏左边缘 ${occ.sideLeft}`);
   await js('window.__ba.toggleSideHidden()');
   await wait(1000);
   s = await readState(); g = await geom();
-  ok(s.sideHidden === true, 'state.sideHidden=true');
-  ok(s.bodyClass.includes('side-hidden'), `body 带 side-hidden 类（${s.bodyClass}）`);
-  ok(g.sideDisplay === 'none', '右栏 display:none');
-  ok(g.mainCols.split(' ').length === 1, `main 变单列（gridTemplateColumns=${g.mainCols}）`);
-  await js('window.__ba.toggleSideHidden()');
-  await wait(1000);
-  s = await readState(); g = await geom();
-  ok(s.sideHidden === false && g.sideVisible === true, '再点一次能展开回来');
+  ok(s.sideHidden === true && g.sideDisplay === 'none', '再点一次能收回去');
 
   console.log('\n▶ ⑤ 视野保留（本节最容易漏 —— 尺寸一变 resetRoam 会把 zoom 冲成 1）');
   /* 语义：**在全屏里**调好视野，退出后应保留。
@@ -217,6 +289,45 @@ try {
   ok(lockedInFs && lockedView.fullscreen === true, '建锁后仍停留在全屏（没被踢出）');
   await js('window.__ba.toggleFullscreen(false)');
   await wait(1200);
+
+  /* ---- ★ 窄视口：这一节是第一版**完全没有**、也是真 bug 唯一暴露的地方 ----
+   *
+   * 第一版 33 条断言全绿，但用户实机（视口 800×586）一看是坏的：
+   * 右栏撑到 800px 把画布整个盖住。第一版测试跑在 1600×1000，
+   * 那个宽度下 aside 撑满也只占一部分，看起来"正常" ⇒ 漏过去了。
+   *
+   * ⇒ 同一个会话里把视口改到 800×586 再验一遍。宽度是最容易出问题的维度，
+   *   窄视口必须单独测，不能只靠宽视口"顺便"覆盖。 */
+  console.log('\n▶ ⑨ ★ 窄视口 800×586（第一版全绿却不可用的那个场景）');
+  await send('Emulation.setDeviceMetricsOverride', { width: 800, height: 586, deviceScaleFactor: 1, mobile: false });
+  await wait(1200);
+  let gn = await geom();
+  ok(gn.vw === 800, `视口已切到 800×586（${gn.vw}×${gn.vh}）`);
+
+  await js('window.__ba.toggleFullscreen(true)');
+  await wait(1600);
+  s = await readState(); gn = await geom(); let occn = await occlusion();
+  ok(s.fullscreen === true, '窄视口下能进全屏');
+  ok(s.sideHidden === true && s.headCollapsed === true, '窄视口下默认仍是「全收起」');
+  ok(occn.headDisplay === 'none', '窄视口收起时工具条 display:none');
+  ok(occn.sideVisible === false, '窄视口收起时右栏不可见');
+  ok(gn.graphH >= gn.vh - 2, `窄视口下画布仍吃满高度（${gn.graphH} / ${gn.vh}）`);
+  ok(gn.graphW >= gn.vw - 2, `窄视口收起时画布宽＝视口宽（${gn.graphW} / ${gn.vw}）`);
+
+  // 展开右栏：这是第一版真正坏掉的地方
+  await js('window.__ba.toggleSideHidden()');
+  await wait(1200);
+  gn = await geom(); occn = await occlusion();
+  ok(occn.sideVisible === true, '窄视口下右栏能展开');
+  ok(occn.sideW <= 400, `★ 窄视口下右栏仍限宽（${occn.sideW}px）—— 第一版这里是 800px，把画布整个盖住`);
+  ok(occn.sideOverlapsGraph === false, `★ 窄视口下右栏不遮画布 —— 这是第一版的真 bug`);
+  ok(occn.graphRight <= occn.sideLeft + 1, `画布右边缘 ${occn.graphRight} ≤ 右栏左边缘 ${occn.sideLeft}`);
+  ok(occn.graphW > 100, `画布还剩可用宽度（${occn.graphW}px），不是被挤没了`);
+
+  await js('window.__ba.toggleFullscreen(false)');
+  await wait(1000);
+  await send('Emulation.clearDeviceMetricsOverride').catch(() => {});
+  await wait(600);
 } catch (e) {
   failed++;
   console.error('  ✗ 异常：' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 4).join('\n'));

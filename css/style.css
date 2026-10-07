@@ -885,35 +885,41 @@ body.fullscreen .graph-pane {
    （两者同时生效会打架 —— JS 写 px、CSS 写 100%，谁后算谁赢）。 */
 body.fullscreen #graph { height: 100% !important; }
 
-/* 工具条浮化：脱离文档流、盖在画布上，默认半透明，鼠标移上去才完全显现。
-   ⚠ 保留 pointer-events —— 它上面有搜索框和视图切换按钮，不能真的"点不到"；
-      浮化只改视觉层次（半透明 + 悬浮显现），不改可交互性。 */
+/* 工具条浮化：脱离文档流、盖在画布上。
+   ⚠ v0.131 第一版是「默认半透明 42% + 悬停显现」，实测**不可用**：
+   三国 881 点的图本来就密，半透明工具条压在节点上，两层文字叠在一起
+   完全读不了（截图确认）。工具条上全是文字控件，"半透明"对它没有意义。
+   ⇒ 改成**默认收起，点按钮才展开**，并且展开时给**不透明**背景。
+   ⚠ 保留 pointer-events —— 它上面有搜索框和视图切换按钮，浮化只改视觉层次，
+   不改可交互性。 */
 body.fullscreen .pane-head {
   position: absolute; z-index: 35;
   top: 52px; left: 12px; right: 12px;
   margin: 0; padding: 10px 14px;
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  background: var(--panel);          /* 不透明 —— 压在密图上必须能读 */
   border: 1px solid var(--line);
   box-shadow: var(--shadow-md);
-  backdrop-filter: blur(10px) saturate(1.1);
-  opacity: .42;
-  transition: opacity var(--duration-medium) var(--ease-standard);
 }
-body.fullscreen .pane-head:hover,
-body.fullscreen .pane-head:focus-within { opacity: 1; }
-/* 触摸设备没有 hover。focus-within 覆盖了「点一下搜索框」，
-   但空点画布不会让它显现 ⇒ 触摸端给一个更高的常驻透明度。 */
-@media (hover: none) {
-  body.fullscreen .pane-head { opacity: .92; }
-}
+/* 收起态：整条藏起来，只留浮动按钮组里的「⚙ 工具」入口 */
+body.fullscreen.head-collapsed .pane-head { display: none; }
 
-/* 右栏折叠：单列布局下把 aside 收掉 */
-body.fullscreen.side-hidden main { grid-template-columns: minmax(0, 1fr); }
+/* 右栏折叠：默认收起（v0.131 改）。
+   第一版默认**展开**，在 800×586 视口下实测右栏宽 800px —— 因为栅格变单列后
+   它占满整行，**把整个画布盖住了**，用户看到的是"右栏消失、图挤在上面"。
+   ⇒ 现在默认收起（side-hidden），点按钮才展开；展开时也**限宽**，绝不吃掉画布。 */
+body.fullscreen.side-hidden main,
+body.fullscreen.side-hidden .graph-pane { grid-column: 1 / -1; }
 body.fullscreen.side-hidden .side { display: none; }
 
-/* 右栏在全屏时贴边、占满高度（它本来有 max-height + 内部滚动，这里去掉留白） */
-body.fullscreen .side {
+/* 展开时也必须限宽。
+   ⚠ 关键：栅格是单列（1fr），aside 作为第二个格子会撑到整行。
+   改成显式两列 —— 画布 1fr + 右栏固定 380px，右栏再宽也吃不掉画布。 */
+body.fullscreen:not(.side-hidden) main {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+body.fullscreen:not(.side-hidden) .side {
+  width: 380px; max-width: 380px;
   max-height: 100vh; max-height: 100dvh;
   overflow-y: auto; padding: 12px; border-radius: 0;
 }

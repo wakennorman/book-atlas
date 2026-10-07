@@ -55,6 +55,7 @@
     sideHidden: false,        // v0.131：全屏时右栏是否折叠（body.side-hidden）
     fsSettleTimer: null,       // v0.131：切换全屏后补施加视野的定时器（切一次会引发两轮 resize 复位，见 keepViewAcrossFullscreen）
     fsSettleTimer2: null,      // v0.131：同上，第二次（只补一次仍会被第二轮冲掉）
+    headCollapsed: false,      // v0.131b：全屏时工具条是否收起（收起 = 画布上方完全让给图）
     labelTimer: null,
     pendingView: null,   // v93：刚恢复的"上次视野"，用来扛过随后那次 resize 复位
     viewMemTimer: null,   // v92：拖动后延迟写"上次视野"的定时器
@@ -1808,19 +1809,21 @@
      *   "换个看法继续看同一处东西"，而不是"丢弃你刚才的调整"。 */
     const keep = { zoom: state.zoom, center: (state.viewCenter || [0, 0]).slice() };
 
-    if (next) state.sideHidden = false;    // 每次进全屏先展开右栏，不继承上次折叠态
+    /* v0.131b：进全屏时**默认全收起** —— 工具条收起 + 右栏收起。
+     *
+     * 第一版是"右栏默认展开、工具条半透明浮着"，实测在你的视口（800×586）下
+     * 是**不可用**的，探针量到三件事：
+     *   ① 右栏宽 800px —— 栅格变单列后 aside 撑满整行，**把画布整个盖住**
+     *      （看起来像"右栏消失"，其实是盖在图上）
+     *   ② 工具条 opacity .42 压在 881 点的密图上，两层文字叠着，完全读不了
+     *   ③ 图的实际墨迹只占容器高度的 19%（`gen-v` 包围盒极扁 + 等比适配）
+     * ⇒ 全屏的用途是"把整块屏幕让给图"，那默认就该**什么都不挡**。
+     *   要看工具/右栏，点右上角对应按钮即可。
+     */
+    if (next) { state.sideHidden = true; state.headCollapsed = true; }
 
     document.body.classList.toggle('fullscreen', next);
-    document.body.classList.toggle('side-hidden', next && state.sideHidden);
-    const btn = document.getElementById('fullscreen-btn');
-    if (btn) {
-      btn.setAttribute('aria-pressed', String(next));
-      btn.textContent = next ? '⛶ 退出全屏' : '⛶ 全屏';
-      btn.title = next ? '退出全屏（Esc）' : '全屏展示（Esc 退出）';
-    }
-    // 右栏折叠按钮只在全屏里有意义（全屏外右栏本来就一直显示）
-    const sb = document.getElementById('side-btn');
-    if (sb) sb.hidden = !next;
+    syncFullscreenUI();
 
     // 尺寸已经变了（CSS 类已生效），让 chart 按新容器量一次
     if (state.chart) state.chart.resize();
@@ -1828,20 +1831,53 @@
     keepViewAcrossFullscreen(keep);
     updateOffscreenHint();
     try { saveViewMemory(); } catch (e) { /* 隐私模式下忽略 */ }
-    announce(state.fullscreen ? '已进入全屏，Esc 退出' : '已退出全屏');
+    announce(state.fullscreen ? '已进入全屏，点右上角可展开工具条与右栏' : '已退出全屏');
+  }
+
+  /** 把 state 上的两个折叠态同步到 body 类 + 三个按钮的文案/可见性。
+   * 三个入口（进出全屏、折叠工具条、折叠右栏）都走这里，避免文案各写一份走岔。 */
+  function syncFullscreenUI() {
+    const fs = state.fullscreen;
+    document.body.classList.toggle('fullscreen', fs);
+    document.body.classList.toggle('side-hidden', fs && state.sideHidden);
+    document.body.classList.toggle('head-collapsed', fs && state.headCollapsed);
+
+    const fb = document.getElementById('fullscreen-btn');
+    if (fb) {
+      fb.setAttribute('aria-pressed', String(fs));
+      fb.textContent = fs ? '⛶ 退出全屏' : '⛶ 全屏';
+      fb.title = fs ? '退出全屏（Esc）' : '全屏展示（Esc 退出）';
+    }
+    // 这两个只在全屏里有意义（全屏外右栏本来就一直显示、工具条本来就在文档流里）
+    const sb = document.getElementById('side-btn');
+    if (sb) {
+      sb.hidden = !fs;
+      sb.setAttribute('aria-expanded', String(fs && !state.sideHidden));
+      sb.textContent = state.sideHidden ? '▤ 右栏' : '▥ 右栏';
+      sb.title = state.sideHidden ? '展开右栏' : '收起右栏';
+    }
+    const tb = document.getElementById('tools-btn');
+    if (tb) {
+      tb.hidden = !fs;
+      tb.setAttribute('aria-expanded', String(fs && !state.headCollapsed));
+      tb.textContent = state.headCollapsed ? '⚙ 工具' : '⚙ 收起';
+      tb.title = state.headCollapsed ? '展开工具条（搜索 / 视图 / 过滤）' : '收起工具条';
+    }
+  }
+
+  /** 工具条收起/展开（仅全屏内） */
+  function toggleHeadCollapsed() {
+    if (!state.fullscreen) return;
+    state.headCollapsed = !state.headCollapsed;
+    syncFullscreenUI();
+    announce(state.headCollapsed ? '工具条已收起' : '工具条已展开');
   }
 
   /** 右栏折叠/展开（仅全屏内） */
   function toggleSideHidden() {
     if (!state.fullscreen) return;
     state.sideHidden = !state.sideHidden;
-    document.body.classList.toggle('side-hidden', state.sideHidden);
-    const sb = document.getElementById('side-btn');
-    if (sb) {
-      sb.setAttribute('aria-expanded', String(!state.sideHidden));
-      sb.textContent = state.sideHidden ? '▥ 右栏' : '▤ 右栏';
-      sb.title = state.sideHidden ? '展开右栏' : '折叠右栏';
-    }
+    syncFullscreenUI();
     if (state.chart) state.chart.resize();
     applyViewHeight();
     updateOffscreenHint();
@@ -1854,6 +1890,8 @@
     if (fb) fb.addEventListener('click', () => toggleFullscreen());
     const sb = document.getElementById('side-btn');
     if (sb) sb.addEventListener('click', () => toggleSideHidden());
+    const tb = document.getElementById('tools-btn');
+    if (tb) tb.addEventListener('click', () => toggleHeadCollapsed());
     /* Esc 退出全屏。
      * ⚠ 这个项目的 Esc 已经被「取消选中 / 退出锁定」占用了
      *   （见 graph-kb-hint：「Esc 取消选中」）。所以这里加 `if (!state.fullscreen) return;`，
@@ -5417,8 +5455,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
        即同一个 toggleFullscreen，不是另开一条"测试专用"通道） */
     toggleFullscreen: (on) => { toggleFullscreen(on); return state.fullscreen; },
     toggleSideHidden: () => { toggleSideHidden(); return state.sideHidden; },
+    toggleHeadCollapsed: () => { toggleHeadCollapsed(); return state.headCollapsed; },
     fullscreenState: () => ({
       fullscreen: state.fullscreen, sideHidden: state.sideHidden,
+      headCollapsed: state.headCollapsed,
       zoom: state.zoom, center: (state.viewCenter || []).slice(),
       bodyClass: document.body.className,
     }),
