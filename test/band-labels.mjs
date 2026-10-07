@@ -202,19 +202,21 @@ try {
       `gen-h 图注都在画布矩形内（画布 ${h.canvas.w}×${h.canvas.h}，越界 ${h.rects.filter((r) => r.y < -1 || r.y + r.h > h.canvas.h + 1 || r.x < -1).map((r) => r.t).join(' ') || '无'}）`);
   }
 
-  /* ===== 放大后抽稀要放松（refreshBandThinning 的语义） ===== */
-  head('放大后抽稀要放松');
+  /* ===== 放大之后仍然不重叠，且抽稀要放松 ===== */
+  head('放大后');
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 780, deviceScaleFactor: 1, mobile: true });
   await setView('gen-v');
   const z1 = await probe();
-  ok(z1.rects.length < z1.bandCount, `窄视口下确实抽了稀（${z1.rects.length}/${z1.bandCount}，stride=${z1.stride}）`);
+  ok(overlaps(z1.rects).length === 0, `窄视口 gen-v 图注不重叠（画了 ${z1.rects.length}/${z1.bandCount} 个，stride=${z1.stride}）`);
   await js(`(() => { const ch = window.__ba.chart(); ch.dispatchAction({ type: 'graphRoam', zoom: 3, originX: 200, originY: 300 }); })()`);
   await wait(1500);
   const z2 = await probe();
-  const zBad = overlaps(z2.rects);
-  ok(z2.rects.length >= z1.rects.length,
-    `放大到 3 倍后可见图注不少于放大前（${z1.rects.length} → ${z2.rects.length}，stride=${z2.stride}）`);
-  ok(zBad.length === 0, `放大后真实矩形仍不重叠（画了 ${z2.rects.length} 个）`);
+  ok(overlaps(z2.rects).length === 0, `放大到 3 倍后仍不重叠（画了 ${z2.rects.length} 个）`);
+  /* 抽稀只该在间距不够时发生；放大后间距够了，步长不该变大（否则是白丢信息）。
+   * ⚠ v0.133 布局修好之后，手机视口下 gen-v 的间距已经够 10 个图注全显示（stride=1），
+   *   所以这条从「必须抽稀」改成「步长不得变大」—— 断言方向是放宽，不是收紧。 */
+  ok(z2.stride <= z1.stride, `放大后抽稀步长不应变大（${z1.stride} → ${z2.stride}）`);
+  ok(z2.rects.length >= z1.rects.length, `放大后可见图注不少于放大前（${z1.rects.length} → ${z2.rects.length}）`);
 } catch (e) {
   failed++;
   console.error(`  ✗ ${e.message}`);

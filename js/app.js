@@ -2035,81 +2035,109 @@
     state.pos = new Map();
     state.bands = new Map();
     state.bandLabels = new Map();
-    const mainPad = 110, crossPad = 78;
     const maxCount = Math.max(1, ...groups.map((g) => byGen.get(g).length));
     const maxSymbol = Math.min(40, 15 + Math.max(...[...state.byId.keys()].map(nodeDegree)) * 2.2);
     const stepCross = Math.max(34, maxSymbol + 10);
     state.stepWorld = stepCross;      // 相邻节点的世界间距（buildOption 用它决定符号该画多大）
-    const viewMain = (view === 'gen-h' ? W : H) - mainPad * 2;
-    const viewCross = (view === 'gen-h' ? H : W) - crossPad * 2;
+    /* v0.133：原来这里还有 mainPad=110 / crossPad=78，用来从容器尺寸里扣出「可用区」，
+     * 再拿它当目标长宽比。删掉了 —— ECharts 自己就会把包围盒塞进「居中 80%」，
+     * 我们要匹配的应该是**容器本身**的长宽比（就是下面的 W/H），
+     * 多扣一层会让目标比例偏离真实需求。 */
 
-    /* v89 修「代际·横 / 分组·横」整张图不可用。
+    /* v89 修「代际·横 / 分组·横」整张图不可用；v0.133 把同一套解法推广到「纵」视图。
      *
-     * 「竖」视图：一群人排成**一行**，行长＝人数，正好落在宽屏上 —— 一直是对的。
-     * 「横」视图：一群人竖着排进矮边，于是曹魏 250 人就是一根 12500 长、间距 50 的线，
-     * 而群组轴（10 个阵营 × 240）总长才 2160 ⇒ **长宽比 1 : 5.8**，而画布是 2 : 1。
+     * 一开始只有 gen-h 有网格折行，gen-v 是「一群人排成一行」。那段注释说
+     * 「竖视图排成一行正好落在宽屏上 —— 一直是对的」，**那只在高瘦容器下成立**：
+     * 用户实测 800×586（容器 778×340）时 gen-v 退化得很厉害。
      *
-     * 为什么这会致命：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上，
+     * 为什么长宽比不对就会致命：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上，
      * 它先把数据包围盒**等比**塞进「容器居中 80%」的 viewRect，再把 zoom 乘在那个
      * 适配系数之上（实测与源码位置见 memory/echarts-graph-auto-fits-data-bbox.md）。
-     * 于是被压到 0.088 的尺度：群组轴只剩 **83px 宽**，十个阵营的图注全叠在一起，
-     * 整张图退化成中间一条竖线。
-     *
      * 调 fitPositions 的缩放系数没有任何用 —— 等比适配之后只有**长宽比**有意义
      * （实测 64×344 与 949×5118 渲染出来同样宽 83px）。
-     * 真正的解法是把每群人**折成网格**，再解一个 stepMain（群组间距），
-     * 让 群组轴长 : 群内轴长 ≈ 可用宽 : 可用高，两根轴都用得上。
+     *
+     * gen-v 折行前的实测（三国 881 人、10 个阵营、最大组 250 人、stepCross=44）：
+     *     一行到底 ⇒ 包围盒 11000×2204 ⇒ 长宽比 **5.0**，而画布是 2.29
+     *     ⇒ 墨迹只占容器高 **37%**（桌面 32%、手机 16%），上下大片空白；
+     *     而且相邻节点的屏幕间距被压到 **2.5px**（手机 1.2px）⇒ 符号缩到下限、
+     *     人挤成一坨，比"图看起来小"更糟。
+     * 折成网格后实测：
+     *     800×586  ⇒ 占高 **77%**、节点间距 **7.4px**
+     *     1600×1000 ⇒ 占高 **67%**、节点间距 **10.8px**
+     *     390×780 ⇒ 占高 **91%**、节点间距 **5.9px**
      */
-    const GUT = 26;                   // 「横」视图里相邻群组块之间的间隙
-    let stepMain = Math.max(200, 240);
-    let cols = 1, rows = maxCount;
-    if (view === 'gen-h') {
-      const grid = (sm) => {
-        const c = Math.max(1, Math.floor(Math.max(stepCross, sm - GUT) / stepCross));
-        return { c, r: Math.max(1, Math.ceil(maxCount / c)) };
+    const GUT = 26;                   // 相邻群组块之间的间隙
+    const isH = view === 'gen-h';
+    /* v0.133 重写这段网格求解。
+     *
+     * 目标只有一个：**让数据包围盒的长宽比贴近画布的长宽比**。
+     * 为什么只有长宽比有意义：ECharts 会把包围盒**等比**塞进「容器居中的 80%」，
+     * 缩放系数随后乘在 zoom 上（见 memory/echarts-graph-auto-fits-data-bbox.md）
+     * ⇒ 世界坐标整体放大缩小都不影响屏幕结果，只有比例影响。
+     *
+     * 为什么必须扫而不是迭代（这一段之前是 gen-h 专属的 sqrt 迭代，两处错）：
+     *   ① ratio 的**分子漏了块自身的尺寸**。原来算 `(groups-1)*stepMain / (rows-1)*stepCross`，
+     *      那是「群组轴 : 群内轴」，可真实包围盒还要加上块的 cols*stepCross / rows*stepCross。
+     *   ② sqrt 迭代里 stepMain 同时决定「群组间距」和「块宽（→cols）」，两个耦合，
+     *      迭代既可能不收敛也可能停在错误的局部解。
+     * ⇒ 改成：把 ratio 对单个参数写成**单调**的，直接扫一遍取最接近目标的那个。
+     *   gen-h：ratio 随 cols 递增（块变宽、rows 变少）⇒ 越过目标即可停。
+     *   gen-v：ratio 随 rows 递减 ⇒ 越过目标即可停。
+     *
+     * 块（群组内网格）在两个视图里都是 cols*stepCross 宽 × rows*stepCross 高，
+     * 唯一的差别是**群组中心沿哪根轴散开**：gen-h 沿 x、gen-v 沿 y。
+     * 「群组间距」必须装得下块在主轴上的跨度，否则块之间会叠在一起。
+     */
+    const blockW = (c) => c * stepCross;
+    const blockH = (r) => r * stepCross;
+    const wantWH = (W && H) ? W / H : 1.7;
+    let cols = 1, rows = maxCount, stepMain = Math.max(200, 240);
+    {
+      let best = null;
+      const take = (c, r, sm, bWx, bHx) => {
+        const ratio = bWx / bHx;
+        const err = Math.abs(ratio - wantWH) / wantWH;
+        if (!best || err < best.err) best = { c, r, sm, err, ratio };
+        return ratio;
       };
-      const want = viewMain / Math.max(1, viewCross);       // 目标长宽比＝画布可用长宽比
-      for (let it = 0; it < 16 && groups.length > 1; it++) {
-        const g = grid(stepMain);
-        cols = g.c; rows = g.r;
-        const crossL = (rows - 1) * stepCross;
-        if (crossL <= 0) break;
-        const ratio = (groups.length - 1) * stepMain / crossL;
-        if (Math.abs(ratio - want) / want < 0.04) break;
-        // 开根号：stepMain 同时决定格宽（cols↑⇒crossL↓）和群组总长，sqrt 收敛最快
-        stepMain = Math.min(5000, Math.max(stepCross * 2, stepMain * Math.sqrt(want / ratio)));
+      for (let k = 1; k <= maxCount; k++) {
+        if (isH) {
+          // 主轴横：块沿 x 排（槽宽 stepMain 必须装下 blockW(cols)），块内沿 y 排 rows 行
+          const c = k, r = Math.max(1, Math.ceil(maxCount / c));
+          const sm = Math.max(stepCross * 2, blockW(c) + GUT);
+          const ratio = take(c, r, sm, (groups.length - 1) * sm + blockW(c), blockH(r));
+          if (ratio >= wantWH) break;
+        } else {
+          // 主轴竖：块沿 y 排（槽高 stepMain 必须装下 blockH(rows)），块内沿 x 排 cols 列
+          const r = k, c = Math.max(1, Math.ceil(maxCount / r));
+          const sm = blockH(r) + GUT;
+          const ratio = take(c, r, sm, blockW(c), (groups.length - 1) * sm + blockH(r));
+          if (ratio <= wantWH) break;
+        }
       }
-      const g = grid(stepMain);
-      cols = g.c; rows = g.r;
+      cols = best.c; rows = best.r; stepMain = best.sm;
     }
-    const mainLen = view === 'gen-h'
-      ? (groups.length < 2 ? cols * stepCross : (groups.length - 1) * stepMain)
-      : Math.max(viewMain, (groups.length - 1) * stepMain);
-    const crossLen = Math.max(viewCross, (rows - 1) * stepCross);
+    /* 群组中心之间的总距离；不足 2 组时就是 0（此时只有一个块，用块自身尺寸）。 */
+    const mainLen = (groups.length - 1) * stepMain;
 
     groups.forEach((g, gi) => {
-      const center = groups.length === 1 ? 0 : -mainLen / 2 + (mainLen * gi) / (groups.length - 1);
-      state.bands.set(g, center);
+      const t = groups.length === 1 ? 0.5 : gi / (groups.length - 1);
+      const mainAt = groups.length === 1 ? 0 : -mainLen / 2 + mainLen * t;
+      const cx = isH ? mainAt : 0;
+      const cy = isH ? 0 : mainAt;
+      state.bands.set(g, mainAt);          // band 就是主轴坐标：gen-h 是 x、gen-v 是 y
       const sample = byGen.get(g)[0];
       state.bandLabels.set(g, sample ? groupLabelOf(sample) : String(g));
       const list = byGen.get(g);
-      if (view === 'gen-h') {
-        // 群组块：cols 列 × rows 行，块内居中，块与块之间留 GUT 间隙
-        const myCols = Math.max(1, Math.min(cols, list.length));
-        const myRows = Math.max(1, Math.ceil(list.length / myCols));
-        const slot = Math.max(stepCross, stepMain - GUT);
-        const x0 = center - (myCols * stepCross) / 2 + stepCross / 2;
-        const y0 = -crossLen / 2 + ((rows - myRows) / 2) * stepCross;
-        list.forEach((c, ci) => {
-          state.pos.set(c.id, { x: x0 + (ci % myCols) * stepCross, y: y0 + Math.floor(ci / myCols) * stepCross });
-        });
-      } else {
-        const step = list.length > 1 ? crossLen / (list.length - 1) : 0;
-        list.forEach((c, ci) => {
-          const off = list.length === 1 ? 0 : -crossLen / 2 + ci * step;
-          state.pos.set(c.id, { x: off, y: center });
-        });
-      }
+      /* 块内网格。人数少的组用更少的列，并**在自己的中心上居中**
+       * （原来 gen-v 是把所有人铺满整条 crossLen，窄视口下包围盒被拉成极扁的一条）。 */
+      const myCols = Math.max(1, Math.min(cols, list.length));
+      const myRows = Math.max(1, Math.ceil(list.length / myCols));
+      const x0 = cx - (myCols * stepCross) / 2 + stepCross / 2;
+      const y0 = cy - (myRows * stepCross) / 2 + stepCross / 2;
+      list.forEach((c, ci) => {
+        state.pos.set(c.id, { x: x0 + (ci % myCols) * stepCross, y: y0 + Math.floor(ci / myCols) * stepCross });
+      });
     });
   }
 
