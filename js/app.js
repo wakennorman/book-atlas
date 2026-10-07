@@ -6,6 +6,36 @@
 
   const $ = (sel) => document.querySelector(sel);
 
+  /* v0.133：分组图注（「曹魏 / 蜀汉 / 东吴…」）的字号，以及两行之间最少要留的像素。
+   * 抽稀步长 = ceil(need / 相邻图注的真实像素间距)。 */
+  const BAND_FONT = 11.5;
+  const BAND_LABEL_DISTANCE = 4;      // 图注与锚点之间的距离（ECharts label.distance）
+  /* v0.133：图注文字本身量的工具。
+   * 横视图图注是 'top'（文字在节点**上方**、横向居中）⇒ 主轴(x)上要放下整条宽度；
+   * 纵视图是 'left'（文字在节点**左边**、竖向居中）⇒ 主轴(y)上只需一行行高。
+   * ⚠ 别去猜「几个字 × 字号」：「司马·晋」这种带间隔点的实测 40px，「曹魏」只有 23px。 */
+  let bandMeasureCtx = null;
+  const bandTextWidthCache = new Map();
+  function bandTextWidth(text) {
+    if (bandTextWidthCache.has(text)) return bandTextWidthCache.get(text);
+    let w;
+    try {
+      if (!bandMeasureCtx) {
+        bandMeasureCtx = document.createElement('canvas').getContext('2d');
+        bandMeasureCtx.font = 'bold ' + BAND_FONT + 'px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+      }
+      w = bandMeasureCtx.measureText(text).width;
+    } catch { w = text.length * BAND_FONT; }
+    bandTextWidthCache.set(text, w);
+    return w;
+  }
+  /** 最宽的一条图注有多宽（横视图判重叠时用；gen-v 只判行高，用不到） */
+  function bandWidestText() {
+    let w = BAND_FONT;
+    for (const t of state.bandLabels.values()) w = Math.max(w, bandTextWidth(t));
+    return w;
+  }
+
   const state = {
     books: [],
     book: null,
@@ -33,6 +63,13 @@
     maxDeg: 1,             // 本书最大关系数（symbolSize 的开方刻度用）
     groupMode: 'generation', // 'generation'（有代际）| 'faction'（无代际，按阵营分组）
     bandLabels: new Map(),   // 分组键 -> 图注文字（第 N 代 / 阵营名）
+    /* v0.133：图注（阵营/代际）抽稀用的**真实**像素尺度。
+     * 0 = 还没量过 ⇒ buildOption 先按"全显示"渲染一趟，渲染完由 measureBandScale 量出来。
+     * ⚠ 不能用 state.pxScale：那是「适配后单位→像素」，与 state.bands 的
+     *   「适配前世界坐标」量纲不匹配（实测差 13 倍，抽稀会过头到只剩 1 个）。 */
+    bandPxPerWorld: 0,
+    bandStride: 1,          // 上面那个尺度算出来的抽稀步长（1 = 全显示）；只用于判断「变了才重渲」
+    bandInside: false,    // 图注被挤到画布外时翻到内容内侧（见 measureBands 里的实测记录）
     places: new Map(),       // placeId -> place
     placeFilter: null,       // 当前地点筛选
     showMentioned: false,    // 是否显示「仅被提及」的人物（默认折叠）
@@ -1358,20 +1395,93 @@
         const r = document.getElementById('graph').getBoundingClientRect();
         bb = { minX: -((r.width || 900) / 2), minY: -((r.height || 600) / 2) };
       }
-      for (const [g, band] of state.bands) {
+      /* ---------- v0.133：图注抽稀（只改标签，**不动任何坐标**） ----------
+         *
+         * 起因（实测，视口 800×586 / 容器 778×340，三国 881 人，gen-v）：
+         *   · 10 个阵营图注的**屏幕**纵向间距 = 12.12px，而字号 11.5px
+         *   · 间距 < 字号 ⇒ 必然叠；而 labelLayout 明确写着 `hideOverlap: false`
+         *     （刻意禁用隐藏，因为这些图注是"这一组有多少人"的唯一指示）
+         *   ⇒ 「曹魏/蜀汉/东吴/汉室/群雄…」十个标签叠成一团黑字。
+         *
+         * 为什么不用 hideOverlap:true：
+         *   ECharts 的隐藏策略会让被藏掉的标签**不留任何痕迹** ——
+         *   用户看到「曹魏」下面直接是「东吴」，会以为中间那个阵营不存在。
+         *   这些图注承载的是**分组信息**，不能静默丢。
+         *
+         * 为什么不用 layout-stable 那套布局改动（我试过、已撤销）：
+         *   改 buildGenerationPositions 的网格会连带改变节点在画布上的位置，
+         *   而 test/roam 从**固定坐标 (400,300)** 起拖 —— 图一变窄那个点就落到空白，
+         *   zrender 不启动平移 ⇒ viewCenter 恒为 [0,0]（实测 4/4 稳定红）。
+         *   ⇒ 布局是共享核心、风险面大。**这一轮只碰标签，不碰坐标。**
+         *
+         * 做法：沿主轴把图注按**屏幕间距**排序，间距不足时跳着显示
+         * （保证任意两个**同时可见**的图注之间都留得下一行文字）。
+         */
+      /* 主轴上的位置：gen-h 的 band 是 x、gen-v 的 band 是 y（isH 决定）。
+       统一按 band 值排序即可 —— 两个视图的 band 都是"主轴坐标"。 */
+      const bandRows = [...state.bands].map(([g, band]) => ({ g, band }));
+      bandRows.sort((a, b) => a.band - b.band);
+      /* 屏幕间距 = 世界坐标差 × state.bandPxPerWorld
+       *
+       * ⚠⚠⚠ 这行的尺度换过两次，每次都错 —— 记下来别再试第三次：
+       *
+       * ① `cs.dataToPoint()`：逻辑本身**完全正确**（页面里复算能得出 stride=2），
+       *    但页面上根本没抽稀。真因是调用顺序：
+       *      setView → `state.chart.clear()` → **立刻** `buildOption()`
+       *    clear() 刚把坐标系清空，此刻量到的是**空坐标系**的间距 ⇒ stride 恒为 1。
+       *
+       * ② `state.pxScale`（本项目一贯的"真实尺度"）：**量纲不对**。
+       *    pxScale 的定义是「**适配后**单位 → 像素」，而 state.bands 存的是
+       *    **适配前**的世界坐标 ⇒ 差一个 fitLast 因子。实测（1600×1000 / gen-v）：
+       *      真实像素间距            18.03
+       *      cs.scaleY × worldGap    18.03  ✓
+       *      pxScale  × worldGap     1.34  ✗ 差 13 倍
+       *    ⇒ 抽稀过头：desktop 本来 10 个图注全放得下，却被抽成 1 个。
+       *
+       * ⇒ 结论：**在 buildOption 里根本量不出真实尺度**（坐标系刚被 clear / 还没 setOption）。
+       *    自己算也不行 —— ECharts 适配的是"当前绘制集合"的包围盒
+       *    （筛选/锁定一变就跳，见 memory/echarts-graph-auto-fits-data-bbox.md 的 v0.94 节），
+       *    而图注节点还落在 state.bbox **之外**（minX-30 / minY-26），算不进 state.bbox。
+       *
+       * ⇒ 改成**两趟**：先全量渲染一趟 → 用**公开 API** `chart.convertToPixel`
+       *    量出真实像素间距（measureBandScale）→ 需要抽稀才重渲第二趟。
+       *    第一趟 bandPxPerWorld=0 ⇒ stride=1（保守，先都画上）。
+       */
+      /* 换算成步长只用 measureBands 量出来的真实尺度（bandStrideFor 是两边共用的同一份公式）。
+       * bandPxPerWorld 还是 0 时（第一次渲染 / 刚换视图）步长恒为 1 ⇒ 先全画上，
+       * 量完再决定要不要第二趟。 */
+      const stride = bandStrideFor(state.bandPxPerWorld);
+      /* 每 stride 个显示 1 个 ⇒ 任意两个**同时可见**的图注之间至少隔 stride-1 个组，
+       * 实际间距 = stride × 真实像素间距 ≥ bandMainAxisNeed()。 */
+      const bandVisible = new Set(bandRows.filter((_, i) => i % stride === 0).map((r) => r.g));
+
+      /* 锚点与朝向。默认画在包围盒**之外**的 gutter（gen-h 顶部 / gen-v 左侧）——
+       * 那是绝大多数情况下最干净的位置。只有 measureBands 量到「这样画会掉出画布」
+       * （state.bandInside）才翻到内侧：锚点贴着内容自己的边界、朝向翻成 bottom / right。
+       * 代价是标签会盖住最外侧一排节点，但"盖住几个点"远好过"看不见"。 */
+      const OUT_X = isH ? 0 : -30, OUT_Y = isH ? -26 : 0;     // 外侧 gutter 的世界偏移
+      const bandX = (band) => (isH ? band : (state.bandInside ? bb.minX : bb.minX + OUT_X));
+      const bandY = (band) => (isH ? (state.bandInside ? bb.minY : bb.minY + OUT_Y) : band);
+      const bandPos = isH ? (state.bandInside ? 'bottom' : 'top') : (state.bandInside ? 'right' : 'left');
+
+      for (const r of bandRows) {
+        const { g, band } = r;
         // v89：锁定到只剩几个人时，全书的「第N代」图注会变成一堆指向空气的标签。
         // 只保留真的有节点落在这一组的图注。
         if (lockSet && !renderedGroups.has(g)) continue;
+        /* 抽稀：本条被跳过时不 push 图注点。
+         * ⚠ 只影响这一个虚拟节点，不动任何真实人物的 state.pos。 */
+        if (!bandVisible.has(g)) continue;
         data.push({
           id: `__gen_${g}`,
           name: state.bandLabels.get(g) || String(g),
           symbol: 'circle',
           symbolSize: 3,
-          x: isH ? band : bb.minX - 30,
-          y: isH ? bb.minY - 26 : band,
+          x: bandX(band),
+          y: bandY(band),
           label: {
-            show: true, color: muted, fontSize: 11.5, fontWeight: 'bold',   // 标签画在屏幕坐标，不随 zoom 变 ⇒不能除以 zoom（否则一放大就剩 2px）
-            position: isH ? 'top' : 'left', distance: 4,
+            show: true, color: muted, fontSize: BAND_FONT, fontWeight: 'bold',   // 标签画在屏幕坐标，不随 zoom 变 ⇒不能除以 zoom（否则一放大就剩 2px）
+            position: bandPos, distance: BAND_LABEL_DISTANCE,
           },
           itemStyle: { color: 'transparent' },
           labelLayout: { hideOverlap: false },
@@ -1870,6 +1980,8 @@
     if (!state.fullscreen) return;
     state.headCollapsed = !state.headCollapsed;
     syncFullscreenUI();
+    if (state.chart) { state.chart.resize(); refreshBandThinning(); }   // v0.133：容器变高 ⇒ 抽稀要重算
+    applyViewHeight();
     announce(state.headCollapsed ? '工具条已收起' : '工具条已展开');
   }
 
@@ -1878,7 +1990,7 @@
     if (!state.fullscreen) return;
     state.sideHidden = !state.sideHidden;
     syncFullscreenUI();
-    if (state.chart) state.chart.resize();
+    if (state.chart) { state.chart.resize(); refreshBandThinning(); }   // v0.133：同上
     applyViewHeight();
     updateOffscreenHint();
     announce(state.sideHidden ? '右栏已折叠' : '右栏已展开');
@@ -2010,6 +2122,128 @@
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
+  /** v0.133：图注在**主轴**上至少要占多少像素，两个视图的判据**不一样**。
+   *
+   * 这是第一版踩的坑：两个视图都用 `字号 × 1.25` 当门槛，结果 gen-h 在窄视口下
+   * 十个图注**两两全叠**（实测 phone 390×780：节点主轴间距 20.6px，
+   * 而最宽图注「司马·晋」实测 40px —— 40 > 20.6 必然叠）。
+   * 差别在 label 的 position：
+   *   gen-h 用 'top'  —— 文字在节点**上方**、**横向居中**
+   *        ⇒ 主轴（x）上要放下的是**整条文字的宽度**
+   *   gen-v 用 'left' —— 文字在节点**左边**、**竖向居中**
+   *        ⇒ 主轴（y）上要放下的是**行高**，与文字宽度无关
+   * ⚠ 第一版只量「主轴间距 vs 字号」，从没量过文字**自身宽度** ——
+   *   典型的「只测机械属性」：gen-h 的重叠整整一轮都没发现，
+   *   直到 test/band-labels 改成量真实绘制矩形才暴露出来。
+   */
+  function bandMainAxisNeed() {
+    if (state.view === 'gen-h') return bandWidestText() * 1.15;   // 'top' 横向居中
+    return BAND_FONT * 1.35;                                      // 'left' 竖向居中 ⇒ 一行行高
+  }
+
+  /** v0.133：算出当前该用多大的图注抽稀步长。
+   *
+   * @param {number} scale 一个世界单位 = 多少屏幕像素（pxPerWorld）
+   * @returns {number} 步长；1 = 全显示
+   *
+   * 传入的 `scale` 必须是**真实测出来的**（见 measureBandScale）。
+   * 这里只负责「间距 → 步长」的换算，两处共用同一份公式，免得各写一套走岔。
+   */
+  function bandStrideFor(scale) {
+    if (state.view === 'force' || !state.bands || state.bands.size < 2) return 1;
+    const vals = [...state.bands.values()].sort((a, b) => a - b);
+    let minGap = Infinity;
+    for (let i = 1; i < vals.length; i++) minGap = Math.min(minGap, vals[i] - vals[i - 1]);
+    if (!(minGap > 0) || !(scale > 0)) return 1;
+    const pxGap = minGap * scale;
+    return Math.max(1, Math.ceil(bandMainAxisNeed() / pxGap));
+  }
+
+  /** v0.133：量出图注该用多大的抽稀步长，以及**该不该翻到内侧**，存进 state。
+   *
+   * 必须在**已经 setOption 过**之后量 —— ECharts 的 graph 系列会把「当前绘制集合」的
+   * 包围盒等比塞进容器（见 memory/echarts-graph-auto-fits-data-bbox.md），
+   * 这个适配系数事先算不出来，也不该自己复算（筛选/锁定一变就变）。
+   *
+   * 用 `chart.convertToPixel` 这个**公开 API**，不用 coordinateSystem 内部字段
+   * （压缩版会改名，见同一条记忆的 v0.94 节）。
+   *
+   * 量的是**最外侧两条**（bands 首尾）再除以世界跨度求比例 ——
+   * 先求比例再换算成间距，噪声被摊薄，比逐对量相邻两条稳。
+   *
+   * @returns {{stride:number, inside:boolean}} stride = 抽稀步长；inside = 图注翻到内容内侧
+   */
+  function measureBands() {
+    if (state.view === 'force' || !state.bands || state.bands.size < 2) {
+      state.bandStride = 1; state.bandInside = false; return { stride: 1, inside: false };
+    }
+    const vals = [...state.bands.values()].sort((a, b) => a - b);
+    const a = vals[0], b = vals[vals.length - 1], worldSpan = b - a;
+    const isH = state.view === 'gen-h';
+    let px = 0;
+    if (worldSpan > 0) {
+      try {
+        const pa = state.chart.convertToPixel({ seriesIndex: 0 }, isH ? [a, 0] : [0, a]);
+        const pb = state.chart.convertToPixel({ seriesIndex: 0 }, isH ? [b, 0] : [0, b]);
+        const pxSpan = Math.abs((isH ? pb[0] - pa[0] : pb[1] - pa[1]));
+        if (pxSpan > 0) px = pxSpan / worldSpan;
+      } catch { px = 0; }             // 没有坐标系 / 图表已销毁
+    }
+    state.bandPxPerWorld = px;
+    state.bandStride = bandStrideFor(px);
+
+    /* ---- 该不该把图注翻到内容内侧？----
+     *
+     * 图注默认画在包围盒**之外**的 gutter（gen-h 在顶部、gen-v 在左侧）——
+     * 那是绝大多数情况下最干净的位置（不压任何节点）。
+     * 但那个 gutter 并不是真的存在：series 没写 top/left，实测内容会贴到画布边缘
+     * （phone 390×780：gen-h 内容顶边 y=8、gen-v 内容左边 x=20），
+     * 于是 'top'+distance 的文字整体掉到画布外面 —— 十个图注 y=−9，一个都看不见。
+     *
+     * ⚠ 试过用 series 的 top/left 边距「真造出 gutter」，**实测是净负面**：
+     *   桌面 gen-h 加 top:26 之后内容顶边反而从 y=93 掉到 y=7，图注 y=−10（原来 y=76 可见）；
+     *   桌面 gen-v 加 left:48 之后「司马·晋」x=−13（原来 x=55 可见）。
+     *   ECharts 的 graph 边距并不按我以为的方式让出空间，所以这条路作废。
+     *
+     * ⇒ 改成**量**：把图注锚点换算成屏幕坐标，看文字会不会越过画布边。
+     *   会越界才翻到内侧（'top'→'bottom'、'left'→'right'，锚点改用内容自己的边界）。
+     *   代价是标签会盖住最外侧一排节点 —— 但"盖住几个点"远好过"看不见"。
+     */
+    state.bandInside = false;
+    const bb = state.bbox;
+    if (bb) {
+      try {
+        const el = document.getElementById('graph');
+        const cw = el.clientWidth || 0, chh = el.clientHeight || 0;
+        const gutterX = isH ? 0 : -30, gutterY = isH ? -26 : 0;   // 与 buildOption 里的锚点一致
+        const p = state.chart.convertToPixel({ seriesIndex: 0 }, [bb.minX + gutterX, bb.minY + gutterY]);
+        const size = isH ? BAND_FONT * 1.25 : bandWidestText();    // 'top' 占高度；'left' 占宽度
+        const overflow = isH ? (p[1] - BAND_LABEL_DISTANCE - size < 0)
+                             : (p[0] - BAND_LABEL_DISTANCE - size < 0);
+        state.bandInside = !!(cw > 0 && chh > 0 && overflow);
+      } catch { state.bandInside = false; }
+    }
+    return { stride: state.bandStride, inside: state.bandInside };
+  }
+
+  /** v0.133：容器尺寸变了以后重算图注的显示方式，**变了才**重渲一趟。
+   *
+   * 为什么必须重算：抽稀步长和「翻不翻内侧」都**烘进 option 数据里**
+   * （前者少 push 几个虚拟节点，后者改 label.position），
+   * `chart.resize()` 只重新适配坐标系、不会重写那份数据 ⇒ 不重算就会带着过期的设置去画。
+   * 会改容器尺寸的入口：window resize（→ resetRoam）、进出全屏、收起工具条、收起右栏。
+   *
+   * 只在真的变了才重渲 —— 单纯 resize 不该多画一趟 871 个点的图。
+   */
+  function refreshBandThinning() {
+    if (!state.chart || state.view === 'force') return;
+    const prevStride = state.bandStride, prevInside = state.bandInside;
+    const now = measureBands();
+    if (now.stride !== prevStride || now.inside !== prevInside) {
+      state.chart.setOption(buildOption({ keepView: true }), { notMerge: true });
+    }
+  }
+
   function setView(view, opts = {}) {
     state.view = view;
     state.zoom = 1;
@@ -2064,7 +2298,16 @@
       // v92：布局排好之后先按"整张图"渲染一次，pxScale/bbox 才是准的，
       // 然后才谈得上恢复上次的视野（restoreViewMemory 要用 state.bbox 判断合不合理）。
       state.chart.clear();
+      /* v0.133：图注抽稀走**两趟**。
+       *   第一趟先全量画（bandPxPerWorld 清 0 ⇒ stride 恒为 1，保守起见都画上）。
+       *   画完坐标系才成立，这时才量得出「一个世界单位多少像素」（measureBandScale）。
+       *   桌面尺寸量出来间距够 ⇒ 只有一次判断，不会白跑第二趟。 */
+      state.bandPxPerWorld = 0;
+      state.bandStride = 1;
+      state.bandInside = false;
       state.chart.setOption(buildOption(), { notMerge: true });
+      const bands = measureBands();
+      if (bands.stride > 1 || bands.inside) state.chart.setOption(buildOption(), { notMerge: true });
       // v92：只有「打开一本书 / 切书」才回到上次的位置；手动切布局（点「分组·纵」…）
       // 和点「重置」都是用户明确要一个干净的全貌，这时不该套用旧视野。
       if (opts.restoreView) restoreViewMemory();
@@ -2155,6 +2398,7 @@
     computeLabels(1);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });
+    refreshBandThinning();     // v0.133：容器尺寸变了 ⇒ ECharts 适配系数跳变 ⇒ 抽稀步长要重算
     updateOffscreenHint();
     // v92：resize 触发的复位**不要**写进"上次视野"—— 那会把用户上次认真调好的视角擦掉
     if (save) saveViewMemory();
@@ -2168,6 +2412,7 @@
     computeLabels(state.zoom);
     state.chart.clear();
     state.chart.setOption(buildOption(), { notMerge: true });   // 全量重建：zoom/center 与标签一起生效
+    refreshBandThinning();     // v0.133：放大后图注在屏幕上散开，该把抽稀放松（甚至全显示）
     updateOffscreenHint();
     saveViewMemory();
   }
@@ -2842,7 +3087,12 @@
       state.viewMemTimer = setTimeout(saveViewMemory, 400);   // v92：拖动过程中别每次都写 localStorage
       clearTimeout(state.labelTimer);
       state.labelTimer = setTimeout(() => {
-        if (state.allLabels || !state.chart) return;
+        if (!state.chart) return;
+        /* v0.133：放大之后图注在屏幕上散开了，抽稀该**放松**（步长回到 1、全显示）。
+         * 挂在现成的 200ms 防抖上，而不是自己再开一个 —— 拖动/缩放过程中每帧都
+         * 重测重渲会把 871 个点的图重画几十次。这里 stop=0，只是重算两个数。 */
+        refreshBandThinning();
+        if (state.allLabels) return;
         const before = state.labels ? state.labels.size : -1;
         computeLabels(state.zoom);
         if (state.labels && state.labels.size !== before) state.chart.setOption(buildOption({ keepView: true }));
