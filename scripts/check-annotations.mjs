@@ -76,6 +76,28 @@ for (const slug of bookList()) {
   const plIds = new Set((book.places || []).map((p) => p.id));
   const total = maxChapter(book);
 
+  /* 数据里已知的污染：某些事件的 `chars` 里混进了「登场章远晚于该事件章」的人物
+   * （三国实测 28 处，祝融夫人被塞进 16 个 26–85 回的事件，见
+   *  docs/待修-事件在场人物时间矛盾.md 与 scripts/check-event-chars.mjs）。
+   * ⚠ 后果是**事件卡高亮错人 + 「本章 N 人出场」虚高**；
+   *   **结局剧透不受影响**（charLastChCalc 用 Math.max，被污染者另有更晚的真实事件）——
+   *   我第一版写成"剧透提前解锁"，那是**从机制推出来没实测的错误说法**，已更正。
+   *
+   * ⚠ 这里**不改源数据**（删数据要拿原文逐条核，见新书处理规程与
+   *   「否定一个字段前必须先在原文里找到同义句」那条纪律）。
+   *   只保证**污染不会被带进拆书内容**：条目若把这样的人写成该事件的引用者，直接报红。
+   */
+  const evById = new Map((book.events || []).map((e) => [e.id, e]));
+  const chById = new Map((book.characters || []).map((c) => [c.id, c]));
+  const LATE_BY = 5;
+  const implausible = (eventId, charId) => {
+    const e = evById.get(eventId), c = chById.get(charId);
+    if (!e || !c) return null;
+    const ec = Number(e.ch), fc = Number(c.firstCh);
+    if (!Number.isFinite(ec) || !Number.isFinite(fc) || fc - ec <= LATE_BY) return null;
+    return `${c.name}（第 ${fc} 回登场）不可能在第 ${ec} 回《${e.name}》的场内`;
+  };
+
   const seenTitle = new Map();
   const covered = new Set();
   if (Array.isArray(ann.items)) {
@@ -97,6 +119,16 @@ for (const slug of bookList()) {
           if (!set.has(id)) {
             const near = [...set].filter((x) => String(x).includes(String(id).slice(0, 4)) || String(id).includes(String(x).slice(0, 4))).slice(0, 3);
             problems.push(`${at}.${key} 里的 ${JSON.stringify(id)} 在《${slug}》里不存在${near.length ? `（相近的有：${near.join(' / ')}）` : ''}`);
+          }
+        }
+      }
+      /* 条目同时列了 events 和 chars 时，两边必须对得上：
+       * 若某个 chars 人物被声称"在场于"该条目引用的某个事件，而数据说那时他还没登场 ⇒ 报红。 */
+      if (Array.isArray(it.events) && Array.isArray(it.chars)) {
+        for (const eid of it.events) {
+          for (const cid of it.chars) {
+            const why = implausible(eid, cid);
+            if (why) problems.push(`${at}：把 ${why} —— 拆书条目不能把已知的源数据污染写成依据`);
           }
         }
       }
