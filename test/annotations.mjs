@@ -188,6 +188,96 @@ try {
   ok(/还没写/.test(cEmpty.secText) && !/本章无需/.test(cEmpty.secText), '说的是「还没写」，不是「本章无需拆解」');
   ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(cEmpty.secText), '覆盖进度仍在');
 
+  /* v0.141：正文里的行内 id 与 ** 粗体。
+   * 这两条都是 v0.140 写完 198 条之后**实测**发现的，不是推测：
+   *   ① 975 处行内 id 有 97 处（10%）在界面上点不开 —— 它们只在正文提过、
+   *      没进 events[]，而芯片只从 events[] 生成；
+   *   ② 193/222 条的 body 写了 `**`，而渲染走 esc() ⇒ 星号原样显示给读者。
+   * ⚠ 断言要量「真实的 DOM」，不能只查字符串里有没有这个 id。 */
+  head('正文行内 id 必须可点开核对');
+  /* ⚠⚠ 口径：第一版把「textContent 里的 id 数」和「按钮数」对起来，
+   *   于是**每个按钮的文本也被算进 textContent**，凭空多出 50 个重复项
+   *   ⇒ 报成「925/975，有 50 处点不开」，其实是量错了对象。
+   *   正确口径：**按钮数就是全部行内引用数**（渲染器保证每个 id 都成按钮），
+   *   再单独核「数据里的 id 与按钮一一对应」。 */
+  const inline = await js(`(() => {
+    const A = window.__ba.state.anno;
+    const dataIds = [...new Set([...A.items, ...A.global]
+      .flatMap((i) => String(i.body).match(/e-\\d+-\\d+/g) || []))];
+    const chs = [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b);
+    const sel = document.getElementById('ch-select');
+    const seen = new Set(); const bad = [];
+    for (const ch of chs) {
+      sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
+      const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
+      for (const b of sec.querySelectorAll('p .anno-inline-ref[data-event]')) {
+        seen.add(b.dataset.event);
+        if (!b.textContent.trim()) bad.push({ ch, id: b.dataset.event, why: '按钮是空的' });
+      }
+      /* 每个 item 单独核：它正文里出现的 id，是否都成了按钮 */
+      for (const p of sec.querySelectorAll('.anno-item p')) {
+        const inText = new Set(String(p.textContent).match(/e-\\d+-\\d+/g) || []);
+        const inBtn = new Set([...p.querySelectorAll('.anno-inline-ref[data-event]')].map((b) => b.dataset.event));
+        for (const id of inText) if (!inBtn.has(id) && bad.length < 6) bad.push({ ch, id, why: '正文里有但不是按钮' });
+      }
+    }
+    return { dataIds: dataIds.length, seen: seen.size, bad };
+  })()`);
+  ok(inline.dataIds > 100, `数据里共有 ${inline.dataIds} 个不同的行内引用`);
+  ok(inline.seen === inline.dataIds,
+    `全部行内引用都渲染成了可点按钮（页面 ${inline.seen} / 数据 ${inline.dataIds}${inline.bad.length ? '；异常：' + JSON.stringify(inline.bad) : ''}）`);
+
+  /* 点一个**只在正文里出现、没进 events[]** 的行内引用 ——
+   * 这正是 v0.140 实测点不开的那 97 处。 */
+  const inlineOnly = await js(`(() => {
+    const A = window.__ba.state.anno;
+    const sel = document.getElementById('ch-select');
+    for (const ch of [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b)) {
+      sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
+      const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
+      for (const item of sec.querySelectorAll('.anno-item')) {
+        const declared = [...item.querySelectorAll('.anno-refs [data-event]')].map((b) => b.dataset.event);
+        for (const b of item.querySelectorAll('p .anno-inline-ref[data-event]')) {
+          if (!declared.includes(b.dataset.event)) return { ch, id: b.dataset.event };
+        }
+      }
+    }
+    return null;
+  })()`);
+  ok(!!inlineOnly, `找到一条「只在正文里出现、没进 events[]」的行内引用：${inlineOnly ? `第 ${inlineOnly.ch} 回 ${inlineOnly.id}` : '（现在没有了）'}`);
+  if (inlineOnly) {
+    await js(`document.querySelector('#ch-select').value='${inlineOnly.ch}'; document.getElementById('ch-select').dispatchEvent(new Event('change',{bubbles:true})); true`);
+    await wait(700);
+    await js(`document.querySelector('#chapter-body p .anno-inline-ref[data-event="${inlineOnly.id}"]').click()`);
+    await wait(700);
+    const openedInline = await js(`window.__ba.state.activeEvent`);
+    ok(openedInline === inlineOnly.id, `点行内引用打开了对应事件（activeEvent=${JSON.stringify(openedInline)}，期望 ${inlineOnly.id}）`);
+  }
+
+  head('正文里的 ** 必须是真粗体，不能把星号显示给读者');
+  const bold = await js(`(() => {
+    const A = window.__ba.state.anno;
+    const sel = document.getElementById('ch-select');
+    let strong = 0, strayAsterisk = 0;
+    for (const ch of [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b)) {
+      sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
+      const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
+      for (const p of sec.querySelectorAll('.anno-item p')) {
+        strong += p.querySelectorAll('strong').length;
+        strayAsterisk += (p.textContent.match(/\\*\\*/g) || []).length;
+      }
+    }
+    return { strong, strayAsterisk };
+  })()`);
+  ok(bold.strong > 100, `正文渲染出了真 <strong>（${bold.strong} 处）`);
+  ok(bold.strayAsterisk === 0, `读者看不到残留的 **（${bold.strayAsterisk} 处）`);
+
+  /* ⚠ 我这两段扫描把 #ch-select 留在了最后一次遍历的章（第 119 回），
+   *   而下面「切回本章」要验的是 emptyCh。**必须先把章节拨回去**，
+   *   否则那条断言是在测一个我刚改掉的���态（第一版就是这样红的）。
+   *   —— 这是我自己制造的污染，不是产品缺陷。 */
+  await gotoChapter(emptyCh);
+
   head('全书模式');
   await js(`document.querySelector('.anno-tab[data-anno-mode="global"]').click()`);
   await wait(700);

@@ -4012,7 +4012,7 @@
     if (mode === 'global') {
       if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">这本书还没写全书层面的拆解。</p></div>`;
       return `<div class="ch-sec anno-sec">${tabs}
-        ${g.map((x) => `<div class="anno-item"><h4>${esc(x.title)}</h4><p>${esc(x.body)}</p>${annoBasis(x)}</div>`).join('')}
+        ${g.map((x) => `<div class="anno-item"><h4>${esc(x.title)}</h4><p>${annoBody(x.body)}</p>${annoBasis(x)}</div>`).join('')}
       </div>`;
     }
 
@@ -4035,11 +4035,33 @@
     return `<div class="ch-sec anno-sec">${tabs}${head}
       ${items.map((it) => `<div class="anno-item">
         <h4>${esc(it.title)}</h4>
-        <p>${esc(it.body)}</p>
+        <p>${annoBody(it.body)}</p>
         ${annoRefs(it)}
         ${annoBasis(it)}
       </div>`).join('')}
     </div>`;
+  }
+
+  /** body 渲染：**只**做两件事，都由 v0.141 的实测缺陷决定。
+   *  ① `**x**` → `<strong>`：193/222 条的 body 写过粗体，而原来走 esc()，
+   *     星号原样显示给读者。
+   *  ② `（e-NN-N）` → 可点按钮：实测 975 处行内 id 有 97 处（10%）点不开——
+   *     它们只在正文里提过，没进 events[]，而芯片只从 events[] 生成。
+   *     现在两条引用口径都能点开核对。用 document 级委托（handlePanelClick 的
+   *     `[data-event]` 分支），所以不用另接事件。
+   *  ⚠⚠ 匹配**只认 id 本身**、不认括号。第一版写 `/（(e-\d+-\d+)）/g`，
+   *     于是并列引用「（e-10-1、e-10-2）」只能点开第一个 —— 而正文里这种
+   *     写法有很多处，实测漏掉 8 个 id。代价只是括号留在文字里（本来也是）。
+   *  ⚠ 先 esc 再替换：`**`、`（`、`）`、`、` 都不含可转义字符，顺序安全。 */
+  function annoBody(text) {
+    return esc(String(text == null ? '' : text))
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/e-\d+-\d+/g, (id) => {
+        const e = state.book.events.find((x) => x.id === id);
+        if (!e) return id; // 数据里没有就保持纯文本，不要造出一个点不动的按钮
+        return `<button class="anno-inline-ref" type="button" data-event="${esc(id)}"`
+          + ` title="${esc(e.summary || e.name)}">${esc(id)}</button>`;
+      });
   }
 
   /** 依据标签：把「原文」和「整理者推断」在界面上分开，不混为一谈 */
