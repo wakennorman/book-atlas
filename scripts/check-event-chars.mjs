@@ -125,7 +125,10 @@ if (writeDoc) {
   L.push('');
   L.push('> 由 `node scripts/check-event-chars.mjs --write` 生成，勿手改。');
   L.push('> 2026-10-08 两轮修完：chars 侧按「字面提及」判据、firstCh 侧按原著逐字核。');
-  L.push('> **当前残留 0 处**（详见下「修复记录」）。');
+  /* ⚠ v0.157：这一行原先**硬编码**「当前残留 0 处」—— 一旦又出现污染，
+   *   头部仍写 0、末尾却列出条目 ⇒ 自相矛盾。现在从本次扫描的 total / totalNoHit 动态生成。 */
+  L.push(`> **本次扫描残留 ${total} 处**，其中 chars 侧无字面依据 ${totalNoHit} 处`
+    + `（那一档会让本脚本 exit 1）。`);
   L.push('');
   L.push('## 为什么这是错');
   L.push('');
