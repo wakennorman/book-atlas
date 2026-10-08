@@ -32,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -120,6 +120,38 @@ jobs:
         # 判据（双向）：登记的 file/graphFile/textFile 都存在 · slug 与 file 一致 ·
         #               listBooks() 与 books.json 的书目集合相等。
         run: node test/books-registry.mjs
+
+      - name: 采用名字台账的引用完整性（台账说几条 ≠ 真正生效几条）
+        # v0.160 新增。`data/<slug>.name-form-ok.json` 申报「主名不是原书原样字」的人物，
+        # 消费方是 `scripts/audit-against-text.mjs --names` —— 但它要**原著文本**，
+        # 而原著不在仓库里（见 docs/新书处理规程.md：「这一类错在版本库里查不出来」）
+        # ⇒ 那条审计**进不了 CI**，于是这份台账此前**没有任何一处守着**。
+        #
+        # 台账有两个结构性弱点：
+        #   ① 按 **name** 记账，而 name 是会变的（改名 / 删人 / 合并都动它）；
+        #   ② 消费方**按主名查**（declared.get(c.name)）⇒ 键写成别名，这条申报
+        #      根本不生效，可它看起来还好好地待在那儿。
+        # 实测现场（本步写完当场抓到）：审计打印「已申报 11 个」，
+        # 台账文件自己写着 `申报条数: 13` —— **两个数字都印在文件里，差 2 条，
+        # 却没有任何一处报过**。差的两条：诸葛珪（v0.106 已连人删掉，条目留了 9 个版本）、
+        # 戴陵（主名其实是戴凌，原著逐字 16 次，台账键却写成了别名）。
+        #
+        # 本步只做**引用完整性**（不需要原著 ⇒ 可以进 CI）：键必须是某人的主名
+        # （只出现在别名里即报错）、申报条数 / 理由 / 唯一性要对得上、台账不能是孤儿文件。
+        # 判据 E1–E7 见脚本文件头。**「该不该申报」仍归那条本地审计**，两者互补：
+        # 本步管"台账还指不指得着人"，那条管"人有没有漏申报"。
+        run: node scripts/check-name-form-ledger.mjs
+
+      - name: 采用名字台账检查自身的守卫（证明它真的会报红）
+        # v0.160 新增。上一步是"防台账悄悄失效"的检查，所以必须有一条测试
+        # **证明它自己会 exit 1** —— 否则它随时可能退化成空转
+        # （入口判断写成 `import.meta.url.endsWith(process.argv[1])` 就够了：
+        #   本仓库目录名带空格 ⇒ 路径里的空格是 %20 编码 ⇒ 两边永远不相等 ⇒ 主流程一次都不跑，
+        #   而退出码还是 0 —— "检查通过"其实是"检查没执行"）。
+        # 做法：在 tmp 里造一份最小 data/，用 BOOKATLAS_ROOT 把 ROOT 指过去，
+        # 逐场景断言退出码（1 个正常态 + 7 个期望报红 + 1 个形状兼容 + 1 个还原）。
+        # 全程不碰真实仓库 —— 注入测试若直接改 data/ 下的真文件，中途崩了仓库就脏了。
+        run: node test/name-form-ledger-guard.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
