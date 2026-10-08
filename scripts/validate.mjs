@@ -402,6 +402,26 @@ function validate(file) {
     // 本名恒保留；别名只留**独享**的
     n: [c.name, ...(c.aliases || [])].filter((x) => x && !sharedAliases.has(x)),
   }));
+  /* ---------- v0.148：同名（本名相同）的多个角色，视为一个「名字组」 ----------
+   *
+   * v0.121 的立场是「本名重名也保留在匹配里 ⇒ 两个都该在 chars 里（或都不该）」。
+   * 那对**同时代同名**（如「王颀」「吴氏」）成立，但对**不同章节各自出场的同名者**不成立：
+   *   · 邓贤① = 刘璋部将（第 62 回，被黄忠射死）
+   *   · 邓贤② = 孟达外甥（第 94 回才出场）
+   * e-62-5（第 62 回）的 chars 有 `deng-xian`，本就不该有第 94 回的 `deng-xian-2`；
+   * 但文案写着「邓贤」，v0.121 的规则就会报「chars 未包含 deng-xian-2」——**纯误报**。
+   *
+   * 判据为什么该这么定：文案里写「邓贤」时，**从文字无法判断是哪一个**。
+   * 「是否漏了另一个同名者」因此**不可判定**；报出来只会是噪音，还会淹没真警告。
+   * ⇒ 组内**任一** id 已在 chars 里，就视为"提到了组里那位"，不报；
+   *   组内**一个都没有**，才是真漏（这种情况照报）。
+   * 非同名角色（组里只有自己）行为与旧逻辑**完全等价**。
+   */
+  const nameOwners = new Map();
+  for (const c of chars) {
+    if (!nameOwners.has(c.name)) nameOwners.set(c.name, new Set());
+    nameOwners.get(c.name).add(c.id);
+  }
   const hasName = (text) => nameIndex.some((x) => x.n.some((nn) => text.includes(nn)));
   const sentences = (s) => String(s || '').split(/[。；！？]/).map((x) => x.trim()).filter(Boolean);
   const firstSentence = (s) => sentences(s)[0] || '';
@@ -423,9 +443,13 @@ function validate(file) {
       return false;
     };
     for (const { id, n } of nameIndex) {
-      if (n.some((nn) => mentions(nn)) && !(e.chars || []).includes(id)) {
-        warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
-      }
+      if (!n.some((nn) => mentions(nn))) continue;
+      if ((e.chars || []).includes(id)) continue;
+      /* v0.148：本名与他人重名时，若「名字组」里已有成员在 chars 里，
+       * 视为文案提到的是组里那位，不报（见上面 nameOwners 的理由）。 */
+      const group = nameOwners.get(n[0]);
+      if (group && [...group].some((g) => (e.chars || []).includes(g))) continue;
+      warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
     }
     /* 用了共用称谓的，**不报但要记账** —— 静默跳过会让"改好了"和"没检查"看起来一样。
      * 顺手把原文那句记下来，好让最后那条提示能举**本书真实**的例子，而不是写死某一本的。 */

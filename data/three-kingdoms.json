@@ -6482,7 +6482,21 @@
       "title": "刘璋部将",
       "desc": "筵前掣剑助舞",
       "fate": "被黄忠射落马下而死",
-      "note": "益州武将。"
+      "note": "益州武将。与孟达外甥邓贤同名，非一人。"
+    },
+    {
+      "id": "deng-xian-2",
+      "name": "邓贤",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 94,
+      "faction": "wei",
+      "title": "孟达外甥",
+      "desc": "随李辅出首孟达谋反",
+      "fate": "献新城降魏，与李辅守新城、上庸",
+      "note": "与刘璋部将邓贤同名，非一人。",
+      "tier": "minor"
     },
     {
       "id": "yang-huai",
@@ -7731,7 +7745,21 @@
       "title": "中郎将",
       "desc": "魏臣",
       "fate": "议魏当代汉，奏请禅位",
-      "note": "",
+      "note": "与孟达心腹李辅同音，非一人。",
+      "tier": "minor"
+    },
+    {
+      "id": "li-fu-2",
+      "name": "李辅",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 94,
+      "faction": "wei",
+      "title": "孟达心腹",
+      "desc": "孟达心腹，随状出首孟达谋反",
+      "fate": "献新城降魏，守新城、上庸",
+      "note": "与魏臣李伏同音，非一人。",
       "tier": "minor"
     },
     {
@@ -36983,7 +37011,7 @@
     },
     {
       "from": "meng-da",
-      "to": "deng-xian",
+      "to": "deng-xian-2",
       "type": "舅甥",
       "kin": "blood",
       "style": "dashed",
@@ -36998,7 +37026,7 @@
     },
     {
       "from": "meng-da",
-      "to": "li-fu",
+      "to": "li-fu-2",
       "type": "心腹",
       "style": "dashed",
       "events": [
