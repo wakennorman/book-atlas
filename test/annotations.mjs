@@ -18,7 +18,9 @@ import { fileURLToPath } from 'node:url';
  *   ⑤ 没写的章要**明说"还没写"**，不能让人以为"这一章无需拆解"
  *   ⑥ 覆盖进度常驻（已拆 N / M 章）
  *   ⑦ 全书模式能切，且切了之后 chapter 模式的内容不串
- *   ⑧ 没写拆书的书（百年孤独/罪与罚）**不显示该分区**，也不能报错
+ *   ⑧ 三本书各就各位：每本书的拆书能加载、**id 都属于它自己**（跨书写入事故的拦截）。
+ *      「0 条 ⇒ 不显示分区」这条现在没有真实数据能触发（三本书都写满了）——
+ *      未测，不假装测了。
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -394,75 +396,75 @@ try {
   const crimeOpened = await js(`window.__ba.state.activeEvent`);
   ok(crimeOpened === wantInline, `点了打开《罪与罚》的事件（activeEvent=${JSON.stringify(crimeOpened)}，期望 ${JSON.stringify(wantInline)}）`);
   }
-
-  /* ── 《百年孤独》：第三本书，同样要能加载、渲染、id 属于它自己 ──
-   *  这本书的 id 形态是 e01（和罪与罚的 e1 不同，和三国的 e-1-3 也不同），
-   *   且人名歧义多（「乌尔苏拉」有 2 个、「奥雷里亚诺」有 4 个）——
-   *   所以它同时验证：形态无关的渲染正则 + 全名解析。 */
-  head('《百年孤独》：拆书能加载，且 id 都属于它自己');
+  /* ★ 同一套断言在第三本书上再跑一遍 —— 《百年孤独》是第三种 id 形态（e01 零填充），
+   *   也是**第一批「原文依据」标签**：前两本书 218 条 basis 全是「整理者推断」，
+   *   annoBasis 的原文依据分支从没被真实数据踩过。换一本书可能换一个坏法（v0.142
+   *   的正则写死就是例子），所以第三种形态也要实跑。 */
+  head('《百年孤独》：第三种 id 形态 + 首批「原文依据」标签');
   await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=one-hundred-years-of-solitude` });
   for (let i = 0; i < 300; i++) {
-    if (await js(`!!(window.__ba && window.__ba.state.chart && window.__ba.state.book && window.__ba.state.book.characters.length > 10)`).catch(() => false) === true) break;
+    if (await js(`!!(window.__ba && window.__ba.state.book && window.__ba.state.book.meta.slug === 'one-hundred-years-of-solitude' && window.__ba.state.anno && window.__ba.state.anno.items.length > 10)`).catch(() => false) === true) break;
     await wait(100);
   }
   await wait(3000);
-  const solSt = await js(`(() => ({
-    status: window.__ba.state.annoStatus, has: !!window.__ba.state.anno,
-    slug: window.__ba.state.anno && window.__ba.state.anno.slug,
-    nItems: window.__ba.state.anno ? window.__ba.state.anno.items.length : 0,
-    nGlobal: window.__ba.state.anno ? window.__ba.state.anno.global.length : 0,
-  }))()`);
-  ok(solSt.status && solSt.status.status === 'done', `拆书已加载（${JSON.stringify(solSt.status)}）`);
-  ok(solSt.slug === 'one-hundred-years-of-solitude', `标注文件自称 one-hundred-years-of-solitude（实际 ${JSON.stringify(solSt.slug)}）`);
-  ok(solSt.nItems >= 18, `《百年孤独》有 ${solSt.nItems} 条章节条目 + ${solSt.nGlobal} 条全局`);
+  const ySt = await js(`(() => { const s = window.__ba.state; return {
+    slug: s.anno && s.anno.slug, status: s.annoStatus && s.annoStatus.status,
+    nItems: s.anno ? s.anno.items.length : 0, nGlobal: s.anno ? s.anno.global.length : 0 }; })()`);
+  ok(ySt.slug === 'one-hundred-years-of-solitude', `标注文件自称 one-hundred-years-of-solitude（实际 ${JSON.stringify(ySt.slug)}）`);
+  ok(ySt.status === 'done', `拆书已加载（status=${JSON.stringify(ySt.status)}）`);
+  ok(ySt.nItems >= 25, `《百年孤独》有 ${ySt.nItems} 条章节条目 + ${ySt.nGlobal} 条全局`);
 
-  const solIdsOwn = await js(`(() => {
+  /* ★ 关键断言（第三本书再拦一次跨书写入）：标注里每个 id 必须真属于本书。 */
+  const yIdsOwn = await js(`(() => {
     const A = window.__ba.state.anno, B = window.__ba.state.book;
     const charIds = new Set(B.characters.map(c => c.id));
     const evIds = new Set(B.events.map(e => e.id));
-    let nChar = 0, nEv = 0;
-    const foreign = [];
+    let nChar = 0, nEv = 0; const foreign = [];
     for (const it of A.items) {
       for (const c of it.chars || []) { nChar++; if (!charIds.has(c)) foreign.push('人物 ' + c); }
       for (const e of it.events || []) { nEv++; if (!evIds.has(e)) foreign.push('事件 ' + e); }
     }
-    return { nChar, nEv, foreign: foreign.slice(0, 6), total: foreign.length };
-  })()`);
-  ok(solIdsOwn.nChar + solIdsOwn.nEv > 60, `扫到了足够的引用（人物 ${solIdsOwn.nChar} + 事件 ${solIdsOwn.nEv}）`);
-  ok(solIdsOwn.total === 0,
-    `每个 id 都属于《百年孤独》（混入 ${solIdsOwn.total} 个外来的${solIdsOwn.total ? '：' + JSON.stringify(solIdsOwn.foreign) : ''}）`);
+    return { nChar, nEv, foreign: foreign.slice(0, 6), total: foreign.length }; })()`);
+  ok(yIdsOwn.nChar + yIdsOwn.nEv > 60, `扫到了足够的引用（人物 ${yIdsOwn.nChar} + 事件 ${yIdsOwn.nEv}）`);
+  ok(yIdsOwn.total === 0,
+    `每个 id 都属于《百年孤独》（混入 ${yIdsOwn.total} 个外来的${yIdsOwn.total ? '：' + JSON.stringify(yIdsOwn.foreign) : ''}）`);
 
-  /* 第 1 回有拆书内容（e01+e02 合并），行内引用可点 */
   await gotoChapter(1);
-  const solSec = await annoDom();
-  ok(solSec.present, '《百年孤独》第 1 回显示了拆书分区');
-  ok((solSec.items || []).length >= 1, `第 1 回渲染出 ${(solSec.items || []).length} 条`);
-  const solWantInline = await js(`(() => {
-    const A = window.__ba.state.anno;
-    const it = A.items.find((x) => x.ch === 1);
+  const y1 = await annoDom();
+  ok(y1.present, '《百年孤独》第 1 章显示了拆书分区');
+  ok((y1.items || []).length >= 2, `第 1 章渲染出 ${(y1.items || []).length} 条`);
+  ok((y1.items || []).some((i) => i.basisTag === '原文依据') && (y1.items || []).some((i) => i.basisTag === '整理者推断'),
+    `同一章里两种依据标签并排（${(y1.items || []).map((i) => i.basisTag).join(' / ')}）——「原文依据」分支第一次被真实数据踩到`);
+
+  /* 零填充 id（e01 形态）的行内引用可点开 —— 期望值从数据取，不写死 'e01' */
+  const yWant = await js(`(() => {
+    const it = window.__ba.state.anno.items.find((x) => x.ch === 1);
     const hit = it ? String(it.body).match(/e-?\\d[\\w-]*/g) : null;
-    return hit && hit.length ? hit[0] : null;
-  })()`);
-  const solInline = await js(`(() => {
-    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) return null;
-    const btn = sec.querySelector('p .anno-inline-ref[data-event]');
-    return btn ? btn.dataset.event : null;
-  })()`);
-  ok(solInline === solWantInline, `《百年孤独》的行内引用也渲染成可点按钮（实际 ${JSON.stringify(solInline)}，期望 ${JSON.stringify(solWantInline)}）`);
-  if (solWantInline) {
-    await js(`document.querySelector('#chapter-body p .anno-inline-ref[data-event="${solWantInline}"]').click()`);
+    return hit && hit.length ? hit[0] : null; })()`);
+  const yBtn = await js(`(() => { const sec = document.querySelector('#chapter-body .anno-sec');
+    const b = sec && sec.querySelector('p .anno-inline-ref[data-event]');
+    return b ? b.dataset.event : null; })()`);
+  ok(!!yWant && yBtn === yWant, `零填充 id 也渲染成按钮（实际 ${JSON.stringify(yBtn)}，期望 ${JSON.stringify(yWant)}）`);
+  if (yWant) {
+    await js(`document.querySelector('#chapter-body p .anno-inline-ref[data-event="${yWant}"]').click()`);
     await wait(700);
-    const solOpened = await js(`window.__ba.state.activeEvent`);
-    ok(solOpened === solWantInline, `点了打开《百年孤独》的事件（activeEvent=${JSON.stringify(solOpened)}，期望 ${JSON.stringify(solWantInline)}）`);
+    const yOpened = await js(`window.__ba.state.activeEvent`);
+    ok(yOpened === yWant, `点了打开《百年孤独》的事件（activeEvent=${JSON.stringify(yOpened)}，期望 ${yWant}）`);
   }
 
-  /* 第 10 回没有拆书内容（events 为空），要明说「还没写」 */
-  await gotoChapter(10);
-  const solEmpty = await annoDom();
-  ok(solEmpty.present, '《百年孤独》第 10 回（没写）显示分区');
-  ok((solEmpty.items || []).length === 0, `第 10 回渲染出 ${(solEmpty.items || []).length} 条`);
-  ok(/还没写/.test(solEmpty.hint ? solEmpty.hint.join('') : (solEmpty.secText || '')),
-    `《百年孤独》没写的章明说「还没写」：${((solEmpty.hint || []).join('') || solEmpty.secText || '').match(/[^\n]*还没写[^\n]*/) ? ((solEmpty.hint || []).join('') || solEmpty.secText || '').match(/[^\n]*还没写[^\n]*/)[0].trim() : '（没找到）'}`);
+  /* 没素材的章（本书 20 章里 18 章有事件）：明说「还没写」+ 覆盖进度按本书实际写 */
+  const yWritten = new Set(await js(`(window.__ba.state.anno?.items || []).map(i => i.ch)`));
+  const yTotal = await js(`window.__ba.state.book.meta.chapters`);
+  let yEmpty = 0;
+  for (let n = 1; n <= yTotal; n++) { if (!yWritten.has(n)) { yEmpty = n; break; } }
+  ok(yEmpty > 0, `找到一个没写拆解的章（第 ${yEmpty} 章；已写 ${yWritten.size} / ${yTotal}）`);
+  await gotoChapter(yEmpty);
+  const yE = await annoDom();
+  ok(yE.present && /还没写/.test(yE.secText || ''),
+    `第 ${yEmpty} 章明说还没写：${((yE.secText || '').match(/[^\n]*还没写[^\n]*/) || [''])[0].trim()}`);
+  const yProg = new RegExp('已拆\\s*' + yWritten.size + '\\s*/\\s*' + yTotal + '\\s*章');
+  ok(yProg.test(yE.secText || ''),
+    `覆盖进度是 已拆 ${yWritten.size} / ${yTotal} 章（实际：${((yE.secText || '').match(/已拆[^\n]*/) || [''])[0]}）`);
 
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {
