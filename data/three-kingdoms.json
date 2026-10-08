@@ -41507,8 +41507,8 @@
       ]
     },
     {
-      "from": "zhuge-zhan",
-      "to": "zhuge-liang",
+      "from": "zhuge-liang",
+      "to": "zhuge-zhan",
       "type": "父子",
       "kin": "blood",
       "style": "solid",
@@ -50537,14 +50537,14 @@
     {
       "from": "zhuge-liang",
       "to": "zhuge-shang",
-      "type": "同父异母的兄弟（推导）",
+      "type": "祖孙（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "blood",
       "events": [
         {
           "chapter": "",
-          "text": "由 「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
+          "text": "由 「诸葛亮 —父子→ 诸葛瞻」、「诸葛瞻 —父子→ 诸葛尚」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]

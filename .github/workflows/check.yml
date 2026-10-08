@@ -35,7 +35,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -287,6 +287,18 @@ jobs:
         # 正是靠它抓出「吴懿—刘璋 舅甥 + kin=inlaw」那两条）。但它此前**零测试覆盖**。
         # 钉返回的 level 序列（结构），不钉文案 —— 文案会改，语义不会。
         run: node test/kin-check.mjs
+
+      - name: 亲子边定义跨端一致性（含「养父子」这类收养边）
+        # v0.153 新增。「哪条关系算亲子边」这个定义在项目里抄了 **8 份以上**，已漂出 3 种行为：
+        #   · 权威    scripts/kin-terms.mjs 的 isParentChild（含「养父子」）
+        #   · 漏「养」 scripts/fix-gongsun.mjs / fix-wu-tail.mjs（一次性补丁，显式豁免）
+        #   · 只认血缘 js/editor.js 的「亲子成环」检测 ⇒ 全部收养亲子边对编辑器不可见
+        #              （三国 7 条、百年孤独 2 条）
+        # 这不是新问题：scripts/lib/data-files.mjs 把它列为「同一个定义抄多份」的第 ① 例（v0.110），
+        # 当时改了那三个审计脚本却**没加判据**，于是又漂了一次。
+        # 判据：源码级（编辑器那份与权威逐字相同）+ 结构级（不许出现第 3 份 / 「缺养」变体）
+        #       + 金标（钉「正确」而非「现状」）。浏览器侧的两条在 test/editor.mjs 里。
+        run: node test/parent-child.mjs
 
       - name: 亲属称谓对质（手写 type 必须与族谱算出来的一致）
         # 起因 v0.99：用户报「上校—叔侄（伯父与侄）—奥雷里亚诺第二」

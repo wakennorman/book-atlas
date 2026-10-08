@@ -28,6 +28,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 import { guessKin as nodeGuessKin, checkKin as nodeCheckKin } from '../scripts/kin.mjs';
+import { isParentChild as nodeIsParentChild } from '../scripts/kin-terms.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
@@ -434,6 +435,54 @@ if (!url) {
   }
   ok(sameArr(two.v, two.h) && two.v.length > 0,
     `两个入口在 ${KI.length} 条关系上给出逐字相同的 kin 条目（${two.v.length} 条）`);
+
+  /* ---------- 亲子边：编辑器那份必须与权威同口径（v0.153） ----------
+   * 「哪条关系算亲子边」原先在编辑器里是「`kin === 'blood'` 且 type 以 父/母 或 子/女 开头」，
+   * 而权威是 `scripts/kin-terms.mjs` 的 `isParentChild`（**含「养父子」**）⇒
+   * 编辑器的「亲子成环」检测把**全部收养亲子边**漏掉了（三国 7 条、百年孤独 2 条）。
+   * 源码级 / 结构级 / 金标在 test/parent-child.mjs；这里补两条只有浏览器能测的。 */
+  console.log('\n▶ 亲子边：与 scripts/kin-terms.mjs 的 isParentChild 对拍（真实数据）');
+  const pcTriples = [];
+  for (const slug of ['three-kingdoms', 'crime-and-punishment', 'one-hundred-years-of-solitude']) {
+    const fp = path.join(ROOT, 'data', `${slug}.json`);
+    if (!fs.existsSync(fp)) continue;
+    for (const r of JSON.parse(fs.readFileSync(fp, 'utf8')).relations || []) pcTriples.push([r.from, r.to, String(r.type || '')]);
+  }
+  const pcWant = pcTriples.filter(([, , t]) => nodeIsParentChild({ type: t })).map(([f, t]) => `${f}>${t}`).sort();
+  const pcGot = await js(`window.__ed.parentChildEdges({ relations: ${JSON.stringify(pcTriples)}.map(([from, to, type]) => ({ from, to, type })) }).sort()`);
+  const pcOnlyEd = pcGot.filter((x) => !pcWant.includes(x));
+  const pcOnlyNode = pcWant.filter((x) => !pcGot.includes(x));
+  if (pcOnlyEd.length || pcOnlyNode.length) {
+    console.error(`      · 只有编辑器算的边（${pcOnlyEd.length}）：${JSON.stringify(pcOnlyEd.slice(0, 5))}`);
+    console.error(`      · 只有权威算的边（${pcOnlyNode.length}）：${JSON.stringify(pcOnlyNode.slice(0, 5))}`);
+  }
+  ok(sameArr(pcGot, pcWant),
+    `编辑器与 isParentChild 在 ${pcTriples.length} 条关系上算出的亲子边完全一致（${pcWant.length} 条）`);
+
+  console.log('\n▶ 亲子成环：收养边构成的环，「校验」与「体检」都必须报出来');
+  const ringBook = (kin, type) => ({
+    meta: { slug: 'ring', title: 'ring', chapters: 10 },
+    factions: [], places: [], phases: [], events: [],
+    characters: [
+      { id: 'a', name: '甲', gender: 'm', firstCh: 1 },
+      { id: 'b', name: '乙', gender: 'f', firstCh: 1 },
+    ],
+    relations: [
+      { from: 'a', to: 'b', type, kin, events: [{ chapter: '第 1 章', text: 'x' }] },
+      { from: 'b', to: 'a', type, kin, events: [{ chapter: '第 1 章', text: 'x' }] },
+    ],
+  });
+  const ringOf = (book) => `(() => {
+    const ed = window.__ed.state;
+    ed.book = window.__ed.normalize(${JSON.stringify(book)});
+    const hit = (s) => /亲子关系成环/.test(s);
+    return { v: window.__ed.validate().filter(hit).length, h: window.__ed.health().filter((x) => hit(x.msg)).length };
+  })()`;
+  const rBlood = await js(ringOf(ringBook('blood', '父子')));
+  ok(rBlood.v > 0 && rBlood.h > 0, `血缘亲子环（父子 / kin=blood）两个入口都报：校验 ${rBlood.v} 条 / 体检 ${rBlood.h} 条`);
+  const rAdopt = await js(ringOf(ringBook('adoptive', '养父子')));
+  ok(rAdopt.v > 0 && rAdopt.h > 0,
+    `**收养**亲子环（养父子 / kin=adoptive）两个入口都报：校验 ${rAdopt.v} 条 / 体检 ${rAdopt.h} 条（旧编辑器规则对这条一声不吭）`);
 
   /* ---------- 页面无报错 ---------- */
   const logs = await js('window.__edErrors || []');

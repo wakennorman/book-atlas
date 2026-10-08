@@ -13,17 +13,27 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+/* 亲子边的定义 —— 单一来源（含「养父子」这类收养边），别再自己写正则：
+ * v0.110 就因为三处审计脚本各自内联、漏了「养」而让收养边对它们完全不可见。 */
+import { isParentChild } from './kin-terms.mjs';
+/* 「哪些文件是书」——同样别自己 readdir 过滤，见下面 files 处的说明。 */
+import { listBooks } from './lib/data-files.mjs';
 
 const argv = process.argv.slice(2);
 const write = argv.includes('--write');
+/* ⚠ `--all` 必须走 lib/data-files.mjs 的 listBooks()，**不能自己 readdir 过滤**。
+ *   自己过滤会把 sidecar 当书扫：本脚本原来列到 **15 个文件**（三本书 + 全部 .graph/.text/
+ *   .missing-ok/.name-form-ok/.altnames-sources 与 kin-terms-exempt.json），
+ *   而 `kin-terms-exempt.json` 的 `characters` 不是数组 ⇒
+ *   `node scripts/fix-parent-cycles.mjs --all` **直接 TypeError 崩掉**。
+ *   本脚本不在发布门禁里，所以这个崩溃一直没人发现（v0.114 已在别处踩过同一个坑）。 */
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(process.cwd(), 'data')).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(process.cwd(), 'data', f))
+  ? listBooks().map((f) => path.join(process.cwd(), 'data', f))
   : argv.filter((a) => !a.startsWith('--'));
 
 if (!files.length) { console.error('用法：node scripts/fix-parent-cycles.mjs data/xx.json [--write]  |  --all [--write]'); process.exit(1); }
 
-const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;
-const isPC = (r) => PARENT_CHILD.test(String(r.type || '').replace(/[（(].*$/, '').trim());
+/* 亲子边的定义来自 `kin-terms.mjs`（单一来源，含「养父子」这类收养边），见顶部 import 的说明。 */
 
 /** 人工核对过的方向：[父母, 子女] —— 只列"数据里写反过"的 */
 const CANON = {
@@ -46,7 +56,7 @@ for (const file of files) {
   const slug = path.basename(file, '.json');
   const byId = new Map((book.characters || []).map((c) => [c.id, c]));
   const name = (id) => (byId.get(id) || {}).name || id;
-  const pc = (book.relations || []).filter((r) => isPC(r) && byId.has(r.from) && byId.has(r.to));
+  const pc = (book.relations || []).filter((r) => isParentChild(r) && byId.has(r.from) && byId.has(r.to));
 
   const drop = new Set();
   const notes = [];
@@ -73,7 +83,7 @@ for (const file of files) {
 
   const cycles = (relList) => {
     const adj = new Map();
-    for (const r of relList.filter(isPC)) { if (!adj.has(r.from)) adj.set(r.from, []); adj.get(r.from).push(r.to); }
+    for (const r of relList.filter(isParentChild)) { if (!adj.has(r.from)) adj.set(r.from, []); adj.get(r.from).push(r.to); }
     const color = new Map(); const out = [];
     const dfs = (u, stack) => {
       color.set(u, 1); stack.push(u);

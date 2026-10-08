@@ -38,7 +38,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTree, computeKin } from './kin-terms.mjs';
+import { buildTree, computeKin, isParentChild } from './kin-terms.mjs';
 import { listBooks } from './lib/data-files.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -83,7 +83,7 @@ function chainUp(tree, from, to, edgeLabel) {
 /** 这条亲子边的 type 原文（写进推导链，让读者能看到是从哪条边推的） */
 function edgeLabel(book, parent, child) {
   for (const r of book.relations || []) {
-    if (r.from === parent && r.to === child && /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/.test(String(r.type || '').replace(/[（(].*$/, '').trim())) {
+    if (r.from === parent && r.to === child && isParentChild(r)) {
       return r.type.replace(/[（(].*$/, '');
     }
   }

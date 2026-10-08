@@ -218,6 +218,40 @@
    *   两边漂过：这里曾少了「姨甥 / 表兄弟 / 表兄妹 / 堂兄弟 / 堂兄妹 / 孪生兄弟 / 孪生姐妹 /
    *   父子关系」8 个 ⇒ 同样一句「堂兄弟 + kin=收养」，scripts 那边报错、编辑器这边不报。 */
   const BLOOD_TERM = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姨甥|姑侄|表兄弟|表兄妹|堂兄弟|堂兄妹|孪生兄弟|孪生姐妹|父子关系)/;
+  /* 亲子边（父子/母子/父女/母女/亲生子/养父子…）—— 只用于「亲子成环」检测。
+   * ⚠ 与 `scripts/kin-terms.mjs` 的 `PARENT_CHILD` **逐字对应**（那是全项目唯一来源，
+   *   `isParentChild(r)` 就是「去掉括号说明后 PARENT_CHILD.test(type)」）。
+   *   由 `test/parent-child.mjs` 守着。
+   *   这里曾用「`kin === 'blood'` 且 type 以 父/母 或 子/女 开头」代替，后果是
+   *   **全部收养亲子边被漏掉**（三国 7 条「养父子」、百年孤独 2 条「养母女/养父女」）
+   *   ⇒ CLI 能报出来的成环，编辑器面板报不出来。 */
+  const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;
+  /** type 去掉括号说明后是不是亲子边。数据约定：from＝父母、to＝子女。 */
+  const isParentChildType = (t) => PARENT_CHILD.test(String(t || '').replace(/[（(].*$/, '').trim());
+  /* 亲子成环：返回「在环上」的角色 id。**编辑器里唯一的一份** ——
+   * 「校验」按钮与「数据体检」面板都调它（免得像 kinIssues 那样两处各抄一份再漂开，见 v0.152）。
+   * 判定边用 isParentChildType，与 scripts/validate.mjs 同口径（**含收养边**）。 */
+  function parentCycles(book) {
+    const parentMap = new Map();
+    for (const r of (book.relations || [])) {
+      if (!isParentChildType(r.type)) continue;
+      if (!parentMap.has(r.to)) parentMap.set(r.to, []);
+      parentMap.get(r.to).push(r.from);   // 数据约定：from＝父母、to＝子女
+    }
+    const seen = new Set(), stack = new Set();
+    const walk = (id) => {
+      if (stack.has(id)) return true;
+      if (seen.has(id)) return false;
+      seen.add(id); stack.add(id);
+      for (const p of parentMap.get(id) || []) if (walk(p)) { stack.delete(id); return true; }
+      stack.delete(id);
+      return false;
+    };
+    return [...parentMap.keys()].filter((id) => walk(id));
+  }
+  /** 把成环的角色 id 列表渲染成「甲、乙」形式（找不到就退回 id）。 */
+  const cycleNames = (ids, book) => ids.slice(0, 6)
+    .map((id) => ((book.characters || []).find((c) => c.id === id) || {}).name || id).join('、');
   /* ⚠ 这份正则必须与 `scripts/kin.mjs` 的 `guessKin` **逐字对应**（同一套正则、同一判定顺序）。
    *
    *   `scripts/kin.mjs` 是 kin 规范的**唯一来源**（被 `validate.mjs` / `annotate-kin.mjs` /
@@ -340,6 +374,10 @@
       // 时间区间（时间旅行）
       if (typeof r.fromCh === 'number' && typeof r.toCh === 'number' && r.toCh <= r.fromCh) issues.push(`关系 ${r.from}→${r.to} 的 toCh（${r.toCh}）必须大于 fromCh（${r.fromCh}）`);
     }
+    /* 亲子成环 —— `scripts/validate.mjs` 一直查这条，而编辑器原先只有「数据体检」查、
+     * 「校验」不查 ⇒ 又是"两个入口两个答案"。现在两边共用 parentCycles()。 */
+    const cyc = parentCycles(b);
+    if (cyc.length) issues.push(`亲子关系成环（方向写反了？）：${cycleNames(cyc, b)} —— 用 scripts/fix-parent-cycles.mjs 修`);
     return issues;
   }
 
@@ -445,29 +483,9 @@
         }
       }
     });
-    // 亲子成环（血缘 + 父/母 称谓；from＝父母、to＝子女 是数据约定）
-    const parentMap = new Map();
-    for (const r of b.relations) {
-      if (r.kin !== 'blood') continue;
-      const t = String(r.type || '');
-      let parent = null, child = null;
-      if (/^(父|母)/.test(t)) { parent = r.from; child = r.to; }
-      else if (/^(子|女)/.test(t)) { parent = r.to; child = r.from; }
-      if (!parent || !child) continue;
-      if (!parentMap.has(child)) parentMap.set(child, []);
-      parentMap.get(child).push(parent);
-    }
-    const seen = new Set(), stack = new Set();
-    const walk = (id) => {
-      if (stack.has(id)) return true;
-      if (seen.has(id)) return false;
-      seen.add(id); stack.add(id);
-      for (const p of parentMap.get(id) || []) if (walk(p)) { stack.delete(id); return true; }
-      stack.delete(id);
-      return false;
-    };
-    const cyc = [...parentMap.keys()].filter((id) => walk(id));
-    if (cyc.length) add('error', `亲子关系成环（方向写反了？）：${cyc.slice(0, 6).map((id) => (ids.has(id) ? (b.characters.find((c) => c.id === id) || {}).name : id)).join('、')} —— 用 scripts/fix-parent-cycles.mjs 修`, 'relations', null);
+    // 亲子成环（方向写反 ⇒ 成环）—— 与「校验」按钮共用 parentCycles()，见文件顶部说明。
+    const cyc = parentCycles(b);
+    if (cyc.length) add('error', `亲子关系成环（方向写反了？）：${cycleNames(cyc, b)} —— 用 scripts/fix-parent-cycles.mjs 修`, 'relations', null);
     return out;
   }
 
@@ -1096,7 +1114,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=152';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=153';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1801,6 +1819,13 @@
      * 「校验」与「体检」对同一条关系给同一个答案（此前它俩各抄一份、漂过）。 */
     kinIssues: (type, kin) => kinIssues(type, kin),
     validate: () => validate(),
+    /* v0.153：亲子边的判定（与 `scripts/kin-terms.mjs` 的 `isParentChild` 同一套，含收养边）。
+     * 返回 `from>to` 的边集，供 test/parent-child.mjs 对着真实数据与权威对拍 ——
+     * 这里曾用一套不同的规则（只认 kin=blood），静默漏掉了全部收养亲子边。 */
+    parentChildEdges: (book) => {
+      const rels = ((book || ed.book) || {}).relations || [];
+      return rels.filter((r) => isParentChildType(r.type)).map((r) => `${r.from}>${r.to}`);
+    },
     cleanHtml: (html) => cleanHtml(html),
     mergeDraft: (draft) => mergeDraft(draft),
     undo: () => undo(),

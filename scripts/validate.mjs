@@ -14,6 +14,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { checkKin, KIN, KIN_KEYS } from './kin.mjs';
+/* 亲子边的定义（含「养父子」这类收养边）—— 单一来源，见 kin-terms.mjs。
+ * 这里原先内联了一份同样的正则：不 import 的话，哪天 kin-terms.mjs 改了（比如再加一类
+ * 收养写法），validate 会静默用旧规则判成环 —— 正是 v0.110 出过的那个事故。 */
+import { isParentChild } from './kin-terms.mjs';
 
 const STYLES = new Set(['solid', 'dashed', 'dotted']);
 let errors = 0, warns = 0;
@@ -287,10 +291,9 @@ function validate(file) {
 
   // ---------- 亲子方向（成环 = 方向写反了）----------
   {
-    const PARENT_CHILD = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$/;
     const adj = new Map();
     for (const r of rels) {
-      if (!PARENT_CHILD.test(String(r.type || '').replace(/[（(].*$/, '').trim())) continue;
+      if (!isParentChild(r)) continue;   // 单一来源：kin-terms.mjs（含「养」边）
       if (!adj.has(r.from)) adj.set(r.from, []);
       adj.get(r.from).push(r.to);
     }

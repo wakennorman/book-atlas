@@ -31,6 +31,9 @@ import fs from 'node:fs';
 import { listBooks } from './lib/data-files.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+/* 亲子边部分用单一来源；下面「亲缘邻接」还要认 叔侄/兄弟/夫妻 等**非亲子**的家人边，
+ * 所以是 `isParentChild(r) || 额外词`，不是自己再抄一份亲子正则。 */
+import { isParentChild } from './kin-terms.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -102,10 +105,10 @@ for (const bf of books) {
     .filter((x) => x.flat.length >= 2);
 
   /* 亲缘邻接：用于 B 级判定"第三方与一方有关系" */
-  const kinRe = /^(亲生)?(父|母)(子|女)$|^养(父|母)(子|女)$|叔侄|姑侄|舅甥|姨甥|祖孙|兄弟|姐妹|夫妻|父子|母子|父女|母女/;
+  const EXTRA_KIN = /叔侄|姑侄|舅甥|姨甥|祖孙|兄弟|姐妹|夫妻|父子|母子|父女|母女/;
   const kinAdj = new Map();
   for (const r of book.relations || []) {
-    if (!kinRe.test(String(r.type || '').replace(/[（(].*$/, ''))) continue;
+    if (!isParentChild(r) && !EXTRA_KIN.test(String(r.type || '').replace(/[（(].*$/, ''))) continue;
     if (!kinAdj.has(r.from)) kinAdj.set(r.from, new Set());
     if (!kinAdj.has(r.to)) kinAdj.set(r.to, new Set());
     kinAdj.get(r.from).add(r.to);
