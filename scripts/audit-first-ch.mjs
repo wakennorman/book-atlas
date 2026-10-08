@@ -23,6 +23,11 @@
  * ⇒ 脚本**自动排掉"去括号后同名"**的人物（那类必然假阳性），其余逐条打印
  *   首现处的**上下文片段**，供人工判读。**它不改任何数据。**
  *
+ * v0.158：另单列一组「**缺 firstCh**」—— 给出「名字首现章」作**建议值**
+ *   （validate 只报"缺 firstCh"、不给线索；本组补上线索，但仍需人工核出场口径）。
+ *   ⚠ 「去括号后同名」的人对拍段要排除，但**缺 firstCh 时不能一起丢**——
+ *     否则报告少报（三国 `雷同（雒城）`/`雷同（巴西）` 即此情形），故单列并标注「不可判」。
+ *
  * ## 用法
  * ```bash
  * node scripts/audit-first-ch.mjs                    # 三国，阈值 5
@@ -117,18 +122,44 @@ const base = (n) => String(n || '').replace(/（.*?）/g, '').replace(/\(.*?\)/g
 const nameCount = new Map();
 for (const c of book.characters) nameCount.set(base(c.name), (nameCount.get(base(c.name)) || 0) + 1);
 
+/* ── 查「名字在原文的首次出现」──
+ * ⚠ 这只是**名字首现**，不等于「首次实打实出场」（名单/被提及不算）——
+ *   有 firstCh 时它用来对拍、报警；缺 firstCh 时它只作**建议值**。 */
+function firstOccur(name) {
+  for (let i = 0; i < segText.length; i++) {
+    const p = segText[i].indexOf(name);
+    if (p >= 0) return { ch: i + 1, at: p };
+  }
+  return null;
+}
+
 /* ── 对拍 ── */
 const cand = [];
-let skippedDup = 0, skippedShort = 0, skippedNoFc = 0, notFound = 0;
+const noFc = [];   // 缺 firstCh 的人 —— 给出「名字首现」作建议值（v0.158）
+let skippedDup = 0, skippedShort = 0, notFound = 0, dupNoFc = 0;
 for (const c of book.characters) {
   const b = base(c.name);
-  if (b.length < 2) { skippedShort++; continue; }
-  if ((nameCount.get(b) || 0) > 1) { skippedDup++; continue; }
   const fc = Number(c.firstCh);
-  if (!Number.isFinite(fc)) { skippedNoFc++; continue; }
-  let first = null, at = -1;
-  for (let i = 0; i < segText.length; i++) { const p = segText[i].indexOf(b); if (p >= 0) { first = i + 1; at = p; break; } }
-  if (first === null) { notFound++; continue; }
+  if (b.length < 2) { skippedShort++; continue; }
+  if ((nameCount.get(b) || 0) > 1) {
+    skippedDup++;
+    /* ⚠ 去括号后同名 ⇒「名字首现」指向谁不确定，对拍必须排除。
+     *   但**缺 firstCh** 的人不能因此被静默丢掉——否则报告会少报（v0.158 修：
+     *   三国里 `雷同（雒城）`/`雷同（巴西）` 就是这情形，后者曾被整个跳过）。 */
+    if (!Number.isFinite(fc)) { dupNoFc++; noFc.push({ name: c.name, id: c.id, first: null, ctx: '', dup: true }); }
+    continue;
+  }
+  const occ = firstOccur(b);
+  if (!Number.isFinite(fc)) {
+    if (occ) {
+      const seg = segText[occ.ch - 1];
+      const ctx = seg.slice(Math.max(0, occ.at - 40), occ.at + b.length + 40);
+      noFc.push({ name: c.name, id: c.id, first: occ.ch, ctx });
+    } else noFc.push({ name: c.name, id: c.id, first: null, ctx: '' });
+    continue;
+  }
+  if (occ === null) { notFound++; continue; }
+  const first = occ.ch, at = occ.at;
   const d = fc - first;
   if (d > THRESHOLD) {
     const seg = segText[first - 1];
@@ -141,13 +172,15 @@ for (const c of book.characters) {
   }
 }
 cand.sort((a, b) => b.d - a.d);
+noFc.sort((a, b) => (a.first ?? 1e9) - (b.first ?? 1e9));
 
 /* ── 报告 ── */
 const by = (k) => cand.filter((x) => x.kind === k);
 console.log(`\n▶ ${SLUG}（${book.characters.length} 人 / ${totalCh} 章）`);
 console.log(`  阈值：firstCh 比原文首现晚 > ${THRESHOLD} 章`);
-console.log(`  已排除：去括号后同名 ${skippedDup} 人（必然假阳性）· 名字<2字 ${skippedShort} 人 · 无 firstCh ${skippedNoFc} 人`);
+console.log(`  已排除：去括号后同名 ${skippedDup} 人（必然假阳性）· 名字<2字 ${skippedShort} 人`);
 console.log(`  原文里找不到名字：${notFound} 人（多为字号/别称，或数据里的写法与原著不同）`);
+console.log(`  缺 firstCh：${noFc.length} 人${dupNoFc ? `（其中 ${dupNoFc} 人同名，无法给建议值）` : ''} —— 单列在下（给「名字首现」作建议值，仍需人工核出场口径）`);
 console.log(`\n  ⚠ 以下 ${cand.length} 条是**待核清单**，不是错误清单 —— 必须看上下文核 referent。`);
 console.log('    已按首现形态分三组，「其余」才是真正值得核的。');
 
@@ -168,5 +201,21 @@ for (const [label, note] of GROUPS) {
   }
   if (arr.length > show.length) console.log(`  | … | | | | 还有 ${arr.length - show.length} 条（用 --top 调整） |`);
 }
+if (noFc.length) {
+  console.log(`\n### 缺 firstCh（${noFc.length} 人）—— 建议值，⚠ 必须人工核\n`);
+  console.log('  名字首现 ≠ 首次出场（名单/被提及不算）。下表给的是**名字首现章**，只能当建议值；');
+  console.log('  要定 firstCh，得看该处上下文是不是"实打实出场"。');
+  if (dupNoFc) console.log(`  ⚠ 其中 ${dupNoFc} 人「去括号后与另一人同名」⇒ 名字首现指向谁不确定，给不了建议值，须人工判。\n`);
+  else console.log('');
+  console.log('  | 人物 | id | 名字首现 | 首现处上下文 |');
+  console.log('  |---|---|---|---|');
+  for (const x of noFc.slice(0, TOP)) {
+    const firstCell = x.dup ? '**同名，不可判**' : (x.first ?? '—');
+    const ctxCell = x.dup ? '（去括号后与另一人同名，名字首现指向谁不确定）' : `…${x.ctx.replace(/\|/g, '\\|')}…`;
+    console.log(`  | ${x.name} | \`${x.id}\` | ${firstCell} | ${ctxCell} |`);
+  }
+  if (noFc.length > TOP) console.log(`  | … | | | 还有 ${noFc.length - TOP} 人（用 --top 调整） |`);
+}
+
 console.log('\n  ⇒ 确认是错的，用 `scripts/fix-*.mjs` 那套（带原著 locate 短语）去改；');
 console.log('    本脚本**不改任何数据**。\n');
