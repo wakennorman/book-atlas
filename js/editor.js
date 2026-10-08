@@ -284,9 +284,16 @@
         if (ev.place && !placeIds.has(ev.place)) issues.push(`关系 ${r.from}→${r.to} 的小事件地点「${ev.place}」没有在 places 里定义`);
       }
       const guessed = guessKin(r.type);
-      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姑侄)/.test(r.type || '');
+      /* ⚠ 与 `scripts/kin.mjs` 的 `BLOOD_TERM` **逐字对应**（同一份"纯血缘称谓"表）。
+       *   两边漂过：编辑器这份少了「姨甥 / 表兄弟 / 表兄妹 / 堂兄弟 / 堂兄妹 / 孪生兄弟 /
+       *   孪生姐妹 / 父子关系」8 个 ⇒ 同样一句「堂兄弟 + kin=收养」，validate 报错、编辑器不报。 */
+      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姨甥|姑侄|表兄弟|表兄妹|堂兄弟|堂兄妹|孪生兄弟|孪生姐妹|父子关系)/.test(r.type || '');
       if (r.kin && !KIN_LABEL[r.kin]) issues.push(`关系 ${r.from}→${r.to} 的亲属类型「${r.kin}」不合法（应为 blood/marriage/inlaw/adoptive/foster/step/sworn 之一）`);
-      else if (r.kin && ['adoptive', 'foster', 'step', 'sworn'].includes(r.kin) && bloodTerm) issues.push(`关系 ${r.from}→${r.to}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」——收养/继亲/结义/抚养要说清是哪一种`);
+      /* 纯血缘称谓（父子/母子/兄弟/舅甥…）**只能配 blood** —— 配收养/继亲/结义/抚养/姻亲/婚姻都自相矛盾。
+       *   v0.146 起把「姻亲 / 婚姻」也纳入（原先只管 收养/继亲/结义/抚养 4 类）：
+       *   实测三国里「吴懿—刘璋 舅甥 + kin=inlaw」「孟达—邓贤 舅甥 + kin=inlaw」两条，
+       *   回原著核过（「乃舅氏吴懿也」「达外甥邓贤」）⇒ 舅甥就是血缘，是 kin 标错了。 */
+      else if (r.kin && r.kin !== 'blood' && bloodTerm) issues.push(`关系 ${r.from}→${r.to}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」——是血缘才用 blood；收养/继亲/结义/抚养/姻亲要说清是哪一种`);
       else if (!r.kin && guessed) issues.push(`关系 ${r.from}→${r.to}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`);
       else if (r.kin && guessed && guessed !== r.kin) issues.push(`关系 ${r.from}→${r.to}：关系名「${r.type}」看着像${KIN_LABEL[guessed]}，但亲属类型标的是${KIN_LABEL[r.kin]}——对一下哪个对`);
       // 时间区间（时间旅行）
@@ -1047,7 +1054,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=146';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=147';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {

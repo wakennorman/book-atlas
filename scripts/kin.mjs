@@ -90,10 +90,14 @@ export function checkKin(rel) {
     if (guessed) out.push({ level: 'warn', msg: `像是亲属关系（type「${type}」），建议补 kin: "${guessed}"（${KIN[guessed]}）` });
     return out;
   }
-  // 有 kin：措辞必须与之一致
-  const vague = ['adoptive', 'foster', 'step', 'sworn'];
-  if (vague.includes(kin) && BLOOD_TERM.test(type)) {
-    out.push({ level: 'error', msg: `kin=${kin}（${KIN[kin]}）但 type「${type}」是血缘称谓——收养/继亲/结义/抚养不要写成「父子/母子/兄弟」这类词，要说清是哪一种` });
+  /* 有 kin：措辞必须与之一致。
+   * 纯血缘称谓（父子/母子/兄弟/舅甥…，见 BLOOD_TERM）**只能配 `blood`** ——
+   * 配 收养 / 继亲 / 结义 / 抚养 / 姻亲 / 婚姻 都自相矛盾。
+   * v0.146 起把「姻亲 / 婚姻」也纳入（原先只管 收养/继亲/结义/抚养 4 类）：
+   * 实测三国「吴懿—刘璋 舅甥 + kin=inlaw」「孟达—邓贤 舅甥 + kin=inlaw」两条，
+   * 回原著核过（「璋视之，乃舅氏吴懿也」「更有…达外甥邓贤随状出首」）⇒ 舅甥就是血缘，是 kin 标错了。 */
+  if (kin !== 'blood' && BLOOD_TERM.test(type)) {
+    out.push({ level: 'error', msg: `kin=${kin}（${KIN[kin]}）但 type「${type}」是血缘称谓——收养/继亲/结义/抚养/姻亲/婚姻都不要写成「父子/母子/兄弟/舅甥」这类词，是血缘才用 blood` });
   }
   if (kin === 'blood' && !guessed) {
     out.push({ level: 'warn', msg: `标了 kin=blood，但 type「${type}」看不出是血缘称谓` });

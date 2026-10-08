@@ -30634,7 +30634,7 @@
       "from": "wu-yi",
       "to": "liu-zhang",
       "type": "舅甥",
-      "kin": "inlaw",
+      "kin": "blood",
       "style": "solid",
       "events": [
         {
@@ -36985,7 +36985,7 @@
       "from": "meng-da",
       "to": "deng-xian",
       "type": "舅甥",
-      "kin": "inlaw",
+      "kin": "blood",
       "style": "dashed",
       "events": [
         {

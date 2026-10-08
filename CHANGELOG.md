@@ -5,6 +5,62 @@
 
 ---
 
+## v0.147 · 收紧「血缘称谓 ⇄ kin」一致性规则 ＋ 修两条自相矛盾的关系
+
+### 1. 起因
+
+v0.146 的遗留项：「吴懿 —舅甥— 刘璋」「孟达 —舅甥— 邓贤」两条 `type`（血缘）与 `kin`（姻亲）矛盾，需回原著定夺。
+
+### 2. 先收紧判据，让它把矛盾报出来
+
+v0.145 的 `BLOOD_TERM` 规则只覆盖 4 类血缘称谓（父子/父女/母子/母女…），漏网的照样静默通过。
+本轮把 `scripts/kin.mjs` 的 `checkKin` 与 `js/editor.js` 的 `validate()` **同步收紧**为一条更强的规则：
+
+> **非 `blood` 的 `kin`，一律不许配「纯血缘称谓」的 `type`。**
+
+覆盖的称谓：父子/父女/母子/母女/兄弟/姐妹/兄妹/姐弟/祖孙/曾祖孙/叔侄/舅甥/姨甥/姑侄/表兄弟/表兄妹/堂兄弟/堂兄妹/孪生兄弟/孪生姐妹。
+理由：收养 / 继亲 / 结义 / 抚养 / 姻亲 / 婚姻**都不该**写成「父子」「舅甥」这类词——那是血缘才用的词；真要是血缘，就该标 `blood`。
+收紧后实测让那两条记录从 `⚠` 升为 `✗`（`validate` 退出码 1）——**判据先能报红，再去改数据**。
+
+### 3. 回原著定夺：错的是 `kin`，不是 `type`
+
+- **吴懿 —舅甥— 刘璋**：`type: 舅甥` **对**。原文第 62 回「璋视之，乃**舅氏**吴懿也。璋曰：得**尊舅**去最好」——吴懿是刘璋的舅舅 ⇒ 是**血缘**。
+- **孟达 —舅甥— 邓贤**：`type: 舅甥` **对**。原文第 94 回「更有孟达心腹人李辅并**达外甥邓贤**随状出首」——邓贤是孟达的外甥 ⇒ 是**血缘**。
+
+两处 `"kin": "inlaw"` → `"kin": "blood"`（`type` 保留 `舅甥`）。改后 `validate` 转绿。
+
+### 4. 顺带抓出两处 id 撞车（未处理，见遗留）
+
+核验邓贤时发现：`deng-xian` 的档案写「刘璋部将，第 62 章被黄忠射死」，却挂着**第 94 章**的「孟达外甥」关系
+⇒ **两个同名邓贤被并成了一个 id**（第 62 回雒城 vs 第 94 回），两侧原文都在。
+同理 `li-fu` 档案是「**李伏**（中郎将，第 79 章议禅位）」，却挂着第 94 章「孟达 —李伏 | 心腹」，
+而原文写的是「孟达心腹人**李辅**」⇒ 两人**同拼音 `li-fu`** 被并成一个 id。这是「拼音 id 撞车」族。
+
+### 5. 验证证据
+
+- `node scripts/validate.mjs --all`：**0 error / 79 warning**，那两条 `✗ …舅甥…` 消失。
+- 派生物已重新生成且 `--check` 通过：`make-slim-packs`（`data/three-kingdoms.graph.json`）、
+  `make-miniprogram-packs`（`miniprogram/data/three-kingdoms.js`）；`make-anno-digest --check` 本就同步；
+  `derive-kin --all` 预览无新推导（147 → 147）。
+- `js/editor.js` 改了 ⇒ 新门禁 `check-version-bump.mjs` **报红**（列出 `js/editor.js`）→ bump 到 **147** → 转绿。
+  这是该门禁**第二次**在真实改动上生效（第一次是 v0.146 自身）。
+- 全量门禁：**39 步里 38 绿**。唯一红灯 `test/lock.mjs` 是**环境抖动**——它报的是「异常：CDP Input.dispatchMouseEvent
+  300 秒无响应」（CDP 通信层挂起，**不是断言失败**），且与本轮改动（kin 字段 / 规则）无任何交集；
+  单独重跑 **67/0 通过**，确认非回归。
+
+### 6. 遗留
+
+- ★ `deng-xian` 同名混淆（刘璋部将 vs 孟达外甥）、`li-fu` 同拼音混淆（李伏 vs 李辅）—— 需各拆成两个 id
+  （沿用项目先例 `<id>-2` / `<id>-orig`，如 `ding-yi-2`、`sun-he-orig`）。
+- `KIN` / `KIN_HINT` / `KIN_LABEL` 常量共 **5 处副本**（`scripts/kin.mjs`、`js/app.js`、`js/editor.js`、
+  `miniprogram/utils/graph.js`、`miniprogram/pages/index/index.js`），目前一致但**无测试守着**；`checkKin` 亦零测试覆盖。
+- 反方向的情况仍是 `⚠`（标了 `blood` 但 `type` 用「同宗」「汉室同宗」「先祖与后裔」而非标准血缘称谓，
+  如 `liu-bei→liu-biao`、`zhuge-feng→zhuge-liang`、`liu-bei→liu-bi`、`sun-xiu-jin→sun-hao`）——是否一并收紧待定。
+- （沿用 v0.146 遗留）`check-event-chars` 只报告；`test/_patch*.mjs` 宜清理；CHANGELOG 缺口 v0.100–v0.143；
+  `guessKin` 仍是两份手抄实现。
+
+---
+
 ## v0.146 · 给「忘了 bump 版本号」补一道门禁 ＋ 修掉编辑器与 `kin.mjs` 的 `guessKin` 漂移
 
 ### 1. 起因
