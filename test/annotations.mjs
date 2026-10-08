@@ -394,6 +394,76 @@ try {
   const crimeOpened = await js(`window.__ba.state.activeEvent`);
   ok(crimeOpened === wantInline, `点了打开《罪与罚》的事件（activeEvent=${JSON.stringify(crimeOpened)}，期望 ${JSON.stringify(wantInline)}）`);
   }
+
+  /* ── 《百年孤独》：第三本书，同样要能加载、渲染、id 属于它自己 ──
+   *  这本书的 id 形态是 e01（和罪与罚的 e1 不同，和三国的 e-1-3 也不同），
+   *   且人名歧义多（「乌尔苏拉」有 2 个、「奥雷里亚诺」有 4 个）——
+   *   所以它同时验证：形态无关的渲染正则 + 全名解析。 */
+  head('《百年孤独》：拆书能加载，且 id 都属于它自己');
+  await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=one-hundred-years-of-solitude` });
+  for (let i = 0; i < 300; i++) {
+    if (await js(`!!(window.__ba && window.__ba.state.chart && window.__ba.state.book && window.__ba.state.book.characters.length > 10)`).catch(() => false) === true) break;
+    await wait(100);
+  }
+  await wait(3000);
+  const solSt = await js(`(() => ({
+    status: window.__ba.state.annoStatus, has: !!window.__ba.state.anno,
+    slug: window.__ba.state.anno && window.__ba.state.anno.slug,
+    nItems: window.__ba.state.anno ? window.__ba.state.anno.items.length : 0,
+    nGlobal: window.__ba.state.anno ? window.__ba.state.anno.global.length : 0,
+  }))()`);
+  ok(solSt.status && solSt.status.status === 'done', `拆书已加载（${JSON.stringify(solSt.status)}）`);
+  ok(solSt.slug === 'one-hundred-years-of-solitude', `标注文件自称 one-hundred-years-of-solitude（实际 ${JSON.stringify(solSt.slug)}）`);
+  ok(solSt.nItems >= 18, `《百年孤独》有 ${solSt.nItems} 条章节条目 + ${solSt.nGlobal} 条全局`);
+
+  const solIdsOwn = await js(`(() => {
+    const A = window.__ba.state.anno, B = window.__ba.state.book;
+    const charIds = new Set(B.characters.map(c => c.id));
+    const evIds = new Set(B.events.map(e => e.id));
+    let nChar = 0, nEv = 0;
+    const foreign = [];
+    for (const it of A.items) {
+      for (const c of it.chars || []) { nChar++; if (!charIds.has(c)) foreign.push('人物 ' + c); }
+      for (const e of it.events || []) { nEv++; if (!evIds.has(e)) foreign.push('事件 ' + e); }
+    }
+    return { nChar, nEv, foreign: foreign.slice(0, 6), total: foreign.length };
+  })()`);
+  ok(solIdsOwn.nChar + solIdsOwn.nEv > 60, `扫到了足够的引用（人物 ${solIdsOwn.nChar} + 事件 ${solIdsOwn.nEv}）`);
+  ok(solIdsOwn.total === 0,
+    `每个 id 都属于《百年孤独》（混入 ${solIdsOwn.total} 个外来的${solIdsOwn.total ? '：' + JSON.stringify(solIdsOwn.foreign) : ''}）`);
+
+  /* 第 1 回有拆书内容（e01+e02 合并），行内引用可点 */
+  await gotoChapter(1);
+  const solSec = await annoDom();
+  ok(solSec.present, '《百年孤独》第 1 回显示了拆书分区');
+  ok((solSec.items || []).length >= 1, `第 1 回渲染出 ${(solSec.items || []).length} 条`);
+  const solWantInline = await js(`(() => {
+    const A = window.__ba.state.anno;
+    const it = A.items.find((x) => x.ch === 1);
+    const hit = it ? String(it.body).match(/e-?\\d[\\w-]*/g) : null;
+    return hit && hit.length ? hit[0] : null;
+  })()`);
+  const solInline = await js(`(() => {
+    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) return null;
+    const btn = sec.querySelector('p .anno-inline-ref[data-event]');
+    return btn ? btn.dataset.event : null;
+  })()`);
+  ok(solInline === solWantInline, `《百年孤独》的行内引用也渲染成可点按钮（实际 ${JSON.stringify(solInline)}，期望 ${JSON.stringify(solWantInline)}）`);
+  if (solWantInline) {
+    await js(`document.querySelector('#chapter-body p .anno-inline-ref[data-event="${solWantInline}"]').click()`);
+    await wait(700);
+    const solOpened = await js(`window.__ba.state.activeEvent`);
+    ok(solOpened === solWantInline, `点了打开《百年孤独》的事件（activeEvent=${JSON.stringify(solOpened)}，期望 ${JSON.stringify(solWantInline)}）`);
+  }
+
+  /* 第 10 回没有拆书内容（events 为空），要明说「还没写」 */
+  await gotoChapter(10);
+  const solEmpty = await annoDom();
+  ok(solEmpty.present, '《百年孤独》第 10 回（没写）显示分区');
+  ok((solEmpty.items || []).length === 0, `第 10 回渲染出 ${(solEmpty.items || []).length} 条`);
+  ok(/还没写/.test(solEmpty.hint ? solEmpty.hint.join('') : (solEmpty.secText || '')),
+    `《百年孤独》没写的章明说「还没写」：${((solEmpty.hint || []).join('') || solEmpty.secText || '').match(/[^\n]*还没写[^\n]*/) ? ((solEmpty.hint || []).join('') || solEmpty.secText || '').match(/[^\n]*还没写[^\n]*/)[0].trim() : '（没找到）'}`);
+
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {
   failed++;
