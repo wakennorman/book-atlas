@@ -426,7 +426,9 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/draft.mjs` | 一次性 AI 草稿：`node scripts/draft.mjs --title "书名" [--text book.txt]` |
 | `scripts/extract-epub.mjs` | 零依赖 EPUB 抽文（本地校对用）：`node scripts/extract-epub.mjs book.epub out.txt [--split 目录]` |
 | `scripts/audit-against-text.mjs` | **拿原著逐条核**（原著文本不在版本库，所以是手跑步骤，不是 CI 门禁）。默认模式找**漏人**（书里提到、数据里没有）；加 `--names` 查**反方向**——已建档的人名在书里那个写法搜不搜得到，有搜不到的**非零退出**。`node scripts/audit-against-text.mjs --all .text/ [--names]`，详见 [`docs/新书处理规程.md`](docs/新书处理规程.md) §二 2.6 与 §四 0.5 / 0.6 |
-| `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 73 [--dry-run]` |
+| `scripts/bump-version.mjs` | 版本号同步：改前端资源后跑一次，自动更新 `index.html` / `editor.html` / `sw.js` 里所有 `?v=NN` 与 `CACHE`：`node scripts/bump-version.mjs 146 [--dry-run]` |
+| `scripts/check-version.mjs` | **发布门禁**：查「版本号四处彼此一致」（`sw.js` / `index.html` / `editor.html` / `js/editor.js` / `package.json`）。查不出「该 bump 没 bump」——那由下一条守 |
+| `scripts/check-version-bump.mjs` | **发布门禁**：查「改了**被预缓存**的前端资源，却没 bump `CACHE`」。判据只用 git：`base` = 最后一次改动 `CACHE` 的提交，`base` 以来 `sw.js` 没变、而预缓存资源变过 ⇒ 报红。要盯的清单**从 `sw.js` 的 `SHELL` 推导**（不手抄）；`data/` 走 SWR 会自更新故排除。配套测试 `test/version-bump-guard.mjs` 在临时仓库里证明它真会报红 |
 | `scripts/make-tutorial-gifs.mjs` | 动图教程生成器：用无头 Edge（CDP）**真实点击页面**逐帧截图（`docs/tutorial/frames/`），因为教程要展示的正是悬停提示、点事件聚焦、拖时间滑块这类真实交互，静态图拼不出来。场景见文件里的 `SCENES`：`node scripts/make-tutorial-gifs.mjs [--width 1024 --height 640 --fps 10]` |
 | `scripts/assemble-gif.py` | 把上一条截下的帧合成 GIF（可选 MP4）。用**全局共享调色板**量化，否则同一种颜色在不同帧取到不同索引、整块 UI 会「闪」：`python scripts/assemble-gif.py --frames docs/tutorial/frames/search --out docs/tutorial/search.gif [--colors 128 --mp4]`（依赖 pillow） |
 | `scripts/make-icons.py` | 把 logo 的矢量源文件渲染成站点用的位图资源（Pillow + 本机 Edge 无头截图）：`python scripts/make-icons.py` |
@@ -457,12 +459,14 @@ book-atlas/
 ## 部署与发布
 
 - 部署：GitHub 仓库 → Settings → Pages → `main` / `/ (root)`
-- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑 26 步：JS 语法、版本号一致性、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、**关系线身份**、**锁定只显示相关**、**渲染尺度与「分组·横」布局**、**画布漫游与视野自救**、**画布手感与导航提示**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
-  > 本地一次跑完：`npm run check`
+- **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑（步骤以该文件为准；本地 `node tools/gate.mjs --list` 可列出全部）：JS 语法、**版本号一致性**、**改了预缓存资源却没 bump 版本号**、**版本号检查自身的守卫**、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、**关系线身份**、**锁定只显示相关**、**渲染尺度与「分组·横」布局**、**画布漫游与视野自救**、**画布手感与导航提示**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
+  > 本地一次跑完：`npm run check`（= `node tools/gate.mjs`，与 CI 读的是同一个 `check.yml`）
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改
 - 发布：改完数据后跑 `tools\push-via-api.ps1`（从 Git 凭据管理器取 token，走 GitHub API 建 blob/tree/commit，再更新分支）
-- **改前端资源后要同步三处**：`index.html` / `editor.html` 里资源引用的 `?v=NN`、`sw.js` 里的 `CACHE = 'bookatlas-vNN'`，以及 `sw.js` 的 `SHELL` 预缓存清单里对应的 `?v=NN`，否则老访客会一直看到旧代码
-  > 推荐用 `node scripts/bump-version.mjs <新版本号>` 自动同步（如 `node scripts/bump-version.mjs 74`）
+- **改前端资源后要同步三处**：`index.html` / `editor.html` 里资源引用的 `?v=NN`、`sw.js` 里的 `CACHE = 'bookatlas-vNN'`，以及 `sw.js` 的 `SHELL` 预缓存清单里对应的 `?v=NN`
+  > 推荐用 `node scripts/bump-version.mjs <新版本号>` 自动同步（如 `node scripts/bump-version.mjs 146`）
+  > 忘了 bump 的后果：SW 字节不变 ⇒ 浏览器不重装 SW ⇒ 预缓存清单与 `CACHE` 停在旧版本、旧缓存不被清。**在线**访客仍能拿到新资源（sw.js 对 HTML/JS/CSS 是网络优先），吃亏的是**离线**。
+  > 门禁里的 `scripts/check-version-bump.mjs` 会拦住这种漏 bump（判据是「`sw.js` 相对上次 bump 的提交变过没有」），并配了一条证明它真会报红的测试。
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)；对外公告草稿：[docs/发布公告-2026-09-28.md](docs/发布公告-2026-09-28.md)
 
 ---

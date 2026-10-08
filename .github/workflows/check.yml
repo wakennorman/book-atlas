@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # v0.146：`check-version-bump.mjs` 要靠 git 历史找「最后一次 bump CACHE 的提交」，
+          # 默认的 fetch-depth=1 浅克隆会让它拿不到 base ⇒ 只能打印「跳过」。
+          # 其它依赖 blame/log 的检查（如引文审计）同理受益。
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -27,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -39,6 +44,23 @@ jobs:
         # v85：以前 v0.69–v0.71 连着三轮改前端却漏 bump CACHE（CHANGELOG 有记录），
         # 没有任何检查能发现。这里比对 sw.js / index.html / editor.html / js/editor.js / package.json。
         run: node scripts/check-version.mjs
+
+      - name: 改了前端资源必须 bump 版本号
+        # v0.146 新增。上一步 `check-version.mjs` 只查**一致性**（各处 ?v=NN 与 CACHE 是否彼此相等），
+        # 查不出「该 bump 而没 bump」—— 全都没动也是一致的，检查照样通过。
+        # 实测踩过：js/ 从 v0.131 到 v0.142 **至少 9 轮**改过前端，CACHE 却一直是 bookatlas-v99
+        # ⇒ 老访客一直跑 v99 的代码。这正是 v85 出过、check-version.mjs 当初要防的那件事，换了个入口复发。
+        # 判据（只用 git，不靠猜）：base = 最后一次改动 CACHE 的提交；
+        # 若 base..HEAD 之间 index.html/editor.html/js//css//shared/ 变过 ⇒ 就是忘了 bump ⇒ exit 1。
+        # 拿不到 git 历史（浅克隆等）⇒ 打印「跳过」exit 0（门禁里一条会误报的检查终会被 || true 吞掉）。
+        run: node scripts/check-version-bump.mjs
+
+      - name: 版本 bump 检查自身的守卫（证明它会报红）
+        # v0.146 新增。上面那条检查本身就是为了防「判据存在但从不触发」，
+        # 所以必须有一条测试**证明它真的会 exit 1** —— 否则它可能随时悄悄退化成空转
+        # （自测时就踩过：`-G 'bookatlas-v\d'` 里的 `\d` 被 git 当字面 d ⇒ 永远找不到 base ⇒ 永远跳过）。
+        # 做法：在临时目录 git init 一个最小仓库，把 BOOKATLAS_ROOT 指过去，逐场景断言退出码。不碰真实仓库。
+        run: node test/version-bump-guard.mjs
 
       - name: 拆分数据包与 data/*.json 同步
         # v85 新增。首屏只下 <slug>.graph.json，文案在空闲时后台预取。

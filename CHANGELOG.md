@@ -5,6 +5,64 @@
 
 ---
 
+## v0.146 · 给「忘了 bump 版本号」补一道门禁（并在过程中抓到它自己差点空转）
+
+### 1. 起因
+
+v0.145 的遗留项：`scripts/check-version.mjs` 只查**一致性**（各处 `?v=NN` 与 `CACHE` 是否彼此相等），
+**查不出「该 bump 而没 bump」**——全都没动也是一致的，它照样通过。而 v0.131→v0.142 至少 9 轮改过 `js/`，
+`CACHE` 一直是 `bookatlas-v99`，正是从这条缝里漏过去的。本轮补上 `scripts/check-version-bump.mjs`。
+
+### 2. 判据（只用 git，不靠猜）
+
+- `base` = **最后一次改动 `CACHE` 的提交**（`git log -G` 找）。
+- ① 若 `sw.js` 相对 `base` **变过**（含工作树未提交的 bump）⇒ SW 会重装 ⇒ 通过。
+- ② 否则，若 `base` 以来**任一被预缓存（`sw.js` 的 `SHELL`）的资源**变过 ⇒ 就是忘了 bump ⇒ exit 1。
+- 要盯的清单**从 `SHELL` 推导**，不手抄（手抄必漏——本项目 `altNames` 白名单漏字段、`make-anno-digest` 漏进 CI 都是这么栽的）；
+  `./` 与 `./data/*` 排除（`data/` 走 stale-while-revalidate，会自己更新）。
+
+### 3. 写这条检查时，它自己踩了三个坑（都是「看着在守、其实没守」）
+
+| # | 坑 | 后果 | 修 |
+|---|---|---|---|
+| 1 | `-G 'bookatlas-v\d'` —— git 的 `-G` 是 **POSIX 正则**，`\d` 被当字面 `d` | 永远找不到 `base` ⇒ **静默跳过、等于没生效** | 改 `bookatlas-v[0-9]` |
+| 2 | 判据比的是 `base..HEAD`（两个**提交**） | 本项目发布是 **GitHub Pages 从 `main` 直推**（README「部署与发布」），CI 不拦发布 ⇒ 只比提交的话，本地 `npm run gate` 在**提交前假绿**，推上去其实已经上线 | 改比 `base` 与**工作树** |
+| 3 | 清单里含 `shared/` | `shared/graph-core.js` 是「线上没有任何地方用」的参考实现（`test/parity.mjs` 里写明），改它不需要 bump ⇒ 会误报 | 清单改为从 `SHELL` 推导，自动排除 |
+
+> 坑 1 是自测时抓到的：写完先跑，发现它打印「跳过」而不是「通过」——**一条永远跳过的门禁**，
+> 正是本项目反复踩的那一族。所以配了 `test/version-bump-guard.mjs`：在**临时 git 仓库**里
+> 逐场景断言退出码，**证明它真会报红**（9 条断言，含「只改 `data/` 不该报红」「工作树里 js+bump 未提交不该报红」）。
+
+### 4. 顺带纠正一处**过期文档**：不 bump 的真实代价
+
+`check-version.mjs` 与 README 都写着「不 bump ⇒ 老访客一直跑旧代码」。
+但 `ed16c38`（在 v0.71 之后、v0.86 之前）已把 `sw.js` 的 fetch 改成**网络优先**——
+**在线访客照样拿到新资源**，那句结论在当前策略下**已不成立**。
+不 bump 的真实代价是**缓存卫生与离线**：`CACHE` 名不变 ⇒ `activate` 里「删掉非当前 CACHE」永不执行 ⇒ 旧缓存只进不出；
+`SHELL` 停在旧版本 ⇒ 离线时新 URL 只能靠运行时缓存兜，miss 时会把 `index.html` 当资源返回。
+已在 `check-version.mjs` 注释与本条检查的报错文案里改成准确说法。README 的「发布门禁…26 步」也早已过期（现 39 步），改为不硬编码、指向 `check.yml`。
+
+### 5. 门禁接线
+
+- `actions/checkout` 加 `fetch-depth: 0`（本检查要靠 git 历史找 `base`；默认浅克隆会拿不到）。
+- 新增两步：`改了前端资源必须 bump 版本号`、`版本 bump 检查自身的守卫（证明它会报红）`。
+- 门禁 **37 → 39 步**。
+
+### 6. 验证证据
+
+- `node test/version-bump-guard.mjs`：**9/9 通过**（含 4 条「期望报红」场景）。
+- 全量门禁：**39 步全绿**。
+
+### 7. 遗留
+
+- `js/editor.js` 与 `scripts/kin.mjs` **各有一份 `guessKin`**，无 parity 测试守着两者一致。
+- 「吴懿 —舅甥— 刘璋」「孟达 —舅甥— 邓贤」两条 `type`（血缘）与 `kin`（姻亲）矛盾，需回原著定夺。
+- `check-event-chars` 只报告（可只对 `noHit>0` 做硬门禁）。
+- `test/_patch.mjs` / `_patch-v93.mjs` 一次性补丁脚本宜清理。
+- CHANGELOG 缺口 v0.100–v0.143（44 轮）。
+
+---
+
 ## v0.145 · 补齐门禁盲区 ＋ 修掉 14 条自相矛盾的亲属称谓 ＋ 版本号欠账
 
 ### 1. 怎么发现的
