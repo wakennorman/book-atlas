@@ -5,6 +5,71 @@
 
 ---
 
+## v0.155 · 「哪些是书」有两份定义 —— 忘了登记新书，门禁会假绿
+
+### 1. 起因：顺着「手抄副本」这条线继续找
+
+v0.152 / v0.153 收敛了「kin 判据」与「亲子边」两处手抄。顺着同一条线继续找，盯上了
+`scripts/lib/data-files.mjs` 的 `listBooks()` —— 它是「data/ 里哪些是书」的**唯一**来源
+（v0.114 抽出来，注释里明说这是「同一个定义抄多份」的第 ③ 例）。
+但**还有另一份**：`data/books.json` 的 `books[]`。
+
+### 2. 两份定义，互不知情
+
+| 定义 | 谁在读 |
+|---|---|
+| `data/books.json` 的 `books[]` | 前端（`app.js` / `editor.js`）+ 约 10 个脚本（check-annotations / check-event-chars / check-graph-fields / check-packs-sync / check-sw-precache / audit-search / audit-against-text / annotate-kin …） |
+| `scripts/lib/data-files.mjs` 的 `listBooks()` | validate / derive-kin / check-kin-terms / audit-relation-actors / fix-parent-cycles |
+
+**没有任何脚本交叉校验这两者**（`check-kin-terms.mjs` 里的 `books.json` 只是注释里提了一句）。
+
+### 3. 后果：忘了登记 ⇒ 门禁假绿
+
+「加一本书」是**手动**步骤（`books.json` 的 `noteAddBook` 明说 5 步：① 在 books 数组加一条…）。
+手动 = 会忘。在 `data/` 放一本新书、忘了登记：
+
+- `listBooks()` 系（validate / derive-kin / 称谓对质）**会**处理它 ⇒ 看着"检查过了"
+- `books.json` 系（check-annotations / check-event-chars / check-graph-fields /
+  check-packs-sync / check-sw-precache / 前端）**全部静默跳过它**
+
+⇒ 新书**半上线**：门禁全绿，但**大部分步骤根本没看它一眼**。这正是本项目最怕的「门禁只守了 1/N」，
+而且它踩在**加书主路径**上。反向（登记了 `data/` 里不存在的书）⇒ 前端 `fetch` 404。
+
+### 4. 修法：不合并两套，加判据守一致
+
+两套各有用途（`books.json` 带 title/author/links，前端要用；`listBooks()` 是纯文件系统视角），
+不合并。与 v0.153 的处理一致：**收敛不了就加判据守一致**。
+
+**新增 `test/books-registry.mjs`**（门禁 43 → **44 步**），三条双向判据：
+① 登记的 `file` / `graphFile` / `textFile` 都必须真实存在
+② `data/` 里每本书（`listBooks()`）都必须在 `books.json` 里登记
+③ `file` 必须等于 `data/<slug>.json`
+
+### 5. 证据链（两个方向都注入过）
+
+| 注入 | 判据反应 | exit |
+|---|---|---|
+| 正常态 | 15/15 绿 | 0 |
+| `data/` 放一本未登记的书 `_inject-fake.json` | ✗ **漏登记：`_inject-fake`**（精确点名） | **1** |
+| 把 `books[1].slug` 改成 `…-GHOST` | ✗ 3 处（file/slug 不一致 + 漏登记 + **幽灵条目**） | **1** |
+| 恢复后 | 15/15 绿 | 0 |
+
+（幽灵注入用 `git checkout -- data/books.json` 恢复，`git diff` 为空作证。）
+
+### 6. 验证证据
+
+- `node test/books-registry.mjs`：见上表。
+- 门禁 **44 步全绿**。
+- 未改前端资源 ⇒ 不 bump 版本。
+
+### 7. 遗留
+
+- `lib/data-files.mjs` 注释里列的「同一个定义抄多份」已有 ①②③，本轮补上**第 ④ 例**（书目注册表）。
+  下次再发现第 ⑤ 例，先问「有没有东西守着它们一致」。
+- 三国的 `generation` 半成品（v0.154 遗留）仍未动。
+
+---
+
 ## v0.154 · 一条注释把只读审计吹成「硬门禁」—— 而它连门禁都没进
 
 ### 1. 起因：v0.153 改的那条边，触发了一条没人看的报警

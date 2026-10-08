@@ -35,7 +35,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -108,6 +108,18 @@ jobs:
         # 网站会持续加书，而 sw.js 的 SHELL 里是硬编码每个图包的路径。
         # 忘了加不会白屏（/data/ 走 stale-while-revalidate），但会静默不一致。
         run: node scripts/check-sw-precache.mjs
+
+      - name: 书目注册表与 data/ 实际内容一致（加书别忘登记）
+        # v0.155 新增。「哪些是书」有两份定义、互不知情：
+        #   · data/books.json 的 books[]（前端 + 约 10 个脚本读它）
+        #   · scripts/lib/data-files.mjs 的 listBooks()（validate / derive-kin / 对质读它）
+        # 加书是**手动**步骤（books.json 的 noteAddBook 列了 5 步）—— 手动 = 会忘。
+        # 忘了登记的后果是**门禁假绿**：新书会被 listBooks() 系检查到（看着"查过了"），
+        # 却被 books.json 系（check-annotations / check-event-chars / check-graph-fields /
+        # check-packs-sync / check-sw-precache / 前端）**全部静默跳过**。
+        # 判据（双向）：登记的 file/graphFile/textFile 都存在 · slug 与 file 一致 ·
+        #               listBooks() 与 books.json 的书目集合相等。
+        run: node test/books-registry.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
