@@ -11,6 +11,10 @@
  *   · cleanHtml —— EPUB 的 XHTML 转纯文本。
  *   · mergeDraft —— 把模型返回的人物/关系并进当前书（去重、合并别名）。
  *   · normalize —— 补齐缺失字段。
+ *   · guessKin / kinIssues —— 从关系文案猜亲属类别、判「kin 与 type 自洽」（v0.152）。
+ *     这两份都是 `scripts/kin.mjs` 的**手抄副本**（浏览器模块 import 不了 scripts/，
+ *     那会要求把 scripts/ 也塞进 SW 预缓存）—— 抄漏一个词，就变成「编辑器判 A、CLI 判 B」，
+ *     而两边都不会报错。所以这里既钉**金标**（正确答案）又做**对拍**（两边一致）。
  *
  * 这些都不依赖网络与模型，纯粹是"给定输入该给什么输出"，所以可以断言得很死。
  * 用法：node test/editor.mjs
@@ -23,7 +27,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { guessKin as nodeGuessKin } from '../scripts/kin.mjs';
+import { guessKin as nodeGuessKin, checkKin as nodeCheckKin } from '../scripts/kin.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
@@ -38,6 +42,7 @@ if (!EDGE) { console.error('找不到 Edge/Chrome，跳过'); process.exit(0); }
 
 let passed = 0, failed = 0;
 const ok = (c, m) => { if (c) { passed++; console.log(`  ✓ ${m}`); } else { failed++; console.error(`  ✗ ${m}`); } };
+const sameArr = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 const MIME = {
   '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8',
@@ -264,6 +269,73 @@ if (!url) {
   ok(diffs.length === 0,
     `编辑器与 kin.mjs 的 guessKin 在 ${types.length} 个关系名上完全一致${diffs.length ? `（${diffs.length} 个不一致）` : ''}`);
 
+  /* ---------- kinIssues：kin ⇄ type 自洽的唯一判定（v0.152） ----------
+   * 这段规则原先在编辑器里**抄了两份**：`validate()`（「校验」按钮）一份、
+   * `healthCheck()`（「数据体检」面板）一份 —— 而且已经漂了：
+   *   validate() 在 v0.147 收紧了（`kin !== 'blood'` + 21 个血缘称谓词），
+   *   healthCheck() 还停在旧规则（只管 收养/继亲/结义/抚养 4 类 + 13 个词）。
+   * 于是「堂兄弟 + kin=收养」在「校验」里报错、在「数据体检」面板里**一声不吭** ——
+   * 同一份数据两个答案，用户只在点「校验」时才看得到。
+   * （v0.147 修掉的两条「舅甥 + kin=inlaw」正是踩在这条缝里：CLI 报、面板不报。）
+   *
+   * 现在两处共用 `kinIssues()`。下面两组断言守它：
+   *   ① 金标 —— 钉"正确答案"（含旧面板漏掉的 8 个血缘称谓、以及 inlaw/marriage 两类）
+   *   ② 对拍 —— 钉"编辑器这份 == scripts/kin.mjs 的 checkKin"（真实数据的全部 type × 各种 kin 值）
+   * ⚠ 对拍只能抓「两边不一致」，抓不到「两边一起错」⇒ ① 不能删。
+   * ⚠ 断言钉的是**命中的分支名**（code），不是文案 —— 改措辞不该让测试红。 */
+  console.log('\n▶ kinIssues：kin 与 type 自洽（金标）');
+  const KI = [
+    // [type, kin, 期望命中的 code 序列]
+    ['父子', 'blood', []],                                  // 正例
+    ['养父子', 'adoptive', []],                             // 正例：BLOOD_TERM 锚定在开头 ⇒ 不该命中「父子」
+    ['父子', 'bogus', ['bad-kin']],
+    ['父子', '', ['missing']],
+    ['同宗', 'blood', ['blood-unclear']],                   // 真实数据里 4 条都是这一类
+    ['父子', 'adoptive', ['blood-term', 'mismatch']],
+    ['母子', 'sworn', ['blood-term', 'mismatch']],
+    ['舅甥', 'inlaw', ['blood-term', 'mismatch']],          // v0.147 修的两条数据正是这个形状
+    ['夫妻', 'inlaw', ['mismatch']],                        // 「婚姻 / 姻亲」的边界：不是血缘称谓，只报错配
+    // ↓ 下面 8 个词是 healthCheck() 旧正则漏掉的：旧面板对每一条都一声不吭
+    ['堂兄弟', 'adoptive', ['blood-term', 'mismatch']],
+    ['表兄妹', 'foster', ['blood-term', 'mismatch']],
+    ['姨甥', 'step', ['blood-term', 'mismatch']],
+    ['孪生姐妹', 'sworn', ['blood-term', 'mismatch']],
+    ['父子关系', 'adoptive', ['blood-term', 'mismatch']],
+    ['姑侄', 'marriage', ['blood-term', 'mismatch']],
+    ['叔侄', 'inlaw', ['blood-term', 'mismatch']],
+    ['祖孙', 'adoptive', ['blood-term', 'mismatch']],
+    // kin 的"空值哨兵"：LLM 常把"没有"写成这些，checkKin 当留空处理，编辑器必须一致
+    ['父子', '无', ['missing']], ['父子', 'none', ['missing']], ['父子', '-', ['missing']],
+  ];
+  const kiGot = await js(`(${JSON.stringify(KI.map(([t, k]) => [t, k]))}).map(([t, k]) => window.__ed.kinIssues(t, k).map((x) => x.code))`);
+  for (let i = 0; i < KI.length; i++) {
+    const [t, k, want] = KI[i];
+    const got = kiGot[i] || [];
+    ok(sameArr(got, want), `kinIssues(${JSON.stringify(t)}, ${JSON.stringify(k)}) → ${JSON.stringify(got)}${sameArr(got, want) ? '' : `（应为 ${JSON.stringify(want)}）`}`);
+  }
+
+  console.log('\n▶ kinIssues 与 scripts/kin.mjs 的 checkKin 对拍（真实数据全部 type × 各种 kin 值）');
+  const KIN_VALS = ['', 'blood', 'marriage', 'inlaw', 'adoptive', 'foster', 'step', 'sworn', '无', 'none', 'bogus'];
+  const pairs = [];
+  for (const t of types) for (const k of KIN_VALS) pairs.push([t, k]);
+  const edCodes = await js(`(${JSON.stringify(pairs)}).map(([t, k]) => window.__ed.kinIssues(t, k).map((x) => x.code))`);
+  let kiBad = 0; const kiSamples = [];
+  pairs.forEach(([t, k], i) => {
+    const ed = edCodes[i] || [];
+    const ck = nodeCheckKin({ type: t, kin: k });
+    const edErr = ed.includes('bad-kin') || ed.includes('blood-term');
+    const ckErr = ck.some((x) => x.level === 'error');
+    if (ed.length !== ck.length || edErr !== ckErr) {
+      kiBad++;
+      if (kiSamples.length < 6) {
+        kiSamples.push(`type=${JSON.stringify(t)} kin=${JSON.stringify(k)}：编辑器 ${JSON.stringify(ed)}（error=${edErr}）vs checkKin ${JSON.stringify(ck.map((x) => x.level))}（error=${ckErr}）`);
+      }
+    }
+  });
+  for (const s of kiSamples) console.error(`      · ${s}`);
+  ok(kiBad === 0,
+    `kinIssues 与 checkKin 在 ${pairs.length} 组 (type × kin) 上命中条数与"是否报错"完全一致${kiBad ? `（${kiBad} 组不一致）` : ''}`);
+
   /* ---------- normalize ---------- */
   console.log('\n▶ 补齐缺失字段');
   const n1 = await call('normalize', {});
@@ -326,6 +398,42 @@ if (!url) {
 
   const redoRes = await js(`(() => { const before = JSON.stringify(window.__ed.state.book); window.__ed.redo(); return { same: JSON.stringify(window.__ed.state.book) === before }; })()`);
   ok(redoRes.same === true, '没有历史时 redo 不会破坏当前内容');
+
+  /* ---------- 「校验」与「数据体检」必须给同一个答案（v0.152） ----------
+   * 这条是**最贴近用户**的断言：kinIssues() 抽出来了、两边都调它 —— 但只要哪天有人
+   * 把其中一个入口改回"自己再抄一份"，上面那两组断言**都不会红**（它们只测 kinIssues 本身）。
+   * 这里直接把两个入口都跑一遍，要求产出的 kin 条目**逐字相同**。
+   *
+   * 认条目的办法：两个入口产出的 kin 条目长这样 —— `关系 甲→乙：…`（冒号分隔）；
+   * 其余条目的分隔符是空格或没有（`关系 甲→乙 没有小事件` / `关系 甲→乙 缺少关系名 type`），
+   * 所以用 `^关系 …→…：` 就能把 kin 条目择出来。 */
+  console.log('\n▶ 「校验」与「数据体检」对同一份数据给同一个答案');
+  const kinBook = {
+    meta: { slug: 'kinbook', title: 'kinbook', chapters: 10 },
+    factions: [], places: [], phases: [], events: [],
+    characters: [
+      { id: 'a', name: '甲', gender: 'm', firstCh: 1 },
+      { id: 'b', name: '乙', gender: 'f', firstCh: 1 },
+    ],
+    relations: KI.map(([type, kin]) => ({ from: 'a', to: 'b', type, kin, events: [{ chapter: '第 1 章', text: 'x' }] })),
+  };
+  const two = await js(`(() => {
+    const ed = window.__ed.state;
+    ed.book = window.__ed.normalize(${JSON.stringify(kinBook)});
+    const isKin = (s) => /^关系 .+→.+：/.test(s);
+    return {
+      v: window.__ed.validate().filter(isKin).sort(),
+      h: window.__ed.health().filter((x) => x.sec === 'relations' && isKin(x.msg)).map((x) => x.msg).sort(),
+    };
+  })()`);
+  const vOnly = two.v.filter((x) => !two.h.includes(x));
+  const hOnly = two.h.filter((x) => !two.v.includes(x));
+  if (vOnly.length || hOnly.length) {
+    console.error(`      · 只有「校验」报：${JSON.stringify(vOnly)}`);
+    console.error(`      · 只有「体检」报：${JSON.stringify(hOnly)}`);
+  }
+  ok(sameArr(two.v, two.h) && two.v.length > 0,
+    `两个入口在 ${KI.length} 条关系上给出逐字相同的 kin 条目（${two.v.length} 条）`);
 
   /* ---------- 页面无报错 ---------- */
   const logs = await js('window.__edErrors || []');

@@ -213,6 +213,11 @@
 
   /* ---------------- 校验 ---------------- */
   const KIN_LABEL = { blood: '血缘', marriage: '婚姻', inlaw: '姻亲', adoptive: '收养', foster: '抚养', step: '继亲', sworn: '结义' };
+  /* 纯血缘称谓（不许用来写收养/继亲/结义/抚养/姻亲/婚姻）
+   * ⚠ 与 `scripts/kin.mjs` 的 `BLOOD_TERM` **逐字对应** —— 由 `test/kin-constants.mjs` 守着。
+   *   两边漂过：这里曾少了「姨甥 / 表兄弟 / 表兄妹 / 堂兄弟 / 堂兄妹 / 孪生兄弟 / 孪生姐妹 /
+   *   父子关系」8 个 ⇒ 同样一句「堂兄弟 + kin=收养」，scripts 那边报错、编辑器这边不报。 */
+  const BLOOD_TERM = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姨甥|姑侄|表兄弟|表兄妹|堂兄弟|堂兄妹|孪生兄弟|孪生姐妹|父子关系)/;
   /* ⚠ 这份正则必须与 `scripts/kin.mjs` 的 `guessKin` **逐字对应**（同一套正则、同一判定顺序）。
    *
    *   `scripts/kin.mjs` 是 kin 规范的**唯一来源**（被 `validate.mjs` / `annotate-kin.mjs` /
@@ -243,6 +248,51 @@
     // 抄它只是为了「两份逐字对应」这件事本身成立，免得哪天 kin.mjs 把它挪到 blood 之前。
     if (/未婚|恋人|情人|相好|单相思|拒婚|婚约|私情/.test(t)) return '';
     return '';
+  }
+
+  /* 「kin ⇄ type 自洽」的**唯一**判定 —— `validate()`（导出前校验）与 `healthCheck()`
+   * （「数据体检」面板）都必须走这里，不许各自再抄一份。
+   *
+   * ⚠ 为什么非要抽出来：这两处原先各抄了一份，且**已经漂了** ——
+   *   `validate()` 在 v0.147 收紧了（`kin !== 'blood'` + 21 个血缘称谓词），
+   *   `healthCheck()` 还停在旧规则（只管 收养/继亲/结义/抚养 4 类 + 13 个词）。
+   *   于是「堂兄弟 + kin=收养」在导出校验里报错、在数据体检面板里**一声不吭** ——
+   *   同一份数据两个答案，用户只在点「校验」时才看得到。（v0.147 修掉的两条
+   *   「舅甥 + kin=inlaw」正是踩在这条缝里：CLI 报、面板不报。）
+   *
+   * 返回 `[{ code, msg }]`。`code` 是命中的**分支名**，供测试钉住"是哪条规则命中"
+   * （钉结构不钉文案，改措辞不该让测试红）：
+   *   bad-kin       kin 值不合法（只能是 KIN_LABEL 的 7 个键之一）
+   *   missing       没标 kin，但 type 看着像亲属
+   *   blood-term    标了非 blood，type 却是纯血缘称谓（父子/兄弟/舅甥…）
+   *   blood-unclear 标了 blood，type 却看不出是血缘
+   *   mismatch      type 猜出来的类别 ≠ 标上去的 kin
+   * ⚠ 与 `scripts/kin.mjs` 的 `checkKin` **分支顺序与判定条件逐条对应**，
+   *   由 `test/editor.mjs` 用真实数据全量对拍（两边命中条数必须相等）。
+   *   改这里请同步改 `scripts/kin.mjs`。 */
+  function kinIssues(type, kin) {
+    const out = [];
+    const t = String(type || '');
+    const raw = String(kin == null ? '' : kin).trim();
+    // 与 checkKin 同口径：LLM 常把"没有"写成「无 / none / -」，这些等于留空，不是非法值
+    const k = /^(空|无|none|null|-|否)$/i.test(raw) ? '' : raw;
+    const guessed = guessKin(t);
+    if (k && !KIN_LABEL[k]) {
+      return [{ code: 'bad-kin', msg: `亲属类型「${k}」不合法（应为 ${Object.keys(KIN_LABEL).join(' / ')} 之一）` }];
+    }
+    if (!k) {
+      if (guessed) out.push({ code: 'missing', msg: `关系名「${t}」像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」` });
+      return out;
+    }
+    /* 纯血缘称谓（父子/母子/兄弟/舅甥…，见 BLOOD_TERM）**只能配 blood** ——
+     *   配 收养/继亲/结义/抚养/姻亲/婚姻 都自相矛盾。
+     *   v0.147 起把「姻亲 / 婚姻」也纳入（原先只管 收养/继亲/结义/抚养 4 类）。 */
+    if (k !== 'blood' && BLOOD_TERM.test(t)) {
+      out.push({ code: 'blood-term', msg: `标了「${KIN_LABEL[k]}」，关系名却写成血缘称谓「${t}」——是血缘才用 blood；收养/继亲/结义/抚养/姻亲/婚姻要说清是哪一种` });
+    }
+    if (k === 'blood' && !guessed) out.push({ code: 'blood-unclear', msg: `标了 kin=blood，但关系名「${t}」看不出是血缘称谓` });
+    if (guessed && guessed !== k) out.push({ code: 'mismatch', msg: `关系名「${t}」看着像${KIN_LABEL[guessed]}，但亲属类型标的是${KIN_LABEL[k]}——对一下哪个对` });
+    return out;
   }
 
   function validate() {
@@ -283,19 +333,10 @@
         if (ev.chapter && !/(\d+)/.test(ev.chapter)) issues.push(`关系 ${r.from}→${r.to} 的章节「${ev.chapter}」没有数字`);
         if (ev.place && !placeIds.has(ev.place)) issues.push(`关系 ${r.from}→${r.to} 的小事件地点「${ev.place}」没有在 places 里定义`);
       }
-      const guessed = guessKin(r.type);
-      /* ⚠ 与 `scripts/kin.mjs` 的 `BLOOD_TERM` **逐字对应**（同一份"纯血缘称谓"表）。
-       *   两边漂过：编辑器这份少了「姨甥 / 表兄弟 / 表兄妹 / 堂兄弟 / 堂兄妹 / 孪生兄弟 /
-       *   孪生姐妹 / 父子关系」8 个 ⇒ 同样一句「堂兄弟 + kin=收养」，validate 报错、编辑器不报。 */
-      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姨甥|姑侄|表兄弟|表兄妹|堂兄弟|堂兄妹|孪生兄弟|孪生姐妹|父子关系)/.test(r.type || '');
-      if (r.kin && !KIN_LABEL[r.kin]) issues.push(`关系 ${r.from}→${r.to} 的亲属类型「${r.kin}」不合法（应为 blood/marriage/inlaw/adoptive/foster/step/sworn 之一）`);
-      /* 纯血缘称谓（父子/母子/兄弟/舅甥…）**只能配 blood** —— 配收养/继亲/结义/抚养/姻亲/婚姻都自相矛盾。
-       *   v0.146 起把「姻亲 / 婚姻」也纳入（原先只管 收养/继亲/结义/抚养 4 类）：
-       *   实测三国里「吴懿—刘璋 舅甥 + kin=inlaw」「孟达—邓贤 舅甥 + kin=inlaw」两条，
-       *   回原著核过（「乃舅氏吴懿也」「达外甥邓贤」）⇒ 舅甥就是血缘，是 kin 标错了。 */
-      else if (r.kin && r.kin !== 'blood' && bloodTerm) issues.push(`关系 ${r.from}→${r.to}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」——是血缘才用 blood；收养/继亲/结义/抚养/姻亲要说清是哪一种`);
-      else if (!r.kin && guessed) issues.push(`关系 ${r.from}→${r.to}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`);
-      else if (r.kin && guessed && guessed !== r.kin) issues.push(`关系 ${r.from}→${r.to}：关系名「${r.type}」看着像${KIN_LABEL[guessed]}，但亲属类型标的是${KIN_LABEL[r.kin]}——对一下哪个对`);
+      /* kin ⇄ type 自洽 —— 与「数据体检」面板**共用同一个判定**（kinIssues）。
+       * 原先这里和 healthCheck() 各抄一份，v0.147 只收紧了这里、忘了那边，
+       * 于是同一份数据在「校验」里报错、在「体检」里不报。 */
+      for (const k of kinIssues(r.type, r.kin)) issues.push(`关系 ${r.from}→${r.to}：${k.msg}`);
       // 时间区间（时间旅行）
       if (typeof r.fromCh === 'number' && typeof r.toCh === 'number' && r.toCh <= r.fromCh) issues.push(`关系 ${r.from}→${r.to} 的 toCh（${r.toCh}）必须大于 fromCh（${r.fromCh}）`);
     }
@@ -382,12 +423,13 @@
         if (ev.chapter && !/(\d+)/.test(ev.chapter)) add('warn', `${where} 的章节「${ev.chapter}」没有数字（剧透保护要靠它）`, 'relations', i);
         if (ev.place && !placeIds.has(ev.place)) add('error', `${where} 的小事件地点「${ev.place}」没有在 places 里定义`, 'relations', i);
       }
-      const guessed = guessKin(r.type);
-      const bloodTerm = /^(父子|父女|母子|母女|兄弟|姐妹|兄妹|姐弟|祖孙|曾祖孙|叔侄|舅甥|姑侄)/.test(r.type || '');
-      if (r.kin && !KIN_LABEL[r.kin]) add('error', `${where} 的亲属类型「${r.kin}」不合法`, 'relations', i);
-      else if (r.kin && ['adoptive', 'foster', 'step', 'sworn'].includes(r.kin) && bloodTerm) add('error', `${where}：标了「${KIN_LABEL[r.kin]}」，关系名却写成血缘称谓「${r.type}」`, 'relations', i);
-      else if (!r.kin && guessed) add('info', `${where}（${r.type}）像是${KIN_LABEL[guessed]}关系，建议补上「亲属类型」`, 'relations', i);
-      else if (r.kin && guessed && guessed !== r.kin) add('warn', `${where}：关系名看着像${KIN_LABEL[guessed]}，亲属类型却标${KIN_LABEL[r.kin]}`, 'relations', i);
+      /* kin ⇄ type 自洽 —— 与「校验」按钮共用同一个判定（kinIssues）。
+       * 这里原先抄的是**旧规则**（只管 收养/继亲/结义/抚养 4 类 + 13 个血缘称谓词），
+       * 于是「堂兄弟 + kin=收养」在导出校验里报错、在这块面板里不报 —— 同一份数据两个答案。 */
+      for (const k of kinIssues(r.type, r.kin)) {
+        add(k.code === 'bad-kin' || k.code === 'blood-term' ? 'error' : k.code === 'missing' ? 'info' : 'warn',
+          `${where}：${k.msg}`, 'relations', i);
+      }
       // 时间区间
       if (r.fromCh !== undefined && (!Number.isInteger(r.fromCh) || r.fromCh < 1)) add('error', `${where} 的 fromCh 必须是 ≥1 的整数`, 'relations', i);
       if (r.toCh !== undefined && (!Number.isInteger(r.toCh) || r.toCh < 1)) add('error', `${where} 的 toCh 必须是 ≥1 的整数`, 'relations', i);
@@ -1054,7 +1096,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=147';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=152';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1754,6 +1796,11 @@
     pageToLines: (items) => pageToLines(items),
     normalize: (book) => normalize(book),
     guessKin: (type) => guessKin(type),
+    /* v0.152：kin ⇄ type 的唯一判定，以及走它的两个入口。
+     * 暴露出来是为了让 test/editor.mjs 能对着真实数据断言
+     * 「校验」与「体检」对同一条关系给同一个答案（此前它俩各抄一份、漂过）。 */
+    kinIssues: (type, kin) => kinIssues(type, kin),
+    validate: () => validate(),
     cleanHtml: (html) => cleanHtml(html),
     mergeDraft: (draft) => mergeDraft(draft),
     undo: () => undo(),

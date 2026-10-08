@@ -1,5 +1,5 @@
 /**
- * KIN / KIN_HINT 跨端一致性对拍（v0.149 新增）
+ * KIN / KIN_HINT / BLOOD_TERM 跨端一致性对拍（v0.149 新增；v0.152 补 BLOOD_TERM）
  *
  * ## 为什么要有它
  *
@@ -70,6 +70,47 @@ if (hints.length === 2) {
 console.log('\n▶ 权威键集合（金标：钉「正确」而非「现状」）');
 const EXPECTED = ['adoptive', 'blood', 'foster', 'inlaw', 'marriage', 'step', 'sworn'];
 ok(same(Object.keys(KIN).sort(), EXPECTED), `KIN 恰有这 7 个键：${EXPECTED.join(' / ')}`);
+
+console.log('\n▶ BLOOD_TERM（纯血缘称谓表：两处逐字对拍 + 金标）');
+/* 「纯血缘称谓」表（父子/母子/兄弟/舅甥…）在项目里有 **2 处副本**：
+ *   · scripts/kin.mjs  —— 权威（checkKin 靠它判「标了非 blood，type 却是血缘称谓」）
+ *   · js/editor.js     —— 编辑器（kinIssues 用同一张表，「校验」与「数据体检」共用）
+ * 这张表**已经漂过**：编辑器那份少了 8 个词（姨甥 / 表兄弟 / 表兄妹 / 堂兄弟 / 堂兄妹 /
+ * 孪生兄弟 / 孪生姐妹 / 父子关系），于是「堂兄弟 + kin=收养」在 scripts 侧报错、
+ * 编辑器侧不报 —— 而当时**没有任何测试守着**（浏览器里那份 kinIssues 的对拍是 v0.152 才补的）。
+ * ⚠ 只对拍抓不到「两边一起错」：一起删掉「堂兄弟」两边照样一致。
+ *   所以下面还有一张**金标**表钉"正确"，而不只是钉"两边一样"。 */
+function pickRe(file, name) {
+  const m = read(file).match(new RegExp('(?:export\\s+)?const\\s+' + name + '\\s*=\\s*/([^/]*)/'));
+  if (!m) throw new Error(`在 ${file} 里找不到 const ${name} = /.../`);
+  return m[1];
+}
+const TERM_SITES = ['scripts/kin.mjs', 'js/editor.js'];
+const terms = [];
+for (const f of TERM_SITES) {
+  try { terms.push([f, pickRe(f, 'BLOOD_TERM')]); } catch (e) { ok(false, `${f}: ${e.message}`); }
+}
+if (terms.length === 2) {
+  ok(terms[0][1] === terms[1][1], `BLOOD_TERM 两处逐字一致（${terms[0][0]} ⇄ ${terms[1][0]}）`);
+}
+
+const EXPECTED_TERMS = [
+  '父子', '父女', '母子', '母女', '兄弟', '姐妹', '兄妹', '姐弟', '祖孙', '曾祖孙', '叔侄',
+  '舅甥', '姨甥', '姑侄', '表兄弟', '表兄妹', '堂兄弟', '堂兄妹', '孪生兄弟', '孪生姐妹', '父子关系',
+];
+try {
+  const body = pickRe('scripts/kin.mjs', 'BLOOD_TERM');
+  /* `^` 是**载荷**，不是装饰：少了它，type「养父子」会命中里面的「父子」
+   * ⇒ 一条「kin=收养 + 养父子」的合法关系被判成「血缘称谓配了收养」。 */
+  ok(/^\^\(/.test(body) && /\)$/.test(body),
+    '权威 BLOOD_TERM 写成 `^(…)`（锚定在开头 + 整条一个分组）—— 少了 `^`，「养父子」会被误判成血缘称谓');
+  const authTerms = body.replace(/^\^/, '').replace(/^\(/, '').replace(/\)$/, '').split('|');
+  const missing = EXPECTED_TERMS.filter((w) => !authTerms.includes(w));
+  const extra = authTerms.filter((w) => !EXPECTED_TERMS.includes(w));
+  ok(same(authTerms, EXPECTED_TERMS),
+    `权威 BLOOD_TERM 恰有这 ${EXPECTED_TERMS.length} 个称谓、顺序一致`
+    + `${missing.length ? `（缺 ${missing.join(' / ')}）` : ''}${extra.length ? `（多 ${extra.join(' / ')}）` : ''}`);
+} catch (e) { ok(false, e.message); }
 
 console.log(`\n${fail === 0 ? '✓' : '✗'} KIN 跨端一致性　通过：${pass}  失败：${fail}`);
 process.exit(fail === 0 ? 0 : 1);
