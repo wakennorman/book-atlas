@@ -32,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -215,6 +215,36 @@ jobs:
         # ⚠ 它 import 的 `lib/data-files.mjs` 也认这个变量（v0.162 起），
         #   否则 `listBookSlugs()` 看不见 tmp 里的书、"book 不存在"这类判据就测不了。
         run: node test/kin-terms-exempt-guard.mjs
+
+      - name: 噪声忽略名单的一致性（忽略条目不得恰好等于真名）
+        # v0.163 新增。`data/<slug>.missing-ok.json` 是 `audit-against-text.mjs` 的
+        # **噪声忽略名单**（人判过"确实不是人名"的候选写进去，下次不再报）。
+        # 它靠**名字**记账，而名字会变（建档 / 改名 / 删人 / 加别名都动它）。
+        # 消费方按「候选不在 okSet 里」判 —— 一旦名单里的名字**变成了真名**，那条目
+        # **永远不会被读到**（真名在候选提取前就被屏蔽了）：
+        #   · 是**人物**真名 / 别名 / 译名 ⇒ **自相矛盾**（名单说"不是人名"，数据里却有这个人），
+        #     而且**哪天这个人被改名 / 删掉，它会把他重新冒出来的候选静默吃掉**；
+        #   · 是**地点**名 ⇒ 同样被屏蔽 ⇒ 这条目是**死的**。
+        # 实测现场（本步写完当场抓到）：三国第 209 条「车冑」、第 276 条「刘繇」都恰好是
+        # 数据里人物的**主名**（che-zhou / liu-yao）；而且那份文件的 `_说明` 还写着
+        # 「书里确实还有些没建档的人（车冑、潘璋、严颜、张鲁…）」—— 这**四个现在全在数据里**。
+        #
+        # 判据 M1–M7 见脚本文件头（**不需要原著文本**，所以能进 CI）：
+        # 数组 / 形状（字符串 或 `{name,why}`）/ 名字非空且不以 `_` 开头 / 去重 /
+        # **why 非空** / **不得等于会被屏蔽的真名** / 孤儿名单。
+        # ⚠ 一条刻意不做的判据：**子串**不算 —— 名单口径 ③ 明确允许
+        #   "属于已有人物的别名或全名片段"（如「罗曼妲」＝尼格罗曼妲的名）。只有完全相等才是矛盾。
+        run: node scripts/check-missing-ok.mjs
+
+      - name: 噪声忽略名单检查自身的守卫（证明它真的会报红）
+        # v0.163 新增。上一步是"防一份靠名字记账的名单悄悄失效"的检查，所以必须有一条测试
+        # **证明它自己会 exit 1** —— 否则它随时可能退化成空转
+        # （入口判断写成 `import.meta.url.endsWith(process.argv[1])` 就够了：本仓库目录名带空格
+        #   ⇒ 路径里的空格是 %20 编码 ⇒ 两边永远不相等 ⇒ 主流程一次都不跑，退出码还是 0）。
+        # tmp 里造一份最小 data/（一本 demo 书 + 忽略名单），用 BOOKATLAS_ROOT 把 ROOT 指过去，
+        # 逐场景断言退出码（**3 个正常态 + 13 个期望报红 + 1 个反向 + 1 个还原**）。
+        # 其中一条**反向**：名字是真人名的**子串**（甲 ⊂ 甲人）不许报红。
+        run: node test/missing-ok-guard.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
