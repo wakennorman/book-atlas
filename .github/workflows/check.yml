@@ -32,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -152,6 +152,37 @@ jobs:
         # 逐场景断言退出码（1 个正常态 + 7 个期望报红 + 1 个形状兼容 + 1 个还原）。
         # 全程不碰真实仓库 —— 注入测试若直接改 data/ 下的真文件，中途崩了仓库就脏了。
         run: node test/name-form-ledger-guard.mjs
+
+      - name: 又译出处台账与数据的一致性（台账说 26、数据 27）
+        # v0.161 新增。`data/<slug>.altnames-sources.json` 记录每个人物 altNames（界面上
+        # 显示为「又译 X」）的**出处**，`_说明` 里立着铁律「查不到出处的一个字都不许写」。
+        # 但全仓搜 `altnames-sources`，只有 `scripts/lib/data-files.mjs` 的 SIDECAR 正则
+        # （用来把它排除出"书"）和一句注释 —— **它没有任何消费者**：漂了、漏了、写错了，
+        # 没有任何一处会响（与上一步的 name-form-ok 同一族）。
+        # 实测现场（本步写完当场抓到，两处）：
+        #   · 何塞·阿尔卡蒂奥（第二代）：数据里是「霍塞·阿卡迪奥」，台账写「霍塞·阿卡迪奥第二」
+        #     —— 那是**修正前的旧值**（黄锦炎靠"带不带姓"区分父子，光杆的是儿子；那次把
+        #     「第二」从第二代身上挪走了，台账没跟着改）。
+        #   · 布鲁诺·克雷斯皮：数据里有 `altNames: ["布鲁诺·克雷斯比"]`，台账根本没有这一条。
+        # 而且它自己的 `altNames 计数: 26` 与数据的 **27** 对不上 —— 又是
+        # 「两个数字都印在文件里、差 1、没人报过」（v0.155 / v0.156 / v0.160 同一族）。
+        #
+        # 判据 A1–A8 见脚本文件头（**不需要原著文本**，所以能进 CI）：主力是 **A5 逐人双向比对**
+        # （数据该人的 altNames ⇄ 台账该人的又译，必须完全相同），本次两处漂移都是它抓的。
+        # ⚠ 有一条判据被**否掉**了：「已拒绝的候选里的又译不得出现在数据 altNames 里」——
+        #   真实数据里 `小邦迪亚／邦迪亚上校` 的拒绝理由是"S1 已给出、**不重复登记**"，
+        #   它本来就在数据里。「拒绝」= 不再登记进 `明细`，不等于不进数据。
+        run: node scripts/check-altnames-ledger.mjs
+
+      - name: 又译出处台账检查自身的守卫（证明它真的会报红）
+        # v0.161 新增。上一步是"防一份没有任何消费者的台账悄悄漂掉"的检查，所以必须有一条
+        # 测试**证明它自己会 exit 1** —— 否则它随时可能退化成空转
+        # （入口判断写成 `import.meta.url.endsWith(process.argv[1])` 就够了：本仓库目录名带空格
+        #   ⇒ 路径里的空格是 %20 编码 ⇒ 两边永远不相等 ⇒ 主流程一次都不跑，退出码还是 0）。
+        # 照 version-bump-guard / name-form-ledger-guard 的先例：tmp 里造一份最小 data/，
+        # 用 BOOKATLAS_ROOT 把 ROOT 指过去，逐场景断言退出码
+        # （**1 个正常态 + 10 个期望报红 + 1 个还原**）。全程不碰真实仓库。
+        run: node test/altnames-ledger-guard.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
