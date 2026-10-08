@@ -35,7 +35,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -270,6 +270,16 @@ jobs:
 
       - name: 亲属称谓计算（族谱推称谓：直系 / 同胞 / 伯叔 / 姑舅姨 / 堂表）
         run: node test/kin-terms.mjs
+
+      - name: 亲属类型标签跨端一致性（KIN / KIN_HINT 的 5 处副本）
+        # v0.149 新增。亲属类型标签（blood→血缘、inlaw→姻亲…）在项目里有 5 处副本：
+        # scripts/kin.mjs 是权威；网页 js/app.js、编辑器 js/editor.js、小程序
+        # miniprogram/utils/graph.js 与 miniprogram/pages/index/index.js 各抄一份 ——
+        # 因为浏览器 / 小程序模块 import 不了 scripts/，项目对同类问题的既定策略是「手抄 + 对拍」。
+        # 目前 5 处一致，但此前**没有任何测试守着**：某端单独改一个标签，
+        # 就会出现「同一个 kin 在网页显示 A、在小程序显示 B」这种**用户可见**的不一致，而门禁全绿。
+        # 判据：读各文件源码抽常量、与权威逐键比对（连「漏抄一个键」也能抓到）。
+        run: node test/kin-constants.mjs
 
       - name: 亲属称谓对质（手写 type 必须与族谱算出来的一致）
         # 起因 v0.99：用户报「上校—叔侄（伯父与侄）—奥雷里亚诺第二」

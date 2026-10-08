@@ -5,6 +5,53 @@
 
 ---
 
+## v0.149 · 给「亲属类型标签的 5 处副本」补一道跨端对拍
+
+### 1. 起因
+
+v0.147 的遗留项：`KIN` / `KIN_HINT` / `KIN_LABEL` 常量共 **5 处副本**，目前一致但**没有任何测试守着**。
+
+### 2. 5 处副本是既定策略，不是失误
+
+| 位置 | 常量 |
+|---|---|
+| `scripts/kin.mjs` | `KIN`（**权威**，被 `validate.mjs` / `annotate-kin.mjs` / `wholebook.mjs` import） |
+| `js/app.js` | `KIN_LABEL` + `KIN_HINT` |
+| `js/editor.js` | `KIN_LABEL` |
+| `miniprogram/utils/graph.js` | `KIN` + `KIN_HINT` |
+| `miniprogram/pages/index/index.js` | `KIN_LABEL` |
+
+浏览器 / 小程序模块 import 不了 `scripts/`（会要求把 scripts/ 也塞进 SW 预缓存 / 小程序包），
+所以项目对同类问题的既定策略是「**手抄 + 对拍**」（见 v0.146 的 `guessKin`、v0.147）。
+问题在于：`guessKin` 有对拍了，**这组标签常量却一直裸奔**。
+
+### 3. 判据
+
+`test/kin-constants.mjs`：读各文件源码 → 正则抽出常量对象字面量 → **逐键**与权威比对。
+逐键（而非比字符串）是为了连「漏抄一个键」也能抓到。另加一条金标：`KIN` 恰有
+`adoptive / blood / foster / inlaw / marriage / step / sworn` 这 7 个键（钉「正确」而非「现状」）。
+不用 `new Function` / `eval`：值全是单引号字符串，正则足够，也免得踩 eslint 的 `no-new-func`。
+
+### 4. 先证明它会报红
+
+把 `js/app.js` 的 `inlaw` 标签由「姻亲」临时改成「亲家」⇒ 测试 **6 通过 / 1 失败、exit 1**，
+且精确指出 `✗ js/app.js 的 KIN_LABEL 与权威一致`；`git checkout` 恢复后 exit 0。
+—— 一条从不报红的判据等于没有（v0.146 的教训）。
+
+### 5. 验证证据
+
+- `node test/kin-constants.mjs`：**7/7 通过**；`eslint` 通过。
+- 门禁接线：`check.yml` 新增一步（放在 `test/kin-terms.mjs` 之后），语法检查清单补 `test/kin-constants.mjs`；门禁 **39 → 40 步**。
+- 全量门禁：**40 步全绿**。
+
+### 6. 遗留
+
+- `checkKin`（`scripts/kin.mjs` 与 `js/editor.js` 各一份）仍零测试覆盖。
+- （沿用 v0.148 遗留）第 116 回另有「李辅」（钟会前军围乐城）是否与 `li-fu-2` 同一人存疑；
+  `deng-xian-2` / `li-fu-2` 目前只挂一条关系。
+
+---
+
 ## v0.148 · 拆开两处 id 撞车（邓贤×2、李伏/李辅）＋ 修掉同名者引起的「文案提到」误报
 
 ### 1. 起因
