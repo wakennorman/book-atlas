@@ -35,7 +35,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -61,6 +61,14 @@ jobs:
         # （自测时就踩过：`-G 'bookatlas-v\d'` 里的 `\d` 被 git 当字面 d ⇒ 永远找不到 base ⇒ 永远跳过）。
         # 做法：在临时目录 git init 一个最小仓库，把 BOOKATLAS_ROOT 指过去，逐场景断言退出码。不碰真实仓库。
         run: node test/version-bump-guard.mjs
+
+      - name: 门禁声明一致性（注释自称的守卫必须真的存在）
+        # v0.154 新增。check.yml 里曾有一条注释把某个只读审计说成「硬门禁」，
+        # 而那个脚本**从没进过 run 步骤**、还恒 exit 0 —— 注释吹了牛。
+        # 这比"没有守卫"更危险：读注释的人会以为这里有守卫，于是不去补。
+        # 判据：扫注释 —— 含「硬门禁」的行 ±1 内出现的脚本名，必须真的在 run 步骤里。
+        # 想说明"某脚本**不是**硬门禁"，就别把它的名字写在「硬门禁」旁边（隔 ≥2 行）。
+        run: node test/gate-claims.mjs
 
       - name: 拆分数据包与 data/*.json 同步
         # v85 新增。首屏只下 <slug>.graph.json，文案在空闲时后台预取。
@@ -308,9 +316,11 @@ jobs:
         # 族谱覆盖不足的书会整体跳过（那是数据没录全，不是缺陷）。
         #
         # ⚠ v0.115 追加 --coverage=0：那个 15% 是**代理指标**，
-        #   当初存在的理由（族谱薄且未校验 ⇒ 容易误报）已被两个直接结构检查取代：
-        #   audit-kin-direction（查父子边方向）与 audit-kin-gender（查 type/gender 自洽），
-        #   两者都是硬门禁。
+        #   当初存在的理由（族谱薄且未校验 ⇒ 容易误报）已被更直接的结构检查取代：
+        #   audit-kin-gender 查 type 与 gender 是否自洽（**硬门禁**，见下方步骤）。
+        #   （v0.154 更正）这里原先还写着另一个只读审计也是硬门禁 —— **那是错的**：
+        #   它从没进过 run 步骤、还恒 exit 0，只是人工报告；判据又依赖 generation，
+        #   而 generation 是部分填写的（多数人物默认 1）⇒ 含噪声，不能当判决。
         #   实测三本书在 coverage=0 下**全部 0 不一致**（三国 148 / 百年孤独 54 / 罪与罚 7），
         #   所以"跳过"今天已经挡不住任何东西 —— 继续靠跳过装作没事，不如真去跑。
         #   这一步**不改门槛默认值**，只是让门禁真的检查到三国。
