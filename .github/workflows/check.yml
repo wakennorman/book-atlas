@@ -32,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -183,6 +183,38 @@ jobs:
         # 用 BOOKATLAS_ROOT 把 ROOT 指过去，逐场景断言退出码
         # （**1 个正常态 + 10 个期望报红 + 1 个还原**）。全程不碰真实仓库。
         run: node test/altnames-ledger-guard.mjs
+
+      - name: 称谓对质豁免清单的引用完整性（按 id 记账，id 会变）
+        # v0.162 新增。`data/kin-terms-exempt.json` 记「手写称谓与族谱算出来的不一致、
+        # 但**是有意**」的关系对，每条 `{book,from,to,reason}`（from/to 是**人物 id**）。
+        # 消费方只有 `check-kin-terms.mjs` 的 `isExempt(bookId,from,to)`，而它有两处**静默**：
+        #   ① JSON 解析失败 ⇒ `catch { return [] }` ⇒ 整份清单**悄悄变成空名单**；
+        #   ② `reason` 短于 8 字 ⇒ `isExempt` 返回 false ⇒ 这条豁免**不生效**（文件里却看着还在）。
+        # 危险在于：这两条豁免的对象（孙权—孙桓）族谱**本来就算不出来**（孙河无父母记录）
+        # ⇒ 对质循环里 `if (!k.term || k.kind === 'unrelated') continue;` 直接跳过它们
+        # ⇒ **解析失败 / 理由太短 / 指错人，跑出来和一切正常一模一样**。
+        # 加上它按 **id** 记账，而 id 会变（改名 / 删人 / 合并都动它）。
+        #
+        # 判据 K1–K7 见脚本文件头（**不需要原著文本**，所以能进 CI）：
+        # 结构 / 必填 / **reason ≥8 字（与消费方门槛逐字一致）** / book 真实 /
+        # from·to 是真实 **id** / 不重复 / from≠to。
+        # ⚠ 两条**刻意不做**的判据：① 不检查"这条关系是否存在于数据里" —— 清单**允许**
+        #   "关系已不存在、只为留依据防改错"的条目（sun-quan→sun-huan 的理由里明写）；
+        #   能安全检查的是"**人**在不在"，不是"**关系**在不在"。
+        #   ② 不检查 reason 有没有注明来源类型 —— 那属于人工评审，不是机器判据。
+        run: node scripts/check-kin-terms-exempt.mjs
+
+      - name: 称谓对质豁免清单检查自身的守卫（证明它真的会报红）
+        # v0.162 新增。上一步是"防一份只有 2 条、坏掉也没人看得出"的清单悄悄失效的检查，
+        # 所以必须有一条测试**证明它自己会 exit 1** —— 否则它随时可能退化成空转
+        # （入口判断写成 `import.meta.url.endsWith(process.argv[1])` 就够了：本仓库目录名带空格
+        #   ⇒ 路径里的空格是 %20 编码 ⇒ 两边永远不相等 ⇒ 主流程一次都不跑，退出码还是 0）。
+        # 照前几个守卫的先例：tmp 里造一份最小 data/（一本 demo 书 + 豁免清单），
+        # 用 BOOKATLAS_ROOT 把 ROOT 指过去，逐场景断言退出码
+        # （**2 个正常态 + 11 个期望报红 + 1 个还原**）。
+        # ⚠ 它 import 的 `lib/data-files.mjs` 也认这个变量（v0.162 起），
+        #   否则 `listBookSlugs()` 看不见 tmp 里的书、"book 不存在"这类判据就测不了。
+        run: node test/kin-terms-exempt-guard.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，

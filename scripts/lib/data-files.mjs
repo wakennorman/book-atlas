@@ -21,12 +21,23 @@
  *
  * 共同点：**定义抄多份，然后各改各的，漂移了就静默出错**。
  * 凡是需要"多处保持一致"的定义，就该有一个 module。
+ *
+ * ## v0.162：ROOT 支持 `BOOKATLAS_ROOT` 环境变量（只给测试用）
+ *
+ * 加了 `scripts/check-kin-terms-exempt.mjs` 之后，它的守卫测试需要在 tmp 里造一份
+ * 最小 `data/`（一本 demo 书 + 一份豁免清单），用环境变量把根目录指过去 —— 而
+ * `listBooks()` 原先写死 `ROOT`，不认这个变量 ⇒ 守卫测试**测不了"书不存在"这类判据**
+ * （tmp 里造的书，listBooks 看不见）。
+ * ⇒ 与 check-version-bump / check-name-form-ledger / check-altnames-ledger 同一写法：
+ *   **环境变量优先，没设就用真实路径**（不设时行为与以前**逐字相同**，因此对现有四个
+ *   使用者零影响 —— 它们都不设这个变量）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+export const ROOT = process.env.BOOKATLAS_ROOT
+  || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const DATA = path.join(ROOT, 'data');
 
 /**
