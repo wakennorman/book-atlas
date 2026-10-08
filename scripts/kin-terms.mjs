@@ -311,7 +311,13 @@ export function computeKin(tree, aId, bId) {
     if (shared.length >= 2) term = sibWord;
     else if (shared.length === 1) {
       const p = shared[0];
-      term = `${tree.gender.get(p) === 'm' ? '同父异母' : '同母异父'}的${sibWord}`;
+      /* ⚠ 收养的同胞**不能**带「同父异母／同母异父」—— 那四个字断言的是**血缘**（半血），
+       *   而收养路径上根本没有血亲；拼出来是「养同父异母的兄弟」这种自相矛盾的词。
+       *   三国实测 14 条（如「曹丕 —养同父异母的兄弟— 典满」，典满是曹操的养子）。
+       *   ⇒ 收养的同胞一律叫「养兄弟／养姐妹」。这正是 validate 那批
+       *     「看着像血缘，但标的是收养——对一下哪个对」warning 的根因。 */
+      term = sibAdoptive ? sibWord
+        : `${tree.gender.get(p) === 'm' ? '同父异母' : '同母异父'}的${sibWord}`;
     } else term = `${cousinMark(tree, aId, bId)}${sibWord}`;   // 数据里不该出现：同辈必有共同父母
     const mark = shared.length >= 2 ? '' : shared.length === 1 ? '半血' : cousinMark(tree, aId, bId);
     return sibAdoptive

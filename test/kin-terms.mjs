@@ -383,8 +383,11 @@ console.log('\n▶ ★ 伯 / 叔 按长幼区分（用户 2026-10-05：「叔就
   ok(grand.term === '养祖孙', '养亲实现：隔代的养关系 ⇒「养祖孙」（不是祖孙）', { term: grand.term });
 
   const cousin = computeKin(at, 'AD', 'AD2');
-  ok(cousin.adoptive === true && /养/.test(cousin.term),
-    '养亲实现：养兄弟 ⇒ 主词带「养」字', { term: cousin.term, adoptive: cousin.adoptive });
+  /* ⚠ 不能只测「含养字」——「养同父异母的兄弟」也含养字，照样过，
+   *   而那正是要防的畸形词（收养没有血亲路径，不该带「同父异母」）。
+   *   所以这里钉**恰好等于**「养兄弟」。 */
+  ok(cousin.adoptive === true && cousin.term === '养兄弟',
+    '养亲实现：养兄弟 ⇒ 恰好是「养兄弟」，不带「同父异母」', { term: cousin.term, adoptive: cousin.adoptive });
 
   /* 关键反例：血亲路径与养亲路径**并存**时，必须判血亲。
    * AD2 同时有 AP 的养父和 XBF 的血亲曾祖父 ⇒ XBF→AP→AD2 里

@@ -13,6 +13,7 @@ data/.gen-*.json
 node_modules/
 # 其它工具的本地目录（WorkBuddy / Claude / Codex 等）
 .workbuddy/
+.workbuddy-ai/
 .claude/
 .codex/
 .hermes/

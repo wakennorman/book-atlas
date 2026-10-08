@@ -1947,10 +1947,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 10,
+      "firstCh": 2,
       "faction": "wei",
       "title": "行军教授",
-      "desc": "荀彧之侄，海内名士",
+      "desc": "字公达，荀彧之侄，何进所引大臣，扶立少帝",
       "fate": "随叔同投曹操，为行军教授",
       "note": "荀彧之侄"
     },
@@ -2208,7 +2208,7 @@
     },
     {
       "id": "wang-qi",
-      "name": "王颀",
+      "name": "王颀（长安）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -3545,10 +3545,10 @@
       "aliases": [],
       "generation": 1,
       "gender": "m",
-      "firstCh": 22,
+      "firstCh": 7,
       "faction": "qunxiong",
       "title": "袁绍谋士",
-      "desc": "与许攸同劝袁绍起兵",
+      "desc": "韩馥谋士，劝韩馥请袁绍入冀州",
       "fate": "随军屯黎阳",
       "note": "",
       "tier": "minor"
@@ -3561,10 +3561,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 22,
+      "firstCh": 7,
       "faction": "qunxiong",
       "title": "袁绍统军",
-      "desc": "与审配同领大军",
+      "desc": "袁绍谋士，字元图，献计取冀州",
       "fate": "随军屯黎阳",
       "note": ""
     },
@@ -3712,8 +3712,7 @@
       "id": "yuan-tan",
       "name": "袁谭",
       "aliases": [
-        "显思",
-        "青州"
+        "显思"
       ],
       "generation": 2,
       "gender": "m",
@@ -4173,8 +4172,7 @@
       "id": "yuan-shang",
       "name": "袁尚",
       "aliases": [
-        "显甫",
-        "冀州"
+        "显甫"
       ],
       "generation": 1,
       "gender": "m",
@@ -4232,10 +4230,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 29,
+      "firstCh": 15,
       "faction": "wu",
       "title": "孙权叔",
-      "desc": "孙策之叔，奉命理会丧事",
+      "desc": "孙策之叔，字幼台，献计破王朗",
       "fate": "引军守吴会，为江东后援。",
       "note": "孙权叔父"
     },
@@ -4479,10 +4477,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 29,
+      "firstCh": 15,
       "faction": "other",
       "title": "名医",
-      "desc": "已往中原，止有徒弟在吴",
+      "desc": "名医，字元化，为周泰疗金疮",
       "fate": "辞金不受，留药一帖而去",
       "note": "本章仅被提及"
     },
@@ -4492,10 +4490,10 @@
       "aliases": [],
       "generation": 1,
       "gender": "m",
-      "firstCh": 31,
+      "firstCh": 7,
       "faction": "qunxiong",
       "title": "袁绍谋士",
-      "desc": "一向辅袁谭，随其往青州",
+      "desc": "韩馥谋士，与荀谌同劝韩馥请袁绍同治冀州",
       "fate": "随袁谭整顿青州军马",
       "note": ""
     },
@@ -4625,7 +4623,7 @@
     },
     {
       "id": "zhang-nan",
-      "name": "张南",
+      "name": "张南（袁熙部）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -5500,11 +5498,11 @@
       "aliases": [],
       "generation": 1,
       "gender": "m",
-      "firstCh": 39,
+      "firstCh": 15,
       "faction": "wu",
       "title": "东吴旧将",
-      "desc": "凌统之父，昔在江夏为甘宁射死。",
-      "fate": "早亡，其子欲报仇。",
+      "desc": "领乡人败严白虎，与子凌统归孙策为从征校尉",
+      "fate": "昔在江夏为甘宁射死，其子凌统欲报仇。",
       "note": "本章仅追述",
       "tier": "minor"
     },
@@ -6369,11 +6367,11 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 58,
+      "firstCh": 18,
       "faction": "wei",
       "title": "曹操将",
-      "desc": "迎战马超，被刺于马下。",
-      "fate": "阵亡。",
+      "desc": "江夏平春人，字文达，守汝南，接应曹操，封建功侯",
+      "fate": "迎战马超，被刺于马下，阵亡。",
       "note": "",
       "tier": "minor"
     },
@@ -6400,10 +6398,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 56,
+      "firstCh": 15,
       "faction": "wei",
       "title": "文官",
-      "desc": "铜雀台进献诗章颂曹操",
+      "desc": "会稽太守，助严白虎拒孙策，战太史慈",
       "fate": "与群臣奏请献帝禅位",
       "note": ""
     },
@@ -7083,10 +7081,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 63,
+      "firstCh": 52,
       "faction": "shu",
       "title": "荆州信使",
-      "desc": "奉孔明书至涪关报天文凶兆",
+      "desc": "荆襄马氏五常之一，字季常，伊籍荐之，献策守荆襄取四郡",
       "fate": "送书后回荆州",
       "note": "马谡之兄"
     },
@@ -7744,10 +7742,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 79,
+      "firstCh": 69,
       "faction": "wei",
       "title": "太史丞",
-      "desc": "魏臣，掌天象",
+      "desc": "魏太史丞，掌天象，向曹操举荐管辂",
       "fate": "倡受禅之礼，奏请禅位",
       "note": "",
       "tier": "minor"
@@ -7758,10 +7756,10 @@
       "aliases": [],
       "generation": 1,
       "gender": "m",
-      "firstCh": 79,
+      "firstCh": 58,
       "faction": "wei",
       "title": "魏臣",
-      "desc": "魏之文臣",
+      "desc": "治书侍御史，字长文，献策劝曹操取江南",
       "fate": "同奏请献帝禅位",
       "note": "",
       "tier": "minor"
@@ -7872,7 +7870,7 @@
     },
     {
       "id": "li-shi",
-      "name": "李氏",
+      "name": "李氏（庞德妻）",
       "aliases": [],
       "generation": 1,
       "gender": "f",
@@ -8739,10 +8737,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 91,
+      "firstCh": 60,
       "faction": "shu",
       "title": "安汉将军、建宁太守",
-      "desc": "后军领兵使",
+      "desc": "建宁俞元人，谏刘璋勿迎刘备入川",
       "fate": "随军北伐",
       "note": "建宁俞元人。"
     },
@@ -8768,10 +8766,10 @@
       ],
       "generation": 1,
       "gender": "m",
-      "firstCh": 91,
+      "firstCh": 85,
       "faction": "shu",
       "title": "扬武将军、中监军",
-      "desc": "愿助赵云为先锋",
+      "desc": "义阳新野人，字伯苗，邓禹之后，献联吴拒魏之策",
       "fate": "与赵云同引前军",
       "note": ""
     },
@@ -10687,7 +10685,7 @@
     },
     {
       "id": "li-feng-wei",
-      "name": "李丰",
+      "name": "李丰（魏臣）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -12534,7 +12532,7 @@
     },
     {
       "id": "liu-shi-cao-shuang",
-      "name": "刘氏",
+      "name": "刘氏（曹爽妻）",
       "aliases": [
         "曹爽妻"
       ],
@@ -49838,7 +49836,7 @@
     {
       "from": "sun-ce",
       "to": "sun-shao",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -49973,7 +49971,7 @@
     {
       "from": "cao-ang",
       "to": "dian-man",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50048,7 +50046,7 @@
     {
       "from": "guan-ping",
       "to": "guan-xing",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50093,7 +50091,7 @@
     {
       "from": "sun-quan",
       "to": "sun-shao",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50243,7 +50241,7 @@
     {
       "from": "cao-pi",
       "to": "dian-man",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50393,7 +50391,7 @@
     {
       "from": "cao-zhi",
       "to": "dian-man",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50423,7 +50421,7 @@
     {
       "from": "liu-feng",
       "to": "liu-shan",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50468,7 +50466,7 @@
     {
       "from": "liu-feng",
       "to": "liu-yong",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50483,7 +50481,7 @@
     {
       "from": "liu-feng",
       "to": "liu-li",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50708,7 +50706,7 @@
     {
       "from": "cao-guiren",
       "to": "dian-man",
-      "type": "养同父异母的姐弟（推导）",
+      "type": "养姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50783,7 +50781,7 @@
     {
       "from": "cao-zhang",
       "to": "dian-man",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -50843,7 +50841,7 @@
     {
       "from": "cao-xiong",
       "to": "dian-man",
-      "type": "养同父异母的兄弟（推导）",
+      "type": "养兄弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -51098,7 +51096,7 @@
     {
       "from": "dian-man",
       "to": "qinghe-gongzhu",
-      "type": "养同父异母的兄妹（推导）",
+      "type": "养兄妹（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -51398,7 +51396,7 @@
     {
       "from": "cao-hou",
       "to": "dian-man",
-      "type": "养同父异母的姐弟（推导）",
+      "type": "养姐弟（推导）",
       "style": "dotted",
       "derived": true,
       "kin": "adoptive",
@@ -54495,8 +54493,7 @@
       "chars": [
         "cao-cao",
         "zhu-jun",
-        "bao-xin",
-        "yuan-tan"
+        "bao-xin"
       ],
       "quote": "操择精锐者，号为“青州兵”，其馀尽令归农。",
       "phase": "p1",
@@ -55508,8 +55505,7 @@
         "wang-zifu",
         "wu-zilan",
         "zhong-ji",
-        "wu-shuo",
-        "liu-shi-cao-shuang"
+        "wu-shuo"
       ],
       "phase": "p2",
       "order": 36,
@@ -55803,8 +55799,7 @@
         "yuan-shao",
         "sun-qian",
         "cao-cao",
-        "yuan-tan",
-        "yuan-shang"
+        "yuan-tan"
       ],
       "phase": "p2",
       "order": 60,
@@ -56036,8 +56031,7 @@
         "gan-furen",
         "mi-furen",
         "liao-hua",
-        "du-yuan",
-        "zhu-rong-furen"
+        "du-yuan"
       ],
       "phase": "p2",
       "order": 74,
@@ -56303,8 +56297,7 @@
         "cao-cao",
         "zhang-liao",
         "gan-furen",
-        "mi-furen",
-        "zhu-rong-furen"
+        "mi-furen"
       ],
       "phase": "p2",
       "order": 72,
@@ -56554,7 +56547,7 @@
         "yuan-shang",
         "cao-pi",
         "zhen-shi",
-        "liu-shi-cao-shuang"
+        "liu-shi-yuanshao"
       ],
       "phase": "p2",
       "order": 103,
@@ -56697,8 +56690,7 @@
         "liu-bei",
         "liu-biao",
         "cai-mao",
-        "cai-furen",
-        "zhu-rong-furen"
+        "cai-furen"
       ],
       "phase": "p3",
       "order": 4,
@@ -56984,8 +56976,7 @@
         "cai-mao",
         "cai-furen",
         "liu-qi",
-        "liu-bei",
-        "zhu-rong-furen"
+        "liu-bei"
       ],
       "phase": "p3",
       "order": 9,
@@ -57082,8 +57073,7 @@
         "liu-biao",
         "liu-bei",
         "liu-qi",
-        "li-gui",
-        "zhu-rong-furen"
+        "li-gui"
       ],
       "phase": "p3",
       "order": 39,
@@ -57299,8 +57289,7 @@
         "zhou-yu",
         "zhang-zhao",
         "wu-tai-furen",
-        "cao-cao",
-        "zhu-rong-furen"
+        "cao-cao"
       ],
       "phase": "p3",
       "order": 28,
@@ -57715,8 +57704,7 @@
         "liu-shan",
         "cao-cao",
         "zhang-he",
-        "guan-yu",
-        "zhu-rong-furen"
+        "guan-yu"
       ],
       "phase": "p3",
       "order": 48,
@@ -58402,8 +58390,7 @@
       "chars": [
         "liu-bei",
         "wu-tai-furen",
-        "sun-furen",
-        "zhu-rong-furen"
+        "sun-furen"
       ],
       "phase": "p4",
       "order": 25,
@@ -58451,8 +58438,7 @@
         "liu-bei",
         "sun-furen",
         "sun-quan",
-        "zhou-yu",
-        "zhu-rong-furen"
+        "zhou-yu"
       ],
       "phase": "p4",
       "order": 28,
@@ -58469,8 +58455,7 @@
         "sun-quan",
         "cheng-pu",
         "sun-furen",
-        "liu-bei",
-        "zhu-rong-furen"
+        "liu-bei"
       ],
       "phase": "p4",
       "order": 29,
@@ -58596,14 +58581,13 @@
       "id": "e-54-1",
       "ch": 54,
       "name": "孔明赖荆州立文书",
-      "summary": "鲁肃讨荆州，孔明以刘氏正统相驳，只立借地文书，取西川后归还，鲁肃押字作保。",
+      "summary": "鲁肃讨荆州，孔明以暂借为辞，只立借地文书，取西川后归还，鲁肃押字作保。",
       "impact": "东吴讨荆州落空，周瑜怒鲁肃中计，两家结怨加深。",
       "chars": [
         "zhuge-liang",
         "lu-su",
         "liu-bei",
-        "zhou-yu",
-        "liu-shi-cao-shuang"
+        "zhou-yu"
       ],
       "phase": "p4",
       "order": 19,
@@ -58621,8 +58605,7 @@
         "lv-fan",
         "lu-su",
         "gan-furen",
-        "liu-bei",
-        "zhu-rong-furen"
+        "liu-bei"
       ],
       "phase": "p4",
       "order": 20,
@@ -58690,8 +58673,7 @@
         "sun-quan",
         "zhao-yun",
         "sun-furen",
-        "jia-hua",
-        "zhu-rong-furen"
+        "jia-hua"
       ],
       "phase": "p4",
       "order": 24,
@@ -59038,7 +59020,6 @@
         "sun-furen",
         "liu-shan",
         "zhou-shan",
-        "zhu-rong-furen",
         "wu-tai-furen"
       ],
       "phase": "p4",
@@ -59056,8 +59037,7 @@
         "zhang-fei",
         "liu-shan",
         "sun-furen",
-        "zhou-shan",
-        "zhu-rong-furen"
+        "zhou-shan"
       ],
       "quote": "若不留下小主人，纵然万死，亦不敢放夫人去。",
       "phase": "p4",
@@ -60754,8 +60734,7 @@
         "zhuge-jin",
         "sun-furen",
         "guan-yu",
-        "sun-quan",
-        "zhu-rong-furen"
+        "sun-quan"
       ],
       "phase": "p4",
       "order": 187,
@@ -61086,8 +61065,7 @@
       "chars": [
         "zhang-nan",
         "liu-bei",
-        "sun-furen",
-        "zhu-rong-furen"
+        "sun-furen"
       ],
       "phase": "p4",
       "order": 202,
@@ -61953,7 +61931,7 @@
         "zhuge-liang",
         "si-ma-yi",
         "meng-da",
-        "li-feng-wei"
+        "li-feng-liyan"
       ],
       "phase": "p5",
       "order": 50,
@@ -64012,7 +63990,6 @@
         "wen-chou",
         "gongsun-zan",
         "zhang-miao",
-        "yuan-shang",
         "geng-wu",
         "guan-chun"
       ],
@@ -64202,8 +64179,7 @@
         "he-miao",
         "dong-taihou",
         "wu-yang-jun",
-        "dong-zhong",
-        "he-shi"
+        "dong-zhong"
       ],
       "phase": "p1",
       "order": 11,

@@ -1380,6 +1380,48 @@
       "note": "说话人是卢仁，依据是同段的对话标签「彼得·彼得罗维奇打断他的话说」（原文实字，非推测）；同段命中 彼得·彼得罗维奇"
     },
     {
+      "from": "nikodim",
+      "to": "ilya",
+      "type": "同僚",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "尼科丁佛米奇带着亲切的好意对伊里亚彼得罗维奇说\"又冒火了，又大发雷霆了\"；局长亦称其绰号\"炮筒子中尉\"",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "nikodim",
+      "to": "raskolnikov",
+      "type": "辩护",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "尼科丁佛米奇对罗季昂说\"我要跟您说，他是个极其高尚的人，然而又是炮筒子…说到底，他那颗心是金子的\"",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
+      "from": "ilya",
+      "to": "raskolnikov",
+      "type": "责备",
+      "style": "solid",
+      "events": [
+        {
+          "chapter": "第1章",
+          "place": "",
+          "text": "伊里亚彼得罗维奇当着罗季昂的面大发雷霆，厉声训斥丽扎维达\"你是存心要进拘留所吗\"",
+          "evidence": "paraphrase"
+        }
+      ]
+    },
+    {
       "from": "lonyusha",
       "to": "sonya",
       "type": "同父异母的姐妹（推导）",
@@ -1421,48 +1463,6 @@
           "chapter": "",
           "text": "由 「卡捷莉娜 —母女→ 廖尼娅」 推导（原文没有直接互动）",
           "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "nikodim",
-      "to": "ilya",
-      "type": "同僚",
-      "style": "solid",
-      "events": [
-        {
-          "chapter": "第1章",
-          "place": "",
-          "text": "尼科丁佛米奇带着亲切的好意对伊里亚彼得罗维奇说\"又冒火了，又大发雷霆了\"；局长亦称其绰号\"炮筒子中尉\"",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
-      "from": "nikodim",
-      "to": "raskolnikov",
-      "type": "辩护",
-      "style": "solid",
-      "events": [
-        {
-          "chapter": "第1章",
-          "place": "",
-          "text": "尼科丁佛米奇对罗季昂说\"我要跟您说，他是个极其高尚的人，然而又是炮筒子…说到底，他那颗心是金子的\"",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
-      "from": "ilya",
-      "to": "raskolnikov",
-      "type": "责备",
-      "style": "solid",
-      "events": [
-        {
-          "chapter": "第1章",
-          "place": "",
-          "text": "伊里亚彼得罗维奇当着罗季昂的面大发雷霆，厉声训斥丽扎维达\"你是存心要进拘留所吗\"",
-          "evidence": "paraphrase"
         }
       ]
     }

@@ -55,6 +55,25 @@ jobs:
         # 判据是「源数据里有值、而 graph.json 与 text.json 里都没有」。
         run: node scripts/check-graph-fields.mjs
 
+      - name: 拆书素材文档与 data/*.json 同步
+        # v0.145 新增。`scripts/make-anno-digest.mjs` 的文件头一直写着「--check 进 CI」，
+        # 但 check.yml 里从来没有这一步 —— 于是它**没进 CI**。
+        # 后果实测过：改完 data/three-kingdoms.json 忘了重跑生成脚本，
+        # `docs/拆书素材-*.md` 六份全过期（e-33-1 的在场人物与数据对不上），
+        # 而门禁 31 步全绿。这正是本项目反复踩的「改了等于没改」。
+        # 判据：文档逐字由 data 重排而来 ⇒ 与数据必须逐字节一致（可复现、可 diff）。
+        run: node scripts/make-anno-digest.mjs --check
+
+      - name: 拆书标注校验（引用的 id 必须真实存在）
+        # v0.145 新增。拆书条目是**唯一一块"由人/模型写、却当成事实展示"**的内容，
+        # 风险最高，而此前没有任何门禁守它。
+        # 卡死的四条：① events/chars 里的 id 必须真实存在于该书数据（防编造主闸门）
+        #            ② ch 必须落在该书章号范围内
+        #            ③ basis 必填（区分"原文"与"整理者推断"）
+        #            ④ body/title 不得为空、不得是「待补/TODO」这类占位
+        # 这是**硬门禁**（有问题即 exit 1），不是只读审计。
+        run: node scripts/check-annotations.mjs
+
       - name: sw.js 预缓存清单与 books.json 一致
         # 网站会持续加书，而 sw.js 的 SHELL 里是硬编码每个图包的路径。
         # 忘了加不会白屏（/data/ 走 stale-while-revalidate），但会静默不一致。
@@ -148,6 +167,23 @@ jobs:
         # 这一步用 **zrender 的 handler 合成真实 mousedown/mousemove/mouseup/mousewheel**
         # （CDP 的 Input.dispatchMouseEvent 在无头 Edge 里到不了页面），判据一律量 zrender 里的真实墨迹。
         run: node test/roam.mjs
+
+      # ↓↓↓ v0.145 补进 CI 的 4 个测试 ↓↓↓
+      # 起因：`package.json` 的 `check` 脚本里**早就列了**这 4 个测试，但 `check.yml` 里没有
+      # ⇒ 「本地 `npm run check`」与「CI 门禁」是**两份会漂移的定义**，而 README 明说
+      # `npm run gate` 跑的是「按 check.yml 完全一样的门禁」。这四个测试实测全绿（约 3.2 分钟），
+      # 只是从未被 CI 守过 —— 典型的「门禁只守了 1/N」。
+      - name: 全屏展示（无头 Edge）
+        run: node test/fullscreen.mjs
+
+      - name: 分组图注可读性（无头 Edge）
+        run: node test/band-labels.mjs
+
+      - name: 分组视图占满画布（无头 Edge）
+        run: node test/gen-fill.mjs
+
+      - name: 拆书标注（无头 Edge）
+        run: node test/annotations.mjs
 
       - name: 画布手感与导航提示（无头 Edge）
         # v91 新增。用户反馈两件事：
