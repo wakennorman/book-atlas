@@ -20,7 +20,9 @@ const LEDGER = path.join(ROOT, 'data', 'three-kingdoms.name-form-ok.json');
 const WRITE = process.argv.includes('--write');
 
 /** 已从 characters 里删掉的人，台账里也要删 */
-const REMOVED = ['陶商', '陶应', '公孙晃'];
+const REMOVED = ['陶商', '陶应', '公孙晃', '雷同（巴西）'];
+/* ⚠ 「雷同（巴西）」是 v0.159 合并掉的：它与「雷同（雒城）」本是同一人（原著一条连续人生），
+ *   合并后主名回到「雷同」，原著里逐字出现 ⇒ 不再需要「主名非原样字」的申报。 */
 
 /** 仍在数据里、但理由写错的 */
 const FIX_WHY = new Map([
