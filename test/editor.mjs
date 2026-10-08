@@ -23,6 +23,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { guessKin as nodeGuessKin } from '../scripts/kin.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
@@ -208,16 +209,60 @@ if (!url) {
   console.log('\n▶ 从关系文案猜亲属类别');
   const kin = [
     ['结义兄弟', 'sworn'], ['义兄弟', 'sworn'], ['收养', 'adoptive'], ['过继', 'adoptive'],
-    ['继母', 'step'], ['岳母', 'inlaw'], ['婆媳', 'inlaw'], ['乳母', 'foster'],
-    ['夫妻', 'marriage'], ['妻子', 'marriage'],
-    // 「同门师兄弟」含"兄弟"，血亲判断排在兜底之前 ⇒ 判成 blood 是当前的既定行为
-    ['同门师兄弟', 'blood'], ['表兄弟', 'blood'],
+    ['继母', 'step'], ['晚爹', 'step'], ['岳母', 'inlaw'], ['婆媳', 'inlaw'], ['乳母', 'foster'],
+    ['夫妻', 'marriage'], ['妻子', 'marriage'], ['未婚夫妻', ''],
+    ['表兄弟', 'blood'], ['堂姐妹', 'blood'], ['双胞胎', 'blood'],
+    // v0.146：「同门师兄弟」含"兄弟"，但「同门」在"不是家人"表里 ⇒ 留空。
+    //   以前这里是 `'blood'`，与 scripts/kin.mjs 不一致（那边把同门当非亲属）——
+    //   而编辑器会把这个猜测**自动写进 kin 字段** ⇒ 同门关系被误标成血缘。
+    ['同门师兄弟', ''], ['同窗', ''], ['门生', ''], ['忘年交', ''], ['幽灵', ''],
     ['政敌', ''], ['同学', ''], ['', ''],
   ];
   for (const [t, want] of kin) {
     const got = await call('guessKin', t);
     ok(got === want, `guessKin(${JSON.stringify(t)}) = ${JSON.stringify(got)}${got === want ? '' : `（应为 ${JSON.stringify(want)}）`}`);
   }
+
+  /* ---------- guessKin 与 scripts/kin.mjs 对拍 ----------
+   * 编辑器里那份是**手抄的第二份**（editor.js 是浏览器模块，import 不了 scripts/），
+   * 已经漂过：少了 `晚爹`、NOT_KIN 少 12 个词、BLOOD 少 9 个词。
+   * 两边不一致时，同一句关系名在编辑器里被猜成 A、在 validate / 整本生成里被猜成 B，
+   * 而两边都不会报错 —— 典型的静默漂移。
+   *
+   * ⚠ 对拍只能抓「两边不一致」，**抓不到「两边一起错」**（比如两边都把某个非亲属词判成 blood）。
+   *   所以上面那张金标表不能删，它是钉住"正确答案"的那一半。
+   * ⚠ 语料要含**真实数据的全部 relations[].type**，不能只写几个例子 ——
+   *   漏掉的那 9 个 BLOOD 词（堂姐妹/表亲/双胞胎…）正是只有真数据才会覆盖到的。 */
+  console.log('\n▶ guessKin 与 scripts/kin.mjs 对拍（真实数据 + 边界词）');
+  const corpus = new Set();
+  // ⚠ 必须把**上面金标表的输入**也放进来：对拍的语料漏掉某条，那条就只剩金标在守，
+  //   两条判据各漏一半。实测踩过：只加了 '同门' 没加 '同门师兄弟' ⇒ 编辑器漏掉 `同门`
+  //   这个词时对拍照样全绿（真实数据里只有「同门友军」，两边都不命中）。
+  for (const [t] of kin) corpus.add(t);
+  for (const slug of ['three-kingdoms', 'crime-and-punishment', 'one-hundred-years-of-solitude']) {
+    const fp = path.join(ROOT, 'data', `${slug}.json`);
+    if (!fs.existsSync(fp)) continue;
+    for (const r of JSON.parse(fs.readFileSync(fp, 'utf8')).relations || []) {
+      if (r && r.type) corpus.add(String(r.type));
+    }
+  }
+  for (const t of [
+    '养兄弟', '养祖孙', '抚养', '养大', '继父', '晚娘', '晚爹', '义母', '干爹', '结拜姐妹',
+    '妻舅', '妻弟', '国舅', '姻亲', '内兄', '大舅子', '儿媳', '女婿', '妯娌', '连襟',
+    '堂亲', '表亲', '双胞胎', '孪生姐妹', '同门', '同僚', '座师', '囚犯', '酒鬼', '犯罪',
+    '未婚夫妻', '未婚妻', '恋人', '情人', '单相思', '保姆', '房东', '信使', '狱友', '',
+  ]) corpus.add(t);
+
+  const types = [...corpus];
+  // 一次求值把整批算完（逐条 call 会有上千次 CDP 往返）
+  const browserKin = await js(`(${JSON.stringify(types)}).map((t) => window.__ed.guessKin(t))`);
+  const diffs = types.map((t, i) => [t, browserKin[i], nodeGuessKin(t)])
+    .filter(([, a, b]) => a !== b);
+  for (const [t, a, b] of diffs.slice(0, 8)) {
+    console.error(`      · ${JSON.stringify(t)}：编辑器=${JSON.stringify(a)}  kin.mjs=${JSON.stringify(b)}`);
+  }
+  ok(diffs.length === 0,
+    `编辑器与 kin.mjs 的 guessKin 在 ${types.length} 个关系名上完全一致${diffs.length ? `（${diffs.length} 个不一致）` : ''}`);
 
   /* ---------- normalize ---------- */
   console.log('\n▶ 补齐缺失字段');

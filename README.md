@@ -412,7 +412,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/validate.mjs` | 数据校验 + 文案规范检查 + `gender/firstCh/ch` + 地点引用 + 亲属关系（kin）+ **别名覆盖** + **亲子成环**。`node scripts/validate.mjs --all` 一把过 |
 | `scripts/audit-search.mjs` | **搜索命中率审计**：别名覆盖 / 译名变体（`--write` 自动补）/ 疑似漏人 / 同名重复：`node scripts/audit-search.mjs --all [--write]` |
 | `scripts/annotate-kin.mjs` | 按关系名猜 `kin`（血缘/收养/继亲/姻亲/结义…）并报告猜不出的：`node scripts/annotate-kin.mjs [--write]` |
-| `scripts/kin.mjs` | **不是命令行脚本**，是 `kin` 规范的唯一来源（7 类取值 + 中文标签），被编辑器 / `validate.mjs` / `annotate-kin.mjs` 共同 import；改 kin 口径只改这里（见上面的「亲属关系规范」） |
+| `scripts/kin.mjs` | **不是命令行脚本**，是 `kin` 规范的唯一来源（7 类取值 + 中文标签），被 `validate.mjs` / `annotate-kin.mjs` / `wholebook.mjs` import；改 kin 口径只改这里（见上面的「亲属关系规范」）。⚠ 编辑器的 `guessKin` 是**手抄的第二份**（`editor.js` 是浏览器模块，import 不了 `scripts/`）—— `test/editor.mjs` 有一条对拍（真实数据的全部 `relations[].type`）锁着两份一致，改一处必须同步另一处 |
 | `scripts/fix-parent-cycles.mjs` | 修亲子关系方向（人工核对表）+ 报告可疑方向 + 亲子环检测：`node scripts/fix-parent-cycles.mjs --all [--write]` |
 | `scripts/derive-kin.mjs` | 族谱补全：从亲子边推导祖孙/曾祖孙/叔侄等（`derived: true`，图上虚线+「推导」标）：`node scripts/derive-kin.mjs --all [--write]` |
 | `scripts/assign-phases.mjs` | 按 `phases[].from/to` 的章区间把事件归到阶段（逐章生成只有第 1 章输出 phase）：`node scripts/assign-phases.mjs data/xx.json [--write]` |
