@@ -2298,9 +2298,7 @@
     {
       "id": "zhang-wen",
       "name": "张温",
-      "aliases": [
-        "惠恕"
-      ],
+      "aliases": [],
       "generation": 1,
       "gender": "m",
       "firstCh": 8,
@@ -2308,7 +2306,23 @@
       "title": "司空",
       "desc": "汉司空，被董卓诬为通袁术",
       "fate": "被吕布揪下堂斩首",
-      "note": "消歧：此为东吴张温，非汉太尉张温"
+      "note": "汉司空，第8回被董卓诬为结连袁术、命吕布揪下堂斩之。原文第8回注释：「同时有两张温。此一张温，乃汉张温也；后孙权使张温至蜀，乃吴张温也。」东吴张温见 zhang-wen-wu。"
+    },
+    {
+      "id": "zhang-wen-wu",
+      "name": "张温",
+      "aliases": [
+        "惠恕"
+      ],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 86,
+      "faction": "wu",
+      "title": "东吴使臣",
+      "desc": "孙权遣其与邓芝入川通好，秦宓以天为问折之",
+      "fate": "使蜀后还吴",
+      "note": "东吴张温（字惠恕）。与汉司空张温（zhang-wen，第8回被董卓斩）是两个人 —— 原文第8回注释明言「同时有两张温」。",
+      "tier": "minor"
     },
     {
       "id": "gao-shun",
@@ -2580,7 +2594,21 @@
       "title": "吕布部将",
       "desc": "使画戟迎战许褚",
       "fate": "被许褚两合斩于马下",
-      "note": "袁术部将，非蜀汉李丰。"
+      "note": "吕布副将，第12回与薛兰守兖州，被许褚两合斩于马下。⚠ 勿与「袁术部将李丰」（li-feng-yuanshu）、「李严之子李丰」（li-feng-liyan）混。"
+    },
+    {
+      "id": "li-feng-yuanshu",
+      "name": "李丰",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 17,
+      "faction": "qunxiong",
+      "title": "袁术部将",
+      "desc": "为催进使接应七路，守寿春",
+      "fate": "寿春城破被曹操生擒，斩于市",
+      "note": "袁术部将。与吕布副将「李封」（li-feng）、李严之子「李丰」（li-feng-liyan）均非一人。",
+      "tier": "minor"
     },
     {
       "id": "li-xian",
@@ -37872,7 +37900,7 @@
     },
     {
       "from": "zhuge-liang",
-      "to": "zhang-bao",
+      "to": "zhang-bao-zhangfei",
       "type": "部将",
       "style": "solid",
       "events": [
@@ -44320,7 +44348,7 @@
     },
     {
       "from": "yuan-shu",
-      "to": "li-feng",
+      "to": "li-feng-yuanshu",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -44604,7 +44632,7 @@
     },
     {
       "from": "lv-bu",
-      "to": "li-feng",
+      "to": "li-feng-yuanshu",
       "type": "敌对",
       "style": "dashed",
       "events": [
@@ -46308,21 +46336,6 @@
       "fromCh": 101
     },
     {
-      "from": "li-yan",
-      "to": "li-feng",
-      "type": "父子",
-      "kin": "blood",
-      "style": "solid",
-      "events": [
-        {
-          "text": "孔明用李严之子李丰为长史",
-          "chapter": "第101章",
-          "place": "chengdu",
-          "evidence": "paraphrase"
-        }
-      ]
-    },
-    {
       "from": "zhuge-liang",
       "to": "li-yan",
       "type": "责罪对立",
@@ -46447,7 +46460,7 @@
     },
     {
       "from": "sun-quan",
-      "to": "zhang-wen",
+      "to": "zhang-wen-wu",
       "type": "君臣",
       "style": "solid",
       "events": [
@@ -46502,7 +46515,7 @@
       ]
     },
     {
-      "from": "zhang-wen",
+      "from": "zhang-wen-wu",
       "to": "deng-zhi",
       "type": "同行使臣",
       "style": "solid",
@@ -46517,7 +46530,7 @@
     },
     {
       "from": "qin-mi",
-      "to": "zhang-wen",
+      "to": "zhang-wen-wu",
       "type": "席间论辩",
       "style": "dashed",
       "events": [
@@ -46531,7 +46544,7 @@
     },
     {
       "from": "zhuge-liang",
-      "to": "zhang-wen",
+      "to": "zhang-wen-wu",
       "type": "宾主",
       "style": "solid",
       "events": [
@@ -49872,21 +49885,6 @@
         {
           "chapter": "",
           "text": "由 「孙坚 —养父子→ 孙韶」 推导（原文没有直接互动）",
-          "evidence": "derived"
-        }
-      ]
-    },
-    {
-      "from": "li-feng",
-      "to": "li-feng-liyan",
-      "type": "同父异母的兄弟（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
-      "events": [
-        {
-          "chapter": "",
-          "text": "由 「李严 —父子→ 李丰（李严之子）」 推导（原文没有直接互动）",
           "evidence": "derived"
         }
       ]

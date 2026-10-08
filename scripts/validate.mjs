@@ -417,10 +417,17 @@ function validate(file) {
    *   组内**一个都没有**，才是真漏（这种情况照报）。
    * 非同名角色（组里只有自己）行为与旧逻辑**完全等价**。
    */
+  /* v0.151：分组键用「**去掉括号后缀**的名字」—— 项目对同名的既有写法是 `李丰（李严之子）`、
+   * `李丰（魏臣）`，括号只为在界面上消歧，**同名组**该按主干名归并。
+   * 否则「李丰」组里只剩那个 name 恰好不带括号的角色（新加的 `li-feng-yuanshu`），
+   * 别的一律被判成"漏了" —— 实测 e-94-5 / e-109-6 两条误报（它们的 chars 里
+   * 明明分别有 `li-feng-liyan` / `li-feng-wei`）。 */
+  const nameKey = (s) => String(s || '').replace(/（[^）]*）/g, '');
   const nameOwners = new Map();
   for (const c of chars) {
-    if (!nameOwners.has(c.name)) nameOwners.set(c.name, new Set());
-    nameOwners.get(c.name).add(c.id);
+    const k = nameKey(c.name);
+    if (!nameOwners.has(k)) nameOwners.set(k, new Set());
+    nameOwners.get(k).add(c.id);
   }
   const hasName = (text) => nameIndex.some((x) => x.n.some((nn) => text.includes(nn)));
   const sentences = (s) => String(s || '').split(/[。；！？]/).map((x) => x.trim()).filter(Boolean);
@@ -447,7 +454,7 @@ function validate(file) {
       if ((e.chars || []).includes(id)) continue;
       /* v0.148：本名与他人重名时，若「名字组」里已有成员在 chars 里，
        * 视为文案提到的是组里那位，不报（见上面 nameOwners 的理由）。 */
-      const group = nameOwners.get(n[0]);
+      const group = nameOwners.get(nameKey(n[0]));
       if (group && [...group].some((g) => (e.chars || []).includes(g))) continue;
       warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
     }

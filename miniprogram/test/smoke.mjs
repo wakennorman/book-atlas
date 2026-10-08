@@ -166,7 +166,7 @@ ok(inst.g.pack.slug === 'three-kingdoms', '切到《三国演义》');
  *     拆出 cao-hou「曹后」（第80回曹操之女、汉献帝皇后），宦官那边只剩窦武一条政敌边。
  * ⚠ 这个数字是**硬编码的期望值**，故意不写成"读数据里的长度" ——
  *   那样写就等于"数据是多少就认为多少"，人数被误删也照样绿。 */
-ok(inst.g.pack.characters.length === 883, '三国 883 人');
+ok(inst.g.pack.characters.length === 885, '三国 885 人');
 inst.render();
 ok(/三国演义/.test(inst.data.status), '状态行跟着书变：' + inst.data.status);
 inst.setChapter(31);
