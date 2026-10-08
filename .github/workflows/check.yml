@@ -32,7 +32,7 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
                    test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs \
@@ -284,6 +284,18 @@ jobs:
         # 横着移的字读不了、复制不了，读屏也拿不到）。
         # 关键断言是**负向**那条：没被剪掉的元素不许弹 —— 否则页面会变得很吵。
         run: node test/full-tip.mjs
+
+      - name: 事件在场人物与登场章的一致性（chars 里的人必须被该事件文案字面提到）
+        # v0.156 新增。`events[].chars` 的语义是**在场人物**（app.js 靠它高亮事件卡节点、
+        # 算「最后出场章」）。一个人不可能在自己出场之前在场 —— 但 validate.mjs 只查
+        # **人物侧**（firstCh 类型 / 父母一致性 / 阵营有效性），**从不交叉检查 events[].chars**
+        # ⇒ 这类污染「一直是隐形的」（2026-10-08 实测曾 28 处，见
+        # docs/待修-事件在场人物时间矛盾.md）。
+        # 本脚本的判据**不需要原著**（纯内部数据：ev.chars × firstCh × 事件文案字面命中），
+        # 本可进 CI，此前却恒 exit 0（自称"只报告"）⇒ 改完就没人守了。现拆两档：
+        #   · chars 侧无字面依据 ⇒ **确定是错**（应删）⇒ exit 1（本步）
+        #   · 字面有据但 firstCh 晚 ⇒ 疑在 firstCh 侧 ⇒ exit 0，人工回原著核
+        run: node scripts/check-event-chars.mjs
 
       - name: 数据校验（结构 / 引用 / 亲属 / 别名 / 时间区间）
         run: node scripts/validate.mjs --all

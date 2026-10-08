@@ -36,8 +36,14 @@
  *   ② 23 个回的「本章 N 人出场」**虚高**，合计 24 人次
  *   ③ 结局剧透：**不受影响**
  *
- * 用法：node scripts/check-event-chars.mjs            # 报告（退出码 0，不阻塞）
+ * 用法：node scripts/check-event-chars.mjs            # chars 侧违规 ⇒ 退出码 1（硬门禁）
  *       node scripts/check-event-chars.mjs --write    # 同时写出 docs/待修-事件在场人物时间矛盾.md
+ *
+ * ⚠ v0.156：本脚本此前**恒 exit 0**（自称"只报告"），于是这类污染"改完就没人守了"——
+ *   但它的判据**不需要原著**（纯内部数据：`ev.chars` × `firstCh` × 事件文案字面命中），
+ *   本可以进 CI。现在拆成两档：
+ *     · chars 侧无字面依据 ⇒ **确定是错**（应删）⇒ `exit 1`，已进 check.yml
+ *     · 字面有据但 firstCh 晚 ⇒ 疑在 firstCh 侧 ⇒ `exit 0`，人工回原著核
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -234,9 +240,14 @@ if (writeDoc) {
 }
 
 if (totalNoHit) {
-  console.log(`\n共 ${total} 处，其中 **${totalNoHit} 处无字面依据 —— chars 侧仍有违规，应删**（本脚本只报告不改数据，退出码 0，不阻塞门禁）。`);
+  console.log(`\n✗ 共 ${total} 处，其中 **${totalNoHit} 处无字面依据 —— chars 侧违规，应删**（退出码 1，阻塞门禁）。`);
+  console.log('  ⇒ 这几处是**确定的错**（chars 里的人没被该事件 summary/impact/quote 字面提到），不是「待核」。');
+  console.log('  ⇒ 修法：删掉那几条 chars 项，或把 referent 换对（同名碰撞 / 地盘别名假命中）；改完重跑本脚本。');
+  process.exit(1);
 } else if (total === 0) {
-  console.log('\n✓ 共 0 处 —— 三本书都没有「在场人物」与登场章的时间矛盾（本脚本只报告不改数据，退出码 0，不阻塞门禁）。');
+  console.log('\n✓ 共 0 处 —— 三本书都没有「在场人物」与登场章的时间矛盾（退出码 0）。');
 } else {
-  console.log(`\n共 ${total} 处，全部字面有据 ⇒ 矛盾在 firstCh 侧（chars 侧违规 0；本脚本只报告不改数据，退出码 0，不阻塞门禁）。`);
+  console.log(`\n⚠ 共 ${total} 处，全部字面有据 ⇒ 矛盾在 firstCh 侧（chars 侧违规 0，退出码 0，不阻塞）。`);
+  console.log('  ⇒ 这几处**不是**「chars 错」，而是「firstCh 可能记晚了」—— 需人工回原著核。');
+  console.log('  ⇒ 明细：node scripts/check-event-chars.mjs --write（写 docs/待修-事件在场人物时间矛盾.md）。');
 }
