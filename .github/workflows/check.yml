@@ -35,7 +35,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -280,6 +280,13 @@ jobs:
         # 就会出现「同一个 kin 在网页显示 A、在小程序显示 B」这种**用户可见**的不一致，而门禁全绿。
         # 判据：读各文件源码抽常量、与权威逐键比对（连「漏抄一个键」也能抓到）。
         run: node test/kin-constants.mjs
+
+      - name: checkKin 规则金标（kin 与 type 自洽的唯一判据）
+        # v0.150 新增。`checkKin` 是「亲属类型（kin）与关系名（type）是否自洽」的**唯一判据**，
+        # validate.mjs 靠它报错（v0.147 收紧后「非 blood 配纯血缘称谓」是 error，
+        # 正是靠它抓出「吴懿—刘璋 舅甥 + kin=inlaw」那两条）。但它此前**零测试覆盖**。
+        # 钉返回的 level 序列（结构），不钉文案 —— 文案会改，语义不会。
+        run: node test/kin-check.mjs
 
       - name: 亲属称谓对质（手写 type 必须与族谱算出来的一致）
         # 起因 v0.99：用户报「上校—叔侄（伯父与侄）—奥雷里亚诺第二」
