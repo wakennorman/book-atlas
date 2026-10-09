@@ -34,24 +34,44 @@ jobs:
       #      `spawn(undefined)` 同步抛 `The "file" argument must be of type string`
       #      ⇒ 整个 job 崩掉 ⇒ 后面 14 个步骤全部 SKIP。
       # 实测后果：数据体检最后一次全绿是 2026-09-30，之后 34 次全红；而本地 55 步一直绿
-      # （一直跑在 Windows 上），于是"本地绿 / CI 红"长期并存而没人发现。
+      # （一直跑在 Windows 上），于是「本地绿 / CI 红」长期并存而没人发现。
       # 现在两处都修了：① 路径判断收敛到 test/_browser.mjs（认 Windows / macOS / Linux）；
-      # ② 找不到浏览器时**退出码 2 而不是 0** —— 静默跳过才是"门禁全绿但什么都没测"的根源。
-      # 所以这里必须真的装一个浏览器，否则门禁会诚实地红在"环境不对"上（那是它该做的）。
-      - name: 安装无头浏览器（19 个浏览器测试要用）
+      # ② 找不到浏览器时**退出码 2 而不是 0** —— 静默跳过才是「门禁全绿但什么都没测」的根源。
+      #
+      # ⚠ 这里**不装浏览器**：GitHub 的 ubuntu-24.04 镜像本来就带
+      #   Google Chrome / Chromium / Microsoft Edge（见 actions/runner-images 的
+      #   "Browsers and Drivers" 一节，2026-09 镜像为 154.x）。
+      #   浏览器一直都在，缺的只是「代码认得它」。所以本步只做**自证**：
+      #   打印用的是哪一个、什么版本，并且找不到就立刻红 —— 让"环境不对"当场暴露，
+      #   而不是等到某个测试毫无线索地挂掉。
+      # （v0.165 第一次提交时这里写的是"playwright 装 chromium，失败回落 apt 装 edge"，
+      #  实测这步自己先失败了：playwright 装的 chromium 在 ~/.cache/ms-playwright/ 下、
+      #  不在 PATH 上 ⇒ findBrowser() 找不到 ⇒ 自证 exit 1。多此一举，删掉。）
+      - name: 自证浏览器可用（19 个浏览器测试要用）
         run: |
           set -euo pipefail
-          # Ubuntu 24.04 起 chromium 是 snap 包装的（snapd 在容器里起不来）⇒ 用 microsoft-edge。
-          # 先试 playwright 自带的（版本固定、最稳），失败再回落到 apt 的 microsoft-edge。
-          if npx --yes playwright install --with-deps chromium 2>/dev/null; then
-            echo "playwright chromium 已装"
-          else
-            echo "playwright 装失败，回落到 apt 安装 microsoft-edge-stable"
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends microsoft-edge-stable
-          fi
-          # 自证：test/_browser.mjs 的查找口径必须真的能找到它（否则下面的步骤会 exit 2）
-          node -e "import('./test/_browser.mjs').then(m => { const b = m.findBrowser(); console.log('浏览器：' + b); if (!b) process.exit(1); })"
+          echo "平台：$(uname -srm)"
+          node -e "
+            import('./test/_browser.mjs').then(async (m) => {
+              const b = m.findBrowser();
+              if (!b) {
+                const { paths, cmds, label } = m.browserCandidates();
+                console.error('✗ 找不到浏览器（平台 ' + process.platform + '，口径 ' + label + '）');
+                console.error('  试过的路径：\n    ' + paths.join('\n    '));
+                console.error('  试过的命令：' + cmds.join('、'));
+                process.exit(2);
+              }
+              console.log('✓ 浏览器：' + b);
+              const { execFileSync } = await import('node:child_process');
+              try {
+                const v = execFileSync(b, ['--version'], { encoding: 'utf8', timeout: 30000 }).trim();
+                console.log('  版本：' + v);
+              } catch (e) {
+                console.error('  ✗ 找到了 ' + b + ' 但 --version 跑不起来：' + e.message);
+                process.exit(2);
+              }
+            });
+          "
 
       - name: JS 语法检查
         run: |
@@ -63,6 +83,7 @@ jobs:
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
                    test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs \
+                   test/_browser.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done

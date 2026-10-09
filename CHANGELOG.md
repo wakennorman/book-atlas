@@ -47,31 +47,59 @@ CI 里实际跑到的只有 lint、数据校验、台账检查等纯 Node 步骤
 `requireBrowser()` 找不到时自己就退 2，走不到那里；而且它们写着 `exit(0)`，
 正是本轮要废掉的口径，留着会让下一个人以为还能这么干。
 
-### 3. `.github/workflows/check.yml` 补浏览器安装
+### 3. `.github/workflows/check.yml` 补浏览器**自证**（不是安装）
 
 ```yaml
-- name: 安装无头浏览器（19 个浏览器测试要用）
+- name: 自证浏览器可用（19 个浏览器测试要用）
   run: |
-    npx --yes playwright install --with-deps chromium   # 失败则回落 apt microsoft-edge-stable
-    node -e "import('./test/_browser.mjs').then(m => { const b = m.findBrowser(); if (!b) process.exit(1); })"
+    echo "平台：$(uname -srm)"
+    node -e "import('./test/_browser.mjs').then(async m => {
+      const b = m.findBrowser(); if (!b) { …打印试过的路径与命令…; process.exit(2); }
+      console.log('✓ 浏览器：' + b); console.log('  版本：' + execFileSync(b, ['--version'])); })"
 ```
-Ubuntu 24.04 起 chromium 是 snap 包装的（snapd 在容器里起不来）⇒ 首选 playwright 自带的 chromium。
-装完**立刻自证** `findBrowser()` 找得到 —— 否则门禁会诚实地红在"环境不对"上。
+
+⚠ **这一版和第一版不一样，是被 CI 实跑打回来的。** 第一版我写的是「安装浏览器
+（playwright chromium，失败回落 apt 装 microsoft-edge-stable）」，理由是「容器里总得装一个」。
+推上去之后**这一步自己先红了**：playwright 装的 chromium 在 `~/.cache/ms-playwright/` 下，
+**不在 PATH 上** ⇒ 我自己的 `findBrowser()` 找不到它 ⇒ 自证 `exit 1`。
+装了个自己认不出的浏览器，等于没装。
+
+去查了 GitHub 官方镜像清单（`actions/runner-images` 的 `Ubuntu2404-Readme.md`），
+「Browsers and Drivers」一节写着：
+
+```
+- Google Chrome 154.0.8037.57      - Microsoft Edge 154.0.4258.37
+- Chromium 154.0.8037.0            - Mozilla Firefox 156.0
+```
+
+**ubuntu-latest 本来就带 Chrome / Chromium / Edge。** 浏览器一直在，缺的只是「代码认得它」——
+这跟根因是同一件事。于是安装步骤整段删掉，只留自证：打印用的是哪一个、什么版本，
+找不到就当场红（而不是等某个测试毫无线索地挂掉）。
+
+顺带把 CI 的 `node --check` 清单补齐 11 个（`_browser.mjs` / `build.mjs` / `ai.mjs` /
+`annotations` / `band-labels` / `full-tip` / `fullscreen` / `gen-fill` / `layout-stable` /
+`place` / `place-visible`）——同一类毛病：清单里漏了，就等于没检查。
 
 ## 验证
 
 - `test/_browser.mjs` 自证 13/13：三平台候选正确、当前机器找得到 Edge、
   **模拟 plan9 平台 ⇒ exit=2**、诊断信息含平台/试过的命令/修法/退出码理由；
 - 19 个文件语法检查通过 + 复核无内联 Windows 路径、无 `if (!EDGE)` 残留；
-- 本地完整门禁 55 步（Windows 有 Edge ⇒ 行为不变，这是不把本地搞坏的唯一证据）。
+- check.yml 自证步骤 14/14：不是 `run: node X` 形态（本地 Windows 门禁不会执行它）、
+  内嵌 JS 语法通过、**Linux 候选逐个对照官方镜像清单里真有的四个浏览器**、本机 findBrowser 命中；
+- 本地门禁仍 **55 步**（bash 块不在其中）、**55 步全绿 exit 0**
+  —— Windows 上有 Edge ⇒ 行为不变，这是不把本地搞坏的唯一证据；
+- `check-packs-sync` 回退对照：带 miniprogram/data ⇒ 同步，撤掉 ⇒ exit 1。
 
 ## 遗留（**不能本地验证，如实记下**）
 
 - **CI 上 19 个浏览器测试能否真跑通，我无法在本地验证**（本地是 Windows）。
-  这次能保证的是"不再因找不到浏览器而崩、也不再假装绿"；
+  这次能保证的是「不再因找不到浏览器而崩、也不再假装绿」；
   剩下的是容器里 Chromium 能不能把这些测试跑通 —— 看 CI 实跑结果。
+  ⚠ 而且要预期：**这批测试从未在 Linux 上真跑过**，第一次真跑很可能暴露一批新失败。
+  那是把假绿变成真红的正常代价，不是这次改动引入的缺陷。
 - 触发点是 10-04 那次提交（`8e30f74`「16 个测试的写死端口改成临时端口」）：
-  端口改对了，**浏览器路径没一起改**。同一类改动的"漏一半"，跨了两周才被看见。
+  端口改对了，**浏览器路径没一起改**。同一类改动的「漏一半」，跨了两周才被看见。
 
 ## v0.164 · 缺口检测对两本书其实是瞎的 —— 183 个人名它根本产不出来
 
