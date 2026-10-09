@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 import { guessKin as nodeGuessKin, checkKin as nodeCheckKin } from '../scripts/kin.mjs';
 import { isParentChild as nodeIsParentChild } from '../scripts/kin-terms.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
@@ -64,7 +64,7 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-ed-'));
  * 本文件在 CI（Ubuntu）上稳定连不上 CDP 端点，而 stdout 只有一句「连不上 CDP 端点」
  * —— 环境缺陷时这句话没有任何线索。改成接住 stderr（只留尾部，浏览器会刷很多日志），
  * 启动失败时一并打出来。 */
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1600,1000', 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'] });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1600,1000', 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'] });
 const browserLog = [];
 for (const s of [proc.stdout, proc.stderr]) {
   s?.on('data', (d) => { browserLog.push(d); if (browserLog.length > 400) browserLog.shift(); });

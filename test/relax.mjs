@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 // 「没有坐标的人怎么落位」的两条性质（v87 加）：
 //   ① 孤立人物（一条关系都没有）不能叠在同一个点上
@@ -35,7 +35,7 @@ PORT = server.address().port;   // v0.97：临时端口
 
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-relax3-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = ''; r.on('data', (d) => { b += d; });

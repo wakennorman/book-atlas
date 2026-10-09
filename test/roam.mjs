@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 // 而 applyZoom 会显式写 viewCenter，正好把 bug 绕过去了；而且判据也用的是 state.viewCenter，
 // 万一它陈旧，测试就是假绿。这里一律量 zrender 里的**真实墨迹位置**。
 import { spawn as _s } from 'node:child_process';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ v0.96：原来这里写死 `const PORT = 19135, CDP_PORT = 19136;`，代价是实测踩到的：
@@ -103,7 +103,7 @@ try {
 } catch (e) { console.log('  (清扫失败) ' + e.message); }
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-roam-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = ''; r.on('data', (d) => { b += d; });

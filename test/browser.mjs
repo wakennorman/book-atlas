@@ -19,7 +19,7 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
@@ -84,7 +84,7 @@ const edge = requireBrowser();
 const server = await serve();
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-br-'));
-const proc = spawn(edge, [
+const proc = spawn(edge, [...browserArgs(), 
   `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`,
   '--headless=new', '--no-first-run', '--disable-gpu', '--hide-scrollbars',
   '--window-size=1400,900', 'about:blank',

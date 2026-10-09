@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createGraphCore } from '../shared/graph-core.js';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -110,7 +110,7 @@ function buildMini(slug, stateOverrides) {
 /* ---------------- 起浏览器 ---------------- */
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-parity-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = ''; r.on('data', (d) => { b += d; });

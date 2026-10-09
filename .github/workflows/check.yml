@@ -47,6 +47,17 @@ jobs:
       # （v0.165 第一次提交时这里写的是"playwright 装 chromium，失败回落 apt 装 edge"，
       #  实测这步自己先失败了：playwright 装的 chromium 在 ~/.cache/ms-playwright/ 下、
       #  不在 PATH 上 ⇒ findBrowser() 找不到 ⇒ 自证 exit 1。多此一举，删掉。）
+# （v0.165 第一次提交时这里写的是"playwright 装 chromium，失败回落 apt 装 edge"，
+      #  实测这步自己先失败了：playwright 装的 chromium 在 ~/.cache/ms-playwright/ 下、
+      #  不在 PATH 上 ⇒ findBrowser() 找不到 ⇒ 自证 exit 1。多此一举，删掉。）
+      #
+      # v0.165.4：自证**必须真的起一次浏览器**，光跑 `--version` 是不够的。
+      #   v0.165.3 的教训：自证绿了（`Microsoft Edge 154.0.4258.53` 正常输出），
+      #   但测试要的 `--remote-debugging-port + --headless=new` 那条路根本没人验过
+      #   ⇒ 结果"自证绿、测试红"，又多花一整轮 CI 才定位到是 Linux 的沙箱问题。
+      #   所以这里调 test/browser-locator.mjs 的 `cdpSmoke()`：
+      #   **用测试真正使用的那套参数**起一次，并真的去敲 /json/list；
+      #   起不来就把浏览器自己的 stderr 打出来（各测试原本 stdio:'ignore'，全扔了）。
       - name: 自证浏览器可用（19 个浏览器测试要用）
         run: |
           set -euo pipefail
@@ -63,16 +74,27 @@ jobs:
               }
               console.log('✓ 浏览器：' + b);
               const { execFileSync } = await import('node:child_process');
+              let ver = '(取不到版本号)';
               try {
-                const v = execFileSync(b, ['--version'], { encoding: 'utf8', timeout: 30000 }).trim();
-                console.log('  版本：' + v);
+                ver = execFileSync(b, ['--version'], { encoding: 'utf8', timeout: 30000 }).trim();
               } catch (e) {
-                console.error('  ✗ 找到了 ' + b + ' 但 --version 跑不起来：' + e.message);
+                console.error('  ✗ --version 跑不起来：' + e.message);
                 process.exit(2);
               }
+              console.log('  版本：' + ver);
+              console.log('  追加的启动标志：' + JSON.stringify(m.browserArgs()));
+              console.log('  ── CDP 冒烟（用测试真正的那套参数起一次）──');
+              const r = await m.cdpSmoke();
+              if (!r.ok) {
+                console.error('  ✗ 浏览器起来了，但 CDP 端点没出现（' + r.secs + 's，端口 ' + r.port + '）');
+                console.error('    19 个浏览器测试都会以「CDP 没起来」失败 —— 这里红比在那里红得早，而且有线索。');
+                console.error('  ── 浏览器自己的输出（尾部）──');
+                console.error(r.stderr);
+                process.exit(2);
+              }
+              console.log('  ✓ CDP 端点已就绪（' + r.secs + 's，端口 ' + r.port + '）');
             });
           "
-
       - name: JS 语法检查
         run: |
           for f in js/app.js js/editor.js \

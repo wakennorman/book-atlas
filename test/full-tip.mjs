@@ -16,7 +16,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EDGE = requireBrowser();
@@ -34,7 +34,7 @@ const PORT = await new Promise((r) => server.listen(0, () => r(server.address().
 const CDP_PORT = await freePort();
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-tip-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = ''; r.on('data', (d) => { b += d; });

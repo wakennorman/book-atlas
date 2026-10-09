@@ -5,7 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 /* v0.133：分组图注（「曹魏 / 蜀汉 / 东吴…」）的**视觉可读性**。
  *
@@ -46,7 +46,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-band-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = '';

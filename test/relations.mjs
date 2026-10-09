@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 // 同一对人物之间可能有**类型完全相同**的多条关系 —— 图上会画成多条线（不同曲率），
 // 但只靠 (source, target, value=类型) 分不开它们。
@@ -35,7 +35,7 @@ PORT = server.address().port;   // v0.97：临时端口
 
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-rel-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
     let b = ''; r.on('data', (d) => { b += d; });

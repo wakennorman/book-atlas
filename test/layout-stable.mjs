@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 // 相同视口下也能对上，但**换视口就对不上**，所以这里只断言同视口。
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './browser-locator.mjs';
+import { requireBrowser, browserArgs } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ 每次冷启动必须用**自己的** CDP 端口。
@@ -76,7 +76,7 @@ async function coldStart(label, views) {
   const CDP_PORT = await freePort();   // v0.97：临时端口，不再靠 cdpSeq 错开
   sweepStaleProfiles();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-det-'));
-  const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+  const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
   const cdpUrl = () => new Promise((res, rej) => {
     http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
       let b = ''; r.on('data', (d) => { b += d; });
@@ -259,7 +259,7 @@ try {
     const CDP_PORT = await freePort();
     sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-hist-'));
-    const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+    const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
     const cdpUrl = () => new Promise((res, rej) => {
       http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
         let s = ''; r.on('data', (d) => { s += d; });
@@ -360,7 +360,7 @@ try {
     const CDP_PORT = await freePort();
     sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-vm-'));
-    const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+    const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
     const PIN = `(() => {
       let s = document.getElementById('ba-test-pin');
       if (!s) { s = document.createElement('style'); s.id = 'ba-test-pin'; document.head.appendChild(s); }
