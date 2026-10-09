@@ -110,7 +110,7 @@ const send = (method, params = {}) => new Promise((resolve, reject) => {
 try {
   // 等 CDP 端口起来
   let url = null;
-  for (let i = 0; i < 40 && !url; i++) {
+  for (let i = 0; i < 240 && !url; i++) {
     try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); }
   }
   if (!url) throw new Error('CDP 没起来');

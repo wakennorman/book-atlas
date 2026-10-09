@@ -84,7 +84,7 @@ async function coldStart(label, views) {
     }).on('error', rej);
   });
   let url = null;
-  for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
+  for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
 /* ⚠ 连不上 CDP 时必须**在这里**报错退出，不能往下走。
  *
  * 下面是 `new WebSocket(url)` 加一个只监听 onopen/onerror 的 promise ——
@@ -267,7 +267,7 @@ try {
       }).on('error', rej);
     });
     let url = null;
-    for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
+    for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
     const ws = new WebSocket(url);
     await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
     let seq = 0; const pending = new Map();
@@ -373,7 +373,7 @@ try {
       }).on('error', rej);
     });
     let url = null;
-    for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
+    for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await sleep(250); } }
     const ws = new WebSocket(url);
     await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
     let seq = 0; const pending = new Map();

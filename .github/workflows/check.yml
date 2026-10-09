@@ -20,7 +20,12 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # v0.165.5：原来写的是 20，**和本地（Node 22）不一致**，于是报
+          #   `WebSocket is not defined` —— 全局 WebSocket 从 Node 21 才有（22 起默认开），
+          #   20.20.2 上没有 ⇒ 20 个浏览器测试全部起不来 WebSocket。
+          # 同一族病：本地绿、CI 红，而量程差藏在"CI 用的 Node 版本"里。统一到 22 = 与本地一致。
+          # package.json 的 engines 也同步写死，免得下次有人只改一边。
+          node-version: '22'
           cache: npm
 
       - name: 安装依赖

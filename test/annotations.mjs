@@ -50,7 +50,7 @@ const cdpUrl = () => new Promise((res, rej) => {
   }).on('error', rej);
 });
 let url = null;
-for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 /* v0.165.3：原来这里是「拿不到 CDP ⇒ process.exit(0)」（跳过并报成功）——
  * 那是假绿：浏览器起不来时这条测试会显示通过，而一条断言都没跑。
  * 环境缺陷必须诚实地红。诊断信息只报事实，不猜原因。 */

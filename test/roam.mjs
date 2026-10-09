@@ -111,7 +111,7 @@ const cdpUrl = () => new Promise((res, rej) => {
   }).on('error', rej);
 });
 let url = null;
-for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 
 /* ⚠ 连不上 CDP 时必须**在这里**报错退出，不能往下走。
  *

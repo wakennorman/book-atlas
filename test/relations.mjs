@@ -43,7 +43,7 @@ const cdpUrl = () => new Promise((res, rej) => {
   }).on('error', rej);
 });
 let url = null;
-for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+for (let i = 0; i < 240 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 
 const ws = new WebSocket(url);
 await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
