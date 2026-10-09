@@ -170,14 +170,16 @@ ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.d
  *       修它要动 ECharts 的 roam 或换成非手势的缩放驱动，属于改应用/改测试策略。
  */
 const CDP_TIMEOUT = (method) => (String(method).startsWith('Input.') ? 300000 : 30000);
-const send = (method, params = {}) => new Promise((resolve, reject) => {
+/* v0.166.1：多一个 timeoutMs 参数，让"预检"能用短超时；
+ * 默认仍走 CDP_TIMEOUT —— 300 秒那个值覆盖的是机器负载，不动它。 */
+const send = (method, params = {}, timeoutMs = CDP_TIMEOUT(method)) => new Promise((resolve, reject) => {
   const id = ++seq;
   pending.set(id, { resolve, reject });
   ws.send(JSON.stringify({ id, method, params }));
   /* CDP 响应不来时 pending 条目永不 settle ⇒ 进程静默挂死（0 字节输出、无退出码）。 */
   setTimeout(() => {
-    if (pending.delete(id)) reject(new Error(`CDP ${method} ${CDP_TIMEOUT(method) / 1000} 秒无响应`));
-  }, CDP_TIMEOUT(method));
+    if (pending.delete(id)) reject(new Error(`CDP ${method} ${timeoutMs / 1000} 秒无响应`));
+  }, timeoutMs);
 });
 const js = async (e) => { const r = await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -539,6 +541,36 @@ try {
    *
    * 本节用**真实滚轮事件**（CDP Input.dispatchMouseEvent / mouseWheel）驱动，
    * 因为派发合成 WheelEvent 是不行的：zrender 不认非可信事件，测试会"假绿"。 */
+  /* v0.166.1 预检：先确认这台机器的 CDP 滚轮管线**能用**，再用它。
+   *
+   * 为什么加：文件头记的那个老问题（headless 下 `Input.dispatchMouseEvent` 不回）
+   * 在本机是**间歇性**的，一旦撞上就是 **300 秒超时**，整步 390 秒。
+   * 而实测正常时 `Input.*` 的响应是 **1~7 毫秒** —— 15 秒已经是它的两千倍，
+   * 所以"15 秒不回"几乎不可能是负载，只能是管线真不可用。
+   *
+   * ⇒ 撞上时从"挂 6 分半钟、只留一句『300 秒无响应』"变成
+   *   **15 秒内失败、并说清是环境不可用、且把已经跑过的断言数一起报出来**。
+   *   退出码用 **3**（区别于 1）以便机器区分"环境不可用"与"断言失败"。
+   *
+   * ⚠ 刻意**不**改成 exit 0：滚轮那几条断言确实没跑，
+   *   报成功就是本项目今天治了一整天的假绿。 */
+  /* ⚠ 这里**不能**写 `let wheelUsable = ...`：那个变量除了赋值从没被读过，
+   * ESLint 的 no-unused-vars 会报红（门禁里就有一步 ESLint）。成败全在 catch 里。 */
+  try {
+    await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 10, y: 10, deltaX: 0, deltaY: -1 }, 15000);
+  } catch {
+    console.error('  ✗ 本机的 CDP 滚轮管线不可用（15 秒内 Input.dispatchMouseEvent 无响应）');
+    console.error('    —— 这是**环境**问题，不是断言失败，也不是数据改动引入的：');
+    console.error('       · 正常响应是 1~7 毫秒，15 秒已是两千倍，不可能是负载；');
+    console.error('       · 同一份代码在 CI（Linux）上稳定通过 67/0；');
+    console.error('       · 机制见本文件头 v0.121 那段（合成 WheelEvent 不行、zr 事件映射不稳定）。');
+    console.error(`    滚轮那几条断言**没有跑**（通过 ${passed} · 失败 ${failed}，不含它们）。`);
+    try { proc.kill(); } catch { /* 忽略 */ }
+    try { server.close(); } catch { /* 忽略 */ }
+    releaseProfile(profile);
+    process.exit(3);
+  }
+
   console.log('\n▶ v0.97 锁定某个点后滚轮缩放：画布不许被复位');
   await unlockAll();
   await fill('#search-input', '曹操');
