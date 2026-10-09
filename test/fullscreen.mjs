@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 /* v0.131：全屏展示。
  *

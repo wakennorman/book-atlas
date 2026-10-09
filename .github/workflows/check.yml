@@ -26,7 +26,7 @@ jobs:
       - name: 安装依赖
         run: npm install
 
-      # v0.165 新增。**19 个浏览器测试（test/_browser.mjs 找的那一个）此前在 CI 上
+      # v0.165 新增。**19 个浏览器测试（test/browser-locator.mjs 找的那一个）此前在 CI 上
       # 一次都没真跑过**，原因有两条，缺一不可：
       #   ① 19 个测试各自抄了一份「浏览器在哪」，清一色是 Windows 绝对路径
       #      （`C:\Program Files (x86)\Microsoft\Edge\…`）⇒ ubuntu-latest 上 `existsSync` 全 false；
@@ -35,7 +35,7 @@ jobs:
       #      ⇒ 整个 job 崩掉 ⇒ 后面 14 个步骤全部 SKIP。
       # 实测后果：数据体检最后一次全绿是 2026-09-30，之后 34 次全红；而本地 55 步一直绿
       # （一直跑在 Windows 上），于是「本地绿 / CI 红」长期并存而没人发现。
-      # 现在两处都修了：① 路径判断收敛到 test/_browser.mjs（认 Windows / macOS / Linux）；
+      # 现在两处都修了：① 路径判断收敛到 test/browser-locator.mjs（认 Windows / macOS / Linux）；
       # ② 找不到浏览器时**退出码 2 而不是 0** —— 静默跳过才是「门禁全绿但什么都没测」的根源。
       #
       # ⚠ 这里**不装浏览器**：GitHub 的 ubuntu-24.04 镜像本来就带
@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           echo "平台：$(uname -srm)"
           node -e "
-            import('./test/_browser.mjs').then(async (m) => {
+            import('./test/browser-locator.mjs').then(async (m) => {
               const b = m.findBrowser();
               if (!b) {
                 const { paths, cmds, label } = m.browserCandidates();
@@ -83,7 +83,7 @@ jobs:
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
                    test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs \
-                   test/_browser.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
+                   test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -117,6 +117,17 @@ jobs:
         # 判据：扫注释 —— 含「硬门禁」的行 ±1 内出现的脚本名，必须真的在 run 步骤里。
         # 想说明"某脚本**不是**硬门禁"，就别把它的名字写在「硬门禁」旁边（隔 ≥2 行）。
         run: node test/gate-claims.mjs
+
+      - name: 文件必须在仓库里（本地绿、CI 崩的经典来源）
+        # v0.165.2 新增。起因是 v0.165 连续两次把 CI 推红，而本地门禁 55 步全绿：
+        #   新建的 `test/_browser.mjs` **从未进过仓库** —— `.gitignore` 第 31 行 `_*.mjs`
+        #   把它静默排除，`git add -A` 也不捡 ⇒ CI 上 ERR_MODULE_NOT_FOUND。
+        #   同目录 `test/_profile-guard.mjs` 命中同一规则却好好活着，
+        #   只因它在规则出现前就已提交（已跟踪文件不再受 ignore 约束）——
+        #   **同类文件一个能活一个不能活，本地目录看不出区别。**
+        # 判据两条：① check.yml 里引用的每个 .mjs 磁盘上必须存在（当场抓住本次故障）；
+        #          ② test/ 与 scripts/ 下每个 .mjs 必须已入库，或命中临时文件例外名单。
+        run: node test/helpers-tracked.mjs
 
       - name: 拆分数据包与 data/*.json 同步
         # v85 新增。首屏只下 <slug>.graph.json，文案在空闲时后台预取。

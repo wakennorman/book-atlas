@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 // v89：锁定（搜索单个人物 / 两人关系）时图上**只画**锁定集合内的点与线。
 // 起因：原先集合外的元素只是 opacity 调低继续画着，也没有 silent，而 zrender 的命中测试

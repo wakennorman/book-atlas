@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 // v89：ECharts 的 graph 系列**不会**把世界坐标 1:1 画到像素上 —— 它先把数据包围盒
 // **等比**塞进「容器居中 80%」的 viewRect，再把 zoom 乘在那个适配系数之上。

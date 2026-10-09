@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 // 复现并守住三个只在真实浏览器里才暴露的问题（v85 修）：
 //  A. 快速切书 ⇒ loadBook 必须丢弃过期响应，否则后到的会把当前书覆盖掉

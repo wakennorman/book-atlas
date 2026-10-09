@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 // 而 applyZoom 会显式写 viewCenter，正好把 bug 绕过去了；而且判据也用的是 state.viewCenter，
 // 万一它陈旧，测试就是假绿。这里一律量 zrender 里的**真实墨迹位置**。
 import { spawn as _s } from 'node:child_process';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ v0.96：原来这里写死 `const PORT = 19135, CDP_PORT = 19136;`，代价是实测踩到的：

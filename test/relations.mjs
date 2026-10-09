@@ -6,7 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 // 同一对人物之间可能有**类型完全相同**的多条关系 —— 图上会画成多条线（不同曲率），
 // 但只靠 (source, target, value=类型) 分不开它们。

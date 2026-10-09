@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 // 相同视口下也能对上，但**换视口就对不上**，所以这里只断言同视口。
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ 每次冷启动必须用**自己的** CDP 端口。

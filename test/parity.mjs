@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createGraphCore } from '../shared/graph-core.js';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');

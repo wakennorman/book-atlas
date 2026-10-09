@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 import { guessKin as nodeGuessKin, checkKin as nodeCheckKin } from '../scripts/kin.mjs';
 import { isParentChild as nodeIsParentChild } from '../scripts/kin-terms.mjs';
-import { requireBrowser } from './_browser.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填

@@ -5,6 +5,56 @@
 
 ---
 
+## v0.165.2 · 我造的那个文件从来没进过仓库 —— `.gitignore` 第 31 行
+
+### 1. 现场：v0.165 连推两次，CI 都红在同一步，本地门禁 55 步全绿
+
+拿到 CI 日志（匿名下载 403，改用 git 凭据里的 token 才拿得到）之后，真相一句话：
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+  '/home/runner/work/book-atlas/book-atlas/test/_browser.mjs'
+```
+
+**文件不在仓库里。** v0.165 新建的 `test/_browser.mjs`（19 个浏览器测试都 import 它）
+从头到尾只存在于本地磁盘 —— `.gitignore` 第 31 行写着 `_*.mjs`
+（本意是"别把本地临时脚本发上去"），于是它被静默排除，**`git add -A` 也不捡**。
+
+### 2. 为什么本地一点异常都没有
+
+同目录下 `test/_profile-guard.mjs` 命中的是**同一条规则**，却一直好好地躺着。
+区别只有一个：**它在 `_*.mjs` 这条规则被加进 `.gitignore` 之前就已经提交了**，
+而 git 对已跟踪文件不再应用 ignore 规则。
+
+⇒ 同一个目录、同一种命名，**一个能活一个不能活，光看本地目录完全看不出区别。**
+再加上本地门禁永远绿（文件就在磁盘上，import 得动），这个错误在本地没有任何表征。
+
+### 3. 修法：改名，不去给 `.gitignore` 开口子
+
+`test/_browser.mjs` → **`test/browser-locator.mjs`**（不以下划线开头），21 处引用同步改。
+
+另一条路是加 `!test/_*.mjs` 反向规则，**没选**：
+那条 `_*.mjs` 的本意就是"别把本地临时脚本发上去"，
+为它开口子等于允许以后有人往 `test/` 里丢 `test/_scratch.mjs` 并被提交。
+名字不撞规则更省事，也不会被再次误伤。
+
+### 4. 加门禁 `test/helpers-tracked.mjs`（同一个教训，只罚一次不够）
+
+「本地绿、CI 崩」这个类别本身要被门禁住，判据两条：
+
+① **引用完整性**：`check.yml` 非注释行里出现的每个 `*.mjs`，磁盘上必须真的存在
+   —— 这条能**当场**抓住本次故障（`check.yml` 的语法检查清单里就写着那个文件名）；
+
+② **入库完整性**：`test/` 与 `scripts/` 下每个 `*.mjs`必须要么已被 git 跟踪，
+   要么命中**明写的**临时文件例外名单（只有 `_tmp-*` / `_y*.mjs` 两条，是白名单而不是
+   "凡被忽略就放过"，否则这条守卫等于没有）。
+
+**自证不是"看着对"**：把现场原样复原（往 `check.yml` 里插一行指向 `test/_browser.mjs` 的 run 步骤），
+守卫确实报红、点名了缺失的脚本、并指出 `.gitignore` 这个真凶；随后把 `check.yml` 逐字还原，
+它立刻不再报红。
+
+---
+
 ## v0.165：19 个浏览器测试在 CI 上一次都没真跑过 —— 修了路径、修了"找不到就静默跳过"
 
 ## 起因：用户让我查 CI 的真实状态
@@ -28,7 +78,7 @@ CI 里实际跑到的只有 lint、数据校验、台账检查等纯 Node 步骤
 
 ## 修法（三处）
 
-### 1. 新增 `test/_browser.mjs` —— 单一事实源
+### 1. 新增 `test/browser-locator.mjs` —— 单一事实源
 
 - `browserCandidates(platform)`：Windows 给绝对路径、macOS 给 `.app` 包内路径、
   Linux 给绝对路径 + **PATH 命令名**（msedge / chromium / google-chrome …，容器里通常这么装）；
@@ -53,7 +103,7 @@ CI 里实际跑到的只有 lint、数据校验、台账检查等纯 Node 步骤
 - name: 自证浏览器可用（19 个浏览器测试要用）
   run: |
     echo "平台：$(uname -srm)"
-    node -e "import('./test/_browser.mjs').then(async m => {
+    node -e "import('./test/browser-locator.mjs').then(async m => {
       const b = m.findBrowser(); if (!b) { …打印试过的路径与命令…; process.exit(2); }
       console.log('✓ 浏览器：' + b); console.log('  版本：' + execFileSync(b, ['--version'])); })"
 ```
@@ -76,13 +126,13 @@ CI 里实际跑到的只有 lint、数据校验、台账检查等纯 Node 步骤
 这跟根因是同一件事。于是安装步骤整段删掉，只留自证：打印用的是哪一个、什么版本，
 找不到就当场红（而不是等某个测试毫无线索地挂掉）。
 
-顺带把 CI 的 `node --check` 清单补齐 11 个（`_browser.mjs` / `build.mjs` / `ai.mjs` /
+顺带把 CI 的 `node --check` 清单补齐 11 个（`browser-locator.mjs` / `build.mjs` / `ai.mjs` /
 `annotations` / `band-labels` / `full-tip` / `fullscreen` / `gen-fill` / `layout-stable` /
 `place` / `place-visible`）——同一类毛病：清单里漏了，就等于没检查。
 
 ## 验证
 
-- `test/_browser.mjs` 自证 13/13：三平台候选正确、当前机器找得到 Edge、
+- `test/browser-locator.mjs` 自证 13/13：三平台候选正确、当前机器找得到 Edge、
   **模拟 plan9 平台 ⇒ exit=2**、诊断信息含平台/试过的命令/修法/退出码理由；
 - 19 个文件语法检查通过 + 复核无内联 Windows 路径、无 `if (!EDGE)` 残留；
 - check.yml 自证步骤 14/14：不是 `run: node X` 形态（本地 Windows 门禁不会执行它）、
