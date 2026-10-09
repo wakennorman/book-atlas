@@ -156,6 +156,19 @@ jobs:
         #          ② test/ 与 scripts/ 下每个 .mjs 必须已入库，或命中临时文件例外名单。
         run: node test/helpers-tracked.mjs
 
+      - name: 门禁步骤必须可能报红（形同虚设的步骤会显示"通过"）
+        # v0.165.7 新增。2026-10-09 在 CI 上连抓三处假绿，同一个病：
+        #   「步骤在 run 里、找不到东西就 process.exit(0)」⇒ 门禁显示通过，
+        #   而它一条断言都没跑（test/browser.mjs + 四个「拿不到 CDP ⇒ 跳过」）。
+        #   现有的 test/gate-claims.mjs 守的是「注释自称的守卫必须在 run 步骤里」，
+        #   它能发现注释吹牛，发现不了「步骤在、却永远不会红」—— 后者更隐蔽，
+        #   因为文件名和 run 步骤都齐整，任何清单式核对都会认为它没问题。
+        # 判据：run: node X 的 X 必须含非零退出路径；豁免必须写明
+        #   GATE_MAY_ALWAYS_SUCCEED: <为什么>，没理由的豁免等于没豁免。
+        # ⚠ 按语义判不按字面判：process.exit(fail === 0 ? 0 : 1) 是能报红的
+        #   （1 在假分支里）；第一版只认字面量 process.exit(1)，误判过。
+        run: node test/gate-effectiveness.mjs
+
       - name: 拆分数据包与 data/*.json 同步
         # v85 新增。首屏只下 <slug>.graph.json，文案在空闲时后台预取。
         # 改了 data/*.json 忘了重跑生成脚本 ⇒ 首屏会拿到过期（甚至缺文案）的数据。
