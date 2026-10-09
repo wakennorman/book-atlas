@@ -19,17 +19,11 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { requireBrowser } from './browser-locator.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
 const CDP_PORT = await freePort();
-
-const EDGE_CANDIDATES = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-];
 
 let passed = 0, failed = 0;
 const ok = (cond, msg) => { if (cond) { passed++; console.log(`  ✓ ${msg}`); } else { failed++; console.error(`  ✗ ${msg}`); } };
@@ -77,8 +71,15 @@ function cdpUrl() {
 }
 
 /* ---------------- 主流程 ---------------- */
-const edge = EDGE_CANDIDATES.find((p) => fs.existsSync(p));
-if (!edge) { console.error('找不到 Edge/Chrome，跳过浏览器测试'); process.exit(0); }
+/* v0.165.3：原来这里是自己抄的一份 Windows 绝对路径（`EDGE_CANDIDATES`，
+ * 变量名不叫 EDGE，所以 v0.165 那轮批量迁移**漏掉了本文件**），
+ * 找不到就 `process.exit(0)`。
+ * ⇒ 在 CI（Ubuntu）上它找不到浏览器、直接以 0 退出、**在门禁里显示成"通过"**，
+ *    而一条断言都没跑。这是本项目最典型的假绿：不是"没测"，是"假装测了"。
+ *
+ * 现在两处都改掉：浏览器查找走共享的 browser-locator（认 Windows / macOS / Linux），
+ * 找不到时它自己 exit 2，不再静默跳过。 */
+const edge = requireBrowser();
 
 const server = await serve();
 sweepStaleProfiles();

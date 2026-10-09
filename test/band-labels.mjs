@@ -56,7 +56,18 @@ const cdpUrl = () => new Promise((res, rej) => {
 });
 let url = null;
 for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
-if (!url) { console.log('  (跳过) 拿不到 CDP'); process.exit(0); }
+/* v0.165.3：原来这里是「拿不到 CDP ⇒ process.exit(0)」（跳过并报成功）——
+ * 那是假绿：浏览器起不来时这条测试会显示通过，而一条断言都没跑。
+ * 环境缺陷必须诚实地红。诊断信息只报事实，不猜原因。 */
+if (!url) {
+  console.error('  ✗ 拿不到 CDP 端点 —— 环境/启动失败，**不是断言失败**（不再跳过）');
+  console.error(`    浏览器：${EDGE}　端口：${CDP_PORT}　profile：${profile}`);
+  console.error(`    进程还活着吗：${proc.exitCode === null ? '是' : '否，已退出 code=' + proc.exitCode}`);
+  console.error('    下一步：把浏览器的 stderr 抓出来看（现在多数测试是 stdio: ignore，扔掉了）');
+  try { proc.kill(); } catch { /* 忽略 */ }
+  try { server.close(); } catch { /* 忽略 */ }
+  process.exit(1);
+}
 
 const ws = new WebSocket(url);
 await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });

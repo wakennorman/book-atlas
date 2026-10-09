@@ -60,7 +60,16 @@ PORT = server.address().port;   // v0.97：临时端口
 
 sweepStaleProfiles();
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-ed-'));
-const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
+/* v0.165.3：`stdio: 'ignore'` 把浏览器自己的报错**全扔了**。
+ * 本文件在 CI（Ubuntu）上稳定连不上 CDP 端点，而 stdout 只有一句「连不上 CDP 端点」
+ * —— 环境缺陷时这句话没有任何线索。改成接住 stderr（只留尾部，浏览器会刷很多日志），
+ * 启动失败时一并打出来。 */
+const proc = spawn(EDGE, [`--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--disable-gpu', '--window-size=1600,1000', 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'] });
+const browserLog = [];
+for (const s of [proc.stdout, proc.stderr]) {
+  s?.on('data', (d) => { browserLog.push(d); if (browserLog.length > 400) browserLog.shift(); });
+}
+const browserTail = (n = 3000) => Buffer.concat(browserLog).toString('utf8').slice(-n).trim();
 
 const cdpUrl = () => new Promise((res, rej) => {
   http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
@@ -69,7 +78,10 @@ const cdpUrl = () => new Promise((res, rej) => {
   }).on('error', rej);
 });
 let url = null;
-for (let i = 0; i < 40 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
+/* v0.165.3：预算从 10 秒（40 × 250ms）放宽到 30 秒。CI 上浏览器是**冷启动**
+ *（首次运行要建 profile、字体缓存），10 秒贴着边缘 —— browser.mjs 用同样的
+ * 10 秒预算能过、这里过不了，说明它本来就只是勉强够，不是有余量。 */
+for (let i = 0; i < 120 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
 
 let ws, seq = 0; const pending = new Map();
 const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params }));  /* v0.115：CDP 响应不来时 pending 条目永不 settle ⇒ 静默挂死。 */ setTimeout(() => { if (pending.delete(id)) reject(new Error(method + ' 30 秒无响应')); }, 30000);});
@@ -86,8 +98,10 @@ try {
  */
 if (!url) {
   console.error('  ✗ Edge 起来后连不上 CDP 端点 —— 这是**环境/负载**问题，不是断言失败。');
-  console.error('    多半是刚借到的临时端口被别的进程抢走了（借出到 Edge 抢占之间有个毫秒级窗口，');
-  console.error('    见 test/_free-port.mjs 的说明）—— 重跑一次通常就好。');
+  console.error(`    浏览器：${EDGE}　端口：${CDP_PORT}　profile：${profile}`);
+  console.error(`    等了 30 秒；进程还活着吗：${proc.exitCode === null ? '是' : '否，已退出 code=' + proc.exitCode}`);
+  const tail = browserTail();
+  console.error(tail ? '    ── 浏览器自己的输出（尾部）──\n' + tail : '    （浏览器没吐出任何 stderr —— 它可能压根没起来）');
   try { proc.kill(); } catch { /* 忽略 */ }
   try { server.close(); } catch { /* 忽略 */ }
   releaseProfile(profile);
