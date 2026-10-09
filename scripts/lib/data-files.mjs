@@ -47,10 +47,15 @@ export const DATA = path.join(ROOT, 'data');
  *   .relayout.json                布局缓存
  *   .altnames-sources.json        别名出处
  *   .name-form-ok.json            译名异体
+ *   .surname-blind-ok.json        提取器盲区豁免（v0.164 新增：产不出来的主名要申报理由）
  *   books.json                    三本书的清单
  *   kin-terms-exempt.json         称谓对质豁免清单（v0.113 新建，最容易漏）
+ *
+ * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
+ *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
+ *   `test/books-registry.mjs` 立刻把它当成「没登记进 books.json 的书」报红）。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。

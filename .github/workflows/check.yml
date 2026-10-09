@@ -32,10 +32,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
@@ -245,6 +245,35 @@ jobs:
         # 逐场景断言退出码（**3 个正常态 + 13 个期望报红 + 1 个反向 + 1 个还原**）。
         # 其中一条**反向**：名字是真人名的**子串**（甲 ⊂ 甲人）不许报红。
         run: node test/missing-ok-guard.mjs
+
+      - name: 提取器盲区台账（产不出来的主名必须申报理由）
+        # v0.164 新增。缺口检测（`audit-against-text.mjs` 找「书里提到、数据里没有的人」）
+        # 靠 `/[百家姓][\u4e00-\u9fa5]{1,2}/` 产候选 ⇒ **产不出来的人，真漏了也永远不会
+        # 进缺口清单**，缺口清单因此「看着干净」。实测三本书共 **183 个主名**落在盲区：
+        #   · 百年孤独 **60 个主名一个都产不出来**、罪与罚 5/38、三国 792/882；
+        #   · 成因①复姓/生僻姓/音译名首字不在那张**单字**百家姓表里（三国 63 人：
+        #     皇甫嵩、桥玄、审配、沮授、典韦、貂蝉、太史慈、淳于琼…）；
+        #   · 成因②全名太长，提取器只取 2~3 字（百年孤独 57 人、罪与罚 31 人，
+        #     另有称谓型主名如「吴太夫人」「清河公主」）。
+        # 本步**只把盲区显式化，不改提取器**：补复姓要动工具行为，而仓库没有原著文本
+        # （`.text/` 被 gitignore）⇒ 改完无法实测召回变化，要动先按新书处理规程 §四 0.5/0.6
+        # 备好原文本地跑一次对比。
+        # 判据里最要紧的是 **C0**：本检查**直接解析 audit-against-text.mjs 的真实规则**
+        # （SURNAMES / surnameRe 长度区间 / norm 字符类），解析不到就 exit 1 —— 门禁与工具
+        # 同源；哪天提取器放宽（补复姓），台账里的旧豁免会**逐条报红过期**，照着删。
+        run: node scripts/check-surname-coverage.mjs
+
+      - name: 提取器盲区台账检查自身的守卫（证明它真的会报红）
+        # v0.164 新增。tmp 里造最小 data/（books.json + demo 书 + 台账）**和一份
+        # audit-against-text.mjs 副本**（检查要解析它），用 BOOKATLAS_ROOT 把 ROOT 指过去，
+        # 逐场景断言退出码（**2 个正常态 + 10 个期望报红 + 1 个反向 + JSON 坏 + 孤儿台账
+        # + C0 同源三档 + 1 个自失效 + 1 个还原** = 21 条）。
+        # 两条值得单说的：
+        #   · **C0 同源三档**：把 tmp 里那份工具的 SURNAMES / norm / surnameRe 分别改坏，
+        #     三档都必须 exit 1 —— 宁可报红，不猜一套默认值跑出假绿；
+        #   · **自失效**：往姓氏表里加一个字（丽），「丽贝卡」的豁免立刻变过期报红
+        #     ⇒ 台账不会随着工具变强而变成没人信的垃圾堆。
+        run: node test/surname-coverage-guard.mjs
 
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
