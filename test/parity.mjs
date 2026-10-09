@@ -29,18 +29,14 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createGraphCore } from '../shared/graph-core.js';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { requireBrowser } from './_browser.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
 const CDP_PORT = await freePort();
 
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.error('找不到 Edge/Chrome，跳过'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const SLUGS = ['one-hundred-years-of-solitude', 'crime-and-punishment', 'three-kingdoms'];
 let passed = 0, failed = 0;

@@ -29,17 +29,13 @@ import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 import { guessKin as nodeGuessKin, checkKin as nodeCheckKin } from '../scripts/kin.mjs';
 import { isParentChild as nodeIsParentChild } from '../scripts/kin-terms.mjs';
+import { requireBrowser } from './_browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
 const CDP_PORT = await freePort();
 
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.error('找不到 Edge/Chrome，跳过'); process.exit(0); }
+const EDGE = requireBrowser();
 
 let passed = 0, failed = 0;
 const ok = (c, m) => { if (c) { passed++; console.log(`  ✓ ${m}`); } else { failed++; console.error(`  ✗ ${m}`); } };

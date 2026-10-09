@@ -26,6 +26,33 @@ jobs:
       - name: 安装依赖
         run: npm install
 
+      # v0.165 新增。**19 个浏览器测试（test/_browser.mjs 找的那一个）此前在 CI 上
+      # 一次都没真跑过**，原因有两条，缺一不可：
+      #   ① 19 个测试各自抄了一份「浏览器在哪」，清一色是 Windows 绝对路径
+      #      （`C:\Program Files (x86)\Microsoft\Edge\…`）⇒ ubuntu-latest 上 `existsSync` 全 false；
+      #   ② 更致命的是 `build.mjs` **漏了「找不到就跳过」的保护**（19 个里唯一）⇒
+      #      `spawn(undefined)` 同步抛 `The "file" argument must be of type string`
+      #      ⇒ 整个 job 崩掉 ⇒ 后面 14 个步骤全部 SKIP。
+      # 实测后果：数据体检最后一次全绿是 2026-09-30，之后 34 次全红；而本地 55 步一直绿
+      # （一直跑在 Windows 上），于是"本地绿 / CI 红"长期并存而没人发现。
+      # 现在两处都修了：① 路径判断收敛到 test/_browser.mjs（认 Windows / macOS / Linux）；
+      # ② 找不到浏览器时**退出码 2 而不是 0** —— 静默跳过才是"门禁全绿但什么都没测"的根源。
+      # 所以这里必须真的装一个浏览器，否则门禁会诚实地红在"环境不对"上（那是它该做的）。
+      - name: 安装无头浏览器（19 个浏览器测试要用）
+        run: |
+          set -euo pipefail
+          # Ubuntu 24.04 起 chromium 是 snap 包装的（snapd 在容器里起不来）⇒ 用 microsoft-edge。
+          # 先试 playwright 自带的（版本固定、最稳），失败再回落到 apt 的 microsoft-edge。
+          if npx --yes playwright install --with-deps chromium 2>/dev/null; then
+            echo "playwright chromium 已装"
+          else
+            echo "playwright 装失败，回落到 apt 安装 microsoft-edge-stable"
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends microsoft-edge-stable
+          fi
+          # 自证：test/_browser.mjs 的查找口径必须真的能找到它（否则下面的步骤会 exit 2）
+          node -e "import('./test/_browser.mjs').then(m => { const b = m.findBrowser(); console.log('浏览器：' + b); if (!b) process.exit(1); })"
+
       - name: JS 语法检查
         run: |
           for f in js/app.js js/editor.js \

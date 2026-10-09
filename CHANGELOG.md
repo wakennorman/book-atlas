@@ -5,6 +5,74 @@
 
 ---
 
+## v0.165：19 个浏览器测试在 CI 上一次都没真跑过 —— 修了路径、修了"找不到就静默跳过"
+
+## 起因：用户让我查 CI 的真实状态
+
+我一直只在本地跑门禁（55 步全绿），从没看过 GitHub Actions 的实际结果。
+用 API 查了 `wakennorman/book-atlas`：数据体检门禁**最后一次成功是 2026-09-30**，
+之后 **34 次全红**。本地绿 / CI 红，长期并存，没人发现。
+
+## 现场：两条缺陷叠加，缺一不可
+
+**① 19 个走 CDP 的测试各自抄了一份「浏览器在哪」，清一色是 Windows 绝对路径**
+（`C:\Program Files (x86)\Microsoft\Edge\…`）。ubuntu-latest 上 `existsSync` 全 false。
+
+**② `build.mjs` 是 19 个里唯一漏了「找不到就跳过」保护的那个**
+（其余 18 个都有 `if (!EDGE) { …exit(0) }`）。没有保护 ⇒ 找到 `EDGE === undefined`
+⇒ `spawn(undefined)` **同步抛出** `The "file" argument must be of type string`
+⇒ 整个 job 崩掉 ⇒ **后面 14 个步骤全部 SKIP**。
+
+⇒ 后果不只是"红"：**v0.145–v0.164 这批提交里的浏览器层测试，在 CI 上一次都没跑过**。
+CI 里实际跑到的只有 lint、数据校验、台账检查等纯 Node 步骤（约占前 1/3）。
+
+## 修法（三处）
+
+### 1. 新增 `test/_browser.mjs` —— 单一事实源
+
+- `browserCandidates(platform)`：Windows 给绝对路径、macOS 给 `.app` 包内路径、
+  Linux 给绝对路径 + **PATH 命令名**（msedge / chromium / google-chrome …，容器里通常这么装）；
+- `requireBrowser()`：找到就打印用的是哪一个；**找不到就打印诊断（试过什么、当前平台、怎么修）
+  并退出码 2**。
+
+> ⚠ **为什么是 2 不是 0**：找不到浏览器就静默 `exit(0)`，门禁会显示"通过"，
+> 而浏览器测试一条都没跑 —— **那才是假绿**。环境缺陷应当诚实地红。
+> （我第一版判断"硬编码路径导致 CI 失败"时，就是默认了这些文件有跳过保护；
+>  实际逐个数过才发现只有 18/19 有，`build.mjs` 那个例外才是崩溃的直接原因。）
+
+### 2. 19 个测试全部切过去（净减 44 行）
+
+逐文件机械替换，每处替换后 `node --check` + 复核无残留内联路径、无 `if (!EDGE)` 死代码。
+顺手删掉 8 处**已成死代码**的 `if (!EDGE) { … process.exit(0) }` ——
+`requireBrowser()` 找不到时自己就退 2，走不到那里；而且它们写着 `exit(0)`，
+正是本轮要废掉的口径，留着会让下一个人以为还能这么干。
+
+### 3. `.github/workflows/check.yml` 补浏览器安装
+
+```yaml
+- name: 安装无头浏览器（19 个浏览器测试要用）
+  run: |
+    npx --yes playwright install --with-deps chromium   # 失败则回落 apt microsoft-edge-stable
+    node -e "import('./test/_browser.mjs').then(m => { const b = m.findBrowser(); if (!b) process.exit(1); })"
+```
+Ubuntu 24.04 起 chromium 是 snap 包装的（snapd 在容器里起不来）⇒ 首选 playwright 自带的 chromium。
+装完**立刻自证** `findBrowser()` 找得到 —— 否则门禁会诚实地红在"环境不对"上。
+
+## 验证
+
+- `test/_browser.mjs` 自证 13/13：三平台候选正确、当前机器找得到 Edge、
+  **模拟 plan9 平台 ⇒ exit=2**、诊断信息含平台/试过的命令/修法/退出码理由；
+- 19 个文件语法检查通过 + 复核无内联 Windows 路径、无 `if (!EDGE)` 残留；
+- 本地完整门禁 55 步（Windows 有 Edge ⇒ 行为不变，这是不把本地搞坏的唯一证据）。
+
+## 遗留（**不能本地验证，如实记下**）
+
+- **CI 上 19 个浏览器测试能否真跑通，我无法在本地验证**（本地是 Windows）。
+  这次能保证的是"不再因找不到浏览器而崩、也不再假装绿"；
+  剩下的是容器里 Chromium 能不能把这些测试跑通 —— 看 CI 实跑结果。
+- 触发点是 10-04 那次提交（`8e30f74`「16 个测试的写死端口改成临时端口」）：
+  端口改对了，**浏览器路径没一起改**。同一类改动的"漏一半"，跨了两周才被看见。
+
 ## v0.164 · 缺口检测对两本书其实是瞎的 —— 183 个人名它根本产不出来
 
 ### 1. 起因：v0.163 说「手写清单这条线收口了」，我复核时不信，去数了一遍

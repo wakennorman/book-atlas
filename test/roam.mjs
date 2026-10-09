@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 // 而 applyZoom 会显式写 viewCenter，正好把 bug 绕过去了；而且判据也用的是 state.viewCenter，
 // 万一它陈旧，测试就是假绿。这里一律量 zrender 里的**真实墨迹位置**。
 import { spawn as _s } from 'node:child_process';
+import { requireBrowser } from './_browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ v0.96：原来这里写死 `const PORT = 19135, CDP_PORT = 19136;`，代价是实测踩到的：
@@ -50,11 +51,7 @@ const freePort = () => new Promise((res) => {
   });
 });
 const CDP_PORT = await freePort();
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, rep) => {

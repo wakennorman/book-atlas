@@ -5,6 +5,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { requireBrowser } from './_browser.mjs';
 
 /* v0.133：分组图注（「曹魏 / 蜀汉 / 东吴…」）的**视觉可读性**。
  *
@@ -30,11 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CDP_PORT = await freePort();
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8' };
 const server = http.createServer((req, rep) => {

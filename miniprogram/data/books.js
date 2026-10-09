@@ -5,7 +5,7 @@ module.exports = {
       "title": "百年孤独",
       "author": "加西亚·马尔克斯",
       "file": "./one-hundred-years-of-solitude.js",
-      "kb": 122
+      "kb": 124
     },
     {
       "slug": "crime-and-punishment",
@@ -19,7 +19,7 @@ module.exports = {
       "title": "三国演义",
       "author": "罗贯中",
       "file": "./three-kingdoms.js",
-      "kb": 1098
+      "kb": 1104
     }
   ]
 };

@@ -6,6 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { requireBrowser } from './_browser.mjs';
 
 // 复现并守住三个只在真实浏览器里才暴露的问题（v85 修）：
 //  A. 快速切书 ⇒ loadBook 必须丢弃过期响应，否则后到的会把当前书覆盖掉
@@ -17,11 +18,7 @@ import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
 const CDP_PORT = await freePort();
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.error('找不到 Edge/Chrome，跳过'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
 // 三国图包加延迟（模拟"大书慢"）；除百年孤独外，文案包一律 500 —— 制造"某本书文案失败"

@@ -6,6 +6,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { requireBrowser } from './_browser.mjs';
 
 // 同一对人物之间可能有**类型完全相同**的多条关系 —— 图上会画成多条线（不同曲率），
 // 但只靠 (source, target, value=类型) 分不开它们。
@@ -18,11 +19,7 @@ import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PORT = 0;   // v0.97：临时端口，listen 之后回填
 const CDP_PORT = await freePort();
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon' };
 const server = http.createServer((req, rep) => {

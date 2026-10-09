@@ -24,6 +24,7 @@ import { readFileSync } from 'node:fs';
 // 相同视口下也能对上，但**换视口就对不上**，所以这里只断言同视口。
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
+import { requireBrowser } from './_browser.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* ⚠ 每次冷启动必须用**自己的** CDP 端口。
@@ -45,11 +46,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  *   残留竞态窗口是毫秒级（借到就关），实测门禁 26 步串行没碰上。 */
 /** 钉死的画布高度（见 coldStart 里那段注释）。用 !important，inline style 会被 applyViewHeight 覆盖。 */
 const PIN_H = 560;
-const EDGE = [
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-].find((p) => fs.existsSync(p));
-if (!EDGE) { console.log('  (跳过) 找不到 Edge/Chrome'); process.exit(0); }
+const EDGE = requireBrowser();
 
 const MIME = { '.html': 'text/html;charset=utf-8', '.js': 'text/javascript;charset=utf-8', '.css': 'text/css;charset=utf-8', '.json': 'application/json;charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon' };
 const server = http.createServer((req, rep) => {
