@@ -234,7 +234,16 @@ try {
    *   于是**每个按钮的文本也被算进 textContent**，凭空多出 50 个重复项
    *   ⇒ 报成「925/975，有 50 处点不开」，其实是量错了对象。
    *   正确口径：**按钮数就是全部行内引用数**（渲染器保证每个 id 都成按钮），
-   *   再单独核「数据里的 id 与按钮一一对应」。 */
+   *   再单独核「数据里的 id 与按钮一一对应」。
+   *
+   * ⚠⚠⚠ v0.174：按钮的**文案**从裸 id 换成了事件名（读者看不懂 `e15`）。
+   *   这会让原来那条「正文里有但不是按钮」**静默失效** ——
+   *   它拿 `p.textContent` 去 match id，而 id 已经不在正文里了，
+   *   `inText` 恒为空集，那条断言永远绿。所以换成两条**咬得住**的：
+   *     ① 每个按钮的文案必须含汉字 —— 防"文案哪天又变回 e15"；
+   *     ② 拆书分区渲染出来的文本里**不得残留任何 id 形态的串** ——
+   *        这比原来的逐条对拍更强：只要有一个 id 没变成按钮就报红。
+   *   ⚠ id 仍然留在 `data-event` 上，下面「点开核对」那条断言口径完全没变。 */
   const inline = await js(`(() => {
     const A = window.__ba.state.anno;
     const dataIds = [...new Set([...A.items, ...A.global]
@@ -245,26 +254,30 @@ try {
       .filter((id) => (window.__ba.state.book.events || []).some((e) => e.id === id)))];
     const chs = [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b);
     const sel = document.getElementById('ch-select');
-    const seen = new Set(); const bad = [];
+    const seen = new Set(); const bad = []; const leaked = [];
     for (const ch of chs) {
       sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
       const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
       for (const b of sec.querySelectorAll('p .anno-inline-ref[data-event]')) {
         seen.add(b.dataset.event);
-        if (!b.textContent.trim()) bad.push({ ch, id: b.dataset.event, why: '按钮是空的' });
+        /* ⚠ 上限 6：这条一旦红就是**几百处**同时红（588 个按钮全中），
+           不限量的话失败信息会把整个测试输出淹掉 —— v0.174 实测过。 */
+        const t = b.textContent.trim();
+        if (!t) { if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮是空的' }); }
+        else if (!/[\\u4e00-\\u9fa5]/.test(t)) {
+          if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮文案里没有汉字（还是 id？）：' + t });
+        }
       }
-      /* 每个 item 单独核：它正文里出现的 id，是否都成了按钮 */
-      for (const p of sec.querySelectorAll('.anno-item p')) {
-        const inText = new Set(String(p.textContent).match(/e-?\\d[\\w-]*/g) || []);
-        const inBtn = new Set([...p.querySelectorAll('.anno-inline-ref[data-event]')].map((b) => b.dataset.event));
-        for (const id of inText) if (!inBtn.has(id) && bad.length < 6) bad.push({ ch, id, why: '正文里有但不是按钮' });
-      }
+      const left = [...new Set(String(sec.innerText).match(/e-?\\d[\\w-]*/g) || [])];
+      if (left.length && leaked.length < 6) leaked.push({ ch, ids: left.slice(0, 6) });
     }
-    return { dataIds: dataIds.length, seen: seen.size, bad };
+    return { dataIds: dataIds.length, seen: seen.size, bad, leaked };
   })()`);
   ok(inline.dataIds > 100, `数据里共有 ${inline.dataIds} 个不同的行内引用`);
   ok(inline.seen === inline.dataIds,
     `全部行内引用都渲染成了可点按钮（页面 ${inline.seen} / 数据 ${inline.dataIds}${inline.bad.length ? '；异常：' + JSON.stringify(inline.bad) : ''}）`);
+  ok(inline.leaked.length === 0,
+    `正文里不再出现 e15 这种 id 串（残留：${JSON.stringify(inline.leaked)}）`);
 
   /* 点一个**只在正文里出现、没进 events[]** 的行内引用 ——
    * 这正是 v0.140 实测点不开的那 97 处。 */
@@ -328,6 +341,10 @@ try {
   ok(g.present && g.tabs[1].active, '切到了全书拆解');
   ok(g.items.length >= 1, `全书拆解渲染出 ${g.items.length} 条`);
   ok(!/已拆\s*\d+\s*\/\s*\d+\s*章/.test(g.secText) || g.items.length >= 1, '全书模式内容不为空');
+  /* v0.174：全书拆解走的是另一条渲染路径（renderAnnotations 的 global 分支），
+     上面那轮扫描只覆盖本章模式 ⇒ 这里单独再咬一口 id 残留。 */
+  ok(!/e-?\d[\w-]*/.test(g.secText),
+    `全书拆解的正文里也不出现 e15 这种 id 串（残留：${JSON.stringify((g.secText.match(/e-?\d[\w-]*/g) || []).slice(0, 6))}）`);
   await js(`document.querySelector('.anno-tab[data-anno-mode="chapter"]').click()`);
   await wait(700);
   const back = await annoDom();

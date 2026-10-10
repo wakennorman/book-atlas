@@ -1,7 +1,9 @@
 {
   "name": "book-atlas",
-  "version": "0.173.0",
-  "engines": { "node": ">=22" },
+  "version": "0.174.0",
+  "engines": {
+    "node": ">=22"
+  },
   "private": true,
   "type": "module",
   "description": "书脉 BookAtlas · 人物关系与事件图谱",

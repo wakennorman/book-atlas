@@ -12,6 +12,11 @@
  *   ④ `body` / `title` 不得为空，且不得是「待补」「TODO」「未详」这类占位
  *   ⑤ 同一章内 `title` 不许重复（重复多半是复制粘贴没改）
  *   ⑥ 不造新词：条目本身不带分类字段（要分类就用书里已有的 phase / relation type）
+ *   ⑦ 面向读者的三个字段（`title` / `body` / `basis`）里**不许有英文单词**（v0.174）——
+ *      拆书的读者是中文读者，`events` / `summary` / `impact` / `quote` 是**数据字段名**，
+ *      写数据的人看得懂，读者看不懂。唯一例外是 `body` 里的行内 id（`e15` / `e-47-6` / `e01`）：
+ *      那是机器用的键，数据里必须留着，显示层（js/app.js 的 annoBody）会把它换成事件名。
+ *      存量 431 处由 `scripts/fix-anno-en.mjs` 一次性修掉；这条门禁防的是**再长回来**。
  *
  * 用法：node scripts/check-annotations.mjs            # 校验全部
  *      node scripts/check-annotations.mjs --fix      # 顺带报告每本书的覆盖率
@@ -26,6 +31,16 @@ const ANN = path.join(DATA, 'annotations');
 
 /** 占位符黑名单：这些词出现在 title/body 里就是没写完 */
 const PLACEHOLDER = /^(待补|待填|todo|TODO|无|未详|暂无|\.{3}|…+|-+)$/;
+
+/** 规则⑦ 用：抽出一个字符串里的英文单词（去重）。
+ *  ⚠ 行内 id 不是"英文单词"，是键：`body` 里要先把它们摘掉再判。
+ *    三种真实形态：三国 `e-1-3`、罪与罚 `e1`、百年孤独 `e01`。 */
+const LATIN = /[A-Za-z][A-Za-z'-]*/g;
+const ID_LIKE = /e-?\d[\w-]*/g;
+function latinWords(text, allowIds) {
+  const s = allowIds ? String(text).replace(ID_LIKE, '') : String(text);
+  return [...new Set(s.match(LATIN) || [])];
+}
 
 const showFix = process.argv.includes('--fix');
 
@@ -110,6 +125,12 @@ for (const slug of bookList()) {
       if (typeof it.body !== 'string' || !it.body.trim()) problems.push(`${at}.body 缺失`);
       else if (PLACEHOLDER.test(it.body.trim())) problems.push(`${at}.body 是占位符：${JSON.stringify(it.body)}`);
       if (typeof it.basis !== 'string' || !it.basis.trim()) problems.push(`${at}.basis 缺失（必须写明「原文」还是「整理者推断」）`);
+      /* 规则⑦：面向读者的字段不许有英文单词（见文件头） */
+      for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
+        if (typeof it[k] !== 'string') continue;
+        const en = latinWords(it[k], allowIds);
+        if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
+      }
       // 引用必须真实存在 —— 防编造的主闸门
       for (const [key, set] of [['events', evIds], ['chars', chIds], ['places', plIds]]) {
         const arr = it[key];
@@ -144,6 +165,12 @@ for (const slug of bookList()) {
       if (typeof g.title !== 'string' || !g.title.trim()) problems.push(`${at}.title 缺失`);
       if (typeof g.body !== 'string' || !g.body.trim()) problems.push(`${at}.body 缺失`);
       if (typeof g.basis !== 'string' || !g.basis.trim()) problems.push(`${at}.basis 缺失`);
+      /* 规则⑦：同上 */
+      for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
+        if (typeof g[k] !== 'string') continue;
+        const en = latinWords(g[k], allowIds);
+        if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
+      }
     });
   }
 
