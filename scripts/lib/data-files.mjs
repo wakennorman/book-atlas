@@ -52,12 +52,16 @@ export const DATA = path.join(ROOT, 'data');
  *   kin-terms-exempt.json         称谓对质豁免清单（v0.113 新建，最容易漏）
  *   cross-chapter-ok.json         A3 跨章声明台账（v0.177 新增：按 book+章号+事件id 记账）
  *   first-ch-ok.json              firstCh 已核台账（v0.178 新增：按 book+主名 记账）
+ *   relation-actors-ok.json       行为人审计已核台账（v0.179 新增：按 book+from+to 记账）
  *
  * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
  *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
  *   `test/books-registry.mjs` 立刻把它当成「没登记进 books.json 的书」报红）。
+ *   v0.179 又踩了一次：新建 `data/relation-actors-ok.json` 时漏了这一处，
+ *   于是 `audit-relation-actors.mjs` 把它当成第 4 本书去扫，
+ *   报告里多出一行「relation-actors-ok 缺原著」——**看起来像真的**，很容易放过去。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。
@@ -68,8 +72,21 @@ export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-
  *   前缀由调用方按各自需要拼，模块只负责"哪些是书"这一件事。
  */
 export function listBooks() {
-  if (!fs.existsSync(DATA)) return [];
-  return fs.readdirSync(DATA)
+  return listBooksIn(DATA);
+}
+
+/**
+ * 同上，但可以指定别的 data 目录（v0.179 新增，**只给守卫测试用**）。
+ *
+ * `test/relation-actors-ledger-guard.mjs` 要在 tmp 里造一份最小 `data/`
+ * （一本 demo 书 + 一份台账），再拿真实判据去跑 —— 而 `listBooks()` 写死 `DATA`。
+ * 守卫若走 `BOOKATLAS_ROOT` 环境变量，就必须在 `import` 之前设好；
+ * 显式传目录更直白，也和 `auditFirstCh({ root })` 的写法一致。
+ * ⚠ `listBooks()` 的行为**逐字未变**（它只是转调本函数）。
+ */
+export function listBooksIn(dataDir) {
+  if (!fs.existsSync(dataDir)) return [];
+  return fs.readdirSync(dataDir)
     .filter((f) => f.endsWith('.json') && !f.startsWith('.') && !SIDECAR.test(f))
     .sort();
 }

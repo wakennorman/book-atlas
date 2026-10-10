@@ -270,7 +270,7 @@
     // 先看明确的几类（它们比"父/母/兄/弟"这类字更具体）
     if (/义[父母子女儿兄姐弟妹叔伯侄甥姑姨舅祖同]|情同|干[亲爹娘兄弟姐弟儿女]|结义|结拜|拜把|把兄弟|教[父母]|教子|教女|盟兄弟/.test(t)) return 'sworn';
     if (/收养|抱养|过继|^养[^大育]/.test(t)) return 'adoptive';
-    if (/继[父母子女儿]|后妈|后爹|晚娘|晚爹|填房/.test(t)) return 'step';
+    if (/继[父母子女儿兄姐弟妹]|后妈|后爹|晚娘|晚爹|填房/.test(t)) return 'step';
     if (/岳[父母]|公公|婆婆|婆媳|孙媳|儿媳|儿媳妇|女婿|姑爷|嫂|姐夫|妹夫|弟媳|妯娌|连襟|亲家|内[兄弟]|舅子|妻[舅弟兄姐妹]|国舅|姻亲/.test(t)) return 'inlaw';
     if (/抚养|带大|养大|养育|寄养|乳母|奶妈/.test(t)) return 'foster';
     if (!/未婚/.test(t) && /夫妻|配偶|丈夫|妻子|妾|姨太太/.test(t)) return 'marriage';
@@ -1114,7 +1114,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=174';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=179';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {

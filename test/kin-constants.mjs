@@ -24,7 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { KIN } from '../scripts/kin.mjs';
+import { KIN, guessKin } from '../scripts/kin.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -111,6 +111,70 @@ try {
     `权威 BLOOD_TERM 恰有这 ${EXPECTED_TERMS.length} 个称谓、顺序一致`
     + `${missing.length ? `（缺 ${missing.join(' / ')}）` : ''}${extra.length ? `（多 ${extra.join(' / ')}）` : ''}`);
 } catch (e) { ok(false, e.message); }
+
+console.log('\n▶ guessKin 跨端对拍（9 条正则 + 分支顺序 + STEP 金标）');
+/* `guessKin` 在项目里有 **2 份实现**：
+ *   · scripts/kin.mjs   —— 权威（正则抽成具名常量：SWORN / ADOPTIVE / STEP / …）
+ *   · js/editor.js      —— 编辑器手抄的第二份（正则**内联**在函数体里）
+ * 编辑器那份的注释自己写着「必须与 scripts/kin.mjs 的 guessKin 逐字对应」，
+ * 但**此前没有任何测试守着**它 —— 而它已经漂过（v0.145：少 `晚爹`、NOT_KIN 少 12 词、BLOOD 少 9 词）。
+ *
+ * 起因（v0.179）：`STEP` 只枚举了 `继[父母子女儿]`，不认「继兄弟 / 继姐妹 / 继兄妹 / 继姐弟」，
+ *   于是这些词落到 BLOOD（里面恰好有 兄|弟|姐|妹）⇒ `继姐妹` 被判成血缘。
+ *   罪与罚 3 条**正确**的数据因此被 validate 报「看着像 血缘，但标的是 继亲」。
+ *   ⇒ 补上字，并在这里加判据：**正则集合 + 分支顺序**两处一致，外加一张钉"正确"的金标表。
+ *   ⚠ 只对拍抓不到「两边一起错」（一起删掉「继兄」两边照样一致）⇒ 金标表不能省。
+ */
+function guessKinSpec(file) {
+  const src = read(file);
+  const named = {};
+  for (const m of src.matchAll(/(?:export\s+)?const\s+([A-Z][A-Z_]*)\s*=\s*\/([^/\n]+)\/;/g)) named[m[1]] = m[2];
+  const fn = src.match(/function guessKin\(type\)\s*\{[\s\S]*?\n[ \t]*\}/);
+  if (!fn) throw new Error(`在 ${file} 里找不到 function guessKin(type) {…}`);
+  /* 去掉注释再扫 —— 注释里在**讲**这些正则，会提到旧写法与「父/母/兄/弟」这类斜杠。 */
+  const body = fn[0].replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const res = new Set();
+  for (const m of body.matchAll(/\/([^/\n]+)\/\.test\(t\)/g)) res.add(m[1]);
+  for (const m of body.matchAll(/([A-Z][A-Z_]*)\.test\(t\)/g)) {
+    if (!named[m[1]]) throw new Error(`${file}：${m[1]} 在 guessKin 里用了，但找不到 const 定义`);
+    res.add(named[m[1]]);
+  }
+  /* 分支顺序也要对：把「恋爱类」挪到 blood 之前会改变判定结果，而正则集合看不出来。 */
+  const rets = [...body.matchAll(/return\s+'([a-z]*)';/g)].map((m) => m[1]);
+  return { res: [...res].sort(), rets };
+}
+try {
+  const a = guessKinSpec('scripts/kin.mjs');
+  const b = guessKinSpec('js/editor.js');
+  ok(a.res.length >= 9, `从权威里抽到 ${a.res.length} 条正则（应 ≥9）`);
+  ok(same(a.res, b.res), `两份 guessKin 的正则集合一致（各 ${a.res.length} 条）`
+    + `${same(a.res, b.res) ? '' : `\n      权威独有：${a.res.filter((x) => !b.res.includes(x)).join(' / ')}`
+      + `\n      编辑器独有：${b.res.filter((x) => !a.res.includes(x)).join(' / ')}`}`);
+  ok(same(a.rets, b.rets), `两份 guessKin 的分支顺序一致（return 序列 ${a.rets.map((r) => r || '空').join(' → ')}）`);
+} catch (e) { ok(false, e.message); }
+
+/* 金标：钉「正确」而不是钉「现状」。左边 = type，右边 = guessKin 该给的答案。 */
+const GK_CASES = [
+  // 继亲本人 / 继亲子 —— 本来就认得
+  ['继父', 'step'], ['继母', 'step'], ['继子', 'step'], ['继女', 'step'],
+  ['继父子', 'step'], ['继母女', 'step'], ['继母继子', 'step'], ['继母（继亲）', 'step'],
+  // ★ v0.179 补上的继亲**兄弟姐妹**（原先一条都不认，全落进 blood）
+  ['继兄弟', 'step'], ['继姐妹', 'step'], ['继兄妹', 'step'], ['继姐弟', 'step'],
+  ['继兄', 'step'], ['继姐', 'step'], ['继弟', 'step'], ['继妹', 'step'],
+  // 口语的继亲词
+  ['后妈', 'step'], ['后爹', 'step'], ['晚娘', 'step'], ['晚爹', 'step'], ['填房', 'step'],
+  // ★ 反例：新加的「兄姐弟妹」四个字**不能**误伤这些非继亲的词
+  ['继任', ''], ['受遗命继事', ''], ['继任次序', ''], ['继任（主祭神甫）', ''],
+  // 反例：真血缘 / 收养不能被抢走
+  ['兄弟', 'blood'], ['姐妹', 'blood'], ['兄妹', 'blood'], ['父子', 'blood'],
+  ['养父子', 'adoptive'], ['收养', 'adoptive'],
+];
+for (const [type, want] of GK_CASES) {
+  const got = guessKin(type);
+  ok(got === want, `guessKin(${JSON.stringify(type)}) = ${JSON.stringify(got)}`
+    + `${got === want ? '' : `（应为 ${JSON.stringify(want)}）`}`);
+}
 
 console.log(`\n${fail === 0 ? '✓' : '✗'} KIN 跨端一致性　通过：${pass}  失败：${fail}`);
 process.exit(fail === 0 ? 0 : 1);

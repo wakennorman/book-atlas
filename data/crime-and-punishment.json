@@ -855,7 +855,7 @@
     {
       "from": "sonya",
       "to": "polina",
-      "type": "姐妹",
+      "type": "继姐妹",
       "style": "solid",
       "events": [
         {
@@ -869,7 +869,7 @@
           "evidence": "paraphrase"
         }
       ],
-      "kin": "blood"
+      "kin": "step"
     },
     {
       "from": "raskolnikov",
@@ -1141,16 +1141,16 @@
     {
       "from": "marmeladov",
       "to": "lonyusha",
-      "type": "父女",
+      "type": "继父女",
       "style": "solid",
       "events": [
         {
-          "text": "「在我们这些孩子当中，他最喜欢的是廖尼娅」——玛尔美拉朵夫的小女儿。",
+          "text": "「在我们这些孩子当中，他最喜欢的是廖尼娅」——廖尼娅是卡捷莉娜与前夫（步兵军官）所生，玛尔美拉朵夫是她的继父：波连卡称他为「我们的第二个爸爸」，「因为我们原先的爸爸已经死了」。",
           "chapter": "第7章",
           "evidence": "quote"
         }
       ],
-      "kin": "blood"
+      "kin": "step"
     },
     {
       "from": "polina",
@@ -1287,17 +1287,17 @@
     {
       "from": "marmeladov",
       "to": "korya",
-      "type": "父子",
+      "type": "继父子",
       "style": "solid",
       "events": [
         {
-          "text": "柯里亚是玛尔美拉朵夫与卡捷莉娜的儿子：文中「柯里亚和廖尼娅呢，跟着妈妈一句句念」说的是卡捷莉娜在教两个孩子念祷文，玛尔美拉朵夫是父亲。",
+          "text": "柯里亚是卡捷莉娜与前夫（步兵军官）所生，玛尔美拉朵夫是继父：波连卡说「柯里亚和廖尼娅呢，跟着妈妈一句句念」，又把玛尔美拉朵夫叫作「我们的第二个爸爸」——「因为我们原先的爸爸已经死了」。",
           "chapter": "第7章",
           "evidence": "paraphrase"
         }
       ],
-      "kin": "blood",
-      "note": "第一人称段落：母亲同段被点名（卡捷莉娜）（原文距上一处点名 2368 字）"
+      "kin": "step",
+      "note": "原标「父子 / 血缘」是错的。柯里亚是卡捷莉娜与前夫（步兵军官）所生，玛尔美拉朵夫是继父 —— 依据：玛尔美拉朵夫自述「我是在她守寡的时候娶她的，那时候她带着三个孩子」，波连卡称他为「我们的第二个爸爸」，且「因为我们原先的爸爸已经死了」。"
     },
     {
       "from": "luzhin",
@@ -1425,45 +1425,42 @@
     {
       "from": "lonyusha",
       "to": "sonya",
-      "type": "同父异母的姐妹（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
+      "type": "继姐妹",
+      "style": "solid",
+      "kin": "step",
       "events": [
         {
-          "chapter": "",
-          "text": "由 「谢敏·扎哈洛维奇·玛尔美拉朵夫 —父女→ 索菲雅·谢敏诺芙娜·玛尔美拉朵娃」 推导（原文没有直接互动）",
-          "evidence": "derived"
+          "text": "索尼娅是玛尔美拉朵夫与前妻的女儿，廖尼娅是卡捷莉娜与前夫的女儿；父母再婚后两人成为继姐妹（玛尔美拉朵夫：「我是在她守寡的时候娶她的，那时候她带着三个孩子」）。",
+          "chapter": "第2章",
+          "evidence": "paraphrase"
         }
       ]
     },
     {
       "from": "korya",
       "to": "sonya",
-      "type": "同父异母的兄妹（推导）",
-      "style": "dotted",
-      "derived": true,
-      "kin": "blood",
+      "type": "继兄妹",
+      "style": "solid",
+      "kin": "step",
       "events": [
         {
-          "chapter": "",
-          "text": "由 「谢敏·扎哈洛维奇·玛尔美拉朵夫 —父女→ 索菲雅·谢敏诺芙娜·玛尔美拉朵娃」 推导（原文没有直接互动）",
-          "evidence": "derived"
+          "text": "索尼娅是玛尔美拉朵夫与前妻的女儿，柯里亚是卡捷莉娜与前夫的儿子；父母再婚后两人成为继兄妹（玛尔美拉朵夫：「我是在她守寡的时候娶她的，那时候她带着三个孩子」）。",
+          "chapter": "第2章",
+          "evidence": "paraphrase"
         }
       ]
     },
     {
       "from": "korya",
       "to": "lonyusha",
-      "type": "兄妹（推导）",
-      "style": "dotted",
-      "derived": true,
+      "type": "兄妹",
+      "style": "solid",
       "kin": "blood",
       "events": [
         {
-          "chapter": "",
-          "text": "由 「卡捷莉娜 —母女→ 廖尼娅」 推导（原文没有直接互动）",
-          "evidence": "derived"
+          "text": "两人同为卡捷莉娜与前夫（步兵军官）所生，是全血亲兄妹：波连卡说「柯里亚和廖尼娅呢，跟着妈妈一句句念」，把两人并列。",
+          "chapter": "第7章",
+          "evidence": "paraphrase"
         }
       ]
     }

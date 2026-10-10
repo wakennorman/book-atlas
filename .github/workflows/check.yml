@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -676,6 +676,31 @@ jobs:
         # 用「张、戴二人」代指两个人、代词指的正是关系一方），
         # 拿它当门禁会天天误报。这份报告是给人看的，不是判决。
         run: node scripts/audit-relation-actors.mjs
+
+      - name: 行为人审计台账（读过的高风险条目必须登记，新冒出来的必须重读）
+        # v0.179 新增。上面那一步只出报告、恒退出 0 —— 于是"报告里有 9 条高风险"
+        # 这件事**没有任何判据接着**：没人看就等于没有。
+        # 台账 `data/relation-actors-ok.json` 按 **(book, from, to)** 记"已回原著读过"的条目，
+        # 判据 L1–L10：
+        #   L1 数组 / L2 形状 / L3 why≥8 字 / L4 flags 在闭集 A|B|C / L5 书存在 /
+        #   L6 from,to 是人物 id / L7 该书里真有这条边 / L8 去重 /
+        #   L9 台账记的级别 == 审计现在报的级别（多记 = 漂移）/
+        #   L10 **双向**：审计报出的每一条都必须在台账里。
+        # ⚠ **L9/L10 里的 B、C 两级需要原著**（`%TEMP%\opencode\ba-books\`），原著不进版本库
+        #   ⇒ **CI 上只核 A 级**，脚本会**打印**它收窄了范围（不静默跳过）。
+        # ⚠ 判据从 `scripts/audit-relation-actors.mjs` **import**（该脚本 v0.179 改成了可导入），
+        #   不在门禁里抄第二份。
+        run: node scripts/check-relation-actors-ledger.mjs
+
+      - name: 行为人审计台账检查自身的守卫（证明它真的会报红）
+        # v0.179 新增。25 条断言：夹具自检 2 + L1 三条 + L2/L3 四条 + L4 三条 +
+        # L5/L6/L7 四条 + L8 一条 + L9 一条 + L10 两条 + **缺原著时 B/C 转为「未核」** 三条
+        # + 还原 1 条。
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），
+        #   直接 import `checkRelationActorsLedger(root, {dir})`，
+        #   在 tmp 里造一份最小 data/ + 一份假三国 txt（书**故意用真 slug**
+        #   `three-kingdoms`，否则原著文件名查不到、B/C 永远"缺原著"，测不出来）。
+        run: node test/relation-actors-ledger-guard.mjs
 
       - name: 亲子边的性别自洽（type 与 gender 必须对得上）
         # 这是**硬门禁**，与上面两个只读审计不同。
