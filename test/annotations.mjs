@@ -113,6 +113,34 @@ const gotoChapter = async (n) => {
   await wait(900);
 };
 
+/** 扫**当前已加载这本书**的每一章：加粗渲染成没成 <strong>、有没有字面残留的 `**`。
+ *
+ *  ⚠⚠ 为什么要抽成函数、且**每本书都要调一次**（v0.175 的教训）：
+ *    原来这段扫描内联在三国的断言里，而它读的是 `window.__ba.state.anno` ——
+ *    **当前加载的那本书**。三国没有落单星号，于是它一直是绿的；
+ *    而罪与罚 ch29 那处落单的 `**`（把 168 字叙述句错加粗、段末还给读者留了个字面 `**`）
+ *    它**结构上就看不到**。我一开始把新断言加在同一段里，实测仍然 61 通过 / 0 失败
+ *    —— 又一个「假绿」。判据本身没错，错在**只扫了一本书**。
+ *  ⇒ 数据层由 `scripts/check-annotations.mjs` 规则⑧守（全库三本），
+ *    这里守端到端后果，也必须**三本都扫**。 */
+const scanMarkup = () => js(`(() => {
+  const A = window.__ba.state.anno;
+  const sel = document.getElementById('ch-select');
+  let strong = 0, strayAsterisk = 0; const badCh = [];
+  for (const ch of [...new Set((A.items || []).map((i) => i.ch))].sort((a, b) => a - b)) {
+    sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
+    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
+    let here = 0;
+    for (const p of sec.querySelectorAll('.anno-item p')) {
+      strong += p.querySelectorAll('strong').length;
+      here += (p.textContent.match(/\\*\\*/g) || []).length;
+    }
+    strayAsterisk += here;
+    if (here && badCh.length < 6) badCh.push(ch);
+  }
+  return { strong, strayAsterisk, badCh };
+})()`);
+
 try {
   await send('Page.enable');
   await send('Runtime.enable');
@@ -306,23 +334,11 @@ try {
     ok(openedInline === inlineOnly.id, `点行内引用打开了对应事件（activeEvent=${JSON.stringify(openedInline)}，期望 ${inlineOnly.id}）`);
   }
 
-  head('正文里的 ** 必须是真粗体，不能把星号显示给读者');
-  const bold = await js(`(() => {
-    const A = window.__ba.state.anno;
-    const sel = document.getElementById('ch-select');
-    let strong = 0, strayAsterisk = 0;
-    for (const ch of [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b)) {
-      sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
-      const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
-      for (const p of sec.querySelectorAll('.anno-item p')) {
-        strong += p.querySelectorAll('strong').length;
-        strayAsterisk += (p.textContent.match(/\\*\\*/g) || []).length;
-      }
-    }
-    return { strong, strayAsterisk };
-  })()`);
+  head('正文里的 ** 必须是真粗体，不能把星号显示给读者（三国）');
+  const bold = await scanMarkup();
   ok(bold.strong > 100, `正文渲染出了真 <strong>（${bold.strong} 处）`);
-  ok(bold.strayAsterisk === 0, `读者看不到残留的 **（${bold.strayAsterisk} 处）`);
+  ok(bold.strayAsterisk === 0,
+    `读者看不到残留的 **（${bold.strayAsterisk} 处${bold.badCh.length ? `；出现在第 ${bold.badCh.join('、')} 回` : ''}）`);
 
   /* ⚠ 我这两段扫描把 #ch-select 留在了最后一次遍历的章（第 119 回），
    *   而下面「切回本章」要验的是 emptyCh。**必须先把章节拨回去**，
@@ -468,6 +484,13 @@ try {
   const crimeOpened = await js(`window.__ba.state.activeEvent`);
   ok(crimeOpened === wantInline, `点了打开《罪与罚》的事件（activeEvent=${JSON.stringify(crimeOpened)}，期望 ${JSON.stringify(wantInline)}）`);
   }
+  /* v0.175：加粗/星号扫描必须**每本书都跑**。
+     原来这段扫描内联在三国的断言里、只扫三国 —— 而罪与罚 ch29 那处落单的 `**`
+     （把 168 字叙述句错加粗、段末还给读者留了个字面 `**`）它**结构上看不到**。 */
+  const crimeBold = await scanMarkup();
+  ok(crimeBold.strayAsterisk === 0,
+    `《罪与罚》正文里没有残留的 **（${crimeBold.strayAsterisk} 处${crimeBold.badCh.length ? `；出现在第 ${crimeBold.badCh.join('、')} 回` : ''}）`);
+
   /* ★ 同一套断言在第三本书上再跑一遍 —— 《百年孤独》是第三种 id 形态（e01 零填充），
    *   也是**第一批「原文依据」标签**：前两本书 218 条 basis 全是「整理者推断」，
    *   annoBasis 的原文依据分支从没被真实数据踩过。换一本书可能换一个坏法（v0.142
@@ -548,6 +571,11 @@ try {
     ok(!/还没写/.test(yE.secText || ''),
       `全书拆满：第 ${yTarget} 章写了拆解，就**不该**出现「还没写」`);
   }
+
+  /* v0.175：第三本书也要扫星号（同罪与罚那条的理由 —— 判据没错，错在只扫一本） */
+  const yBold = await scanMarkup();
+  ok(yBold.strayAsterisk === 0,
+    `《百年孤独》正文里没有残留的 **（${yBold.strayAsterisk} 处${yBold.badCh.length ? `；出现在第 ${yBold.badCh.join('、')} 章` : ''}）`);
 
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {

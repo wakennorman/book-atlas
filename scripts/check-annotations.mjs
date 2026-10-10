@@ -17,6 +17,15 @@
  *      写数据的人看得懂，读者看不懂。唯一例外是 `body` 里的行内 id（`e15` / `e-47-6` / `e01`）：
  *      那是机器用的键，数据里必须留着，显示层（js/app.js 的 annoBody）会把它换成事件名。
  *      存量 431 处由 `scripts/fix-anno-en.mjs` 一次性修掉；这条门禁防的是**再长回来**。
+ *   ⑧ 面向读者的三个字段里，**配对记号必须成对**（v0.175）：`**` 成偶数次、
+ *      `「」`/`『』`/`（）`/`《》` 两边数目相等。
+ *      ⚠ `**` 同一个记号既开又闭 ⇒ 只能查**奇偶**，**不能**写成"两边的数相等"——
+ *        对 `**` 而言那是 `n === n`，**恒真**，正是本项目反复踩的「假绿」。
+ *      实测（v0.175 前）：全库 340 条里只有 1 处落单（罪与罚 ch29）。后果不是"少加粗一点"，
+ *      而是 `annoBody` 里那条加粗正则（把星号对之间的内容换成 `<strong>`）会**从落单处开始错配**：
+ *      把三处不该加粗的长句加粗（最长 166 字，而该文件加粗片段中位 18 字），
+ *      并在段末给读者**留下字面的 `**`**。
+ *      存量 1 处由 `scripts/fix-anno-bold.mjs` 修掉；这条门禁防的是再长回来。
  *
  * 用法：node scripts/check-annotations.mjs            # 校验全部
  *      node scripts/check-annotations.mjs --fix      # 顺带报告每本书的覆盖率
@@ -40,6 +49,37 @@ const ID_LIKE = /e-?\d[\w-]*/g;
 function latinWords(text, allowIds) {
   const s = allowIds ? String(text).replace(ID_LIKE, '') : String(text);
   return [...new Set(s.match(LATIN) || [])];
+}
+
+/** 规则⑧ 用：面向读者的字段里，配对记号必须成对。
+ *  ⚠ `**` 同一个记号既开又闭 ⇒ 只能查**奇偶**。
+ *    写成"两边的数相等"（`no === nc`）对 `**` 而言是 `n === n`，**恒真** —— 假绿。 */
+const MARKUP_PAIRS = [['**', '**'], ['「', '」'], ['『', '』'], ['（', '）'], ['《', '》']];
+function unbalancedMarkup(text) {
+  const s = String(text);
+  const out = [];
+  for (const [o, c] of MARKUP_PAIRS) {
+    const no = s.split(o).length - 1;
+    if (o === c) {
+      if (no % 2) out.push(`${o} 出现 ${no} 次（奇数，必有一处落单）`);
+      continue;
+    }
+    const nc = s.split(c).length - 1;
+    if (no !== nc) out.push(`${o}${c} 不配对（${no} vs ${nc}）`);
+  }
+  return out;
+}
+
+/** 规则⑦＋⑧：面向读者的三个字段（`title` / `body` / `basis`）一起判。
+ *  items 与 global 两处共用，避免同一段判据抄两份（本项目抄两份必漂）。 */
+function readerFieldProblems(obj, at, problems) {
+  for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
+    if (typeof obj[k] !== 'string') continue;
+    const en = latinWords(obj[k], allowIds);
+    if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
+    const bad = unbalancedMarkup(obj[k]);
+    if (bad.length) problems.push(`${at}.${k} 的配对记号没成对：${bad.join('；')} —— 显示层会从落单处开始错配加粗，并在正文里给读者留下字面的记号（改法见 scripts/fix-anno-bold.mjs）`);
+  }
 }
 
 const showFix = process.argv.includes('--fix');
@@ -125,12 +165,8 @@ for (const slug of bookList()) {
       if (typeof it.body !== 'string' || !it.body.trim()) problems.push(`${at}.body 缺失`);
       else if (PLACEHOLDER.test(it.body.trim())) problems.push(`${at}.body 是占位符：${JSON.stringify(it.body)}`);
       if (typeof it.basis !== 'string' || !it.basis.trim()) problems.push(`${at}.basis 缺失（必须写明「原文」还是「整理者推断」）`);
-      /* 规则⑦：面向读者的字段不许有英文单词（见文件头） */
-      for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
-        if (typeof it[k] !== 'string') continue;
-        const en = latinWords(it[k], allowIds);
-        if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
-      }
+      /* 规则⑦＋⑧：面向读者的字段不许有英文单词、配对记号必须成对（见文件头） */
+      readerFieldProblems(it, at, problems);
       // 引用必须真实存在 —— 防编造的主闸门
       for (const [key, set] of [['events', evIds], ['chars', chIds], ['places', plIds]]) {
         const arr = it[key];
@@ -165,12 +201,8 @@ for (const slug of bookList()) {
       if (typeof g.title !== 'string' || !g.title.trim()) problems.push(`${at}.title 缺失`);
       if (typeof g.body !== 'string' || !g.body.trim()) problems.push(`${at}.body 缺失`);
       if (typeof g.basis !== 'string' || !g.basis.trim()) problems.push(`${at}.basis 缺失`);
-      /* 规则⑦：同上 */
-      for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
-        if (typeof g[k] !== 'string') continue;
-        const en = latinWords(g[k], allowIds);
-        if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
-      }
+      /* 规则⑦＋⑧：同上 */
+      readerFieldProblems(g, at, problems);
     });
   }
 
