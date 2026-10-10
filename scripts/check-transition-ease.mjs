@@ -25,10 +25,11 @@
  *
  * ## 刻意不做
  * **不检查**「transition 列表漏了状态规则里变化的属性」。v0.171 实际漏过两处
- * （`.primary:active` 的 `filter`、`.btn-ghost:hover` 的 `color`），但项目里历史 hover
- * 规则大量改属性，一刀切会天天误报 —— 而门禁里一条会误报的检查终会被吞掉。
- * 那类漏属性靠**人工核对**：改 transition 时，把该元素所有 `:hover/:focus/:active`
- * 规则里出现的属性逐个列进去。
+ * （`.primary:active` 的 `filter`、`.btn-ghost:hover` 的 `color`），但一刀切会误报 ——
+ * 而门禁里一条会误报的检查终会被吞掉。
+ * 那一半由 **v0.173 的 `check-transition-coverage.mjs`** 负责：它按「基础选择器精确同名」
+ * 比对、把简写折算成 longhand、排除焦点环等不可过渡属性，实测 0 误报。
+ * 两个脚本各守一半，别把这一半也塞进来（会重复且更脆）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,6 +38,16 @@ import { fileURLToPath } from 'node:url';
 const ROOT = process.env.BOOKATLAS_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = ['css/style.css', 'shared/design-system.css'];
+
+/* ⚠ 豁免判定不能用 `/ease-mixed-ok:\s*\S{8,}/`：那要求冒号后**紧邻** 8 个连续非空白字符，
+ *   中文理由里只要出现一个空格（「ease-mixed-ok: 焦点用 spring 更合适」，`焦点用` 只有 3 字
+ *   就被空格截断）就判不成立 ⇒ **豁免静默失效**。本项目已栽过同类跟头
+ *   （`check-kin-terms.mjs` 的 reason <8 字）。口径改成：忽略空白后理由本身 ≥8 字。
+ *   （v0.173 与 `check-transition-coverage.mjs` 一并修。） */
+function hasExemption(ctx) {
+  const m = ctx.match(/ease-mixed-ok:([^\n]*)/);
+  return m ? m[1].replace(/\s+/g, '').length >= 8 : false;
+}
 
 const problems = [];
 
@@ -62,7 +73,7 @@ for (const rel of FILES) {
 
     // 豁免：声明上方 3 行内
     const ctx = lines.slice(Math.max(0, i - 3), i + 1).join('\n');
-    if (/ease-mixed-ok:\s*\S{8,}/.test(ctx)) continue;
+    if (hasExemption(ctx)) continue;
 
     const mixed = [];
     if (eases.length > 1) mixed.push('缓动 ' + eases.join(' / '));

@@ -5,6 +5,71 @@
 
 ---
 
+## v0.173 · 补上 v0.172 刻意留下的那一半 —— 结果门禁自己先假绿了三次
+
+起因：用户问「现在恢复的这个，是不是我让你装知乎那个 skill 之前的 UI？」
+核对下来**悬停手感确实回到了 v0.170**（逐块对拍 18/18 个选择器块的缓动与时长完全一致）。
+但顺手发现 v0.172 那句「漏属性**靠人工核对**」——**没有门禁**。
+也就是说下一轮谁再展开一次 `transition: all`，`.icon-btn` 漏 `filter` 这类问题不会有人拦。
+
+### 一、新增 `scripts/check-transition-coverage.mjs`（已进 `check.yml`）
+
+判据：状态规则（`:hover` / `:focus` / `:focus-visible` / `:active`）里改的每个可过渡属性，
+必须被**基础选择器同名**的 transition 块覆盖。三条降误报的折算：
+
+- 简写按 longhand 折算：`background: var(--soft)` 实际只改 `background-color`，算覆盖
+  （首次人工核对时 8 条告警里 **7 条**都是这个简写误报）
+- 焦点环（`outline` 系列）与离散属性（`display` 等）显式排除
+- 只在**基础选择器精确同名**时比对；`.a:hover .b` 这类"伪类在祖先、属性在后代"不判
+- 豁免写法 `hover-cov-ok: <≥8 字理由>`（与项目其它豁免同规矩）
+
+### 二、它自己先"全绿"了三次，每次都是**静默跳过**
+
+首版跑出「比对 28 条，0 缺失」，看着挺好 —— 其实大半判据没执行：
+
+| # | 毛病 | 表现 |
+|---|---|---|
+| 1 | 剥伪类的正则 `/(hover\|focus\|focus-visible\|active)\b/`，`:focus` 在 `:focus-visible` 上也能匹配（`focus` 后是 `-`，`\b` 成立） | `:focus-visible` 被削成 `-visible`，**整块跳过** |
+| 2 | transition 块的选择器是逗号组（`.icon-btn, .ghost, .primary`），却按**整串**做 Map 键 | `.icon-btn:hover` **一条也匹配不上** |
+| 3 | `@media (prefers-reduced-motion)` 被拍平成顶层规则，里面那句 `transition: none` 与真正的 transition 块**合并进同一个键** | `.icon-btn`/`.ghost`/`.primary` **整组跳过** —— 恰好就是 v0.172 修过 `filter` 的那一组 |
+
+外加一条同源隐患：`PSEUDO` 带 `g` 标志却用 `.test()`，全局正则的 `lastIndex` 会让判断**隔一次失效**。
+
+⇒ 现在它**必须打印"跳过了多少条"**。三处都表现为"绿"而不是"红"，
+这正是 `test/gate-effectiveness.mjs` 守的那一类（"步骤在、却永远不会红"）。
+验证过它会红：把真文件 `.icon-btn` 组的 `filter` 抽掉 ⇒ 立刻报 `css/style.css:142 .primary 缺 filter`。
+
+### 三、扫出 1 处**既有**问题，挂豁免不动手感
+
+`css/style.css` 的 `.graph-float-btn:hover` 改了 `color`，而它的 transition 只有
+`background, border-color`。逐字对比 v0.170：**完全相同** ⇒ 是既有行为，
+不是 v0.171 展开 `all` 时漏掉的。修它会改那个按钮的悬停手感，而用户已确认本轮不动 UI，
+故挂 `hover-cov-ok:` 豁免并写明"要改的话把 color 加进上面那行即可"。
+
+### 四、顺带发现：`shared/design-system.css` 没有任何 HTML 加载它
+
+`index.html` / `editor.html` 只引 `css/style.css`、`css/editor.css`，它也不在 SW 预缓存清单里。
+⇒ v0.171 声称"按指南整改了 15 处 `transition: all`"里，有 **4 处在不影响 UI 的文件**里
+（`shared/design-system.css` 是 `shared/` 下的孤儿）。门禁现在会把"扫了哪些文件、
+哪个没人加载"打印出来，免得把"门禁绿了"误读成"UI 受保护了"。
+
+同轮删掉该文件里一句 `.input:focus-visible { border-radius: var(--radius-md) }` ——
+与上方 `.input` 同值，纯 no-op，却会让新门禁报"漏列 border-radius"。
+
+### 五、顺手修掉同款"豁免静默失效"
+
+`check-transition-ease.mjs` 与本脚本原本都用 `/xxx-ok:\s*\S{8,}/` 判豁免 ——
+那要求冒号后**紧邻** 8 个连续非空白字符。中文理由里只要有一个空格
+（`hover-cov-ok: 该按钮的 transition …`，`该按钮的` 只有 4 字就被截断）就判不成立 ⇒
+**豁免静默失效**。口径改成"忽略空白后理由本身 ≥8 字"，两个脚本一并修。
+
+### 版本号
+
+改了前端资源（`css/style.css` 在 SW 的 `SHELL` 内）⇒ `v172 → v173`，
+`package.json` 同步 `0.172.0 → 0.173.0`。
+
+---
+
 ## v0.172 · 展开 `transition: all` 时我改了缓动 —— 用户当场察觉「悬停动效变了」
 
 v0.171 按 `web-design-guidelines` 的「Never `transition: all`」把全站 15 处展开成显式属性列表。

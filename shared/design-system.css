@@ -186,11 +186,12 @@ body {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
 }
-/* 键盘可见焦点：沿用全站既有规范（见 css/style.css 的 :focus-visible）。 */
+/* 键盘可见焦点：沿用全站既有规范（见 css/style.css 的 :focus-visible）。
+   v0.173：删掉了这里一句 `border-radius: var(--radius-md)` —— 与上方 `.input` 同值，
+   纯 no-op；但它会让 check-transition-coverage 报「border-radius 不在 transition 列表里」。 */
 .input:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
-  border-radius: var(--radius-md);
 }
 .input::placeholder {
   color: var(--color-text-muted);
