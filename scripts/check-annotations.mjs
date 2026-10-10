@@ -26,6 +26,13 @@
  *      把三处不该加粗的长句加粗（最长 166 字，而该文件加粗片段中位 18 字），
  *      并在段末给读者**留下字面的 `**`**。
  *      存量 1 处由 `scripts/fix-anno-bold.mjs` 修掉；这条门禁防的是再长回来。
+ *   ⑨ `body` 里的**行内 id 必须真实存在**（v0.176）。⑦ 只要求"别写英文单词"，
+ *      而 id 是**例外放行**的 —— 可放行不等于不检查：`annoBody()` 查不到这个 id 时
+ *      **原样返回纯文本**，于是读者会看到一个点不动、也没有名字的 `e-47-6`，
+ *      正是 v0.174 要消灭的那种东西。规则①只管 `events[]`/`chars[]` 数组，
+ *      **管不到正文里的行内引用** —— 这里补上。
+ *      实测（v0.176 前）：三本书 974 处（按条去重）**全部存在**，0 处违规 ⇒
+ *      这条门禁加进来是**防回归**，不是修存量。
  *
  * 用法：node scripts/check-annotations.mjs            # 校验全部
  *      node scripts/check-annotations.mjs --fix      # 顺带报告每本书的覆盖率
@@ -70,15 +77,23 @@ function unbalancedMarkup(text) {
   return out;
 }
 
-/** 规则⑦＋⑧：面向读者的三个字段（`title` / `body` / `basis`）一起判。
+/** 规则⑦＋⑧＋⑨：面向读者的三个字段（`title` / `body` / `basis`）一起判。
  *  items 与 global 两处共用，避免同一段判据抄两份（本项目抄两份必漂）。 */
-function readerFieldProblems(obj, at, problems) {
+function readerFieldProblems(obj, at, problems, evIds) {
   for (const [k, allowIds] of [['title', false], ['body', true], ['basis', false]]) {
     if (typeof obj[k] !== 'string') continue;
     const en = latinWords(obj[k], allowIds);
     if (en.length) problems.push(`${at}.${k} 里有英文单词 ${en.join(' ')} —— 拆书是给中文读者看的，字段名要写成中文（改法见 scripts/fix-anno-en.mjs）`);
     const bad = unbalancedMarkup(obj[k]);
     if (bad.length) problems.push(`${at}.${k} 的配对记号没成对：${bad.join('；')} —— 显示层会从落单处开始错配加粗，并在正文里给读者留下字面的记号（改法见 scripts/fix-anno-bold.mjs）`);
+    /* 规则⑨：正文里的行内 id 必须真实存在（⑦ 把 id 当例外放行了，可放行不等于不查） */
+    if (k === 'body') {
+      for (const id of new Set(obj[k].match(ID_LIKE) || [])) {
+        if (!evIds.has(id)) {
+          problems.push(`${at}.body 里的行内引用 ${JSON.stringify(id)} 在该书事件表里不存在 —— 显示层会原样当纯文本渲染，读者看到的是一个点不动、也没名字的 id`);
+        }
+      }
+    }
   }
 }
 
@@ -166,7 +181,7 @@ for (const slug of bookList()) {
       else if (PLACEHOLDER.test(it.body.trim())) problems.push(`${at}.body 是占位符：${JSON.stringify(it.body)}`);
       if (typeof it.basis !== 'string' || !it.basis.trim()) problems.push(`${at}.basis 缺失（必须写明「原文」还是「整理者推断」）`);
       /* 规则⑦＋⑧：面向读者的字段不许有英文单词、配对记号必须成对（见文件头） */
-      readerFieldProblems(it, at, problems);
+      readerFieldProblems(it, at, problems, evIds);
       // 引用必须真实存在 —— 防编造的主闸门
       for (const [key, set] of [['events', evIds], ['chars', chIds], ['places', plIds]]) {
         const arr = it[key];
@@ -202,7 +217,7 @@ for (const slug of bookList()) {
       if (typeof g.body !== 'string' || !g.body.trim()) problems.push(`${at}.body 缺失`);
       if (typeof g.basis !== 'string' || !g.basis.trim()) problems.push(`${at}.basis 缺失`);
       /* 规则⑦＋⑧：同上 */
-      readerFieldProblems(g, at, problems);
+      readerFieldProblems(g, at, problems, evIds);
     });
   }
 

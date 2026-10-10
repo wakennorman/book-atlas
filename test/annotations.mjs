@@ -113,12 +113,60 @@ const gotoChapter = async (n) => {
   await wait(900);
 };
 
+/** 扫**当前已加载这本书**：正文里的行内 id 是不是都渲染成了可点按钮、有没有残留 id 串、
+ *  按钮文案是不是人名/事件名（不是裸 id）。
+ *
+ *  ⚠⚠ 与 `scanMarkup()` 同一个病、同一个改法（v0.176）：这段原来**内联在三国的断言里**，
+ *    读的是 `window.__ba.state.anno` —— **当前加载的那本书** ⇒ 罪与罚/百年孤独的
+ *    行内引用**从来没被扫过**。三国没问题不代表另外两本没问题。
+ *  ⚠ `dataIds` 只统计**事件表里存在**的 id（渲染器会把不存在的原样当纯文本）——
+ *    所以「不存在的 id」不会让 `seen !== dataIds`，只会让 `leaked` 命中。
+ *    数据层由 `scripts/check-annotations.mjs` 规则⑨兜底。 */
+const scanInlineRefs = () => js(`(() => {
+  const A = window.__ba.state.anno;
+  const evs = window.__ba.state.book.events || [];
+  const dataIds = [...new Set([...A.items, ...A.global]
+    .flatMap((i) => String(i.body).match(/e-?\\d[\\w-]*/g) || [])
+    /* ⚠ id 形态**不能写死**：三国 e-1-3 / 罪与罚 e1 / 百年孤独 e01。 */
+    .filter((id) => evs.some((e) => e.id === id)))];
+  const sel = document.getElementById('ch-select');
+  const seen = new Set(); const bad = []; const leaked = [];
+  for (const ch of [...new Set((A.items || []).map((i) => i.ch))].sort((a, b) => a - b)) {
+    sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
+    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
+    for (const b of sec.querySelectorAll('p .anno-inline-ref[data-event]')) {
+      seen.add(b.dataset.event);
+      /* ⚠ 上限 6：这条一旦红就是**几百处**同时红（588 个按钮全中），
+         不限量的话失败信息会把整个测试输出淹掉 —— v0.174 实测过。 */
+      const t = b.textContent.trim();
+      if (!t) { if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮是空的' }); }
+      else if (!/[\\u4e00-\\u9fa5]/.test(t)) {
+        if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮文案里没有汉字（还是 id？）：' + t });
+      }
+    }
+    const left = [...new Set(String(sec.innerText).match(/e-?\\d[\\w-]*/g) || [])];
+    if (left.length && leaked.length < 6) leaked.push({ ch, ids: left.slice(0, 6) });
+  }
+  return { dataIds: dataIds.length, seen: seen.size, bad, leaked };
+})()`);
+
+/** 把 `scanInlineRefs()` 的结果落成断言。`minIds` 按书给（三国 ~1000，另两本少一个量级）。 */
+async function assertInlineRefs(bookName, minIds) {
+  const r = await scanInlineRefs();
+  ok(r.dataIds >= minIds, `${bookName}：数据里有 ${r.dataIds} 个不同的行内引用（≥${minIds}）`);
+  ok(r.seen === r.dataIds,
+    `${bookName}：全部行内引用都渲染成了可点按钮（页面 ${r.seen} / 数据 ${r.dataIds}${r.bad.length ? '；异常：' + JSON.stringify(r.bad) : ''}）`);
+  ok(r.leaked.length === 0,
+    `${bookName}：正文里不再出现 e15 这种 id 串（残留：${JSON.stringify(r.leaked)}）`);
+  return r;
+}
+
 /** 扫**当前已加载这本书**的每一章：加粗渲染成没成 <strong>、有没有字面残留的 `**`。
  *
  *  ⚠⚠ 为什么要抽成函数、且**每本书都要调一次**（v0.175 的教训）：
  *    原来这段扫描内联在三国的断言里，而它读的是 `window.__ba.state.anno` ——
  *    **当前加载的那本书**。三国没有落单星号，于是它一直是绿的；
- *    而罪与罚 ch29 那处落单的 `**`（把 168 字叙述句错加粗、段末还给读者留了个字面 `**`）
+ *    而罪与罚 ch29 那处落单的 `**`（把 166 字叙述句错加粗、段末还给读者留了个字面 `**`）
  *    它**结构上就看不到**。我一开始把新断言加在同一段里，实测仍然 61 通过 / 0 失败
  *    —— 又一个「假绿」。判据本身没错，错在**只扫了一本书**。
  *  ⇒ 数据层由 `scripts/check-annotations.mjs` 规则⑧守（全库三本），
@@ -271,41 +319,11 @@ try {
    *     ① 每个按钮的文案必须含汉字 —— 防"文案哪天又变回 e15"；
    *     ② 拆书分区渲染出来的文本里**不得残留任何 id 形态的串** ——
    *        这比原来的逐条对拍更强：只要有一个 id 没变成按钮就报红。
-   *   ⚠ id 仍然留在 `data-event` 上，下面「点开核对」那条断言口径完全没变。 */
-  const inline = await js(`(() => {
-    const A = window.__ba.state.anno;
-    const dataIds = [...new Set([...A.items, ...A.global]
-      .flatMap((i) => String(i.body).match(/e-?\\d[\\w-]*/g) || [])
-      /* ⚠ id 形态**不能写死**：三国 e-1-3 / 罪与罚 e1 / 百年孤独 e01。
-       *   v0.142 第一版写死 /e-\\d+-\\d+/，结果后两本的行内引用一个都不成按钮
-       *   （测试报 null 才暴露）—— 断言本身也有同一个毛病，一起改成形态无关。 */
-      .filter((id) => (window.__ba.state.book.events || []).some((e) => e.id === id)))];
-    const chs = [...new Set(A.items.map((i) => i.ch))].sort((a, b) => a - b);
-    const sel = document.getElementById('ch-select');
-    const seen = new Set(); const bad = []; const leaked = [];
-    for (const ch of chs) {
-      sel.value = String(ch); sel.dispatchEvent(new Event('change', { bubbles: true }));
-      const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) continue;
-      for (const b of sec.querySelectorAll('p .anno-inline-ref[data-event]')) {
-        seen.add(b.dataset.event);
-        /* ⚠ 上限 6：这条一旦红就是**几百处**同时红（588 个按钮全中），
-           不限量的话失败信息会把整个测试输出淹掉 —— v0.174 实测过。 */
-        const t = b.textContent.trim();
-        if (!t) { if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮是空的' }); }
-        else if (!/[\\u4e00-\\u9fa5]/.test(t)) {
-          if (bad.length < 6) bad.push({ ch, id: b.dataset.event, why: '按钮文案里没有汉字（还是 id？）：' + t });
-        }
-      }
-      const left = [...new Set(String(sec.innerText).match(/e-?\\d[\\w-]*/g) || [])];
-      if (left.length && leaked.length < 6) leaked.push({ ch, ids: left.slice(0, 6) });
-    }
-    return { dataIds: dataIds.length, seen: seen.size, bad, leaked };
-  })()`);
-  ok(inline.dataIds > 100, `数据里共有 ${inline.dataIds} 个不同的行内引用`);
-  ok(inline.seen === inline.dataIds,
-    `全部行内引用都渲染成了可点按钮（页面 ${inline.seen} / 数据 ${inline.dataIds}${inline.bad.length ? '；异常：' + JSON.stringify(inline.bad) : ''}）`);
-  ok(inline.leaked.length === 0,
-    `正文里不再出现 e15 这种 id 串（残留：${JSON.stringify(inline.leaked)}）`);
+   *   ⚠ id 仍然留在 `data-event` 上，下面「点开核对」那条断言口径完全没变。
+   *
+   * ⚠⚠⚠ v0.176：这段扫描原来**内联在这里**，只扫三国 —— 与 `scanMarkup()` 一模一样的病。
+   *   抽成 `assertInlineRefs(书名, 下限)`，**三本书各调一次**（另两本在各自的段落里）。 */
+  await assertInlineRefs('三国', 100);
 
   /* 点一个**只在正文里出现、没进 events[]** 的行内引用 ——
    * 这正是 v0.140 实测点不开的那 97 处。 */
@@ -490,6 +508,8 @@ try {
   const crimeBold = await scanMarkup();
   ok(crimeBold.strayAsterisk === 0,
     `《罪与罚》正文里没有残留的 **（${crimeBold.strayAsterisk} 处${crimeBold.badCh.length ? `；出现在第 ${crimeBold.badCh.join('、')} 回` : ''}）`);
+  /* v0.176：行内引用扫描也必须每本书都跑（原来只扫三国）。实测该书 dataIds=76。 */
+  await assertInlineRefs('《罪与罚》', 50);
 
   /* ★ 同一套断言在第三本书上再跑一遍 —— 《百年孤独》是第三种 id 形态（e01 零填充），
    *   也是**第一批「原文依据」标签**：前两本书 218 条 basis 全是「整理者推断」，
@@ -576,6 +596,8 @@ try {
   const yBold = await scanMarkup();
   ok(yBold.strayAsterisk === 0,
     `《百年孤独》正文里没有残留的 **（${yBold.strayAsterisk} 处${yBold.badCh.length ? `；出现在第 ${yBold.badCh.join('、')} 章` : ''}）`);
+  /* v0.176：行内引用扫描也要跑第三本。实测该书 dataIds=37。 */
+  await assertInlineRefs('《百年孤独》', 25);
 
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {
