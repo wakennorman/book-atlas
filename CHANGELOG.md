@@ -41,17 +41,17 @@
 
 | 文件:行 | 改前 | 改后 | 位置性质 |
 |---|---|---|---|
-| `CHANGELOG.md:116` | `（在���，非被提及）` | `（在场，非被提及）` | 文档 |
-| `CHANGELOG.md:583` | `**现���写法正确**` | `**现在写法正确**` | 文档 |
-| `data/crime-and-punishment.json:2299` | `卢仁���的就是` | `卢仁怕的就是` | impact 分析文字，**非引文** |
-| `data/annotations/crime-and-punishment.json:567` | `而��从不否认` | `而他从不否认` | body 分析文字，**非引文** |
-| `js/app.js:1651` | `���锁定时集合没变` | `不锁定时集合没变` | 注释 |
-| `scripts/add-send-timeout.mjs:10` | `每一�� CDP 命令` | `每一条 CDP 命令` | 注释 |
-| `scripts/audit-relation-actors.mjs:28` | `上下文窗口字���` | `上下文窗口字数` | 注释 |
-| `scripts/fix-name-clashes.mjs:37` | `亦���汉室宗亲` | `亦为汉室宗亲` | 注释 |
-| `scripts/fix-wrong-chapters.mjs:20` | `名��不出现` | `名字不出现` | 注释 |
-| `test/layout-stable.mjs:18` | `��条性质很关键` | `这条性质很关键` | 注释 |
-| `test/layout-stable.mjs:169` | `同��输入` | `同样输入` | 注释 |
+| `CHANGELOG.md:116` | `（在&#65533;&#65533;&#65533;，非被提及）` | `（在场，非被提及）` | 文档 |
+| `CHANGELOG.md:583` | `**现&#65533;&#65533;&#65533;写法正确**` | `**现在写法正确**` | 文档 |
+| `data/crime-and-punishment.json:2299` | `卢仁&#65533;&#65533;&#65533;的就是` | `卢仁怕的就是` | impact 分析文字，**非引文** |
+| `data/annotations/crime-and-punishment.json:567` | `而&#65533;&#65533;从不否认` | `而他从不否认` | body 分析文字，**非引文** |
+| `js/app.js:1651` | `&#65533;&#65533;&#65533;锁定时集合没变` | `不锁定时集合没变` | 注释 |
+| `scripts/add-send-timeout.mjs:10` | `每一&#65533;&#65533; CDP 命令` | `每一条 CDP 命令` | 注释 |
+| `scripts/audit-relation-actors.mjs:28` | `上下文窗口字&#65533;&#65533;&#65533;` | `上下文窗口字数` | 注释 |
+| `scripts/fix-name-clashes.mjs:37` | `亦&#65533;&#65533;&#65533;汉室宗亲` | `亦为汉室宗亲` | 注释 |
+| `scripts/fix-wrong-chapters.mjs:20` | `名&#65533;&#65533;不出现` | `名字不出现` | 注释 |
+| `test/layout-stable.mjs:18` | `&#65533;&#65533;条性质很关键` | `这条性质很关键` | 注释 |
+| `test/layout-stable.mjs:169` | `同&#65533;&#65533;输入` | `同样输入` | 注释 |
 
 ⚠ **原字信息已丢失**（6 处是 3×U+FFFD＝UTF-8 三字节汉字；5 处是 2×U+FFFD＝疑似 GBK 两字节混入），
 上表是**按语义重写**，**不是**"还原原字"。已逐处核实：**没有一处在「」原著引文内** ——
