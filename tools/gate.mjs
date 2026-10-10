@@ -130,6 +130,18 @@ let bad = 0;
 for (const s of steps) {
   const t0 = Date.now();
   const r = spawnSync(process.execPath, s.argv, { encoding: 'buffer', cwd: ROOT });
+  /* ⚠ 子进程**根本没起来**时，spawnSync 返回的对象没有 stdout/stderr，只有 error。
+   *   原来直接 `r.stdout.toString()` ⇒ 抛 TypeError，整个门禁在第一步就崩，
+   *   报出来的是一段栈而不是"哪一步起不来、为什么"。
+   *   本机实测（2026-10-10）：node 里 spawnSync 任何可执行文件都 EBUSY
+   *   （连 spawnSync(process.execPath, ['scripts/validate.mjs']) 也是），
+   *   所以本机跑不了这个运行器 —— 逐条从 shell 跑 check.yml 里的命令才行。 */
+  if (!r.stdout) {
+    bad++;
+    console.log('  ✗ ' + s.cmd.padEnd(40)
+      + `起不来（没跑成，不是失败）：${r.error ? r.error.message : '无 stdout'}`);
+    continue;
+  }
   const all = r.stdout.toString('utf8') + '\n' + (r.stderr ? r.stderr.toString('utf8') : '');
   const red = all.split(/\r?\n/).filter((l) => /✗/.test(l));
   const pass = r.status === 0 && red.length === 0;

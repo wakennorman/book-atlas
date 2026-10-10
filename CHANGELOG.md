@@ -63,6 +63,22 @@
 （`hover-cov-ok: 该按钮的 transition …`，`该按钮的` 只有 4 字就被截断）就判不成立 ⇒
 **豁免静默失效**。口径改成"忽略空白后理由本身 ≥8 字"，两个脚本一并修。
 
+### 六、顺手修 `tools/gate.mjs`：子进程起不来时抛 TypeError，而不是告诉你"起不来"
+
+本机跑 `npm run gate` 直接崩在 `tools/gate.mjs:133`：
+
+```
+TypeError: Cannot read properties of undefined (reading 'toString')
+```
+
+根因不是门禁红，而是**本机 `node` 里再 spawn 任何进程都 `EBUSY`**——
+`spawnSync(process.execPath, ['scripts/validate.mjs'])` 也一样。`spawnSync` 起不来时
+返回的对象**没有 stdout/stderr、只有 error**，而运行器直接 `r.stdout.toString()`。
+⇒ 现在改成打印「起不来（没跑成，不是失败）：spawnSync … EBUSY」，并计为失败。
+
+⚠ 于是**本机不能用 `npm run gate`**：那 59 步要逐条从 shell 跑（把 `check.yml` 里的
+`run: node …` 抽出来循环执行即可，shell 由工具启动不受此限）。
+
 ### 版本号
 
 改了前端资源（`css/style.css` 在 SW 的 `SHELL` 内）⇒ `v172 → v173`，
