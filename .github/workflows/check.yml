@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -362,6 +362,29 @@ jobs:
         # 逐场景断言退出码（**3 个正常态 + 13 个期望报红 + 1 个反向 + 1 个还原**）。
         # 其中一条**反向**：名字是真人名的**子串**（甲 ⊂ 甲人）不许报红。
         run: node test/missing-ok-guard.mjs
+
+      - name: 跨章声明台账（A3 的 11 处已回原著核过）
+        # v0.177 新增。`data/cross-chapter-ok.json` 是 `audit-annotations.mjs` 的 A3
+        # （条目 events[] 里声明了「章号 ≠ 本条 ch」的事件）的**已核台账**。
+        # 那 11 处已回原著逐条核过（结论：ch 没有一处写错，全部是有意跨章 ——
+        # 大多是"拿上一回的事件作对照/收束"，其中 e-61-1 / e-88-1 **只被这一个条目声明**，
+        # 不挂反而成孤儿）。台账按 **(book, ch, event)** 记账，三样都会变 ⇒ 必须守：
+        #   L1 数组 / L2 形状 / L3 why ≥8 字 / L4 书存在 / L5 该章有条目 / L6 事件存在 /
+        #   L7 该章**有**条目声明它（否则消费方永远读不到 = 死条目）/
+        #   L8 事件章号**确实 ≠** 台账 ch（否则它已不是跨章 ⇒ 台账过期自相矛盾）/
+        #   L9 去重 / **L10 双向：数据里实际的跨章声明每一条都要在台账里**（未核的报出来）。
+        # ⚠ L10 与审计脚本共用 `scripts/lib/anno-cross-chapter.mjs` 的同一份定义（不抄第二遍）。
+        run: node scripts/check-cross-chapter-ledger.mjs
+
+      - name: 跨章声明台账检查自身的守卫（证明它真的会报红）
+        # v0.177 新增。上一步是"防一份台账悄悄失效"的检查，所以必须有一条测试
+        # **证明它自己会报红**（v0.145/146/154/156/160~163 同一族）。
+        # ⚠ 这条守卫**刻意不起子进程**：本机 node 起不了任何子进程（spawnSync 一律 EBUSY），
+        #   而 `test/*-guard.mjs` 里那套 spawnSync 写法在本机**每条用例都红**、等于没测。
+        #   这里改用导出的 `checkCrossChapterLedger(root)`，在进程内跑 —— 14 条「期望报红」
+        #   场景 + 1 条 JSON 坏 + 2 条正常态 + 1 条反向（不跨章的条目才该报 L8）。
+        #   代价：**入口判断**不在这条守卫里，靠手工跑一次脚本确认（v0.177 已跑：exit 0）。
+        run: node test/cross-chapter-ledger-guard.mjs
 
       - name: 提取器盲区台账（产不出来的主名必须申报理由）
         # v0.164 新增。缺口检测（`audit-against-text.mjs` 找「书里提到、数据里没有的人」）

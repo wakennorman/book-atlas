@@ -40,8 +40,33 @@
  * ⚠ 但**同章这一档的信号要留着**：正是它把上面这几条指到人眼前，
  *   去掉它就等于把"值得看一眼"的入口也一起去掉了。
  *   下次跑若同章那一档出现**新的人名**，那才是真的漏挂，要拿原文核。
+ *
+ * ## 2026-10-10（v0.177）：A1-同章 收紧判据、A3 的 11 处逐条回原著核完
+ *
+ * ### A1-同章：加一条排除 —— 「该事件已被任一拆书条目声明」
+ *
+ * v0.166 说「同章才可能是漏挂」，但同章里还分两种：
+ *   · 正文拿它作对照，而**别的条目已经声明过它** ⇒ 章级覆盖已成立，不是漏挂（噪声）；
+ *   · 正文引用了它，而**全库没有任何条目声明过它** ⇒ 这才是真漏挂。
+ * 收紧后 15 → 2，两处都是真漏挂，已用 `scripts/fix-anno-declare.mjs` 补上声明：
+ *   · 罪与罚 ch4「「百分之一」…」引用 e32（正文原话「警察赶来把两人隔开（e32）」）
+ *   · 三国   ch62「张松死于一张被哥哥捡到的信」引用 e-62-1（正文原话「庞统献中计（e-62-1）」）
+ * 两处都回原著核过：e32 的场景在**第一部第四章**（原文「喂，您这个斯维德利盖洛夫！」），
+ * e-62-1 在**第六十二回**（「三条计」）。
+ *
+ * ### A3：11 处全部回原著核过，**没有一处 `ch` 写错**，全部是「有意跨章」
+ *
+ * 判据原样保留（声明了章号 ≠ 本条章号的事件），但已核的记进台账
+ * `data/cross-chapter-ok.json`，本脚本读到就不再报「需人工确认」——
+ * 于是「需要人逐条看」归零，**下次再冒出新的跨章声明才是信号**。
+ * 台账的门禁是 `scripts/check-cross-chapter-ledger.mjs`（台账 ⇄ 数据双向一致）。
+ * 逐条结论与原文依据见那两份台账文件的 `why` 栏。
+ *
+ * 为什么 A3 用台账、A1-同章 用收紧判据：A1 的排除是**机械可判**的（谁声明过，一查便知），
+ * 写进判据即可、不需要人记账；A3 的「有意」是**人读原文读出来的**，只能记进台账。
  */
 import fs from 'node:fs';
+import { eventChapter, crossChapterDeclarations } from './lib/anno-cross-chapter.mjs';
 
 const BOOKS = fs.readdirSync('data/annotations')
   .filter((f) => f.endsWith('.json'))
@@ -64,16 +89,33 @@ for (const BOOK of BOOKS) {
   const A = JSON.parse(fs.readFileSync(`data/annotations/${BOOK}.json`, 'utf8'));
   const B = JSON.parse(fs.readFileSync(`data/${BOOK}.json`, 'utf8'));
   const evById = new Map(B.events.map((e) => [e.id, e]));
-  const chOf = (id) => {
-    const e = evById.get(id);
-    if (!e) return null;
-    const m = String(e.chapter ?? '').match(/\d+/) ?? String(e.ch ?? '').match(/\d+/);
-    return m ? Number(m[0]) : null;
-  };
+  /* ⚠ 事件章号与「跨章声明」的**唯一定义**在 lib 里 —— 台账门禁
+   *   `scripts/check-cross-chapter-ledger.mjs` 的 L10 要用同一份（见 anno-cross-chapter.mjs 头部）。 */
+  const chOf = (id) => eventChapter(evById, id);
+  const crossDecl = new Map();
+  for (const d of crossChapterDeclarations(BOOK, A, B)) crossDecl.set(`${d.ch}|${d.event}`, d.eventCh);
   const P = (s) => `《${BOOK}》${s}`;
   nItems += (A.items || []).length;
   nGlobal += (A.global || []).length;
   nChapters += new Set((A.items || []).map((i) => i.ch)).size;
+
+  /* v0.177：A3 已核台账（`data/cross-chapter-ok.json`，键 `章号|事件id`）。
+   * 台账自身的形状 / 引用完整性由 `scripts/check-cross-chapter-ledger.mjs` 守，
+   * 这里**不重复报** —— 解析失败就当没核过（宁可多报，不可漏报）。 */
+  const reviewed = new Set();
+  {
+    const lf = 'data/cross-chapter-ok.json';
+    if (fs.existsSync(lf)) {
+      try {
+        for (const e of JSON.parse(fs.readFileSync(lf, 'utf8'))) {
+          if (e && e.book === BOOK) reviewed.add(`${e.ch}|${e.event}`);
+        }
+      } catch { /* 交给台账门禁报 */ }
+    }
+  }
+  /* v0.177：全库被任一拆书条目声明过的事件 —— A1-同章 的排除依据（见文件头）。 */
+  const declaredAnywhere = new Set();
+  for (const x of [...(A.items || []), ...(A.global || [])]) for (const id of x.events || []) declaredAnywhere.add(id);
 
   // ── A1 / A2 / A3 ──
   for (const it of A.items || []) {
@@ -85,13 +127,18 @@ for (const BOOK of BOOKS) {
       if (!evById.has(id)) { note('A1-事件不存在', tag, id); continue; }
       if (!declared.has(id)) {
         /* v0.166：跨章互引是编辑常规（正文里拿另一个事件作对照/枚举），
-         * 同章未挂上才可能是漏挂 —— 两者分开报，别再混成 159 条噪声。 */
+         * 同章未挂上才可能是漏挂 —— 两者分开报，别再混成 159 条噪声。
+         * v0.177：同章里再分两种 —— 别的条目已声明过它（章级覆盖成立，是噪声）
+         * ／ 全库无人声明过它（真漏挂）。见文件头。 */
         const ec = chOf(id);
         const cross = ec !== null && ec !== it.ch;
-        note(
-          cross ? 'A1-跨章引用未列入 events[]（编辑常规，非缺陷）'
-                : 'A1-同章引用未列入 events[]（自己本章的事件没挂上，值得看一眼）',
-          tag, `${id}「${evById.get(id).name}」`, cross);
+        if (cross) {
+          note('A1-跨章引用未列入 events[]（编辑常规，非缺陷）', tag, `${id}「${evById.get(id).name}」`, true);
+        } else if (declaredAnywhere.has(id)) {
+          note('A1-同章引用未列入 events[]（该事件已由别条声明，本条只是拿它作对照）', tag, `${id}「${evById.get(id).name}」`, true);
+        } else {
+          note('A1-同章引用未列入 events[]（全库无人声明 ⇒ 疑似漏挂）', tag, `${id}「${evById.get(id).name}」`);
+        }
       }
     }
     for (const id of declared) {
@@ -100,9 +147,12 @@ for (const BOOK of BOOKS) {
        * （实测 ch2「何进召外兵」列 5 个事件，正文一个 id 都没打，仍是正确写法）。
        * ⇒ 降为只报计数，不再当"可能凑数"逐条甩给人。 */
       if (!cited.includes(id)) note('A2-events[] 列了但 body 没引用（声明覆盖范围，非凑数）', tag, `${id}「${evById.get(id).name}」`, true);
-      const ec = chOf(id);
-      if (ec !== null && ec !== it.ch) {
-        note('A3-跨章引用（需人工确认是否有意）', tag, `${id}「${evById.get(id).name}」是第 ${ec} 回事件，本条是第 ${it.ch} 回`);
+      const ec = crossDecl.get(`${it.ch}|${id}`);
+      if (ec !== undefined) {
+        const at = `${id}「${evById.get(id).name}」是第 ${ec} 回事件，本条是第 ${it.ch} 回`;
+        /* v0.177：回原著逐条核过的记进台账 ⇒ 降为计数，把位置留给新冒出来的。 */
+        if (reviewed.has(`${it.ch}|${id}`)) note('A3-跨章引用（已核，见 cross-chapter-ok.json）', tag, at, true);
+        else note('A3-跨章引用（需人工确认是否有意）', tag, at);
       }
     }
   }
@@ -160,5 +210,7 @@ if (!problems.length) {
   }
   const needHuman = problems.filter((p) => !p.countOnly).length;
   console.log(`合计 ${problems.length} 处，其中**需要人逐条看的 ${needHuman} 处**（其余按编辑常规，已归类）`);
+  console.log(`\nA3 跨章声明：${byKind.get('A3-跨章引用（已核，见 cross-chapter-ok.json）')?.length || 0} 处已回原著核过（见台账 why 栏）`
+    + `${byKind.get('A3-跨章引用（需人工确认是否有意）')?.length ? `，另有 ${byKind.get('A3-跨章引用（需人工确认是否有意）').length} 处**新冒出来的、还没核**` : ''}`);
 }
-console.log(`\n（供人工核的量：${problems.filter((p) => !p.countOnly).length} 处；判据见文件头 v0.166）`);
+console.log(`\n（供人工核的量：${problems.filter((p) => !p.countOnly).length} 处；判据见文件头 v0.166 / v0.177）`);
