@@ -106,7 +106,7 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
                    test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs \
@@ -114,6 +114,17 @@ jobs:
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
           done
+
+      - name: transition 缓动一致性（展开 `transition: all` 时不许改手感）
+        # v0.172 新增。v0.171 按 web-design-guidelines 把 15 处 `transition: all` 展开成
+        # 显式属性列表 —— 方向是对的（`all` 会把布局属性也纳入过渡），但展开时**擅自给
+        # 不同属性分配了不同缓动**（`.seg` 的 color/border-color/box-shadow 从 spring 改成
+        # standard、`shared .chip` 的 transform 从 standard 改成 spring）⇒ 用户当场反馈
+        # 「鼠标悬停到按钮上的动效变了」。语义上"只是列了属性"，**视觉上却改了手感**。
+        # 原来每处都是 `all` + 单一缓动/时长 ⇒ 展开后必须仍单一。判据见脚本文件头。
+        # ⚠ 同轮还漏过两处**属性**（`.primary:active` 的 filter、`.btn-ghost:hover` 的 color）——
+        #   那类"漏属性"本脚本**不查**（历史 hover 大量改属性，一刀切会天天误报），靠人工核对。
+        run: node scripts/check-transition-ease.mjs
 
       - name: 版本号一致性
         # v85：以前 v0.69–v0.71 连着三轮改前端却漏 bump CACHE（CHANGELOG 有记录），

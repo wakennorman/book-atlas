@@ -5,6 +5,49 @@
 
 ---
 
+## v0.172 · 展开 `transition: all` 时我改了缓动 —— 用户当场察觉「悬停动效变了」
+
+v0.171 按 `web-design-guidelines` 的「Never `transition: all`」把全站 15 处展开成显式属性列表。
+方向没错（`all` 会把布局属性也纳入过渡），但**展开时我擅自给不同属性分配了不同缓动**：
+
+| 位置 | 改前 | v0.171 写成 | 后果 |
+|---|---|---|---|
+| `shared/design-system.css` `.btn` | `all` + **spring** | `background-color` 用 **standard** | 按钮悬停背景色手感变了 |
+| `css/style.css` `.seg` | `all` + **spring** | `color` / `border-color` / `box-shadow` 用 **standard** | 分段控件同上 |
+| `shared/design-system.css` `.chip` | `all` + **standard** | `transform` 用 **spring** | 徽章位移手感变了 |
+
+另有两处**属性漏列**（原来 `all` 会过渡它们，展开后没列 ⇒ 变成瞬变）：
+- `css/style.css` 的 `.icon-btn`/`.ghost`/`.primary` 漏 `filter`（`.primary:active` 的 `filter: brightness(0.95)`）
+- `shared/design-system.css` 的 `.btn` 漏 `color`（`.btn-ghost:hover` 改文字色）
+
+### 修法
+
+一律**沿用原来那一个缓动** —— 展开只是"把属性列出来"，不该动曲线；并补齐漏掉的属性。
+4 处改动，`git diff` 共 9 增 7 删。
+
+### 新增门禁
+
+`scripts/check-transition-ease.mjs`（已进 `check.yml`）：每个 `transition:` 声明块内出现
+**≥2 种 `var(--ease-*)` 或 `var(--duration-*)`** 即报红 —— 原来每处都是 `all` + 单一缓动/时长，
+展开后必须仍单一。豁免写法 `ease-mixed-ok: <≥8 字理由>`（与项目其它豁免同规矩）。
+
+⚠ 它**刻意不查**「漏属性」：项目里历史 hover 规则大量改属性，一刀切会天天误报
+（"一条会误报的检查终会被吞掉"）。那类靠人工核对 —— 改 transition 时，把该元素所有
+`:hover` / `:focus` / `:active` 规则里出现的属性逐个列进去。
+
+### 教训
+
+**"语义等价的改写"不等于"视觉等价"。** `transition: all` → 显式列表在语义上是同一件事，
+但缓动一改，手感就变了 —— 而这件事 **v0.171 的门禁全绿**，是用户用眼睛抓到的。
+⇒ 凡是"只重写、不改行为"的改动，判据要盯住**行为**，不能只盯语法/结构。
+
+### 版本号
+
+改了前端资源（`css/style.css`、`shared/design-system.css` 都在 SW 的 `SHELL` 内）⇒ `v171 → v172`，
+`package.json` 同步 `0.171.0 → 0.172.0`。
+
+---
+
 ## v0.171 · 按 Web Interface Guidelines 整改 CSS ＋ 顺手扫出全仓库 11 处编码事故
 
 起因两件，凑一轮做完：

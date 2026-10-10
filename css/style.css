@@ -122,7 +122,8 @@ select:focus-visible, input[type="search"]:focus-visible {
   transition: background-color var(--duration-short) var(--ease-spring),
     border-color var(--duration-short) var(--ease-spring),
     box-shadow var(--duration-short) var(--ease-spring),
-    transform var(--duration-short) var(--ease-spring);
+    transform var(--duration-short) var(--ease-spring),
+    filter var(--duration-short) var(--ease-spring);
   display: inline-flex; align-items: center; gap: 6px;
 }
 .icon-btn:hover, .ghost:hover {
@@ -180,9 +181,9 @@ main {
   font-size: 12.5px;
   cursor: pointer;
   transition: background-color var(--duration-short) var(--ease-spring),
-    color var(--duration-short) var(--ease-standard),
-    border-color var(--duration-short) var(--ease-standard),
-    box-shadow var(--duration-short) var(--ease-standard),
+    color var(--duration-short) var(--ease-spring),
+    border-color var(--duration-short) var(--ease-spring),
+    box-shadow var(--duration-short) var(--ease-spring),
     transform var(--duration-short) var(--ease-spring);
 }
 .seg:hover {

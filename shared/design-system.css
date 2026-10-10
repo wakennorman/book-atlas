@@ -114,10 +114,11 @@ body {
   letter-spacing: -0.01em;
   border: none;
   cursor: pointer;
-  transition: background-color var(--duration-short) var(--ease-standard),
+  transition: background-color var(--duration-short) var(--ease-spring),
+    color var(--duration-short) var(--ease-spring),
     box-shadow var(--duration-short) var(--ease-spring),
     transform var(--duration-short) var(--ease-spring),
-    filter var(--duration-short) var(--ease-standard);
+    filter var(--duration-short) var(--ease-spring);
   min-height: 44px;
 }
 .btn-primary {
@@ -228,7 +229,7 @@ body {
   border-radius: var(--radius-xl);
   font-size: 12px;
   font-weight: 500;
-  transition: transform var(--duration-short) var(--ease-spring),
+  transition: transform var(--duration-short) var(--ease-standard),
     box-shadow var(--duration-short) var(--ease-standard);
 }
 .chip:hover {

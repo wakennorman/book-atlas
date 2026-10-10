@@ -1,6 +1,6 @@
 {
   "name": "book-atlas",
-  "version": "0.171.0",
+  "version": "0.172.0",
   "engines": { "node": ">=22" },
   "private": true,
   "type": "module",
