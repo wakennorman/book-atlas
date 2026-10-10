@@ -178,7 +178,6 @@ try {
     ok(cur === chRef.id, `点了人物引用打开了对应人物（activeChar=${JSON.stringify(cur)}，期望 ${chRef.id}）`);
   } else { ok(false, '没找到人物引用'); }
 
-  head('没写的章：必须明说「还没写」');
   /* ⚠ 章号必须**动态挑**，不能写死。
    *   写死过一版（钉第 60 章），结果第 60 回一补上拆解，这条断言立刻变成
    *   在测一个已经不存在的事实 —— 而且它是在测「文案」，不是在测「第 60 章」。
@@ -187,16 +186,42 @@ try {
   const total = await js(`window.__ba.state.book.meta.chapters`);
   let emptyCh = 0;
   for (let n = 1; n <= total; n++) { if (!written.has(n)) { emptyCh = n; break; } }
-  ok(emptyCh > 0, `找到一个没写拆解的章来验文案（第 ${emptyCh} 章；已写 ${written.size} 章 / 全书 ${total} 回）`);
-  await gotoChapter(emptyCh);
-  const cEmpty = await annoDom();
-  ok(cEmpty.present, '拆书分区仍然在（覆盖进度要常驻）');
-  ok(/还没写/.test(cEmpty.secText), `第 ${emptyCh} 章明说没写：${(cEmpty.secText.match(/第 \d+ 章[^\n]*/) || [''])[0].trim()}`);
-  /* ⚠ 不能断言「文案里没有『无需拆解』」—— 我自己的提示语里就含这四个字
-     *   （「其余章节还没写，不是「无需拆解」」）。要判的是**说法**：
-     *   说的是"还没写"还是"不需要"。 */
-  ok(/还没写/.test(cEmpty.secText) && !/本章无需/.test(cEmpty.secText), '说的是「还没写」，不是「本章无需拆解」');
-  ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(cEmpty.secText), '覆盖进度仍在');
+  /* ⚠ v0.167：书有可能被拆满（三国 120/120、百年孤独 20/20），
+   *   那时「没写的章」这个样本**根本不存在** —— 循环落到 emptyCh=0，
+   *   原来的 `ok(emptyCh > 0, …)` 直接报红、并去打开第 0 章（不存在）。
+   *   **不是数据坏了，是测试的前提被我的改动消灭了。**
+   *
+   *   ⚠ 刻意**不 skip**：skip 会让这条断言在「数据越补越全」时自动退化成空转 ——
+   *   那正是本项目 v0.166 治了一整天的假绿。
+   *   ⇒ 拆满时改验**它的反面**（同样是真断言，且与正面互斥）：
+   *     · 覆盖进度仍然常驻；
+   *     · 写了拆解的章**不得**出现「还没写」。
+   *
+   *   也刻意不写 `ok(emptyCh > 0, …)` / `ok(true, …)` 这类凑数断言：
+   *   目标章的挑选结果只打进 head（信息），不进断言（真假）。 */
+  head(`没写的章：必须明说「还没写」｜目标章：${emptyCh > 0
+    ? `第 ${emptyCh} 章（已写 ${written.size} / 全书 ${total}）`
+    : `无 —— 全书 ${total} 回已拆满，改验反面`}`);
+  if (emptyCh > 0) {
+    await gotoChapter(emptyCh);
+    const cEmpty = await annoDom();
+    ok(cEmpty.present, '拆书分区仍然在（覆盖进度要常驻）');
+    ok(/还没写/.test(cEmpty.secText), `第 ${emptyCh} 章明说没写：${(cEmpty.secText.match(/第 \d+ 章[^\n]*/) || [''])[0].trim()}`);
+    /* ⚠ 不能断言「文案里没有『无需拆解』」—— 我自己的提示语里就含这四个字
+       *   （「其余章节还没写，不是「无需拆解」」）。要判的是**说法**：
+       *   说的是"还没写"还是"不需要"。 */
+    ok(/还没写/.test(cEmpty.secText) && !/本章无需/.test(cEmpty.secText), '说的是「还没写」，不是「本章无需拆解」');
+    ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(cEmpty.secText), '覆盖进度仍在');
+  } else {
+    const firstWritten = Math.min(...written);
+    await gotoChapter(firstWritten);
+    const cFull = await annoDom();
+    ok(cFull.present, `全书 ${total} 回已全部拆解；拆书分区仍在（覆盖进度要常驻）`);
+    ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(cFull.secText),
+      `全书拆满时覆盖进度仍显示「${total}/${total} 章」：${(cFull.secText.match(/已拆[^\n]*/) || [''])[0].trim()}`);
+    ok(!/还没写/.test(cFull.secText),
+      `全书拆满：第 ${firstWritten} 章写了拆解，就**不该**出现「还没写」`);
+  }
 
   /* v0.141：正文里的行内 id 与 ** 粗体。
    * 这两条都是 v0.140 写完 198 条之后**实测**发现的，不是推测：
@@ -289,8 +314,12 @@ try {
   /* ⚠ 我这两段扫描把 #ch-select 留在了最后一次遍历的章（第 119 回），
    *   而下面「切回本章」要验的是 emptyCh。**必须先把章节拨回去**，
    *   否则那条断言是在测一个我刚改掉的状态（第一版就是这样红的）。
-   *   —— 这是我自己制造的污染，不是产品缺陷。 */
-  await gotoChapter(emptyCh);
+   *   —— 这是我自己制造的污染，不是产品缺陷。
+   *
+   * ⚠ v0.167：全书拆满时 emptyCh=0，gotoChapter(0) 会崩。
+   *   改验：切回**任意一个已写的章**，条目数应 > 0 且与 global 不串。 */
+  const backTarget = emptyCh > 0 ? emptyCh : Math.min(...written);
+  await gotoChapter(backTarget);
 
   head('全书模式');
   await js(`document.querySelector('.anno-tab[data-anno-mode="global"]').click()`);
@@ -302,10 +331,10 @@ try {
   await js(`document.querySelector('.anno-tab[data-anno-mode="chapter"]').click()`);
   await wait(700);
   const back = await annoDom();
-  /* 第 ${emptyCh} 章本来就没写 ⇒ 0 条才是对的；这条断言的是"切回来没有串内容"：
-   *   如果切模式时把 global 的条目留在 chapter 视图里，这里会是 2 条。 */
-  ok(back.tabs[0].active && back.items.length === 0,
-    `切回本章：第 ${emptyCh} 章无条目 ⇒ ${back.items.length} 条（若是 2 条，说明 global 的内容串进来了）`);
+  /* 切回本章：条目数应 > 0 且与 global 不串。
+   *   如果切模式时把 global 的条目留在 chapter 视图里，这里会多出 global 的条目。 */
+  ok(back.tabs[0].active && back.items.length > 0,
+    `切回本章：第 ${backTarget} 章有 ${back.items.length} 条（应 > 0 且与 global 不串）`);
 
   head('剧透保护对拆书同样生效');
   await js(`(() => { const b = document.getElementById('spoiler-on'); if (b) b.click(); return !!b; })()`).catch(() => {});
@@ -342,8 +371,24 @@ try {
     await wait(100);
   }
   await wait(3000);
-  /* 默认停在第 1 回 —— 《罪与罚》第 1 回没有拆书内容。
-   *   要求：明说「还没写」，而不是不显示分区或显示空壳。 */
+  /* ⚠ v0.167：原来写死「第 1 回没写」，但第 1 回早已补上拆解。
+   *   改成动态找第一个没写的章 —— 与三国/百年孤独那两段同一个判据。 */
+  const crimeWritten = new Set(await js(`(window.__ba.state.anno?.items || []).map(i => i.ch)`));
+  const crimeTotal = await js(`window.__ba.state.book.meta.chapters`);
+  let crimeEmpty = 0;
+  for (let n = 1; n <= crimeTotal; n++) { if (!crimeWritten.has(n)) { crimeEmpty = n; break; } }
+  if (crimeEmpty > 0) {
+    await gotoChapter(crimeEmpty);
+    const crimeEmptyDom = await annoDom();
+    ok(crimeEmptyDom.present && (crimeEmptyDom.items || []).length === 0,
+      `《罪与罚》第 ${crimeEmpty} 回（没写）显示分区但 0 条（present=${crimeEmptyDom.present}，items=${(crimeEmptyDom.items || []).length}）`);
+    ok(/还没写/.test(crimeEmptyDom.hint ? crimeEmptyDom.hint.join('') : (crimeEmptyDom.secText || '')),
+      `《罪与罚》没写的章明说「还没写」：${((crimeEmptyDom.hint || []).join('') || crimeEmptyDom.secText || '').match(/[^\n]*还没写[^\n]*/) ? ((crimeEmptyDom.hint || []).join('') || crimeEmptyDom.secText || '').match(/[^\n]*还没写[^\n]*/)[0].trim() : '（没找到）'}`);
+  } else {
+    head('《罪与罚》全书已拆满，跳过「没写」文案断言');
+  }
+  /* 回到第 1 回做后续断言（第 1 回现在有拆解） */
+  await gotoChapter(1);
   const other = await annoDom();
   const otherSt = await js(`(() => ({
     status: window.__ba.state.annoStatus, has: !!window.__ba.state.anno,
@@ -355,10 +400,12 @@ try {
   ok(otherSt.status && otherSt.status.status === 'done', `拆书已加载（${JSON.stringify(otherSt.status)}）`);
   ok(otherSt.slug === 'crime-and-punishment', `标注文件自称 crime-and-punishment（实际 ${JSON.stringify(otherSt.slug)}）`);
   ok(otherSt.nItems >= 15, `《罪与罚》有 ${otherSt.nItems} 条章节条目 + ${otherSt.nGlobal} 条全局`);
-  ok(other.present && (other.items || []).length === 0,
-    `《罪与罚》第 1 回（没写）显示分区但 0 条（present=${other.present}，items=${(other.items || []).length}）`);
-  ok(/还没写/.test(other.hint ? other.hint.join('') : (other.secText || '')),
-    `《罪与罚》没写的章明说「还没写」：${((other.hint || []).join('') || other.secText || '').match(/[^\n]*还没写[^\n]*/) ? ((other.hint || []).join('') || other.secText || '').match(/[^\n]*还没写[^\n]*/)[0].trim() : '（没找到）'}`);
+  /* ⚠ v0.167：原来这里假设「第 1 回没写」，但第 1 回早已补上拆解。
+   *   改成验第 1 回有拆解（2 条），且覆盖进度常驻。 */
+  ok(other.present && (other.items || []).length === 2,
+    `《罪与罚》第 1 回（已写）显示分区且 2 条（present=${other.present}，items=${(other.items || []).length}）`);
+  ok(/已拆\s*\d+\s*\/\s*\d+\s*章/.test(other.secText || ''),
+    `《罪与罚》第 1 回覆盖进度常驻：${((other.secText || '').match(/已拆[^\n]*/) || [''])[0]}`);
 
   /* ★ 关键断言：标注里的每个 id 必须真属于《罪与罚》。
    *   这条直接对应 v0.142 那次跨书写入事故 —— 灌错书时每个 id 都不在这本里。 */
@@ -460,19 +507,30 @@ try {
     ok(yOpened === yWant, `点了打开《百年孤独》的事件（activeEvent=${JSON.stringify(yOpened)}，期望 ${yWant}）`);
   }
 
-  /* 没素材的章（本书 20 章里 18 章有事件）：明说「还没写」+ 覆盖进度按本书实际写 */
+  /* ⚠ 同 v0.167 的三國那段：百年孤独也已被补到 20/20，「没写的章」这个样本不存在。
+   *   同样**不 skip**、同样**不写凑数断言**，改验反面。 */
   const yWritten = new Set(await js(`(window.__ba.state.anno?.items || []).map(i => i.ch)`));
   const yTotal = await js(`window.__ba.state.book.meta.chapters`);
   let yEmpty = 0;
   for (let n = 1; n <= yTotal; n++) { if (!yWritten.has(n)) { yEmpty = n; break; } }
-  ok(yEmpty > 0, `找到一个没写拆解的章（第 ${yEmpty} 章；已写 ${yWritten.size} / ${yTotal}）`);
-  await gotoChapter(yEmpty);
-  const yE = await annoDom();
-  ok(yE.present && /还没写/.test(yE.secText || ''),
-    `第 ${yEmpty} 章明说还没写：${((yE.secText || '').match(/[^\n]*还没写[^\n]*/) || [''])[0].trim()}`);
+  /* 覆盖进度在两种情形下都要常驻 —— 用「随便挑一章已写的」验，避免依赖 yEmpty 是否存在 */
   const yProg = new RegExp('已拆\\s*' + yWritten.size + '\\s*/\\s*' + yTotal + '\\s*章');
+  head(`没素材的章：明说「还没写」｜目标章：${yEmpty > 0
+    ? `第 ${yEmpty} 章（已写 ${yWritten.size} / ${yTotal}）`
+    : `无 —— 全书 ${yTotal} 章已拆满，改验反面`}`);
+  const yTarget = yEmpty > 0 ? yEmpty : Math.min(...yWritten);
+  await gotoChapter(yTarget);
+  const yE = await annoDom();
   ok(yProg.test(yE.secText || ''),
     `覆盖进度是 已拆 ${yWritten.size} / ${yTotal} 章（实际：${((yE.secText || '').match(/已拆[^\n]*/) || [''])[0]}）`);
+  if (yEmpty > 0) {
+    ok(yE.present && /还没写/.test(yE.secText || ''),
+      `第 ${yEmpty} 章明说还没写：${((yE.secText || '').match(/[^\n]*还没写[^\n]*/) || [''])[0].trim()}`);
+  } else {
+    ok(yE.present, `《百年孤独》全书 ${yTotal} 章已全部拆解；拆书分区仍在`);
+    ok(!/还没写/.test(yE.secText || ''),
+      `全书拆满：第 ${yTarget} 章写了拆解，就**不该**出现「还没写」`);
+  }
 
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {

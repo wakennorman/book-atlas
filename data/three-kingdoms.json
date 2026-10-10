@@ -56348,7 +56348,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 85,
+      "order": 91,
       "evidence": "paraphrase"
     },
     {
@@ -56365,7 +56365,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 86,
+      "order": 92,
       "evidence": "paraphrase"
     },
     {
@@ -56385,7 +56385,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 87,
+      "order": 93,
       "evidence": "paraphrase"
     },
     {
@@ -56402,7 +56402,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 88,
+      "order": 94,
       "evidence": "paraphrase"
     },
     {
@@ -56423,7 +56423,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 89,
+      "order": 95,
       "evidence": "paraphrase"
     },
     {
@@ -56441,7 +56441,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 90,
+      "order": 96,
       "evidence": "paraphrase"
     },
     {
@@ -56461,7 +56461,7 @@
       ],
       "place": "",
       "phase": "p2",
-      "order": 91,
+      "order": 97,
       "evidence": "paraphrase"
     },
     {
@@ -56476,7 +56476,7 @@
         "feng-ji"
       ],
       "phase": "p2",
-      "order": 92,
+      "order": 98,
       "evidence": "paraphrase"
     },
     {
@@ -56492,7 +56492,7 @@
         "xu-chu"
       ],
       "phase": "p2",
-      "order": 93,
+      "order": 99,
       "evidence": "paraphrase"
     },
     {
@@ -56510,7 +56510,7 @@
         "feng-ji"
       ],
       "phase": "p2",
-      "order": 94,
+      "order": 100,
       "evidence": "paraphrase"
     },
     {
@@ -56527,7 +56527,7 @@
         "xu-chang"
       ],
       "phase": "p2",
-      "order": 95,
+      "order": 101,
       "evidence": "paraphrase"
     },
     {
@@ -56543,7 +56543,7 @@
         "cai-mao"
       ],
       "phase": "p2",
-      "order": 96,
+      "order": 102,
       "evidence": "paraphrase"
     },
     {
@@ -56559,7 +56559,7 @@
         "yuan-shang"
       ],
       "phase": "p2",
-      "order": 97,
+      "order": 103,
       "evidence": "paraphrase"
     },
     {
@@ -56576,7 +56576,7 @@
         "liu-shi-yuanshao"
       ],
       "phase": "p2",
-      "order": 103,
+      "order": 109,
       "evidence": "paraphrase"
     },
     {
@@ -56591,7 +56591,7 @@
         "cao-cao"
       ],
       "phase": "p2",
-      "order": 104,
+      "order": 110,
       "evidence": "paraphrase"
     },
     {
@@ -56608,7 +56608,7 @@
         "guo-tu"
       ],
       "phase": "p2",
-      "order": 105,
+      "order": 111,
       "evidence": "paraphrase"
     },
     {
@@ -56624,7 +56624,7 @@
         "ta-dun"
       ],
       "phase": "p2",
-      "order": 106,
+      "order": 112,
       "evidence": "paraphrase"
     },
     {
@@ -56638,7 +56638,7 @@
         "cao-cao"
       ],
       "phase": "p2",
-      "order": 107,
+      "order": 113,
       "evidence": "paraphrase"
     },
     {
@@ -56655,7 +56655,7 @@
         "yuan-xi"
       ],
       "phase": "p2",
-      "order": 108,
+      "order": 114,
       "evidence": "paraphrase"
     },
     {
@@ -64533,7 +64533,7 @@
         "yuan-shang"
       ],
       "phase": "p2",
-      "order": 98,
+      "order": 104,
       "evidence": "paraphrase"
     },
     {
@@ -64548,7 +64548,7 @@
         "yuan-shang"
       ],
       "phase": "p2",
-      "order": 99,
+      "order": 105,
       "evidence": "paraphrase"
     },
     {
@@ -64566,7 +64566,7 @@
         "xin-pi"
       ],
       "phase": "p2",
-      "order": 100,
+      "order": 106,
       "evidence": "paraphrase"
     },
     {
@@ -64582,7 +64582,7 @@
         "yuan-shang"
       ],
       "phase": "p2",
-      "order": 101,
+      "order": 107,
       "evidence": "paraphrase"
     },
     {
@@ -64596,7 +64596,7 @@
         "chen-lin"
       ],
       "phase": "p2",
-      "order": 102,
+      "order": 108,
       "evidence": "paraphrase"
     },
     {
@@ -65323,6 +65323,78 @@
       ],
       "phase": "p6",
       "order": 94,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-1",
+      "ch": 29,
+      "name": "许贡家客丹徒刺孙策",
+      "summary": "吴郡太守许贡上书曹操「孙策骁勇，与项籍相似」，请朝廷召还京师以为后患；孙策斩其使、绞杀许贡。许贡家客三人于丹徒西山遇孙策会猎，持枪刺其左腿、箭中面颊，孙策拔箭回射应弦而倒，杀一人后被围，程普引众救至，将许贡家客砍为肉泥。",
+      "impact": "孙策「血流满面，被伤至重」，乃以刀割袍裹其伤，救回吴会养病",
+      "chars": ["sun-ce", "xu-gong", "xu-gong-jia-ke", "cheng-pu"],
+      "quote": "孙策骁勇，与项籍相似。",
+      "phase": "p2",
+      "order": 85,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-2",
+      "ch": 29,
+      "name": "郭嘉断言孙策必死于小人之手",
+      "summary": "曹操谓孙策强盛，叹曰「狮儿难与争锋也」，又以曹仁之女许配孙策幼弟孙匡。使者回称帐下谋士皆敬服郭嘉，独郭嘉不服，称孙策「轻而无备，性急少谋，乃匹夫之勇耳，他日必死于小人之手」。孙策闻之怒，誓取许昌，不待疮愈便欲出兵，张昭谏止。",
+      "impact": "孙策「恨之，常有袭许都之心」，江东与许昌的对抗由暗转明",
+      "chars": ["sun-ce", "cao-cao", "guo-jia", "zhang-zhao", "sun-kuang"],
+      "quote": "轻而无备，性急少谋，乃匹夫之勇耳，他日必死于小人之手。",
+      "phase": "p2",
+      "order": 86,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-3",
+      "ch": 29,
+      "name": "医者嘱孙策静养百日",
+      "summary": "孙策伤重，求华陀医治，华陀已往中原，其徒治之，谓箭头有药毒已入骨，须静养百日方可无虞，若怒气冲激则疮难治。孙策为人最是性急，恨不得即日便愈。",
+      "impact": "「静养百日」这道医嘱后来被孙策自己推翻了三次：闻郭嘉之评要出兵、斩于吉、焚玉清观",
+      "chars": ["sun-ce"],
+      "quote": "箭头有药，毒已入骨。须静养百日，方可无虞。若怒气冲激，其疮难治。",
+      "phase": "p2",
+      "order": 87,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-4",
+      "ch": 29,
+      "name": "于吉求雨得三尺甘霖",
+      "summary": "琅琊宫道士于吉寓居东方，往来吴会，普施符水救人万病，当世呼为神仙。孙策怒欲诛之，先囚于狱；吕范请令其祈雨以赎罪，于吉自缚烈日之中求三尺甘霖。将及午时狂风骤起，雷电齐发，大雨如注，街市成河，溪涧皆满。",
+      "impact": "孙策见官民俱罗拜于水中，叱曰「晴雨乃天地之定数，妖人偶乘其便」，命武士斩于吉",
+      "chars": ["sun-ce", "yu-ji", "lv-fan"],
+      "quote": "吾求三尺甘霖，以救万民，然我终不免一死。",
+      "phase": "p2",
+      "order": 88,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-5",
+      "ch": 29,
+      "name": "于吉之尸不可得而孙策自伤",
+      "summary": "于吉被斩后尸首不见，守尸军士报知时于吉忽自堂前而来。孙策掷剑，中者乃前日动手杀于吉之小卒；焚玉清观、逐出道士，于吉立于火光之中；照镜则见于吉立于镜中。",
+      "impact": "孙策金疮迸裂昏绝，自叹「吾不能复生矣」；吴太夫人谓「吾儿屈杀神仙，故招此祸」",
+      "chars": ["sun-ce", "yu-ji", "wu-tai-furen"],
+      "quote": "吾不能复生矣！",
+      "phase": "p2",
+      "order": 89,
+      "evidence": "paraphrase"
+    },
+    {
+      "id": "e-29-6",
+      "ch": 29,
+      "name": "孙策托江东于孙权",
+      "summary": "孙策临终召张昭等诸将及弟孙权至卧榻前，自陈「若举江东之众，决机于两阵之间，与天下争衡，卿不如我；举贤任能，使各尽力以保江东，我不如卿」，取印绶付孙权，嘱内事不决可问张昭、外事不决可问周瑜。",
+      "impact": "孙权大哭拜受印绶；吴太夫人忧其弟年幼不能任大事，孙策答以「弟才胜儿十倍」；孙策交代毕瞑目而逝，年止二十六岁",
+      "chars": ["sun-ce", "sun-quan", "zhang-zhao", "zhou-yu", "wu-tai-furen"],
+      "quote": "弟才胜儿十倍，足当大任。倘内事不决，可问张昭；外事不决，可问周瑜。",
+      "phase": "p2",
+      "order": 90,
       "evidence": "paraphrase"
     }
   ]
