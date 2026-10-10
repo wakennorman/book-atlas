@@ -109,7 +109,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -701,6 +701,28 @@ jobs:
         #   在 tmp 里造一份最小 data/ + 一份假三国 txt（书**故意用真 slug**
         #   `three-kingdoms`，否则原著文件名查不到、B/C 永远"缺原著"，测不出来）。
         run: node test/relation-actors-ledger-guard.mjs
+
+      - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
+        # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」
+        #   改成「直接 import 判据函数」，理由是**本机 node 起不了任何子进程**
+        #   （实测 `spawnSync('git'|'node'|process.execPath, …)` 一律
+        #    `status === null, error.code === 'EBUSY'`）⇒ `null === 0` 与 `null === 1`
+        #   全为假 ⇒ 那批守卫在本机**每条用例都红**（`✗ 14 条不符合预期`…），一条都没测到。
+        #   本轮把最后 5 个也改完（name-form / altnames / kin-terms-exempt / missing-ok /
+        #   surname-coverage，共 78 条断言本机首次真跑），并把结论钉成不变量：
+        #   H1 守卫不得起子进程（**先剥注释** —— 守卫文件头本来就在讲"别用 spawnSync"，
+        #      不剥会被自己的注释绊倒，本轮当场踩过一次）；
+        #   H2/H3 守卫必须 import `../scripts/…` 且那个脚本必须**导出函数**；
+        #   H4 check 脚本的入口判断必须是 `import.meta.url === pathToFileURL(…)`，
+        #      不得写成 `endsWith(process.argv[1])`（目录名带空格 ⇒ 恒不相等 ⇒ 主流程一次都不跑）；
+        #   H5 入口块必须①调自己导出的函数②`process.exit(1)`（只打印不报红 = 假门禁）；
+        #   H6/H7 每个守卫、每个 `scripts/check-*.mjs` 都必须登记进本 yml（**剥注释后**匹配）。
+        # ⚠ 豁免 2 个，理由会**打印出来**（不打印"跳过了什么"就等于装饰品）：
+        #   `_profile-guard.mjs` 是辅助库不是用例入口；`version-bump-guard.mjs` 要
+        #   `git init/commit` ⇒ 本质上必须有子进程。
+        # ⚠ 有效性已实测：在隔离副本里注入三处破坏（守卫加 child_process / 入口改 endsWith /
+        #   从 yml 删登记），恰好 3 条红、且每条都指对了文件。
+        run: node test/guard-hygiene.mjs
 
       - name: 亲子边的性别自洽（type 与 gender 必须对得上）
         # 这是**硬门禁**，与上面两个只读审计不同。

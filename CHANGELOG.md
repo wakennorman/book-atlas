@@ -5,6 +5,153 @@
 
 ---
 
+## v0.180 · 最后 5 个守卫「本机恒红」的根因是**起子进程** —— 改完本机首次真跑，并把结论钉成类级不变量
+
+v0.177 / v0.178 / v0.179 连着三轮新写的守卫都用了同一个写法：**直接 import 判据函数**。
+理由写在每轮的文件头里 —— 本机 `spawnSync` 起不了子进程。但那只改了**新写**的，
+**旧的 5 个一直没动** ⇒ 每次本地 `npm run gate` 都固定有 **5 步红**。
+
+### 一、先实测根因，别照抄上一轮的结论
+
+```
+spawnSync('git',           ['--version']) → status= null  error= EBUSY
+spawnSync(process.execPath,['--version']) → status= null  error= EBUSY
+spawnSync('node',          ['--version']) → status= null  error= EBUSY
+```
+
+**连 spawn 一个 node 自己都起不来**，不是"某个命令被拦"。而守卫的断言长这样：
+
+```js
+const run = () => spawnSync(process.execPath, [SCRIPT], {…}).status;
+ok(run() === 0, '正常态 ⇒ exit 0');      // null === 0 → 假
+ok(run() === 1, '坏 JSON ⇒ exit 1');     // null === 1 → 假
+```
+
+⇒ `status` 恒为 `null`，**两种断言全为假** ⇒ 这 5 个守卫在本机**每一条用例都红**。
+
+### 二、这一族比「假绿」更阴：它红得很像"判据坏了"
+
+它们不是静默通过，是**恒红**。可红的是**环境**，不是判据 ——
+于是每次本地门禁都挂着 5 个"不符合预期"，人就开始**习惯性地忽略红**。
+（本项目的反面教材一直是假绿；这一族说明**"常年红"同样会让门禁失去信息量**。）
+
+### 三、改法（5 个文件同一套），断言数一条不少
+
+| 守卫 | 改造前（本机） | 改造后 |
+|---|---|---|
+| `kin-terms-exempt-guard` | `✗ 14 条不符合预期`（全红） | ✓ 14 条通过 |
+| `name-form-ledger-guard` | `✗ 10 条不符合预期` | ✓ 10 条通过 |
+| `altnames-ledger-guard` | `✗ 12 条不符合预期` | ✓ 12 条通过 |
+| `missing-ok-guard` | `✗ 21 条不符合预期` | ✓ 21 条通过 |
+| `surname-coverage-guard` | `✗ 21 条不符合预期` | ✓ 21 条通过 |
+| **合计** | **78 条断言一条都没测到** | **78 条真跑** |
+
+三处要点：
+
+1. **`process.env.BOOKATLAS_ROOT` 必须在 `import` 之前设好** ——
+   `lib/data-files.mjs` 的 `ROOT` / `DATA` 是**模块级常量**，import 之后再设就晚了
+   （`surname-coverage-guard` 更刁：它的 `readExtractor()` 默认参数也吃这个 ROOT，
+   设晚了就会去解析**真仓库**的工具源码，测的就不是 tmp 那份）。
+2. 断言从"退出码 0/1"改成"`problems.length` 为 0 / > 0"。
+3. **入口那段（`pathToFileURL` 判断 + `process.exit`）不在守卫里测** ——
+   改由新加的类级不变量**静态**守着（见下）。这不是放弃覆盖，是换了更便宜的手段。
+
+⚠ **5 个 `scripts/check-*.mjs` 判据本身一行没改** —— 本轮只动测试的取数方式。
+
+### 四、新 `test/guard-hygiene.mjs`：把结论钉成不变量（78 条断言）
+
+| # | 判据 |
+|---|---|
+| H1 | 守卫里**不得**出现子进程（`child_process` / `spawnSync(` / `spawn(` / `execSync(` …） |
+| H2 | 守卫必须 import 至少一个 `../scripts/…`（证明它测的是**真判据**，不是自己抄一份） |
+| H3 | 被 import 的那个脚本必须**导出函数** |
+| H4 | `scripts/check-*.mjs` 的入口判断必须是 `import.meta.url === pathToFileURL(…)`，**不得**写成 `endsWith(process.argv[1])` |
+| H5 | 入口块必须①**调用自己导出的那个函数**、②`process.exit(1)`（只打印不报红 = 假门禁） |
+| H6/H7 | 每个守卫、每个 `scripts/check-*.mjs` 都必须登记进 `check.yml` |
+
+⚠ H1 与 H6/H7 都**必须先剥注释**：守卫的文件头本来就在讲"别用 `spawnSync`"、
+`check.yml` 里也**只在注释里**提过 `_profile-guard.mjs` ——
+不剥注释，判据就会被**自己的说明文字**喂饱（本轮当场踩过一次，见下）。
+
+**豁免 2 个，理由会打印出来**（不打印"跳过了什么"，报告就等于装饰品）：
+
+- `_profile-guard.mjs` —— 不是用例入口，是被多个测试 import 的**辅助库**（临时浏览器 profile 回收），
+  文件名里的 guard 只是巧合；它按设计要读进程表 ⇒ 必须 spawn。
+- `version-bump-guard.mjs` —— 要 `git init` / `git commit` / 读 git 历史 ⇒ **本质上必须有子进程**。
+
+### 五、有效性实测：注入破坏 ⇒ 恰好 3 条红
+
+在**隔离副本**（tmp 里复制 test/ + scripts/ + check.yml）里注入三处，而不是改真仓库：
+
+| 注入 | 报出来的 |
+|---|---|
+| 给 `kin-terms-exempt-guard` 加一行 `import { spawnSync } from 'node:child_process'` | `✗ kin-terms-exempt-guard.mjs 命中「child_process」⇒ 本机 EBUSY 会让它每条用例都红` |
+| 把 `check-kin-terms-exempt.mjs` 的入口改成 `endsWith(process.argv[1])` | `✗ check-kin-terms-exempt.mjs 用了 endsWith(process.argv[1]) ⇒ 恒不相等、主流程一次都不跑` |
+| 从 `check.yml` 里删掉 `test/missing-ok-guard.mjs` 的登记 | `✗ missing-ok-guard.mjs 没登记进 check.yml ⇒ 它永远不会被跑` |
+
+`✗ 3 条不符合预期` —— 条数对得上、每条都指对了文件。**不起子进程也能证明门禁会红。**
+
+### 六、顺着这条线查下去：**整个本地门禁在本机一步都没跑过**
+
+改完 5 个守卫后跑 `npm run gate` 做验收，结果拿到的是：
+
+```
+✗ 66 步失败
+GATE_EXIT=1
+```
+
+—— 66 步，**每一步**都是 `✗ … 起不来（没跑成，不是失败）：spawnSync … EBUSY`。
+
+`tools/gate.mjs` 自己**早就知道**这件事（文件里 2026-10-10 的注释就写着
+"本机实测 node 里 spawnSync 任何可执行文件都 EBUSY，所以本机跑不了这个运行器"），
+单步也**如实**印了"没跑成，不是失败"。问题在**末尾汇总**：
+`blocked` 被算进 `bad`，统一写成「✗ N 步失败」⇒
+**"环境跑不了"和"N 处回归"在报告里长得一模一样**。这正是本轮前面刚说过的那件事，
+只是换了个地方：**报告失去信息量，读者就会开始忽略它**。
+
+改法（三处）：
+
+1. **探针前置**：进循环之前先 `spawnSync(process.execPath, ['-e','0'])` 探一次；
+   起不来就**不进循环**，直接说清楚：
+   ```
+   ⚠ 本机 node 起不了子进程（EBUSY）：这个运行器**一步都跑不了**。
+     ⇒ 因此下面的 ✗ 不是"门禁红"，是"门禁**没执行**"——别读成回归。
+     ⇒ 逐条跑：`node tools/gate.mjs --list` 打印全部命令（含参数），从 shell 一条条跑；或交给 CI。
+     ⇒ 共 66 步，全部跳过。
+   ```
+   （探针用 `['-e','0']`：成功时空 Buffer 是**真值**、失败时是 `null` ⇒ 与循环里 `!r.stdout` 同一套判法。）
+2. **计数分开**：`blocked`（起不来）与 `failed`（跑起来了但 exit≠0 / 输出有 ✗）各自累计。
+3. **汇总分开说**：全 blocked ⇒ 说"都没跑成"；混合 ⇒ `通过 X、报红 Y、没跑成 Z`。
+
+⇒ 本轮验收因此**逐条从 shell 跑**（Bash 起 node 没问题，被拦的只是"node 再起 node"）：
+`check.yml` 里那 18 条数据类步骤 + 9 个测试**全部 exit 0**
+（`validate --all`、`check-kin-terms --all`、`check-event-chars`、`check-annotations`、
+`audit-annotations`、`check-graph-fields`、`make-slim-packs --check`、5 份台账门禁、
+`check-relation-actors-ledger`、`check-first-ch-ledger`、`check-cross-chapter-ledger`、
+`audit-kin-gender`、`check-transition-ease`、`check-transition-coverage`、
+`check-version`、`check-sw-precache`、`books-registry`、`kin-constants`(44/44)、
+`parent-child`(32/32)、`gate-claims`、`gate-effectiveness`(**66 步都可能报红**)、`check-packs-sync`）。
+
+### 七、顺手修一处**误导性跳过**
+
+`test/version-bump-guard.mjs` 原文案是「**没装 git**，跳过」—— 可 git 明明装着，
+真实原因是 `spawnSync` 的 `EBUSY`。两者含义差很远：前者像"环境缺工具"，
+后者是"**这道门禁在本机根本没执行**"。改成按 `error.code` 分开说：
+
+```
+· 跳过：本机 node 起不了子进程（EBUSY）⇒ 这道门禁在本机**未执行**（CI 上会真跑）
+```
+
+### 八、没做的事 / 没变的
+
+- **不动判据**：5 个 `check-*.mjs` 一行未改（所以 `validate` / 各审计读数与 v0.179 完全一致）。
+- **不 bump 版本**：本轮只动 `test/`、`tools/gate.mjs` 与 `.github/`，`sw.js` 的 `SHELL` 预缓存清单里
+  **没有任何一项**被改 ⇒ 按项目口径**不升**（`sw` 停在 `bookatlas-v179`，`package.json` 停在 `0.179.0`，
+  `check-version.mjs` 因此仍然绿）。这与 v0.154–v0.178 那一段"sw 停在 153"是同一个口径。
+- **`version-bump-guard` 本机仍不执行**（EBUSY 是环境限制，改不了）—— 只是现在它**说实话**了。
+
+---
+
 ## v0.179 · 行为人审计那份「需要人看的 9 条」：读出一个真错（一家六条关系全标错）＋ 修两处判据 bug ＋ 补上台账门禁
 
 v0.177 清掉的是**拆书审计**的待核清单，v0.178 清掉的是 **`firstCh` 待核清单**。

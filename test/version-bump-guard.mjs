@@ -29,8 +29,17 @@ const ok = (c, m, extra) => {
   else { fail++; console.error(`  ✗ ${m}${extra !== undefined ? `  → ${extra}` : ''}`); }
 };
 
-if (spawnSync('git', ['--version'], { encoding: 'utf8' }).status !== 0) {
-  console.log('· 没装 git，跳过（本检查本身依赖 git 历史）。');
+const probe = spawnSync('git', ['--version'], { encoding: 'utf8' });
+if (probe.status !== 0) {
+  /* ⚠ v0.180：别把「起不了子进程」说成「没装 git」。
+   * 实测本机 `spawnSync` 对**任何**命令都返回 `status: null, error.code: 'EBUSY'`
+   * （连 spawn 一个 node 自己都起不来），而 git 明明装着 —— 原文案
+   * 「没装 git，跳过」会让人以为是环境缺工具，实际是**这道门禁在本机根本没执行**。
+   * 两者要分开说：否则"跳过"看起来像"环境不支持"，而不是"有个洞没被守"。 */
+  const why = probe.error && probe.error.code === 'EBUSY'
+    ? '本机 node 起不了子进程（EBUSY）⇒ 这道门禁在本机**未执行**（CI 上会真跑）'
+    : `起不了 git（${(probe.error && probe.error.code) || `status=${probe.status}`}）⇒ 未执行`;
+  console.log(`· 跳过：${why}`);
   process.exit(0);
 }
 

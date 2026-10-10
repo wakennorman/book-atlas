@@ -126,7 +126,26 @@ if (argv.includes('--list')) {
   process.exit(0);
 }
 
-let bad = 0;
+/* ---- 先探一次：本机到底能不能起子进程？----
+ * ⚠ 起不了就**别假装在跑门禁**。下面那个循环会把每一步报成 `✗ …起不来`，
+ *   末尾再汇总成「✗ 66 步失败」—— 读起来像 **66 处回归**，实际是**一步都没执行**。
+ *   v0.180 实测（2026-10-10）：本机 `spawnSync(process.execPath, ['-e','0'])` 也 EBUSY，
+ *   连 spawn 一个 node 自己都起不来。⇒ "门禁没执行"与"门禁报红"必须分开说，
+ *   混在一起就是又一个假信号（本项目最怕的那一族）。
+ * ⚠ 探针写 `['-e','0']`：spawn 成功时 stdout 是**空 Buffer**（对象，真值），
+ *   失败时是 `null` ⇒ 用 `!probe.stdout` 判，与下面循环里的判法**同一套**。 */
+const probe = spawnSync(process.execPath, ['-e', '0'], { encoding: 'buffer' });
+if (!probe.stdout) {
+  console.log(`⚠ 本机 node 起不了子进程（${(probe.error && probe.error.code) || '无 stdout'}）：这个运行器**一步都跑不了**。`);
+  console.log('  ⇒ 因此下面的 ✗ 不是"门禁红"，是"门禁**没执行**"——别读成回归。');
+  console.log('  ⇒ 逐条跑：`node tools/gate.mjs --list` 打印全部命令（含参数），从 shell 一条条跑；或交给 CI。');
+  console.log(`  ⇒ 共 ${steps.length} 步，全部跳过。`);
+  process.exit(1);
+}
+
+let bad = 0;        /* 报红 + 没跑成（决定退出码）*/
+let blocked = 0;    /* 子进程根本没起来（环境问题，不是判据问题）*/
+let failed = 0;     /* 跑起来了、但 exit≠0 或输出里有 ✗（真报红）*/
 for (const s of steps) {
   const t0 = Date.now();
   const r = spawnSync(process.execPath, s.argv, { encoding: 'buffer', cwd: ROOT });
@@ -137,7 +156,7 @@ for (const s of steps) {
    *   （连 spawnSync(process.execPath, ['scripts/validate.mjs']) 也是），
    *   所以本机跑不了这个运行器 —— 逐条从 shell 跑 check.yml 里的命令才行。 */
   if (!r.stdout) {
-    bad++;
+    bad++; blocked++;
     console.log('  ✗ ' + s.cmd.padEnd(40)
       + `起不来（没跑成，不是失败）：${r.error ? r.error.message : '无 stdout'}`);
     continue;
@@ -145,10 +164,18 @@ for (const s of steps) {
   const all = r.stdout.toString('utf8') + '\n' + (r.stderr ? r.stderr.toString('utf8') : '');
   const red = all.split(/\r?\n/).filter((l) => /✗/.test(l));
   const pass = r.status === 0 && red.length === 0;
-  if (!pass) bad++;
+  if (!pass) { bad++; failed++; }
   const secs = ((Date.now() - t0) / 1000).toFixed(0);
   console.log((pass ? '  ✓ ' : '  ✗ ') + s.cmd.padEnd(40) + `exit=${r.status}  红 ${red.length}  ${secs}s`
     + (red.length ? '\n      ' + red[0].trim().slice(0, 96) : ''));
 }
-console.log('\n' + (bad ? `✗ ${bad} 步失败` : `✓ 全部 ${steps.length} 步通过`));
+/* ⚠ 汇总必须把"没跑成"与"报红"分开报：原来两者都算进 `bad`、末尾统一写成
+ *   「✗ N 步失败」，于是"环境跑不了"看起来和"N 处回归"一模一样。 */
+if (blocked === steps.length) {
+  console.log(`\n⚠ 全部 ${steps.length} 步**都没跑成**（本机起不了子进程）——这不是"门禁红"，是"门禁**没执行**"。`);
+} else if (blocked) {
+  console.log(`\n${bad ? '✗' : '✓'} 共 ${steps.length} 步：通过 ${steps.length - bad}、**报红 ${failed}**、**没跑成 ${blocked}**`);
+} else {
+  console.log('\n' + (bad ? `✗ ${bad} 步失败` : `✓ 全部 ${steps.length} 步通过`));
+}
 process.exit(bad ? 1 : 0);

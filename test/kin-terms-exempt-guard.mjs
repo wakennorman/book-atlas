@@ -17,18 +17,26 @@
  * 脚本支持 `BOOKATLAS_ROOT` 环境变量（只给测试用），而且它 import 的
  * `lib/data-files.mjs` 也认这个变量（v0.162 起）⇒ `listBookSlugs()` 会读 tmp 里的书。
  * 这里在 tmp 里写一份最小 `data/demo.json`（一本 demo 书）+ `data/kin-terms-exempt.json`，
- * 逐场景跑、断言退出码。**全程不碰真实仓库**。
+ * 逐场景跑、断言**判据函数返回的问题条数**。**全程不碰真实仓库**。
+ *
+ * ## v0.180：从「起子进程看退出码」改成「直接 import 判据函数」
+ *
+ * 原先靠 `spawnSync(process.execPath, [SCRIPT]).status` 断言退出码，可是
+ * **本机 node 起不了任何子进程**（EBUSY）⇒ `status` 恒为 `null` ⇒
+ * `null === 0` 与 `null === 1` **全都为假** ⇒ 这个文件里**每一条**用例都红
+ * （跑出来是「✗ 14 条不符合预期」，其实**一条都没测到**）—— 守卫自己成了假门禁。
+ * 改成 `await import(...)` 拿导出的 `checkKinTermsExempt()`，断言 `problems.length`。
+ *
+ * ⚠ `process.env.BOOKATLAS_ROOT` **必须在 import 之前**设好：
+ *   `lib/data-files.mjs` 的 `ROOT` / `DATA` 是**模块级常量**，import 之后再设就晚了。
+ * ⚠ 入口那段（`pathToFileURL` 判断 + `process.exit`）不在这里测 ——
+ *   改由 `test/guard-hygiene.mjs` **静态**守着（不起子进程也能守住）。
  *
  * 用法：node test/kin-terms-exempt-guard.mjs
  */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SCRIPT = path.join(ROOT, 'scripts', 'check-kin-terms-exempt.mjs');
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log(`  ✓ ${m}`); } else { fail++; console.error(`  ✗ ${m}`); } };
@@ -51,17 +59,19 @@ fs.writeFileSync(BOOK, JSON.stringify({
 const GOOD = [{ book: 'demo', from: 'a', to: 'b', reason: '演示理由，够八个字了吧' }];
 const writeExempt = (o) => fs.writeFileSync(EXEMPT, JSON.stringify(o, null, 2) + '\n', 'utf8');
 const rmExempt = () => { try { fs.unlinkSync(EXEMPT); } catch { /* 忽略 */ } };
-const run = () => spawnSync(process.execPath, [SCRIPT], {
-  encoding: 'utf8', env: { ...process.env, BOOKATLAS_ROOT: tmp },
-}).status;
+
+/* ⚠ 环境变量必须在 import 之前设好（见文件头） */
+process.env.BOOKATLAS_ROOT = tmp;
+const { checkKinTermsExempt } = await import('../scripts/check-kin-terms-exempt.mjs');
+const run = () => checkKinTermsExempt();
 
 console.log('══ scripts/check-kin-terms-exempt.mjs 的守卫 ══\n');
 
 writeExempt(GOOD);
-ok(run() === 0, '正常态（一条合法豁免）⇒ exit 0');
+ok(run().length === 0, '正常态（一条合法豁免）⇒ 0 处问题');
 
 rmExempt();
-ok(run() === 0, '清单不存在（可选文件）⇒ exit 0');
+ok(run().length === 0, '清单不存在（可选文件）⇒ 0 处问题');
 
 const RED = [
   ['K1 顶层不是数组', { book: 'demo' }],
@@ -75,14 +85,14 @@ const RED = [
   ['K6 重复（同一 book+from+to）', [GOOD[0], { ...GOOD[0] }]],
   ['K7 `from` 与 `to` 相同', [{ book: 'demo', from: 'a', to: 'a', reason: '演示理由，够八个字了吧' }]],
 ];
-for (const [label, obj] of RED) { writeExempt(obj); ok(run() === 1, `${label} ⇒ exit 1`); }
+for (const [label, obj] of RED) { writeExempt(obj); ok(run().length > 0, `${label} ⇒ 报红`); }
 
 /* JSON 语法坏 —— 这是最阴的一种：消费方 loadExempt 会静默 return [] */
 fs.writeFileSync(EXEMPT, '{ 这不是 JSON', 'utf8');
-ok(run() === 1, 'K0 JSON 解析失败（消费方会静默当成空名单）⇒ exit 1');
+ok(run().length > 0, 'K0 JSON 解析失败（消费方会静默当成空名单）⇒ 报红');
 
 writeExempt(GOOD);
-ok(run() === 0, '还原后 ⇒ exit 0');
+ok(run().length === 0, '还原后 ⇒ 0 处问题');
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\n${fail ? `✗ ${fail} 条不符合预期` : `✓ 全部 ${pass} 条通过（含 11 条「期望报红」场景）`}`);
