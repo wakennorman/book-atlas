@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -385,6 +385,30 @@ jobs:
         #   场景 + 1 条 JSON 坏 + 2 条正常态 + 1 条反向（不跨章的条目才该报 L8）。
         #   代价：**入口判断**不在这条守卫里，靠手工跑一次脚本确认（v0.177 已跑：exit 0）。
         run: node test/cross-chapter-ledger-guard.mjs
+
+      - name: firstCh 已核台账（「待核清单」里核过、确认本来就对的那几条）
+        # v0.178 新增。`audit-first-ch.mjs` 把 `characters[].firstCh` 与原著首现对拍，
+        # 报「待核清单」；人回原著读完，**确实错的**用 `scripts/fix-first-ch.mjs` 改数据，
+        # **本来就对的**（王双在第 85 回只是被点名、司马师在第 78 回是后人诗、
+        # 第 7 回的张虎是另一个人…）记进 `data/first-ch-ok.json`。
+        # 台账按 **(book, 主名)** 记账，而主名与 firstCh 都会变 ⇒ 必须守：
+        #   L1 数组 / L2 形状 / L3 why≥8 字 / L4 kind 在闭集 / L5 书存在 / L6 人在数据里 /
+        #   L7 台账 firstCh == 数据 firstCh（数据改了台账没跟上 ⇒ 报红）/
+        #   L8 firstCh − 原文首现 > 阈值（否则它不该留在台账里）/ L9 去重 /
+        #   L10 **双向**：数据里还有没有未核的「其余」条目。
+        # ⚠ **L10 需要原著**（`%TEMP%\opencode\ba-books\三国演义.txt`），而原著不进版本库
+        #   ⇒ **CI 上 L10 恒跳过**（脚本会**打印**它跳过了，不静默）。L1–L9 是纯数据判据，CI 上真跑。
+        # ⚠ 闭集 `KINDS` 与阈值都从 `scripts/audit-first-ch.mjs` **import**，不抄第二遍。
+        run: node scripts/check-first-ch-ledger.mjs
+
+      - name: firstCh 台账检查自身的守卫（证明它真的会报红）
+        # v0.178 新增。17 条「期望报红」场景（每条判据各一条）+ 1 条 JSON 坏 +
+        # 3 条反向（L8 不误伤 / 原著不在时 L10 只打印跳过 / 还原）。
+        # 顺带把 v0.178 新增的**子串碰撞**判据也测了（假语料里「丙丙」被地名「大丙」吞掉）。
+        # ⚠ 同 cross-chapter：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），
+        #   改用导出的 `checkFirstChLedger(root, {txtPath})` 与 `auditFirstCh({root, txtPath})`，
+        #   在 tmp 里造一份 8 回的假三国 txt。代价：入口判断靠手工跑一次（v0.178 已跑：exit 0）。
+        run: node test/first-ch-ledger-guard.mjs
 
       - name: 提取器盲区台账（产不出来的主名必须申报理由）
         # v0.164 新增。缺口检测（`audit-against-text.mjs` 找「书里提到、数据里没有的人」）

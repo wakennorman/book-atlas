@@ -51,12 +51,13 @@ export const DATA = path.join(ROOT, 'data');
  *   books.json                    三本书的清单
  *   kin-terms-exempt.json         称谓对质豁免清单（v0.113 新建，最容易漏）
  *   cross-chapter-ok.json         A3 跨章声明台账（v0.177 新增：按 book+章号+事件id 记账）
+ *   first-ch-ok.json              firstCh 已核台账（v0.178 新增：按 book+主名 记账）
  *
  * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
  *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
  *   `test/books-registry.mjs` 立刻把它当成「没登记进 books.json 的书」报红）。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。
