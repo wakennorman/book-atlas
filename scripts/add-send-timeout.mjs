@@ -7,7 +7,7 @@
  *   ① `if (!url)` —— Edge 没暴露 CDP 端点时立刻退出
  *   ② WebSocket 连接的 `Promise.race` 10 秒超时
  *
- * 这两道都只管**连上之前**。连上之后每一�� CDP 命令走的是：
+ * 这两道都只管**连上之前**。连上之后每一条 CDP 命令走的是：
  *     const send = (m, p = {}) => new Promise((resolve, reject) => {
  *       const id = ++seq; pending.set(id, { resolve, reject }); ws.send(...); });
  *     ws.onmessage = (ev) => { const m = JSON.parse(ev.data); if (pending.has(m.id)) { ... } };

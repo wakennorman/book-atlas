@@ -25,7 +25,7 @@
  * 用法：
  *   node scripts/audit-relation-actors.mjs            # 出报告，退出 0
  *   node scripts/audit-relation-actors.mjs --strict   # A 级即失败
- *   node scripts/audit-relation-actors.mjs --context 200   # 上下文窗口字���
+ *   node scripts/audit-relation-actors.mjs --context 200   # 上下文窗口字数
  */
 import fs from 'node:fs';
 import { listBooks } from './lib/data-files.mjs';

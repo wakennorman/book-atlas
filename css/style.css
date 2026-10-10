@@ -103,16 +103,26 @@ button, select, input { font: inherit; color: inherit; }
 select, input[type="search"] {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-s);
   padding: 10px 14px; outline: none; max-width: 260px; font-size: 14px;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: border-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard);
 }
 select:focus, input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
 }
+/* 键盘可见焦点：沿用本文件既有规范（行 208/624/743/913）。
+   边框变色 + box-shadow 对键盘用户对比度不足，必须有独立焦点环。 */
+select:focus-visible, input[type="search"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .icon-btn, .ghost, .primary {
   border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius-s);
   padding: 10px 16px; cursor: pointer; white-space: nowrap; font-size: 14px; font-weight: 500;
-  transition: all var(--duration-short) var(--ease-spring);
+  transition: background-color var(--duration-short) var(--ease-spring),
+    border-color var(--duration-short) var(--ease-spring),
+    box-shadow var(--duration-short) var(--ease-spring),
+    transform var(--duration-short) var(--ease-spring);
   display: inline-flex; align-items: center; gap: 6px;
 }
 .icon-btn:hover, .ghost:hover {
@@ -169,7 +179,11 @@ main {
   padding: 6px 14px;
   font-size: 12.5px;
   cursor: pointer;
-  transition: all var(--duration-short) var(--ease-spring);
+  transition: background-color var(--duration-short) var(--ease-spring),
+    color var(--duration-short) var(--ease-standard),
+    border-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-spring);
 }
 .seg:hover {
   background: var(--soft);
@@ -275,7 +289,8 @@ main {
   background: var(--soft);
   color: var(--muted);
   font-weight: 500;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: transform var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard);
 }
 /* 性别符号：内联 SVG，随徽章 flex 垂直居中（不依赖平台字体） */
 .badge .sex {
@@ -307,7 +322,8 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-2);
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 .help-item:hover {
   box-shadow: var(--shadow-md);
@@ -444,7 +460,8 @@ main {
   display: inline-block; padding: 2px 8px; border-radius: 24px;
   font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;
   background: var(--soft); color: var(--muted); border: 1px solid var(--line);
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: transform var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard);
 }
 .kin-badge:hover {
   transform: translateY(-1px);
@@ -481,7 +498,11 @@ main {
   display: block; width: 100%; text-align: left; cursor: pointer;
   background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--muted);
   border-radius: var(--radius-s); padding: 8px 12px; margin-bottom: 6px;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: background-color var(--duration-short) var(--ease-standard),
+    border-color var(--duration-short) var(--ease-standard),
+    border-left-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 .event-chip:hover {
   background: var(--soft);
@@ -553,7 +574,9 @@ main > *, .side > * { min-width: 0; }
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--line); background: var(--panel-2); border-radius: 24px;
   padding: 4px 12px; font-size: 12.5px; cursor: pointer;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: background-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 .ch-chip:hover {
   background: var(--soft);
@@ -674,7 +697,9 @@ button.spoiler-opt:disabled { opacity: .55; cursor: progress; }
 .fold-btn {
   border: 1px solid var(--line); background: var(--soft); color: var(--ink);
   border-radius: var(--radius-s); padding: 6px 14px; font-size: 12.5px; cursor: pointer;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: border-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 .fold-btn:hover {
   border-color: var(--muted);
@@ -769,7 +794,8 @@ body[data-fontsize="s"] .hint, body[data-fontsize="s"] .card-sub, body[data-font
   flex: none; width: 36px; height: 36px; border-radius: 50%;
   border: 1px solid var(--line); background: var(--panel);
   cursor: pointer; font-size: 15px; line-height: 1;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: background-color var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 .modal-close:hover {
   background: var(--soft);
@@ -786,7 +812,9 @@ body[data-fontsize="s"] .hint, body[data-fontsize="s"] .card-sub, body[data-font
   display: flex; flex-direction: column; gap: 6px; text-align: left;
   background: var(--panel-2); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 14px 16px;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: background-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard),
+    transform var(--duration-short) var(--ease-standard);
 }
 button.spoiler-opt { cursor: pointer; }
 button.spoiler-opt:hover {
@@ -1008,4 +1036,15 @@ body.fullscreen .pathbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   body.fullscreen .pane-head { transition: none; }
   .graph-float-btn { transition: none; }
+  /* v0.171：本次把 transition: all 改成显式属性，其中含位移（translateY）。
+     位移是最需要被 reduced-motion 关掉的动效之一。 */
+  .seg, .badge, .help-item, .kin-badge, .event-chip, .ch-chip,
+  .fold-btn, .modal-close, .spoiler-opt, .icon-btn, .ghost, .primary {
+    transition: none;
+  }
+  .seg:hover, .badge:hover, .help-item:hover, .kin-badge:hover,
+  .event-chip:hover, .ch-chip:hover, .fold-btn:hover, .modal-close:hover,
+  .spoiler-opt:hover, .icon-btn:hover, .ghost:hover, .primary:hover {
+    transform: none;
+  }
 }

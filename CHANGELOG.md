@@ -5,6 +5,78 @@
 
 ---
 
+## v0.171 · 按 Web Interface Guidelines 整改 CSS ＋ 顺手扫出全仓库 11 处编码事故
+
+起因两件，凑一轮做完：
+① 装了 vercel 的 `web-design-guidelines`（skill），拿它的规则扫书脉的 20 个源文件；
+② 修 `css/style.css` 里一处乱码时，按「**发现一个 ≠ 只有一个**」扫了全集 —— 果然不止一处。
+
+### 一、CSS：15 处 `transition: all` ＋ 2 处裸 `outline: none`
+
+规则原文（skill 内嵌）：
+- Animation / Anti-patterns：**Never `transition: all`—list properties explicitly**
+- Focus States：**Never `outline: none` without focus replacement**
+
+| 文件 | `transition: all` | 涉及选择器 |
+|---|---|---|
+| `css/style.css` | 11 处 | select/input、`.icon-btn`/`.ghost`/`.primary`、`.seg`、`.badge`、`.help-item`、`.kin-badge`、`.event-chip`、`.ch-chip`、`.fold-btn`、`.modal-close` |
+| `shared/design-system.css` | 4 处 | `.btn-primary` / `.card` / `.input` / `.chip` |
+
+一律改成**显式属性列表**（`background-color` / `border-color` / `box-shadow` / `transform` …）。
+`transition: all` 会把**所有**可动画属性（含布局属性）都纳入过渡 —— 既把动画推离合成器，又在改无关样式时冒出意料之外的过渡。
+
+两处 `outline: none`（`css/style.css:105` 的 select/input、`shared/design-system.css:184` 的 `.input`）
+**不是删掉 outline**，而是各补一个 `:focus-visible` 焦点环 —— 规则禁的是「只删不给替代」，不是 outline 本身：
+- `select:focus-visible, input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }`
+- `.input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }`
+
+`prefers-reduced-motion` 块同步扩：把新列出的属性对应的元素也纳入 `transition: none` / `transform: none`，
+否则「减少动效」会从刚补的显式 transition 缝里漏掉。
+
+### 二、编码事故：全仓库 11 处 U+FFFD
+
+`css/style.css:1040` 注释里一个汉字被写成 3 个 `U+FFFD`。修它时扫了全集
+（口径：`.js/.mjs/.css/.html/.json/.md/.wxml/.wxss/.txt/.yml`，跳过 `node_modules/.git/vendor/docs/assets`）——
+**除那处外还有 11 处历史遗留**（HEAD 里就有，非本轮引入）：
+
+| 文件:行 | 改前 | 改后 | 位置性质 |
+|---|---|---|---|
+| `CHANGELOG.md:116` | `（在���，非被提及）` | `（在场，非被提及）` | 文档 |
+| `CHANGELOG.md:583` | `**现���写法正确**` | `**现在写法正确**` | 文档 |
+| `data/crime-and-punishment.json:2299` | `卢仁���的就是` | `卢仁怕的就是` | impact 分析文字，**非引文** |
+| `data/annotations/crime-and-punishment.json:567` | `而��从不否认` | `而他从不否认` | body 分析文字，**非引文** |
+| `js/app.js:1651` | `���锁定时集合没变` | `不锁定时集合没变` | 注释 |
+| `scripts/add-send-timeout.mjs:10` | `每一�� CDP 命令` | `每一条 CDP 命令` | 注释 |
+| `scripts/audit-relation-actors.mjs:28` | `上下文窗口字���` | `上下文窗口字数` | 注释 |
+| `scripts/fix-name-clashes.mjs:37` | `亦���汉室宗亲` | `亦为汉室宗亲` | 注释 |
+| `scripts/fix-wrong-chapters.mjs:20` | `名��不出现` | `名字不出现` | 注释 |
+| `test/layout-stable.mjs:18` | `��条性质很关键` | `这条性质很关键` | 注释 |
+| `test/layout-stable.mjs:169` | `同��输入` | `同样输入` | 注释 |
+
+⚠ **原字信息已丢失**（6 处是 3×U+FFFD＝UTF-8 三字节汉字；5 处是 2×U+FFFD＝疑似 GBK 两字节混入），
+上表是**按语义重写**，**不是**"还原原字"。已逐处核实：**没有一处在「」原著引文内** ——
+所以不触碰"改数据要带原著逐字依据"那条铁律（改的是注释和我自己写的分析文字）。
+
+两个生成物（`data/crime-and-punishment.text.json`、`miniprogram/data/crime-and-punishment.js`）
+里的同一处乱码，靠重跑 `make-slim-packs.mjs` / `make-miniprogram-packs.mjs` 消掉。
+
+### 三、行尾 ＋ 版本号
+
+- 本轮编辑在 CRLF 文件里混进了 LF 行（`css/style.css` 22 行、`shared/design-system.css` 6 行），已用脚本统一回 CRLF。
+- 改了 `css/style.css` / `js/app.js`（**都在 SW 的 SHELL 预缓存清单内**）⇒ **必须 bump**：`v153 → v171`。
+  惯例：改前端的轮次，sw 版本号 = 当轮编号；v0.154–v0.170 未动前端，故 sw 停在 153 是对的。
+  `package.json` 同步 `0.153.0 → 0.171.0`。
+
+### 验证
+
+- `validate --all` / `check-annotations` / `make-anno-digest --check` / `check-event-chars` /
+  `make-slim-packs --check` / `check-packs-sync` / `check-version` / `check-sw-precache` /
+  四份手写清单门禁（`name-form-ok` / `altnames-sources` / `kin-terms-exempt` / `missing-ok`）—— **全绿**
+- `eslint`：0 error（127 个 warning 全是历史遗留，非本轮引入）
+- 工作区 U+FFFD 残留：**0**（仅用户自己的压缩记录文件里有 1 处，非项目源，未动）
+
+---
+
 ## v0.170 · 羊皮卷研读链：一个被我连错三轮的问题
 
 起因是用户提醒：「研读羊皮卷的奥雷里亚诺，有很多个。」
@@ -113,7 +185,7 @@ v0.167/v0.168 我两次记下「百年孤独缺一个『奥雷里亚诺（研读
 |---|---|---|---|---|
 | 百年孤独 | `fernanda` | 11 | **10** | 第 10 章「费尔南达·德尔·卡皮奥，他一年前娶来的美丽妻子，表示同意」；第 9 章无 |
 | 百年孤独 | `aureliano-babilonia` | 14 | **15** | 见上 |
-| 罪与罚 | `ilya` | 9 | **8** | 第 8 章中尉与罗佳**大量对话**（在���，非被提及） |
+| 罪与罚 | `ilya` | 9 | **8** | 第 8 章中尉与罗佳**大量对话**（在场，非被提及） |
 | 罪与罚 | `nikodim` | 9 | **8** | 同上，分局局长在场 |
 
 改完后 `check-event-chars` 的疑项从 4 处降到 0。
@@ -580,7 +652,7 @@ v0.165.3 清掉了三处「找不到东西就 `exit(0)`」，可那三处都是*
   与 v0.164 记录的提取器盲区完全一致，**没有新缺口**；
 - `audit-annotations.mjs`：报 A1「body 引用了但未列入 events[]」**159 处**。
   量过之后发现绝大多数是**正文里的互引**（跨章呼应），不是数据缺陷。
-  其中"同章"的 2 处逐字核过，结论是**现���写法正确**：
+  其中"同章"的 2 处逐字核过，结论是**现在写法正确**：
   - ch7「血穿过整条街流到厨房」讲的是 e14，正文里提 e13 是作对照；
   - ch16「缩成婴儿大小的族长」讲的是 e22，正文里列 e01/e03/e10/e06/e21 是在数她的一生。
 

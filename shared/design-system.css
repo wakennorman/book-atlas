@@ -114,7 +114,10 @@ body {
   letter-spacing: -0.01em;
   border: none;
   cursor: pointer;
-  transition: all var(--duration-short) var(--ease-spring);
+  transition: background-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-spring),
+    transform var(--duration-short) var(--ease-spring),
+    filter var(--duration-short) var(--ease-standard);
   min-height: 44px;
 }
 .btn-primary {
@@ -157,7 +160,8 @@ body {
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
-  transition: all var(--duration-medium) var(--ease-standard);
+  transition: box-shadow var(--duration-medium) var(--ease-standard),
+    transform var(--duration-medium) var(--ease-standard);
 }
 .card:hover {
   box-shadow: var(--shadow-lg);
@@ -172,13 +176,20 @@ body {
   border-radius: var(--radius-md);
   font-size: 15px;
   background: var(--color-surface);
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: border-color var(--duration-short) var(--ease-standard),
+    box-shadow var(--duration-short) var(--ease-standard);
   min-height: 44px;
 }
 .input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
+}
+/* 键盘可见焦点：沿用全站既有规范（见 css/style.css 的 :focus-visible）。 */
+.input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-radius: var(--radius-md);
 }
 .input::placeholder {
   color: var(--color-text-muted);
@@ -217,7 +228,8 @@ body {
   border-radius: var(--radius-xl);
   font-size: 12px;
   font-weight: 500;
-  transition: all var(--duration-short) var(--ease-standard);
+  transition: transform var(--duration-short) var(--ease-spring),
+    box-shadow var(--duration-short) var(--ease-standard);
 }
 .chip:hover {
   transform: translateY(-1px);
