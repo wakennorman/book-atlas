@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs scripts/check-ledger-quotes.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -734,6 +734,35 @@ jobs:
         #   ② L8 的错误挂在了条目的 `error` 字段上，而主循环只 `push` 合法条目的结果
         #      ⇒ **重复登记一条都不报**（守卫里那条用例恒绿，是守卫抓到的，不是猜的）。
         run: node test/dup-names-ledger-guard.mjs
+
+      - name: 台账引文是「印刷版逐字」（防把转述装成引文）
+        # v0.182 新增。v0.102 真的放过一条**伪造引文**，`verify-quotes.mjs` 与
+        # `audit-relation-actors.mjs` 的 C 级守着**关系引文** —— 但**台账 `why` 栏里的引文**
+        # 此前没有任何一处检查。而台账恰恰是「人回原著读过」的结论所在。
+        # 实测（本步写完当场抓到，3 条全是真缺陷）：
+        #   · `dup-names-ok.json` 百年孤独那条：「何塞阿尔卡蒂奥」漏了**间隔号**（原书作「何塞·阿尔卡蒂奥」）——
+        #     它之前"查得到"是因为 `flatSource()` 连 `·・･` 一起删了，**逐字口径被掩盖了**；
+        #   · `first-ch-ok.json`：「江夏张虎」—— 原书脚注标记 `[202]` 正好插在两字之间
+        #     （「一个是江夏[202]张虎」），所以这四字连写**从不出现**。这就是 MEMORY 记过的
+        #     **脚注标记坑**，只是这次出现在台账里、没人查。
+        #
+        # 判据（见脚本文件头）：**引文点名了本条台账的主语 ⇒ 必须是印刷版逐字**。
+        # ⚠ 为什么不查**全部**「」：实测全查 99 条会红 29 条，而那 29 条多数**根本不是引文**
+        #   （「」还被用来给一个说法命名，如「钟邓结怨」）⇒ 纯噪声门禁会被忽略，比没有更坏。
+        # ⚠ 口径：只去空白、**保留间隔号**；而"有没有点名主语"那一步**要**归一间隔号。两种口径各司其职。
+        # ⚠ 「引号 = 声明这是原文」：要写原书里没有的说法，**别给它加引号**。
+        # ⚠ **需要原著 ⇒ CI 上恒跳过**，脚本会**打印**它跳过了（不静默）。
+        run: node scripts/check-ledger-quotes.mjs
+
+      - name: 台账引文检查自身的守卫（证明它真的会报红）
+        # v0.182 新增。23 条断言：夹具自检 3 + 2 条「期望报红」+ 2 条坏台账 + 6 条反向。
+        # 值得单说的三条反向：
+        #   · **命名说法不加引号**（钉住"引号 = 声明是原文"这条约定）；
+        #   · **掉了间隔号的引文仍然报红**（去间隔号后能查到**不算数**）；
+        #   · **缺原著必须打印「未判」**（v0.173 教训：门禁不打印跳过了什么，绿就等于装饰品）。
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），
+        #   直接 import `checkLedgerQuotes(root, {sourceDir})`，在 tmp 里造最小 data/ 与假 txt。
+        run: node test/ledger-quotes-guard.mjs
 
       - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
         # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」
