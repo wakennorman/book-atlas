@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -701,6 +701,39 @@ jobs:
         #   在 tmp 里造一份最小 data/ + 一份假三国 txt（书**故意用真 slug**
         #   `three-kingdoms`，否则原著文件名查不到、B/C 永远"缺原著"，测不出来）。
         run: node test/relation-actors-ledger-guard.mjs
+
+      - name: ④「去括号后同名」已核台账（7 组三国 + 1 组百年孤独）
+        # v0.181 新增。`audit-search.mjs` 的 ④ 桶列「去掉括号补充后名字相同的多个人物」，
+        # 它**分不清**两种情况：① 同一人被拆成两条；② 真有两个同名的人。
+        # 本轮把三本书的全部 ④ 组逐条回原著读完（**7 + 1 + 0 = 8 组**），结论**全部真重名**：
+        #   · 6 个主名**原本是裸名重名**，已补括号（张温×2 / 邓贤×2 / 李丰 / 王颀）；
+        #   · 其余组本来就带括号（王颀（长安）/刘氏×3/张南/李氏×2/何塞·阿尔卡蒂奥×2）。
+        #   毛宗岗夹注直接点明其中两组：「同时有两张温。此一张温，乃汉张温也；后孙权使张温至蜀，乃吴张温也」
+        #   与「李丰有二，李严之子亦名丰，乃蜀之李丰也。今此李丰，则魏之李丰」—— **原著自己承认是两个人**。
+        #
+        # 本步的作用是让 ④ 从「永远在报」变成「只报**新冒出来**的组」。
+        # 判据 L1–L10 见脚本文件头（**不需要原著**，所以能进 CI），其中要紧的四条：
+        #   L5 台账的组在数据里必须**确实存在**（组被合并 ⇒ 台账过期）；
+        #   L7 台账成员与数据**完全相等**（多记＝漂移，少记＝有人没核过）；
+        #   L9 **双向**：数据里每组 ④ 撞车都必须登记；
+        #   L10 每组成员主名**必须都带括号**（本项目约定「同名多人必须带括号区分」）。
+        # ⚠ 缺台账**不算通过**：当作空台账继续判，于是 `rm` 掉名单会让 8 组全报红
+        #   —— 删掉名单让门禁变绿，是最坏的一种假绿（v0.160 那条的镜像）。
+        # ⚠ ④ 的分组规则放 `scripts/lib/dup-names.mjs`，审计与门禁都从它取 —— 不抄第二份
+        #   （`audit-search.mjs` 是顶层就干活的脚本，门禁 import 它会被它的 process.exit(1) 杀掉）。
+        run: node scripts/check-dup-names-ledger.mjs
+
+      - name: ④ 台账检查自身的守卫（证明它真的会报红）
+        # v0.181 新增。36 条断言：夹具自检 3 + **20 条「期望报红」**（每条判据各一条）
+        #   + 1 条 JSON 坏 + 5 条反向（半角括号也算带括号 / 三人的组 / 独苗不进组 /
+        #   一半带括号一半不带**仍然**报红 / 台账为空时裸名照样报红）。
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），
+        #   直接 import `checkDupNamesLedger(root)`，在 tmp 里造两本 mini 书。
+        #   ⚠ 它当场抓到**两个真 bug**，都是「门禁看起来在守、其实某条判据恒绿」：
+        #   ① 「缺台账 ⇒ 0 处问题」——照抄其余台账的写法，结果 `rm` 掉名单就全绿；
+        #   ② L8 的错误挂在了条目的 `error` 字段上，而主循环只 `push` 合法条目的结果
+        #      ⇒ **重复登记一条都不报**（守卫里那条用例恒绿，是守卫抓到的，不是猜的）。
+        run: node test/dup-names-ledger-guard.mjs
 
       - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
         # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」

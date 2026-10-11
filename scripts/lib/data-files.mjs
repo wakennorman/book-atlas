@@ -53,6 +53,7 @@ export const DATA = path.join(ROOT, 'data');
  *   cross-chapter-ok.json         A3 跨章声明台账（v0.177 新增：按 book+章号+事件id 记账）
  *   first-ch-ok.json              firstCh 已核台账（v0.178 新增：按 book+主名 记账）
  *   relation-actors-ok.json       行为人审计已核台账（v0.179 新增：按 book+from+to 记账）
+ *   dup-names-ok.json             ④「去括号后同名」已核台账（v0.181 新增：按 book+去括号后的主名 记账）
  *
  * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
  *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
@@ -60,8 +61,10 @@ export const DATA = path.join(ROOT, 'data');
  *   v0.179 又踩了一次：新建 `data/relation-actors-ok.json` 时漏了这一处，
  *   于是 `audit-relation-actors.mjs` 把它当成第 4 本书去扫，
  *   报告里多出一行「relation-actors-ok 缺原著」——**看起来像真的**，很容易放过去。
+ *   ⚠ v0.181 加 `dup-names-ok.json` 时，**这一条注释本身就是现成的证据**：
+ *   它已经列在上面的清单里了却还没进正则 —— 所以下面那行也补上了。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$|^dup-names-ok\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。

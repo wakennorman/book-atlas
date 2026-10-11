@@ -2297,7 +2297,7 @@
     },
     {
       "id": "zhang-wen",
-      "name": "张温",
+      "name": "张温（汉司空）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -2310,7 +2310,7 @@
     },
     {
       "id": "zhang-wen-wu",
-      "name": "张温",
+      "name": "张温（吴臣）",
       "aliases": [
         "惠恕"
       ],
@@ -2598,7 +2598,7 @@
     },
     {
       "id": "li-feng-yuanshu",
-      "name": "李丰",
+      "name": "李丰（袁术部）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -6501,7 +6501,7 @@
     },
     {
       "id": "deng-xian",
-      "name": "邓贤",
+      "name": "邓贤（刘璋部）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -6514,7 +6514,7 @@
     },
     {
       "id": "deng-xian-2",
-      "name": "邓贤",
+      "name": "邓贤（孟达外甥）",
       "aliases": [],
       "generation": 1,
       "gender": "m",
@@ -13319,7 +13319,7 @@
     },
     {
       "id": "wang-qi-tianshui",
-      "name": "王颀",
+      "name": "王颀（天水）",
       "aliases": [
         "王颀（天水太守）",
         "天水太守王颀"
