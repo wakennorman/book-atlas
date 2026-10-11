@@ -80,6 +80,9 @@ npm run gate                 # 按 .github/workflows/check.yml 的顺序跑**完
 npm run gate -- --list       # 只看会跑什么
 npm run gate -- --only 布局   # 只跑名字里含"布局"的步骤
 npm run gate -- --skip-slow  # 跳过四个最慢的（layout-stable / place-visible / lock / render-scale）
+
+bash tools/gate-local.sh     # 同上，但**用 bash 跑**：这台机器上 node 起不了子进程
+bash tools/gate-local.sh --list / --only <子串> / --skip-slow
 ```
 **判断"门禁绿了"请用这个，不要凭"我记得我跑过那些命令"。**
 它直接解析 `check.yml`，并且启动时做两次自检：
@@ -90,9 +93,20 @@ npm run gate -- --skip-slow  # 跳过四个最慢的（layout-stable / place-vis
 而报告里"21 步全绿"看着完全正常）。
 自检不过就 **exit 2 拒绝跑** —— 宁可现在报错，也不要跑一个"看起来全绿"的门禁。
 
-> 另：改了 `data/*.json` 之后要跑 `node scripts/make-slim-packs.mjs`。
-> **网页端加载的是 `data/*.graph.json` 生成物，不是 `data/*.json`** ——
-> 忘了重跑的话页面读的还是旧数据，而校验全绿、看起来一切正常。
+> ⚠ **本机 node 起不了任何子进程**（`spawnSync` 一律 EBUSY），所以 `npm run gate` 在这台机器上
+> **一步都跑不了**（它会自己说明）。本机验收请用 `bash tools/gate-local.sh` ——
+> 它读的是**同一个** `check.yml`、跟 `npm run gate --list` 对过步数与参数自检，只是把执行交给 bash。
+> 为什么需要它：本地验收一度只能**人肉挑几条跑**，而人肉挑就会挑漏，且漏得安静 ——
+> v0.185 就是这样带着 3 道红门禁（`check-packs-sync` / `make-anno-digest --check` /
+> `miniprogram/test/smoke.mjs` 里硬编码的人数）上的 main。
+
+> 另：改了 `data/*.json` 之后**三个产物都要重生成**，缺一个都有门禁会拦：
+> ```bash
+> node scripts/make-slim-packs.mjs        # 网页端加载的是 data/*.graph.json 生成物，不是 data/*.json
+> node scripts/make-miniprogram-packs.mjs # 小程序包（check-packs-sync.mjs 守）
+> node scripts/make-anno-digest.mjs       # 拆书素材文档（make-anno-digest --check 守）
+> ```
+> 忘了重跑的话页面读的还是旧数据，而 `validate` 全绿、看起来一切正常。
 ```
 > 直接双击 `index.html` 打不开是正常的：浏览器不允许 `file://` 页面读取数据文件，必须有本地服务。
 
@@ -434,6 +448,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/make-icons.py` | 把 logo 的矢量源文件渲染成站点用的位图资源（Pillow + 本机 Edge 无头截图）：`python scripts/make-icons.py` |
 | `tools/local-sink.mjs` | 本地小接收器：编辑器「导出 JSON」直接写进 `data/`（无头浏览器里下载会落到别处）：`node tools/local-sink.mjs` |
 | `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），自动遵守 `.gitignore`，同时开/查 Pages |
+| `tools/gate-local.sh` | **本机全量门禁**。`npm run gate` 靠 `spawnSync`，而本机 node 起不了子进程 ⇒ 一步都跑不了；这个脚本读**同一个** `check.yml`、跑之前跟 `node tools/gate.mjs --list` 对步数与参数自检，再把执行交给 bash。`bash tools/gate-local.sh [--list|--only <子串>|--skip-slow]` |
 
 ---
 
@@ -461,6 +476,7 @@ book-atlas/
 - 部署：GitHub 仓库 → Settings → Pages → `main` / `/ (root)`
 - **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑（步骤以该文件为准；本地 `node tools/gate.mjs --list` 可列出全部）：JS 语法、**版本号一致性**、**改了预缓存资源却没 bump 版本号**、**版本号检查自身的守卫**、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、编辑器逻辑测试、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、**关系线身份**、**锁定只显示相关**、**渲染尺度与「分组·横」布局**、**画布漫游与视野自救**、**画布手感与导航提示**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）
   > 本地一次跑完：`npm run check`（= `node tools/gate.mjs`，与 CI 读的是同一个 `check.yml`）
+  > ⚠ 这台机器上 node 起不了子进程 ⇒ `npm run check` 一步都跑不了，用 `bash tools/gate-local.sh`（同上，执行交给 bash）
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改
 - 发布：改完数据后跑 `tools\push-via-api.ps1`（从 Git 凭据管理器取 token，走 GitHub API 建 blob/tree/commit，再更新分支）
 - **改前端资源后要同步三处**：`index.html` / `editor.html` 里资源引用的 `?v=NN`、`sw.js` 里的 `CACHE = 'bookatlas-vNN'`，以及 `sw.js` 的 `SHELL` 预缓存清单里对应的 `?v=NN`

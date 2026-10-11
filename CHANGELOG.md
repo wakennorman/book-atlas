@@ -5,6 +5,77 @@
 
 ---
 
+## v0.186 · 上一轮漏跑的两道门禁 —— 修数据，再把「人肉挑门禁」这件事本身干掉
+
+v0.185 的 CHANGELOG 写着「20 个相关门禁/检查全绿」。全量复核时发现 **HEAD 上有三道门禁是红的**，
+而那 20 条里**恰好不含**它们：
+
+| 门禁 | 报什么 |
+|---|---|
+| `scripts/check-packs-sync.mjs` | `three-kingdoms`：字段 `characters` 不同步（包里 **884** 项，源里 **886** 项） |
+| `scripts/make-anno-digest.mjs --check` | `docs/拆书素材-three-kingdoms*.md` 与 `data/three-kingdoms.json` 不同步 |
+| `miniprogram/test/smoke.mjs` | `✗ 三国 884 人` —— 断言里**硬编码**的人数没跟着改 |
+
+起因就是 v0.185 自己：它往 `data/three-kingdoms.json` 加了 2 个人（`姜子牙` / `张子房`）
+并改了事件 `e-37-2` 的摘要，重生成时**只跑了 `make-slim-packs`，漏了 `make-miniprogram-packs`
+与 `make-anno-digest`**，而那处硬编码的人数也忘了同步。
+
+⇒ 注意这**不是门禁失灵**：三条都在 `check.yml` 里、也都真的会报红（一跑就红）。
+失灵的是**本地验收的方式**。
+
+### 一、修数据：重生成两处产物 ＋ 改一处硬编码
+
+`node scripts/make-miniprogram-packs.mjs` ＋ `node scripts/make-anno-digest.mjs`，
+共 7 个文件 / 18 行（`姜子牙`、`张子房` 进角色表，`e-37-2` 摘要的「张良」按原著用字改成「张子房」）；
+另把 `miniprogram/test/smoke.mjs` 里硬编码的 `884` 改成 `886`（那条断言**故意**不写成"读数据长度"，
+否则人数被误删也照样绿，所以必须手改）。
+三道门禁复跑转绿：小程序包 886 人 / 2335 关系，拆书素材 6 份全部同步。
+
+### 二、修方式：新增 `tools/gate-local.sh`
+
+根因不是「忘了跑」，是**本机根本没有"一次跑完"的办法**：
+
+`tools/gate.mjs` 靠 `spawnSync` 起子进程，而**本机 node 起不了任何子进程**（EBUSY，
+连 spawn node 自己都不行）⇒ 它启动后探一次就直说"一步都跑不了"。于是本地验收只剩**人肉挑**，
+而人肉挑就会挑漏 —— 漏得还很安静（"我记得我跑过那几条"）。
+
+新脚本用 **bash** 跑（bash 起 node 没问题，被拦的只是"node 再起 node"）：
+
+```bash
+bash tools/gate-local.sh                  # 全量（72 步）
+bash tools/gate-local.sh --list           # 只列出会跑什么
+bash tools/gate-local.sh --only check-dup # 只跑命令里含该子串的步骤
+bash tools/gate-local.sh --skip-slow      # 跳过四个最慢的
+```
+
+它**不重写"解析 yml"那套逻辑**（`gate.mjs` 已为此吃过三次亏，见其文件头注释）：
+只取 `run: node …` 的整行（**参数天然保留**），跑之前再跟 `node tools/gate.mjs --list`
+对一次**步数**与**参数自检** —— 对不上就 `exit 2` 拒绝跑，免得"少跑几步还报全绿"。
+
+**判据先红后绿**（`GATE_YML` 环境变量只给这个测试用，不设时行为逐字相同）：
+
+| 用例 | 结果 |
+|---|---|
+| 往 yml 多塞一行 `run: node` ⇒ 抽到 73 ≠ gate.mjs 说的 72 | **exit 2**，「两边不同步…继续跑就会『少跑几步还报全绿』」 |
+| 原样 yml | exit 0 |
+
+⚠ 踩到一个**本机特有的坑**并写进注释：**fork 一个进程要一百多毫秒** ⇒
+第一版逐行 `printf | sed | sed` 抽 72 行就卡掉几十秒（被 `timeout` 掐了两次）。
+改成单趟 `grep | sed` ＋ `mapfile`，筛选用 bash 内建 `case`/`[[ ]]`，
+统计 ✗ 行数用内建 `read` 循环 —— 全程只在真正跑门禁时才起进程。
+
+### 三、结论写在这里，免得下一个人重走
+
+> **「门禁没跑」与「门禁报红」长得一模一样。**
+> 这一族病本项目抓过很多次（v0.180 的"66 步失败"、`check-version-bump` 的静默跳过），
+> 这次的表现形式是**验收步骤靠人肉挑**。所以本轮的产出不只是把三道门禁修绿，
+> 而是**让"一次跑完"变成一个命令**。
+
+遗留：`--only` 只匹配**命令路径**，不匹配 `check.yml` 里的 `- name:` ——
+因为抽名字就得重写"步骤边界"那套解析，正是 `gate.mjs` 三次踩坑的地方，不在这里重来一遍。
+
+---
+
 ## v0.185 · 三国的缺口清空了 —— 不是靠塞台账，是靠**测出来这个检测器没有判别力**
 
 承接 v0.184。v0.184 只解决了"扫错内容"（评点/附录），
