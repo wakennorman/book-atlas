@@ -31,10 +31,17 @@
  *
  * 见 `scripts/lib/against-text.mjs` 文件头的实测数据。译本请以 `--names` 为主。
  *
- * ## 所以有**两条**规则，报告分两节（v0.190）
+ * ## 所以有**两条**规则，报告分两节（v0.190）—— 但**只跑适用的那条**（v0.192）
  *
  *   规则一（姓氏+1~2 字）—— 中文姓名模型，只在中文原著上成立；
  *   规则二（**间隔号**全名）—— 译本那条线，找 `名·父名·姓`，在中文原著上应当报 0。
+ *
+ * ⚠ v0.192：**先判书型再决定跑哪条**（`classifyScript`，按原著正文的 `·` 密度与
+ *   已知名字的形状判，实测三国 0.2 / 罪与罚 31.9 / 百年孤独 67.3 个/万字）。
+ *   起因是用户指出"拿百家姓扫《百年孤独》是错的 —— 外国人名不适用百家姓"：
+ *   老做法两条都跑、都打印，那份 280 条的碎片清单照样摆在最前面，
+ *   而"清单是空的"和"这条规则没跑"长得一模一样。
+ *   现在不适用的那节**照样打印**，只是内容改成"本规则不适用于本书 + 实测判据数字"。
  *
  * 起因：用户拿《百年孤独》第 16/17 章那段问"乌尔苏拉的母亲佩德罗妮拉·伊瓜兰
  * 为什么没加进去"—— 她的外祖母、父亲、表兄、曾外祖父**全在建档**，唯独母亲不在。
@@ -56,7 +63,8 @@ import { mainTextOnly, extractChapters as chaptersOf } from './lib/main-text.mjs
  * ⚠ v0.189 之前它内联在本文件里，于是"报的数"和"算的数"悄悄分了家（见 lib 文件头）。
  * 抽出来还有第二个好处：`test/against-text-guard.mjs` 能直接 import 判据断言 ——
  * 原著 txt 不在仓库里，这条链**没法**做成跑 CLI 的门禁（本机也起不了子进程）。 */
-import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport, plain, MIN, TOP_N, NEAR } from './lib/against-text.mjs';
+import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport,
+  classifyScript, plain, MIN, TOP_N, NEAR } from './lib/against-text.mjs';
 
 const argv = process.argv.slice(2);
 const asJson = argv.includes('--json');
@@ -132,21 +140,36 @@ function audit(bookFile, textFile) {
   for (const p of places) for (const n of [p.name, ...(p.aliases || [])]) if (n && n.length >= 2) names.push(n);
   names.sort((a, b) => b.length - a.length);
 
-  const report = buildGapReport({ raw, names, okSet, min: MIN_ARG, near: NEAR, topN });
-  /* 规则二（v0.190）：译本那条线 —— 找带**间隔号**的全名。
-   * ⚠ 必须吃 `raw`（保留 `·`）。`scripts/lib/book-sources.mjs` 的 `flatSource()`
-   *   会把间隔号一起删掉，用它就等于把这条规则的锚点先毁了。 */
-  const interp = buildInterpReport({ raw, names, okSet, min: MIN_ARG, topN });
+  /* ⚠ 先判"这本书该走哪条规则"（v0.192）。
+   *
+   * 起因：用户指出"拿百家姓扫《百年孤独》是错的 —— 外国人名不适用百家姓"。
+   * 他说的对：规则一（`[百家姓][汉字]{1,2}`）是个**中文姓名模型**，
+   * 拿它扫译本，报出来的一多半是跨词碎片（`终于`/`相同`/`那点酒`），
+   * 而真正该找的 `佩德罗妮拉·伊瓜兰` 反而因为首字「佩」不是百家姓而**结构性看不见**。
+   *
+   * 判据**按原著正文算**，不按书名猜（见 lib 的 `classifyScript`）：
+   * 三国演义 0.2 个/万字 · 罪与罚 31.9 · 百年孤独 67.3 ⇒ 差两个数量级。
+   *
+   * ⚠ 不适用的那一节**照样渲染**，只是改成打印"本规则不适用于本书"——
+   *   "少打印一节"和"这一节 0 条"长得一模一样，而 0 条会被读成"书里没人漏"。
+   *   两份报告都收 `script`，好把实测数字印出来（判错了人要能自己看出来）。 */
+  const script = classifyScript({ raw, names });
+  const report = script.isTranslation
+    ? null : buildGapReport({ raw, names, okSet, min: MIN_ARG, near: NEAR, topN });
+  const interp = script.isTranslation
+    ? buildInterpReport({ raw, names, okSet, min: MIN_ARG, topN }) : null;
   return {
     slug: (book.meta || {}).slug || path.basename(bookFile, '.json'),
+    script,
     report,
     interp,
     okLabel: okFile,
     /* 老字段名保留（`--json` 的消费者用 `rows`/`total`），但 `total` 现在指**待判总数**。
      * ⚠ v0.189 之前 `total` 是"已知名字个数"、`rows.length` 是截断后的窗口数，
-     *   报告把后者当缺口总数印出来（280 → 印 5）。两个字段的语义都改了。 */
-    total: report.total,
-    rows: report.rows,
+     *   报告把后者当缺口总数印出来（280 → 印 5）。两个字段的语义都改了。
+     * ⚠ v0.192 起**两者只会有一个非 null**（书型决定走哪条规则），取那个非 null 的。 */
+    total: (report || interp).total,
+    rows: (report || interp).rows,
   };
 }
 
@@ -372,13 +395,14 @@ if (asJson) { console.log(JSON.stringify(report, null, 1)); process.exit(0); }
 for (const r of report) {
   console.log('');
   for (const line of renderGapReport(r.report, {
-    slug: r.slug, min: MIN_ARG, near: NEAR, topN, okLabel: r.okLabel,
+    slug: r.slug, min: MIN_ARG, near: NEAR, topN, okLabel: r.okLabel, script: r.script,
   })) console.log(line);
   /* 规则二单独一节（v0.190）。为什么不并进上面那份：两条规则的**失败模式完全不同** ——
    * 规则一（姓氏）只在中文姓名上成立、在译本上判别力极低；规则二（间隔号）只在译本上有意义、
-   * 在中文原著上应当报 0。混在一起报，人分不清"这条是谁报的、该按哪套标准判"。 */
+   * 在中文原著上应当报 0。混在一起报，人分不清"这条是谁报的、该按哪套标准判"。
+   * ⚠ v0.192 起两份**只会有一份是实的**（`classifyScript` 判书型），另一份打印"不适用于本书"。 */
   console.log('');
   for (const line of renderInterpReport(r.interp, {
-    slug: r.slug, min: MIN_ARG, okLabel: r.okLabel,
+    slug: r.slug, min: MIN_ARG, okLabel: r.okLabel, script: r.script,
   })) console.log(line);
 }

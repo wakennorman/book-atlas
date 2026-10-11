@@ -30,13 +30,22 @@
  * `node scripts/audit-against-text.mjs data/crime-and-punishment.json .text/crime-and-punishment.txt`
  * 正常输出）。
  *
+ * ## v0.192 追加：第 14 组守「这本书该走哪条规则」
+ *
+ * 用户指出"拿百家姓扫《百年孤独》是错的 —— 外国人名不适用百家姓"。
+ * 老做法两条规则都跑、都打印，那份碎片清单摆在最前面；现在按**原著正文**判书型
+ * （`classifyScript`：`·` 密度 / 已知名字含 `·` 的比例），只渲染适用的那一节，
+ * 不适用的那节打印"本规则不适用于本书 + 实测判据数字"。
+ * 红绿两边都要能验：调低门槛 ⇒ 14a 红；去掉接线 ⇒ 14g 红。
+ *
  * 用法：node test/against-text-guard.mjs
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport,
-  norm, plain, stripParen, knownForms, INTERP_LMAX, INTERP_RMAX, NEAR, MIN, TOP_N }
+  classifyScript, norm, plain, stripParen, knownForms, INTERP_LMAX, INTERP_RMAX,
+  DOT_PER10K, DOT_NAME_SHARE, NEAR, MIN, TOP_N }
   from '../scripts/lib/against-text.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -318,6 +327,106 @@ const PLAUSIBLE = GOOD.length;             // 3
   }
 }
 
+/* ── 14. ⚠ 「这本书该走哪条规则」（v0.192）—— 用户指正：百家姓规则不适用译本 ──
+ *
+ * 起因：用户看到《百年孤独》的报告是用"姓氏+1~2 字"扫出来的，指出
+ * 「外国人名不适用百家姓」。老做法两条规则都跑、都打印 ⇒ 那份 280 条的碎片清单
+ * 照样摆在最前面，读的人**先看到它**；而且"清单是空的"和"这条规则没跑"长得一样。
+ * 现在按**原著正文**判书型（不按书名猜），只渲染适用的那一节。
+ *
+ * 本组用**自带的合成语料**（不借上面 12 组的作用域），两个方向都要能红：
+ *   · 把门槛调低到 0.1 ⇒ 14a 红（中文原著被误判成译本，三国 2580 条清单会整个藏起来）；
+ *   · 去掉 `classifyScript` 的接线 ⇒ 14g 红（判据算了不用 = 另一种死法）。
+ */
+{
+  const TR_NAMES = ['乌尔苏拉·伊瓜兰', '佩德罗妮拉·伊瓜兰'];
+  const TR_RAW = '乌尔苏拉·伊瓜兰，遇见了佩德罗妮拉·伊瓜兰。'
+    + '后来佩德罗妮拉·伊瓜兰又出现了一次。奥雷里亚诺·阿尔卡蒂奥·布恩迪亚。';
+  const CN_NAMES = ['李四', '张甲乙', '王丙丁'];
+  const CN_RAW = '李四见了张甲乙。张甲乙又见了王丙丁。李四。';
+  /* ⚠ 数出来而不是写死：语料改了这条断言不该跟着烂（写死的数字正是"一个数写进正文就会烂"）。 */
+  const TR_DOTS = (TR_RAW.match(/·/g) || []).length;
+
+  /* 14a. 中文原著（正文无间隔号、数据主名也不带 ·）⇒ 判成非译本，走规则一。 */
+  {
+    const cn = classifyScript({ raw: CN_RAW, names: CN_NAMES });
+    ok(cn.isTranslation === false,
+      `中文原著判成非译本（实测 per10k=${cn.per10k.toFixed(1)} share=${(cn.translationShare * 100).toFixed(1)}%）`);
+    ok(cn.byDots === false && cn.byNames === false, '两个来源都不成立 ⇒ 走规则一');
+    ok(cn.dotCount === 0, '正文里 0 个间隔号');
+  }
+
+  /* 14b. 译本（正文密布间隔号）⇒ 判成译本，且**说得出是哪个来源成立的**。 */
+  {
+    const tr = classifyScript({ raw: TR_RAW, names: TR_NAMES });
+    ok(tr.isTranslation === true, `译本判成译本（实测 per10k=${tr.per10k.toFixed(1)}）`);
+    ok(tr.byDots === true, `正文间隔号密度 ${tr.per10k.toFixed(1)} 个/万字 ≥ 门槛 ${DOT_PER10K} ⇒ byDots`);
+    ok(tr.dotCount === TR_DOTS, `数到了 ${tr.dotCount} 个间隔号（合成语料里恰好 ${TR_DOTS} 个）`);
+    ok(tr.nameCount === 2 && tr.translationShare === 1, '数据侧两个主名都带 · ⇒ share=1（用去重后的规范形算）');
+  }
+
+  /* 14c. ⚠ 第二个来源（B）单独也要能成立 —— 兜住"正文混着附录、密度被稀释"的书。
+   *      构造一份**没有间隔号**的正文 + **带间隔号**的名字 ⇒ A 不成立、B 成立。 */
+  {
+    const b = classifyScript({ raw: '李四见了王丙丁。', names: TR_NAMES });
+    ok(b.byDots === false && b.byNames === true && b.isTranslation === true,
+      `正文没间隔号但名字带间隔号 ⇒ 靠 B 判成译本（share=${(b.translationShare * 100).toFixed(1)}%）`);
+  }
+
+  /* 14d. ⚠ 门槛必须落在**空带**里（中文原著 0.2 / 译本 ≥31.9，差两个数量级）。
+   *      这条断言防的是"有人把门槛调成 0.1"—— 那样三国立刻被误判成译本、
+   *      2580 条清单整个藏起来，是比"多报碎片"坏得多的错。 */
+  {
+    ok(DOT_PER10K >= 1 && DOT_PER10K <= 20,
+      `间隔号密度门槛落在空带里（${DOT_PER10K}；中文原著 0.2 / 译本 31.9·67.3）`);
+    ok(DOT_NAME_SHARE >= 0.1 && DOT_NAME_SHARE <= 0.5,
+      `名字含 · 的比例门槛落在空带里（${DOT_NAME_SHARE}；三国 0% / 译本 52.6·62.1%）`);
+    const cn = classifyScript({ raw: '玄德曰。曹操大喜。', names: ['刘备', '曹操', '孙权'] });
+    ok(cn.isTranslation === false, '中文名字一律不带 · ⇒ 不会被 B 误判成译本');
+  }
+
+  /* 14e. ⚠ 不适用的那一节必须**打印"不适用"**，不是静默少一节、也不是"0 条"。
+   *      （静默少一节与"这一节 0 条"长得一样，而 0 条会被读成"书里没人漏"。） */
+  {
+    const script = classifyScript({ raw: TR_RAW, names: TR_NAMES });
+    const gapNull = renderGapReport(null, { slug: 'demo', script }).join('\n');
+    ok(/不适用于本书/.test(gapNull), '译本上规则一那一节明写「不适用于本书」');
+    ok(/规则二/.test(gapNull), '并指向规则二（告诉人该看哪一节）');
+    ok(/个\/万字/.test(gapNull), '把实测的判据数字印出来（判错了人要能自己看出来）');
+    ok(!/待判/.test(gapNull), '**不是**"待判 0 条"那种写法（那会被读成"书里没人漏"）');
+
+    const cnScript = classifyScript({ raw: CN_RAW, names: CN_NAMES });
+    const itpNull = renderInterpReport(null, { slug: 'demo', script: cnScript }).join('\n');
+    ok(/不适用于本书/.test(itpNull) && /中文原著/.test(itpNull), '中文原著上规则二那一节明写「不适用于本书」');
+    ok(/规则一/.test(itpNull), '并指向规则一');
+    ok(!/三国正文/.test(itpNull), '不适用时不印"三国正文 · 数为 0"那句（那是适用时的口径）');
+  }
+
+  /* 14f. ⚠ 译本上规则二的常驻提示要**换口径**：不能说"这条规则本该报 0 条"。 */
+  {
+    const script = classifyScript({ raw: TR_RAW, names: TR_NAMES });
+    const itp = buildInterpReport({ raw: TR_RAW, names: TR_NAMES, topN: 0 });
+    const text = renderInterpReport(itp, { slug: 'demo', min: MIN, script }).join('\n');
+    ok(/本节是\*\*主线\*\*/.test(text) && /是译本/.test(text),
+      '译本上明说本节是主线（老文案"中文原著上它本来就该报 0 条"在译本上是错的）');
+    ok(!/三国正文/.test(text), '译本上不再印"三国正文 · 数为 0"那句（那是中文原著的口径）');
+    /* 中文原著那一侧仍保留老口径 —— 否则上面那条断言可能只是"两处都删了"。 */
+    const cnScript = classifyScript({ raw: CN_RAW, names: CN_NAMES });
+    const cnText = renderInterpReport(
+      buildInterpReport({ raw: CN_RAW, names: CN_NAMES, topN: 0 }),
+      { slug: 'demo', min: MIN, script: cnScript }).join('\n');
+    ok(/三国正文/.test(cnText), '中文原著上仍印"三国正文 · 数为 0"（红绿两边都验，不是删了就绿）');
+  }
+
+  /* 14g. ⚠ 结构性：`audit-against-text.mjs` 必须真的**按书型分流**（防"库写了、忘了接"）。 */
+  {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'audit-against-text.mjs'), 'utf8');
+    ok(/classifyScript\s*\(/.test(src), '脚本调了 classifyScript（否则这个判据是死的）');
+    ok(/script\.isTranslation/.test(src), '按 isTranslation 分流（不是算完不用）');
+    ok(/script:\s*r\.script/.test(src), '把 script 传给两份 render（否则报告印不出实测数字）');
+  }
+}
+
 /* ── 13. 入口卫生 ── */
 {
   /* ⚠ 这里检查的是 **lib**，不是本守卫自己 —— 而本守卫的文件头正写着 spawnSync。
@@ -332,6 +441,10 @@ const PLAUSIBLE = GOOD.length;             // 3
   ok(/^export function renderGapReport/m.test(src), '导出 renderGapReport');
   ok(/^export function buildInterpReport/m.test(src), '导出 buildInterpReport（规则二）');
   ok(/^export function renderInterpReport/m.test(src), '导出 renderInterpReport（规则二）');
+  ok(/^export function classifyScript/m.test(src),
+    '导出 classifyScript（v0.192：按原著正文判"这本书走哪条规则"）');
+  ok(/^export const DOT_PER10K/m.test(src) && /^export const DOT_NAME_SHARE/m.test(src),
+    '导出 DOT_PER10K / DOT_NAME_SHARE（门槛只有一处定义，消费方 import 而不是抄第二份）');
   ok(/^export function plain/m.test(src), '导出 plain');
   ok(/^export const stripParen/m.test(src) && /^export function knownForms/m.test(src),
     '导出 stripParen / knownForms（去我们自己的消歧括注，掩码与 near 判断都靠它）');

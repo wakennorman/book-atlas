@@ -109,7 +109,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -850,6 +850,30 @@ jobs:
         #   代价：`--check` 的 CLI 分支不在覆盖内，靠手工跑一次
         #   （v0.189 已跑：故意改一行 README ⇒ 报"第一处不同在第 N 行"并 exit 1）。
         run: node test/scripts-index-guard.mjs
+
+      - name: Temp 临时目录前缀白名单的守卫
+        # v0.192 新增。起因：2026-10-11 用户报「C 盘又变红了」。查下来 `%TEMP%` 里堆着
+        #   **224 个** `ba-*-<6位随机>` 目录、合计 **14.56 GB**，全是本项目浏览器测试的 profile。
+        #   根因**不是**回收逻辑坏了，而是**白名单漂了**：`test/_profile-guard.mjs` 里那份
+        #   `PROFILE_PREFIXES` 是手写的，后来新增的 `gen-fill` / `band-labels` / `annotations` /
+        #   `fullscreen` / `browser-locator` 各自 `mkdtempSync` 的前缀**从没被补进去** ⇒
+        #   `sweepStaleProfiles()` 一次都没回收过它们（`ba-fill-` 62 个 / 7.76 GB 等）。
+        #   ⚠ 那个文件的注释早就写着「新增脚本时把前缀加进来」——**但没有任何东西在守这句话**。
+        # 本轮：把表搬到 `scripts/lib/profile-prefixes.mjs`（唯一来源），并加这条守卫，扫全仓
+        #   `mkdtempSync(…os.tmpdir()…, '<前缀>')` 与这份表**双向**对拍：
+        #   · 抓到的前缀必须被某条表项覆盖（否则**新脚本又漏了** = 这次 14.56 GB 的成因）；
+        #   · 每条表项必须覆盖到某个抓到的前缀（否则是**打字错误或脚本已删**，表项永远不生效）。
+        # 28 条断言：P1 扫描器没坏 + P2 正向 + P3 反向 + P4 形状/去重
+        #   + P5 语义（**不认 `ba-books`**）+ P5b 第二张表 `msedge_*`/`scoped_dir*`（两张表互斥）
+        #   + P6 两张表各只有一份定义 + P7 消费方真 import 了 + P8 两道安全闸还在。
+        # ⚠ 第二张表的由来：`msedge_*`（组件解包残留）1355 个 / 5.18 GB、`scoped_dir*`
+        #   （扩展安装残留）74 个 / 2.14 GB —— 同样是本项目测试**强杀 Edge** 造成的
+        #   （Chromium 只在优雅退出时自清它们）。sweep 里它有**自己那道** 24 小时闸。
+        # ⚠ 有效性已实测：往 `test/` 里丢一个用 `ba-zzz-` 开目录的探针 ⇒ P2 立刻报
+        #   「漏了 ba-zzz-」；同一个探针再声明一次 `PROFILE_PREFIXES = [` ⇒ P6 报"还有第二处"。
+        #   删掉探针 ⇒ 19 条全绿。（一个不能因真原因变红的守卫 = 装饰品。）
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY）。
+        run: node test/profile-prefix-guard.mjs
 
       - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
         # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」

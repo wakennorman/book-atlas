@@ -10,21 +10,30 @@
 //   releaseProfile(profile) —— 每次运行收尾时调：反复重试删除，等 Edge 自己退干净。
 //   sweepStaleProfiles()    —— 每次运行开始时调：兜底回收历史泄漏（含被强杀的那一轮）。
 //
-// 删除安全：sweep 只认下面这份**白名单前缀**（不认泛 `ba-`），且必须同时通过两道闸：
+// 删除安全：sweep 认**两张表**（都只认 `scripts/lib/profile-prefixes.mjs` 里那份，不认泛 `ba-`）：
+//   ① 我们自己 mkdtemp 的 profile（`PROFILE_PREFIXES`，mtime > 30 分钟才收）
+//   ② 浏览器强杀后自清失败的残留 `msedge_*` / `scoped_dir*`（`BROWSER_LEFTOVERS`，
+//      mtime > **24 小时**才收 —— 那是浏览器的命名空间，误删代价更高，见 lib 头注）
+// 且都必须同时通过两道闸：
 //   ① 进程表里没有任何浏览器的 --user-data-dir 指向它（并发会话正在用的绝不动）
-//   ② 最后写入时间 > 30 分钟（在用的 profile 会被浏览器持续写入，mtime 恒新）
+//   ② 最后写入时间过闸（在用的 profile 会被浏览器持续写入，mtime 恒新）
 // 任一不满足就跳过。宁可漏删，不可误删。
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+/* ⚠ 前缀表**不在这里**（v0.192）：它搬到了 `scripts/lib/profile-prefixes.mjs`。
+ *
+ * 起因是 2026-10-11 用户报「C 盘又变红了」—— Temp 里堆了 224 个 `ba-*-<6位>` 目录 / 14.56 GB，
+ * 全是本项目浏览器测试的 profile。根因就是**下面这份白名单漂了**：
+ * `gen-fill` / `band-labels` / `annotations` / `fullscreen` / `browser-locator`
+ * 后来才加进来，各自的前缀从没被补进白名单 ⇒ 一次都没被回收过。
+ * 那份注释写着"新增脚本时把前缀加进来"，但**没有东西在守它**。
+ * ⇒ 现在表只有一份，由 `test/profile-prefix-guard.mjs` 与全仓的 `mkdtempSync` **双向对拍**。 */
+import { PROFILE_PREFIXES, isOwnTempName, isBrowserLeftover } from '../scripts/lib/profile-prefixes.mjs';
 
-// 与各脚本的 mkdtempSync 前缀一一对应。新增脚本时把前缀加进来，否则它的泄漏没人兜底。
-export const PROFILE_PREFIXES = [
-  'ba-roam-', 'ba-br-', 'ba-ai-', 'ba-cur-', 'ba-ed-', 'ba-tip-',
-  'ba-det-', 'ba-hist-', 'ba-vm-', 'ba-bv-', 'ba-parity-', 'ba-pv-',
-  'ba-lock-', 'ba-place-', 'ba-race-', 'ba-rel', 'ba-scale-', 'ba-tut-',
-];
+/* 老调用点（如果有）仍能从本文件拿到这份表 —— 只是定义地换了地方，不抄第二份。 */
+export { PROFILE_PREFIXES };
 
 /** 同步 sleep。Node 主线程允许 Atomics.wait；万一不可用就退化成忙等。 */
 const sleepSync = (ms) => {
@@ -48,38 +57,52 @@ function browserHeldProfiles() {
  * 兜底清扫历史泄漏的 profile。在每次脚本运行、创建自己的 profile **之前**调用。
  * @returns {number} 实际回收的目录数
  */
-export function sweepStaleProfiles({ staleMs = 30 * 60 * 1000, quiet = false } = {}) {
+export function sweepStaleProfiles({ staleMs = 30 * 60 * 1000, leftoverMs = 24 * 60 * 60 * 1000, quiet = false } = {}) {
   let n = 0;
   try {
     const tmp = os.tmpdir();
     // 便宜的判断放前面：Temp 干净的时候（绝大多数运行）到这就返回了，
     // 不该为了查进程表每次都拉起 PowerShell。
     const stale = [];
+    const staleLeftovers = [];
     for (const name of fs.readdirSync(tmp)) {
-      if (!PROFILE_PREFIXES.some((p) => name.startsWith(p))) continue;
+      /* ⚠ 判据只有一处定义（`scripts/lib/profile-prefixes.mjs`）。
+       *   这里曾经内联着 `PROFILE_PREFIXES.some((p) => name.startsWith(p))` ——
+       *   那正是"表漂了没人知道"的地方：表少一条，这里就静默少收一类目录。 */
+      let isOwn = false, isLeftover = false;
+      if (isOwnTempName(name)) isOwn = true;
+      else if (isBrowserLeftover(name)) isLeftover = true;
+      if (!isOwn && !isLeftover) continue;
       const p = path.join(tmp, name);
       try {
-        if (Date.now() - fs.statSync(p).mtimeMs < staleMs) continue;
-        stale.push(p);
+        const age = Date.now() - fs.statSync(p).mtimeMs;
+        // 两张表两道闸：我们 mkdtemp 的目录 30 分钟；浏览器残留 24 小时（误删代价更高，见 lib 头注）。
+        if (isOwn && age < staleMs) continue;
+        if (isLeftover && age < leftoverMs) continue;
+        (isOwn ? stale : staleLeftovers).push(p);
       } catch { /* 目录被并发删了就跳过 */ }
     }
-    if (stale.length === 0) return 0;
+    if (stale.length === 0 && staleLeftovers.length === 0) return 0;
 
     // 只有真要删的时候才去查进程表：并发会话正在用的 profile 绝不动。
     const held = browserHeldProfiles();
-    for (const p of stale) {
-      try {
-        if (held.has(path.resolve(p))) continue;
-        fs.rmSync(p, { recursive: true, force: true });
-        n++;
-      } catch (e) {
-        if (!quiet) console.log(`  (清扫跳过) ${path.basename(p)}: ${e.message}`);
+    const sweep = (list) => {
+      for (const p of list) {
+        try {
+          if (held.has(path.resolve(p))) continue;
+          fs.rmSync(p, { recursive: true, force: true });
+          n++;
+        } catch (e) {
+          if (!quiet) console.log(`  (清扫跳过) ${path.basename(p)}: ${e.message}`);
+        }
       }
-    }
+    };
+    sweep(stale);
+    sweep(staleLeftovers);
   } catch (e) {
     if (!quiet) console.log('  (清扫失败) ' + e.message);
   }
-  if (n && !quiet) console.log(`  (清扫) 回收历史泄漏 profile ${n} 个`);
+  if (n && !quiet) console.log(`  (清扫) 回收 Temp 泄漏 ${n} 个（含浏览器自清失败残留）`);
   return n;
 }
 
