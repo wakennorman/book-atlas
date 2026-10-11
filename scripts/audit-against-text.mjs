@@ -31,6 +31,17 @@
  *
  * 见 `scripts/lib/against-text.mjs` 文件头的实测数据。译本请以 `--names` 为主。
  *
+ * ## 所以有**两条**规则，报告分两节（v0.190）
+ *
+ *   规则一（姓氏+1~2 字）—— 中文姓名模型，只在中文原著上成立；
+ *   规则二（**间隔号**全名）—— 译本那条线，找 `名·父名·姓`，在中文原著上应当报 0。
+ *
+ * 起因：用户拿《百年孤独》第 16/17 章那段问"乌尔苏拉的母亲佩德罗妮拉·伊瓜兰
+ * 为什么没加进去"—— 她的外祖母、父亲、表兄、曾外祖父**全在建档**，唯独母亲不在。
+ * 原因是规则一锚在"首字＝姓"上，而 `佩德罗妮拉·伊瓜兰` 的首字「佩」不是百家姓，
+ * 唯一锚得上的 `伊瓜兰` 又恰好是已知名 `乌尔苏拉·伊瓜兰` 的子串。
+ * 两条规则**必须分开报**：它们对"什么算候选"的定义不同，判的标准也不同。
+ *
  * 为什么要有 `--known-missing` 忽略名单：
  *   缺口清单会**反复**跑。人工确认过"这个确实是噪声/确实不必建档"的名字，
  *   写进 data/<slug>.missing-ok.json，下次就不会再冒出来 ——
@@ -45,7 +56,7 @@ import { mainTextOnly, extractChapters as chaptersOf } from './lib/main-text.mjs
  * ⚠ v0.189 之前它内联在本文件里，于是"报的数"和"算的数"悄悄分了家（见 lib 文件头）。
  * 抽出来还有第二个好处：`test/against-text-guard.mjs` 能直接 import 判据断言 ——
  * 原著 txt 不在仓库里，这条链**没法**做成跑 CLI 的门禁（本机也起不了子进程）。 */
-import { buildGapReport, renderGapReport, plain, MIN, TOP_N, NEAR } from './lib/against-text.mjs';
+import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport, plain, MIN, TOP_N, NEAR } from './lib/against-text.mjs';
 
 const argv = process.argv.slice(2);
 const asJson = argv.includes('--json');
@@ -122,9 +133,14 @@ function audit(bookFile, textFile) {
   names.sort((a, b) => b.length - a.length);
 
   const report = buildGapReport({ raw, names, okSet, min: MIN_ARG, near: NEAR, topN });
+  /* 规则二（v0.190）：译本那条线 —— 找带**间隔号**的全名。
+   * ⚠ 必须吃 `raw`（保留 `·`）。`scripts/lib/book-sources.mjs` 的 `flatSource()`
+   *   会把间隔号一起删掉，用它就等于把这条规则的锚点先毁了。 */
+  const interp = buildInterpReport({ raw, names, okSet, min: MIN_ARG, topN });
   return {
     slug: (book.meta || {}).slug || path.basename(bookFile, '.json'),
     report,
+    interp,
     okLabel: okFile,
     /* 老字段名保留（`--json` 的消费者用 `rows`/`total`），但 `total` 现在指**待判总数**。
      * ⚠ v0.189 之前 `total` 是"已知名字个数"、`rows.length` 是截断后的窗口数，
@@ -357,5 +373,12 @@ for (const r of report) {
   console.log('');
   for (const line of renderGapReport(r.report, {
     slug: r.slug, min: MIN_ARG, near: NEAR, topN, okLabel: r.okLabel,
+  })) console.log(line);
+  /* 规则二单独一节（v0.190）。为什么不并进上面那份：两条规则的**失败模式完全不同** ——
+   * 规则一（姓氏）只在中文姓名上成立、在译本上判别力极低；规则二（间隔号）只在译本上有意义、
+   * 在中文原著上应当报 0。混在一起报，人分不清"这条是谁报的、该按哪套标准判"。 */
+  console.log('');
+  for (const line of renderInterpReport(r.interp, {
+    slug: r.slug, min: MIN_ARG, okLabel: r.okLabel,
   })) console.log(line);
 }

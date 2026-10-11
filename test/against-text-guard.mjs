@@ -35,7 +35,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildGapReport, renderGapReport, norm, plain, NEAR, MIN, TOP_N }
+import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport,
+  norm, plain, stripParen, knownForms, INTERP_LMAX, INTERP_RMAX, NEAR, MIN, TOP_N }
   from '../scripts/lib/against-text.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -152,6 +153,11 @@ const PLAUSIBLE = GOOD.length;             // 3
     '报告的每一行都**打印**出来了（不打印就等于装饰品）');
   ok(!/\.slice\(0,\s*topN\)/.test(src),
     '脚本自己不再做 `slice(0, topN)` 截断（截断只许在 lib 里、且必须在粗筛之后）');
+  /* 规则二同理：import 了、调了、打印了 —— 三样缺一样它就是死的。 */
+  ok(/buildInterpReport\s*\(/.test(src) && /renderInterpReport\s*\(/.test(src),
+    '规则二的两个导出都被调用了（v0.190 新增；只 import 不用 = 另一种死法）');
+  ok(/for \(const line of renderInterpReport\(/.test(src),
+    '规则二的报告也真的打印出来了（否则它只是算给自己看）');
 }
 
 /* ── 10. ⚠ 百家姓表**只有一份**（v0.189）——`audit-search.mjs` 不再内联副本 ──
@@ -172,7 +178,147 @@ const PLAUSIBLE = GOOD.length;             // 3
     'import 进来的 SURNAMES 真的拼进了扫描正则（不是死变量）');
 }
 
-/* ── 11. 入口卫生 ── */
+/* ── 12. ⚠ 规则二「间隔号全名」（v0.190）—— 译本那条线 ──
+ *
+ * 起因：用户拿《百年孤独》第 16/17 章乌尔苏拉谵妄那段问
+ * 「佩德罗妮拉·伊瓜兰 和 乌尔苏拉的曾外祖父 奥雷里亚诺·阿尔卡蒂奥·布恩迪亚
+ *   为什么没有加进去」。答案是规则一**结构性看不见这两个人**：
+ *   · `佩德罗妮拉·伊瓜兰` 首字「佩」不是百家姓 ⇒ 锚都锚不上；唯一锚得上的
+ *     `伊瓜兰`（「伊」是百家姓）又恰好是已知名 `乌尔苏拉·伊瓜兰` 的**子串** ⇒ 被过滤掉；
+ *   · `奥雷里亚诺·阿尔卡蒂奥·布恩迪亚` 里奥/阿/布**一个都不是百家姓** ⇒ 完全不可见。
+ * 所以这一组用**合成语料**把上面两条各自复现一遍，并且钉住规则二的四条质量筛。
+ *
+ * 合成语料里的每一处都**跟着句号或逗号**（`，`/`。`），否则右段会把后文的叙述吞进来
+ * （`伊瓜兰又出现了一次`）—— 那正是文件头 §局限里写的那个弱点，不该混进断言。
+ */
+{
+  const KNOWN2 = [
+    '乌尔苏拉·伊瓜兰',
+    '阿尔卡蒂奥',
+    '罗季昂·罗曼内奇·拉斯柯尔尼科夫',
+    '阿利黎奥·诺格拉',
+  ];
+  const NEWP = '佩德罗妮拉·伊瓜兰';            // 用户点名的第一个：规则一看不见
+  const THREE = '奥雷里亚诺·阿尔卡蒂奥·布恩迪亚'; // 用户点名的第二个：规则一完全看不见
+  const RAW2 =
+    `乌尔苏拉·伊瓜兰，遇见了${NEWP}。`
+    + `后来${NEWP}又出现了一次。`
+    + '罗季昂·罗曼内奇·拉斯柯尔尼科夫。'
+    + '罗季昂·罗曼内奇。罗季昂·罗曼内奇。'
+    + `${THREE}。${THREE}。${THREE}。`
+    + '阿利黎奥·诺格拉医生。阿利黎奥·诺格拉医生。';
+
+  const gap = buildGapReport({ raw: RAW2, names: KNOWN2, topN: 0 });
+  const itp = buildInterpReport({ raw: RAW2, names: KNOWN2, topN: 0 });
+  const names2 = itp.rows.map((x) => x.name);
+
+  /* 12a. 规则一**看不见**用户点名的这两个 —— 这是"为什么要有第二条规则"的证据。 */
+  ok(!gap.rows.some((x) => x.name.includes('伊瓜兰')),
+    `规则一报不出任何含「伊瓜兰」的名字（实测 ${gap.rows.filter((x) => x.name.includes('伊瓜兰')).length} 条）`
+    + ' —— 「伊」是百家姓，但锚出来的 `伊瓜兰` 是已知名 `乌尔苏拉·伊瓜兰` 的子串，被当碎片滤掉');
+  ok(!gap.rows.some((x) => x.name.includes('奥雷里亚诺·阿尔卡蒂奥')),
+    '规则一也报不出 `奥雷里亚诺·阿尔卡蒂奥·布恩迪亚`（三个字头都不是百家姓）');
+
+  /* 12b. 规则二把这两个都报出来 —— 而且只报这两个。 */
+  ok(itp.total === 2 && itp.rawCount === 2,
+    `规则二恰好报 2 条（实测 rawCount=${itp.rawCount} total=${itp.total}）`
+    + `：${names2.join('、') || '空'}`);
+  ok(names2.includes(NEWP), `报出了用户点名的 ${NEWP}`);
+  ok(names2.includes(THREE), `报出了用户点名的 ${THREE}`);
+  ok(itp.lowFreq === 0, `没有掉进低频档（实测 ${itp.lowFreq} 条）—— 两个名字都出现 ≥2 次`);
+
+  /* 12c. 已知人物的"教名+父名"**必须**丢掉：它是已知名的子串。
+   *      （去掉 lib 里 `list.some((x) => x.includes(name))` 这一行 ⇒ 这里立刻红。）*/
+  ok(!names2.includes('罗季昂·罗曼内奇'),
+    '`罗季昂·罗曼内奇` 不再报（它是已知名 `罗季昂·罗曼内奇·拉斯柯尔尼科夫` 的子串）');
+  ok(!names2.includes('罗季昂·罗曼内奇·拉斯柯尔尼科夫'), '已知名本身也不会被当成新名字报出来');
+  ok(!names2.includes('罗曼内奇·拉斯柯尔尼科夫'), '已知名的后半截（跨间隔号那段）同样不报');
+
+  /* 12d. ⚠ 但"含已知名"**不能**一律丢 —— 这是**单向**判据的命门。
+   *      `奥雷里亚诺·阿尔卡蒂奥·布恩迪亚` 里含着已知名 `阿尔卡蒂奥`，而它是**另一个人**。
+   *      实测这条会红的两种改法（都当场验过）：
+   *        ① 把 12c/12d 改成**双向**包含 ⇒ 红（用户点名的第二个就这么丢过一次）；
+   *        ② 把 `INTERP_RSEGS` 改成 **0**（右段不能跨间隔号）⇒ 红（长名被切两截后全被剔掉）。 */
+  ok(names2.includes(THREE),
+    '⚠ 含已知名 `阿尔卡蒂奥` 的长名**仍然报**（判据必须单向：只丢"候选是已知名的子串"）'
+    + ' —— 改成双向包含、或让右段不能跨间隔号，这条都红');
+  ok(!names2.includes('阿尔卡蒂奥·布恩迪亚'),
+    '`阿尔卡蒂奥·布恩迪亚` 要丢（两段里夹着已知名 ⇒ 是碎片），而上面那条长名要留');
+
+  /* 12e. `已知名 + 官职` 要丢（残渣 ≤ TITLE_SLACK 字）。 */
+  ok(!names2.includes('阿利黎奥·诺格拉医生'),
+    '`阿利黎奥·诺格拉医生` 不报（= 已知名 + 「医生」，残渣 2 字）'
+    + ' —— 去掉 TITLE_SLACK 那条判据这里就红');
+
+  /* 12f. 中文原著上**本来就该报 0**：正文里没有间隔号。 */
+  {
+    const cn = buildInterpReport({ raw: '李四见了张甲乙。张甲乙又见了王丙丁。', names: KNOWN, topN: 0 });
+    ok(cn.rawCount === 0 && cn.total === 0,
+      `没有间隔号的正文 ⇒ 规则二报 0 条（实测 ${cn.total} 条）—— 中文原著上它不该有误报`);
+  }
+
+  /* 12g. 门槛与低频档：只出现 1 次的人**只在低频档里**，不会静默消失。
+   *      （这正是用户点名的第二个例子的处境：全书只出现 1 次。） */
+  {
+    const once = buildInterpReport({ raw: `${NEWP}。`, names: KNOWN2, topN: 0 });
+    ok(once.total === 0 && once.lowFreq === 1,
+      `只出现 1 次 ⇒ 不进待判（${once.total}）但**报进低频档**（${once.lowFreq}）—— 不是静默丢掉`);
+    const one = buildInterpReport({ raw: `${NEWP}。`, names: KNOWN2, min: 1, topN: 0 });
+    ok(one.total === 1, '--min 1 时它出现在待判里（"只被提到一次的人只在这一档里"）');
+    const judged = buildInterpReport({
+      raw: `${NEWP}。`, names: KNOWN2, min: 1, okSet: new Set([NEWP]), topN: 0,
+    });
+    ok(judged.judgedDropped === 1 && judged.total === 0,
+      '台账里判过的（"不是这本书的人物"）下次不再报，且**扣了几条要报出来**');
+  }
+
+  /* 12h. 报告必须把「三类要分开判」和两条常驻提示印出来 ——
+   *      这三类**判错类别比漏判更坏**（现实世界的人写进节点就成了假人物）。 */
+  {
+    const text = renderInterpReport(itp, { slug: 'demo', min: MIN, okLabel: 'data/demo.missing-ok.json' }).join('\n');
+    ok(/规则二：间隔号全名/.test(text), '报告有「规则二」这一节，且标题写明是译本那条线');
+    ok(/待判 2 条/.test(text), '报告印的是**待判总数**，不是本页条数');
+    ok(/① 真漏掉的人/.test(text) && /② 已知人物的另一个写法/.test(text) && /③ 现实世界的人/.test(text),
+      '印出三分类的处理办法（建节点 / 补别名 / 写进 missing-ok）');
+    ok(/data\/demo\.missing-ok\.json/.test(text), '第 ③ 类直接给出台账文件名，人不用去猜');
+    ok(/三国正文/.test(text) && /0 条/.test(text),
+      '常驻提示：中文原著上规则二本来就该报 0 条（免得有人以为它坏了）');
+    /* ⚠ 低频档那一行只在**真有**低频候选时才印 ⇒ 上面那份（lowFreq=0）印不出来，
+     *   得单独拿一份"名字只出现 1 次"的报告来断言 —— 否则这条断言永远绿。 */
+    const low = buildInterpReport({ raw: `${NEWP}。`, names: KNOWN2, topN: 0 });
+    const lowText = renderInterpReport(low, { slug: 'demo', min: MIN }).join('\n');
+    ok(low.lowFreq === 1 && /只出现 1 次/.test(lowText) && /--min 1/.test(lowText),
+      '有低频候选时印出低频档提示（否则人会以为"清单已经空了"）—— 只被提到一次的人只在这一档里');
+  }
+
+  /* 12i. ⚠ 结构性：lib 里必须留着"每个 · 处只挑一个"这一步。
+   *      去掉它 ⇒ 右段会带上后文叙述（`尔卡蒂奥·布恩迪亚不`），实测候选从 11 条炸到 115 条；
+   *      "顺带把最长那个也留下"同样炸（低频档 37 → 978 条）。两条都实测过、都回退了。 */
+  {
+    const src = fs.readFileSync(path.join(ROOT, 'scripts', 'lib', 'against-text.mjs'), 'utf8');
+    ok(/const picked = new Map\(\)/.test(src) && /picked\.get\(best\.key\)\.n\+\+/.test(src),
+      'lib 里有"每个 · 处挑一个规范形"这一步（去掉它候选会炸两个数量级）');
+    ok(/c === best\.c && key\.length > best\.key\.length/.test(src),
+      '并列时**取最长**（否则 `佩德罗妮拉·伊瓜兰` 会被更短的 `妮拉·伊瓜兰` 顶掉）');
+    ok(/const maximal = passing\.filter/.test(src),
+      '过门槛之后还要"只留最大"（去子串），否则同一个人的两个写法各报一条');
+  }
+
+  /* 12j. `stripParen` / `knownForms`（v0.190）—— 数据里 `张南（蜀将）` 这种括注
+   *      **原著里永远没有**，拿整串去掩码等于一个字都没掩掉。 */
+  {
+    ok(stripParen('张南（蜀将）') === '张南', 'stripParen 去掉全角括注（我们自己加的消歧标记）');
+    ok(stripParen('奥雷里亚诺·特里斯特（修铁路的那个）') === '奥雷里亚诺·特里斯特', 'stripParen 也认长括注');
+    ok(stripParen('王颀(长安)') === '王颀', 'stripParen 半角括号也去');
+    const kf = knownForms(['张南（蜀将）', '张南（天水）', '何塞', 'x']);
+    ok(kf.includes('张南') && kf.filter((n) => n === '张南').length === 1,
+      `去括注后**合并重复**（实测 ${JSON.stringify(kf)}）—— 两个消歧条目其实是一个串`);
+    ok(!kf.includes('x'), '去括注后长度 <2 的被丢掉（`x` 不是名字）');
+    ok(kf[0].length >= kf[kf.length - 1].length, 'knownForms 按长度降序（掩码必须长名先替）');
+  }
+}
+
+/* ── 13. 入口卫生 ── */
 {
   /* ⚠ 这里检查的是 **lib**，不是本守卫自己 —— 而本守卫的文件头正写着 spawnSync。
    *   且 `test/guard-hygiene.mjs`（H1）会**剥注释后**扫所有守卫，
@@ -184,7 +330,15 @@ const PLAUSIBLE = GOOD.length;             // 3
   ok(!banned.some((k) => src.includes(k)), 'lib 里没有子进程、没有 fs（纯函数，守卫才能直接调）');
   ok(/^export function buildGapReport/m.test(src), '导出 buildGapReport');
   ok(/^export function renderGapReport/m.test(src), '导出 renderGapReport');
+  ok(/^export function buildInterpReport/m.test(src), '导出 buildInterpReport（规则二）');
+  ok(/^export function renderInterpReport/m.test(src), '导出 renderInterpReport（规则二）');
   ok(/^export function plain/m.test(src), '导出 plain');
+  ok(/^export const stripParen/m.test(src) && /^export function knownForms/m.test(src),
+    '导出 stripParen / knownForms（去我们自己的消歧括注，掩码与 near 判断都靠它）');
+  ok(/^export const INTERP_LMAX/m.test(src) && /^export const INTERP_RMAX/m.test(src),
+    '导出 INTERP_LMAX / INTERP_RMAX（间隔号候选的段长上限，只有一处定义）');
+  ok(INTERP_LMAX === 5 && INTERP_RMAX === 12,
+    `规则二段长上限没被悄悄改（LMAX=${INTERP_LMAX} RMAX=${INTERP_RMAX}）`);
   ok(/^export const NEAR/m.test(src) && /^export const MIN/m.test(src) && /^export const TOP_N/m.test(src),
     '导出 NEAR / MIN / TOP_N（阈值只有一处定义，消费方 import 而不是抄第二份）');
   ok(MIN === 2 && TOP_N === 60 && NEAR === 90, `默认阈值没被悄悄改（min=${MIN} top=${TOP_N} near=${NEAR}）`);

@@ -142,7 +142,7 @@
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
-| `against-text.mjs` | import | 「对着原著正文找漏人」的**唯一**判据实现（v0.189）。 |
+| `against-text.mjs` | import · 文档 | 「对着原著正文找漏人」的**唯一**判据实现（v0.189）。 |
 | `anno-cross-chapter.mjs` | import | 「事件章号」与「跨章声明（A3）」的**唯一定义** —— v0.177 新增。 |
 | `book-sources.mjs` | import | 「哪本书对应哪份原著 txt」的**唯一**定义（v0.179）。 |
 | `data-files.mjs` | import | data/ 目录里"哪些文件是书、哪些是附属文件"的**唯一**定义。 |
