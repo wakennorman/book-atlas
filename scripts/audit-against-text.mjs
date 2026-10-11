@@ -24,6 +24,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+/* 「只含正文」的切分（v0.184）。那份原著 txt 是毛宗岗评点本，混着评点/音注/编者附录；
+ * 缺口检测只该在**正文**上跑（详见 main-text.mjs 的文件头，⚠ 那里也写了为什么不能设成全局默认）。 */
+import { mainTextOnly, extractChapters as chaptersOf } from './lib/main-text.mjs';
 
 const argv = process.argv.slice(2);
 const asJson = argv.includes('--json');
@@ -36,6 +39,21 @@ const NEAR = 90;
 const all = argv.includes('--all');
 const textDirIdx = argv.indexOf('--all');
 const dir = textDirIdx >= 0 ? argv[textDirIdx + 1] || '.text' : '';
+/* ⚠ 默认**只扫正文**（v0.184）。`--with-appendix` 退回「整份 txt 全扫」。
+ *
+ * 那份原著 txt 是**毛宗岗评点本**，混着四类东西：正文 / 评点 / 音注 / **编者附录**。
+ * 附录里有 `山东省`（古今地名对照表）、`毛本`（版本分析）、`陈寿`（参考书目）、
+ * `罗贯中`（作者介绍）—— 它们**不是这本书登场的人物**，却被当成缺口候选报出来。
+ *
+ * ⚠ **不能把它设成全局默认**：台账引文核验必须能搜到**评点** ——
+ *   v0.181 的张温证据「同时有两张温。此一张温，乃汉张温也」就是毛宗岗评点，
+ *   而且是最硬的依据（原著自己承认是两个人）。所以这是**缺口检测这一个用途**的口径。
+ *
+ * ⚠ 进度/说明一律走 **stderr**：`--json` 的消费者要 `JSON.parse(stdout)`，
+ *   往 stdout 打一行提示就会让它崩（v0.184 当场踩到：`JSON.parse` 报
+ *   「Unexpected token '（'」—— 而报错本身完全看不出是哪一行污染的）。
+ */
+const WITH_APPENDIX = argv.includes('--with-appendix');
 
 /* 与 audit-search.mjs 同一份百家姓（那边是内联的，这里刻意保持一致：
  * 两边用不同表 ⇒ 同一本书两次扫描结果对不上，缺口清单就没法当基线用）*/
@@ -69,7 +87,22 @@ function plain(t) {
 
 function audit(bookFile, textFile) {
   const book = JSON.parse(fs.readFileSync(bookFile, 'utf8'));
-  const raw = plain(fs.readFileSync(textFile, 'utf8'));
+  const fullRaw = plain(fs.readFileSync(textFile, 'utf8'));
+  /* v0.184：默认切掉评点与附录，只留 120 回正文。切不出回（别的书没有回目标题）⇒ 原样用全文。 */
+  let raw = fullRaw;
+  if (!WITH_APPENDIX) {
+    const cut = mainTextOnly(fullRaw);
+    if (cut) {
+      raw = cut;
+      const a = fullRaw.replace(/[\s·・･　]/g, '').length;
+      const b = cut.replace(/[\s·・･　]/g, '').length;
+      const nCh = chaptersOf(fullRaw).stats.chapters;
+      console.error(`  （只扫正文：${nCh} 回，去掉 ${a - b} 字非正文 `
+        + `＝${(((a - b) / a) * 100).toFixed(1)}%；加 --with-appendix 可扫全本）`);
+    } else {
+      console.error(`  （本书正文切不出回目标题 ⇒ 按全本扫）`);
+    }
+  }
   const okFile = bookFile.replace(/\.json$/, '.missing-ok.json');
   /* 忽略名单有两种条目，纯字符串和 {name, why} 对象都收。
    *

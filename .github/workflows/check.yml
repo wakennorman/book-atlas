@@ -109,7 +109,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -778,6 +778,24 @@ jobs:
         #   · 过滤**只认精确相等、不认子串**（与 check-missing-ok 的 M6 同一口径）。
         # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），直接 import 判据。
         run: node test/missing-ok-lib-guard.mjs
+
+      - name: 「只含正文」切分库的守卫
+        # v0.184 新增。那份原著 txt 是**毛宗岗评点本**，混着四类东西：
+        #   ① 正文 ② 回末评点 ③ 音注 ④ **编者附录**（版本分析／参考书目／古今地名对照表／
+        #   注释／群英谱／作者介绍）。④ 里的 `罗贯中` `毛宗岗` `山东省` `毛本` `陈寿`
+        #   **都不是这本书登场的人物**，却被当成"缺口"报出来。
+        #   `audit-against-text.mjs` 现在默认只扫 ①，`--with-appendix` 退回全本。
+        # 22 条断言，切分 3 + 附录排除 3 + 评点音注 3 + **子集性质 3** + 退化 2 + 阈值 1 + 接线 5 + 卫生 3。
+        # 值得单说的三条：
+        #   · **正文必须是全集的真子集** —— 正文里每一行都要能在全本里逐字找到。
+        #     这条比"剔掉几条"更有用：它一破就是**真的丢原文**，而不是多报噪声；
+        #   · **切不出回的书必须退化成「切不出」而不是「切出个空串」** ——
+        #     后者会让调用方的 `if (cut)` 判空失效，然后拿空文本去扫，
+        #     报告变成"零缺口"，看着像"这本书没问题"，实则根本没扫；
+        #   · 两条进度说明走 **stderr** —— `--json` 的消费者要 `JSON.parse(stdout)`，
+        #     往 stdout 打一行提示就会让它崩（v0.184 当场踩到，报「Unexpected token '（'」）。
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），直接 import 判据。
+        run: node test/main-text-guard.mjs
 
       - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
         # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」
