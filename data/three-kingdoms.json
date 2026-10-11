@@ -5250,6 +5250,34 @@
       "note": "字士元，号凤雏"
     },
     {
+      "id": "jiang-ziya",
+      "name": "姜子牙",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 37,
+      "faction": "other",
+      "title": "古之贤臣",
+      "desc": "司马徽以之比拟孔明，本书仅被提及",
+      "fate": "未登场",
+      "note": "第三十七回司马徽曰「可比兴周八百年之姜子牙，旺汉四百年之张子房也」",
+      "tier": "minor"
+    },
+    {
+      "id": "zhang-zifang",
+      "name": "张子房",
+      "aliases": [],
+      "generation": 1,
+      "gender": "m",
+      "firstCh": 37,
+      "faction": "other",
+      "title": "古之谋臣",
+      "desc": "司马徽以之比拟孔明，本书仅被提及",
+      "fate": "未登场",
+      "note": "第三十七回司马徽曰「可比兴周八百年之姜子牙，旺汉四百年之张子房也」；原书作「张子房」（即张良），非「张良」",
+      "tier": "minor"
+    },
+    {
       "id": "cui-zhouping",
       "name": "崔州平",
       "aliases": [],
@@ -56878,7 +56906,7 @@
       "id": "e-37-2",
       "ch": 37,
       "name": "司马徽再荐孔明",
-      "summary": "司马徽来访刘备，断言徐母必死，盛赞孔明可比姜子牙、张良，叹其不得其时而去。",
+      "summary": "司马徽来访刘备，断言徐母必死，盛赞孔明可比姜子牙、张子房，叹其不得其时而去。",
       "impact": "坚定刘备求贤之心",
       "chars": [
         "liu-bei",
