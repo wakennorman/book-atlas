@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 按章节区间把事件归到阶段（phases[].from / phases[].to 用回/章号）
  *
  * 逐章生成时，只有第 1 章会输出 phases，后面各章的事件都会落到"第一个阶段"。

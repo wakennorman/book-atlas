@@ -851,6 +851,23 @@ jobs:
         #   （v0.189 已跑：故意改一行 README ⇒ 报"第一处不同在第 N 行"并 exit 1）。
         run: node test/scripts-index-guard.mjs
 
+      - name: scripts/ 归档卫生的守卫
+        # v0.195 新增。立项实测：`scripts/*.mjs` 共 99 个（不含 archive/lib），
+        #   其中一次性补丁 44 个（fix-* 40 + add-* 4）；`scripts/archive/` 里**已经躺着 8 个**
+        #   —— 说明"归档"这件事做过，但**没做成规范**，于是又攒回 44 个。
+        # 根因很具体：**没有任何东西在守它**。`make-scripts-index.mjs` 只是记账，不是约束。
+        # 四条判据：
+        #   · P1 顶层（不含 archive）出现一次性补丁 ⇒ 报「该归档了」
+        #   · P2 archive 里的脚本必须有【已归档】标记（否则目录变成垃圾桶，事后没人知道它干嘛过）
+        #   · P3 每个脚本文件头必须写明「一次性 / 长期」（分类靠猜 ⇒ 猜错就出事，
+        #       v0.195 就差点把 `merge-duplicate-relations.mjs` 归档掉 ——
+        #       而 validate.mjs 会建议用户跑它，归档等于删掉一个出口）
+        #   · P4 双向对拍：门禁 `run:` 到的脚本必须在顶层（不许藏在 archive 里）
+        # ⚠ 守卫末尾带**有效性自测**（在临时目录里造违规形态，确认每条判据真会红）。
+        #   一个不能因真原因变红的守卫＝装饰品。
+        # ⚠ 同其余守卫：刻意不起子进程（本机 spawnSync 一律 EBUSY）。
+        run: node test/scripts-hygiene-guard.mjs
+
       - name: Temp 临时目录前缀白名单的守卫
         # v0.192 新增。起因：2026-10-11 用户报「C 盘又变红了」。查下来 `%TEMP%` 里堆着
         #   **224 个** `ba-*-<6位随机>` 目录、合计 **14.56 GB**，全是本项目浏览器测试的 profile。

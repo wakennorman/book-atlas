@@ -1,4 +1,5 @@
 // 人名 → id 解析器。拆书条目里 chars 一律写中文名，由本脚本转成 id。
+// 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
 // 这样就彻底消灭「从中间输出手工转抄 id」这一类错误。
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 亲属关系（kin）规范 —— 编辑器 / validate.mjs / annotate-kin.mjs 共用这套口径
  *
  * 为什么要有它：《百年孤独》里既有亲生的（乌尔苏拉→「巨人」是亲母子），

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 搜索命中率审计（每本书整理完的收尾必跑）
  *
  * 查四件事：

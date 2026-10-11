@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * `transition` 覆盖检查：状态规则里改的属性，基础块必须列进 transition。
  *
  * ## 为什么需要它

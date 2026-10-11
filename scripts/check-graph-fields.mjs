@@ -1,8 +1,16 @@
+/**
+ * 【长期】发布门禁每轮都跑（v0.195 补的文件头 —— 本脚本原本**完全没有注释头**，
+ *         第一行就是 import，于是任何「读文件头」的检查都取不到东西）。
+ *
+ * 图包字段检查：data/*.graph.json 必须是 data/*.json 的真子集投影，
+ * 缺字段会让网页端在画图时拿到 undefined。
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 网页端图包（data/<slug>.graph.json）的**字段覆盖检查**（v0.97 新增）。
  *
  * 为什么必须有这个检查 —— 它是被一个真实的"功能是死的"坑逼出来的：

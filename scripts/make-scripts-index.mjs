@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 生成 `scripts/README.md`（`scripts/` 的索引）。
  *
  *   node scripts/make-scripts-index.mjs          # 写
@@ -41,7 +42,30 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(HERE, '..');
 
-const PATCH_PREFIX = /^(fix-|add-|purge-|strip-|sync-|tag-|merge-|_)/;
+/** 「什么是一次性补丁」的**唯一**判据。
+ * ⚠ v0.195 起 `export`：守卫 `test/scripts-hygiene-guard.mjs` 要用同一份，
+ *   抄第二份的话改了这边忘了那边，两边会对同一批脚本给出不同结论
+ *   （判据漂移是本项目反复踩的族病）。 */
+export const PATCH_PREFIX = /^(fix-|add-|purge-|strip-|sync-|tag-|merge-|_)/;
+
+/**
+ * ⚠ **例外名单**：名字命中 `PATCH_PREFIX`、但其实是长期工具/维护脚本的。
+ *
+ * 为什么需要它：前缀只是**命名习惯**，不是事实。同一个前缀下混着三类东西：
+ *   · 真正的一次性补丁（该归档）
+ *   · 常驻工具（`merge-duplicate-relations` —— `validate.mjs` 会建议用户跑它）
+ *   · 维护脚本（`tag-script-lifetime` / `archive-one-offs` —— 用来维持规范的那几个）
+ * 后两类一旦被归档，规范就**没法再被维持** —— 而守卫自己也会先被自己的守卫咬。
+ *
+ * ⚠ v0.195：这是**唯一来源**。守卫 `test/scripts-hygiene-guard.mjs`
+ *   与 `scripts/archive-one-offs.mjs` 都 import 它，不再各抄一份 ——
+ *   抄三份的后果是「改了这边忘了那边」，而三边都会报告自己是对的。
+ */
+export const KEEP_TOOL = new Set([
+  'merge-duplicate-relations.mjs',   // 常驻：validate 报「关系重复」时建议用户跑它
+  'tag-script-lifetime.mjs',         // 维护：给脚本补生命周期声明（P3 靠它）
+  'archive-one-offs.mjs',            // 维护：归档动作本身（一次性执行）
+]);
 
 /* 从文件头取"一句话"：第一条含 ≥4 个汉字的注释行
  * （跳过 shebang / 空行 / 代码围栏 / 注释结束标记）。
@@ -133,6 +157,7 @@ export function renderIndex(root = ROOT) {
   const classify = (r) => {
     if (r.inLib) return '库';
     if (ci.has(r.name)) return '门禁';
+    if (KEEP_TOOL.has(r.name)) return '工具';       // ⚠ 例外优先于前缀，理由见 KEEP_TOOL 注释
     if (PATCH_PREFIX.test(r.name)) return '一次性补丁';
     return '工具';
   };
@@ -144,7 +169,7 @@ export function renderIndex(root = ROOT) {
    *   「check.yml 里被提到过」**不算** —— 那个名单里混着 `node --check` 的文件列表与注释，
    *   拿它当"在用"会把问题掩盖掉（第一版就是这么写的，于是 46 个只报出 1 个）。 */
   const orphanAll = all.filter((r) => !r.inLib && !ci.has(r.name) && !importedBy.has(r.name) && !docs.has(r.name));
-  const orphanPatch = orphanAll.filter((r) => PATCH_PREFIX.test(r.name));
+  const orphanPatch = orphanAll.filter((r) => PATCH_PREFIX.test(r.name) && !KEEP_TOOL.has(r.name));
   const orphanOdd = orphanAll.filter((r) => !PATCH_PREFIX.test(r.name));
 
   const L = [];
@@ -170,8 +195,28 @@ export function renderIndex(root = ROOT) {
   L.push('|---|---|');
   L.push('| 库 | 在 `scripts/lib/` 下 |');
   L.push('| 门禁 | 出现在 `check.yml` 的 `run: node scripts/<名字>` 里 |');
-  L.push('| 一次性补丁 | 名字以 `fix-` / `add-` / `purge-` / `strip-` / `sync-` / `tag-` / `merge-` / `_` 开头，且不是门禁 |');
+  L.push('| 一次性补丁 | 名字以 `fix-` / `add-` / `purge-` / `strip-` / `sync-` / `tag-` / `merge-` / `_` 开头，且不是门禁，且不在 `KEEP_TOOL` 里 |');
   L.push('| 工具 | 其余 |');
+  L.push('');
+  L.push('⚠ **`KEEP_TOOL` 是例外名单**（v0.195）：前缀只是命名习惯，不是事实。');
+  L.push('`merge-duplicate-relations.mjs` 命中 `merge-`，但 `validate.mjs` 会**建议用户跑它** ⇒ 归档它等于删掉一个出口；');
+  L.push('`tag-script-lifetime.mjs` / `archive-one-offs.mjs` 是**用来维持规范的那几个脚本**（P3 靠它们才过得去）。');
+  L.push('⇒ 凡是「用来维持规范」的脚本都会被自己的守卫先咬到，这是**自指陷阱**，必须显式豁免。');
+  L.push('');
+  L.push('## 写新脚本时（v0.195 起，守卫 `test/scripts-hygiene-guard.mjs` 会查）');
+  L.push('');
+  L.push('1. **文件头必须写明「一次性」还是「长期」**（P3）。分类靠猜 ⇒ 猜错就出事，');
+  L.push('   v0.195 就差点把一个常驻工具归档掉。');
+  L.push('2. 一次性补丁**跑完就归档**（P1）：');
+  L.push('   ```bash');
+  L.push('   node scripts/archive-one-offs.mjs --write');
+  L.push('   ```');
+  L.push('   它会加【已归档】标记（含「结论去哪了」）并搬进 `scripts/archive/`。');
+  L.push('   ⚠ 归档前要确认两件事：结论已落进 `data/*.json` 或 CHANGELOG、没有未提交改动。');
+  L.push('3. 归档文件**必须有【已归档】标记**（P2），否则那个目录会变成没人看得懂的垃圾桶。');
+  L.push('4. 门禁 `run:` 到的脚本**不许被归档**（P4，双向对拍）。');
+  L.push('');
+  L.push('详见 [`scripts/archive/README.md`](archive/README.md)。');
   L.push('');
   L.push('「引用」列的四个标记：');
   L.push('`CI` = 门禁里每轮跑（`run: node scripts/…`）；');

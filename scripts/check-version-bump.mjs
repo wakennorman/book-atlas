@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 「改了前端资源，却忘了 bump `sw.js` 的 `CACHE`」的检查。
  *
  * ## 为什么还需要它（`check-version.mjs` 不够）

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 检查小程序数据包是否与 data/*.json 同步（语义比对，不比字节）
  *
  * 为什么不做"重新生成 + git diff"：

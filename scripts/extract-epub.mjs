@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * EPUB 抽文工具（零依赖：Node 内置 zlib 解 zip）
  * 用法：node scripts/extract-epub.mjs <book.epub> <out.txt> [--split 目录]
  * 输出：按 spine 顺序拼接的纯文本，段落之间用空行分隔，每个文档前加 ==== [序号] 标题 ==== 标记

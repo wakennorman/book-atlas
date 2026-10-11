@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 版本号一致性检查（发布门禁的一步）。
  *
  * 为什么需要它：v0.69–v0.71 连续三轮改了前端却忘了 bump `sw.js` 里的 `CACHE`，

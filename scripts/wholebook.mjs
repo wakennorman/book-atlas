@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 整本生成（命令行版）—— 逐章抽取 → 合并去重 → 写出 data/<slug>.json
  *
  * 和编辑器「整本生成」同一套提示词与合并规则，但跑在 Node 里：

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * AI 草稿生成（只出草稿，必须人工校对 + validate.mjs 校验后才能发布）
  *
  * 用法：

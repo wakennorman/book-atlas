@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * `data/relation-actors-ok.json`（**行为人审计已核台账**）的门禁。
  *
  * ## 这份台账是什么

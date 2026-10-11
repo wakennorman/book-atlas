@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 数据校验：node scripts/validate.mjs data/one-hundred-years-of-solitude.json
  *          node scripts/validate.mjs --all          （校验 data/ 下所有书）
  *

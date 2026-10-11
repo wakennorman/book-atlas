@@ -1,4 +1,5 @@
 /* A3 跨章声明台账（`data/cross-chapter-ok.json`）的**一致性**检查 —— v0.177 新增。
+ * 【长期】发布门禁每轮都跑　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  *
  * ## 台账是什么
  *

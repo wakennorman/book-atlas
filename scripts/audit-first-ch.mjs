@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * firstCh 审计：把 `characters[].firstCh`（首次出场章）与**原著首现章**对拍。
  *
  * ## 为什么需要它

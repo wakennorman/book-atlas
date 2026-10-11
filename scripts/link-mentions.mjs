@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * 【长期】工具：需要时手动跑，跑完不改仓库状态　（v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定）
  * 文案反挂：事件 summary / 关系小事件里提到的人物，自动补进 events[].chars
  *
  * 整本生成时 AI 常把"提到的人"写进文案却忘了放进 chars —— 图上就不会高亮他。
