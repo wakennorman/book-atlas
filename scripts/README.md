@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 60 个 `.mjs`（另加 `scripts/archive/` 58 个）。
+`scripts/` 现在有 62 个 `.mjs`（另加 `scripts/archive/` 58 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -54,17 +54,17 @@
 |---|---|
 | 门禁 | 27 |
 | 库 | 8 |
-| 工具 | 25 |
+| 工具 | 27 |
 | 一次性补丁 | 0 |
-| **合计** | **60** |
+| **合计** | **62** |
 
 ## ⚠ 没进 CI、没被 import、文档里也没提的
 
-共 **8** 个。分两类看，性质完全不同：
+共 **9** 个。分两类看，性质完全不同：
 
 * **0 个是一次性补丁**（名字带补丁前缀）—— 这是**正常的**：
   它们本来就只跑一次，跑完留档当证据，**不需要**被任何东西引用。
-* **7 个不是补丁命名** —— 这几个才值得看一眼：
+* **8 个不是补丁命名** —— 这几个才值得看一眼：
   名字像是"常驻工具"，却既不在门禁、也没被 import、文档里也没提。
   要么它是"还没归档的一次性补丁"，要么它是**真的没人用**。两种情况都值得看一眼，**但别直接删**。
 
@@ -75,6 +75,7 @@
 | `audit-kin-direction.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `find-missing-people.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `name2id.mjs` | 工具 | 人名 → id 解析器。拆书条目里 chars 一律写中文名，由本脚本转成 id。 |
+| `split-bindui.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `verify-quotes.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `verify-wiki-altnames.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 
@@ -132,10 +133,11 @@
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
 | `profile-prefixes.mjs` | import | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
 
-## 工具（25 个）
+## 工具（27 个）
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
+| `add-app-partitions.mjs` | 提及 · import | 【一次性】一次性补丁前缀 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `annotate-kin.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `archive-one-offs.mjs` | — | 归档一次性脚本（v0.195 · 债二 B1 的一次性执行脚本） |
 | `assign-phases.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
@@ -157,6 +159,7 @@
 | `merge-duplicate-relations.mjs` | 文档 | 长期：可反复跑的关系去重工具 —— 不是一次性补丁。 |
 | `name2id.mjs` | — | 人名 → id 解析器。拆书条目里 chars 一律写中文名，由本脚本转成 id。 |
 | `prune.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
+| `split-bindui.mjs` | — | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `tag-script-lifetime.mjs` | — | 【一次性】一次性补丁前缀 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `verify-quotes.mjs` | — | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `verify-wiki-altnames.mjs` | — | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |

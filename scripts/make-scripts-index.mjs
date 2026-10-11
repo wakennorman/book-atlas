@@ -65,6 +65,7 @@ export const KEEP_TOOL = new Set([
   'merge-duplicate-relations.mjs',   // 常驻：validate 报「关系重复」时建议用户跑它
   'tag-script-lifetime.mjs',         // 维护：给脚本补生命周期声明（P3 靠它）
   'archive-one-offs.mjs',            // 维护：归档动作本身（一次性执行）
+  'add-app-partitions.mjs',          // 维护：生成 app.js 分区目录，**改 app.js 就要重跑它**
 ]);
 
 /* 从文件头取"一句话"：第一条含 ≥4 个汉字的注释行

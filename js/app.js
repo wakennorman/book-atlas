@@ -1,6 +1,95 @@
 /* 书脉 BookAtlas · 前端逻辑
  * 数据与渲染分离：每本书一个 JSON，见 data/ 目录。
+ *
+ * ## 分区目录（v0.196 由 scripts/add-app-partitions.mjs 生成，勿手改）
+ *
+ * 这个文件是**单文件**的（纯静态、零构建，见 docs/工程债立项-2026-10-12.md），
+ * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
+ * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
+ *
+ * 文件共 6103 行、260 个顶层符号，68 个分区。
+ *
+ * | 区域 | 起始符号 | 本区符号数 |
+ * |---|---|---|
+ * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 5 |
+ * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
+ * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
+ * | 5. 称谓徽章 | `kinBadge` | 1 |
+ * | 6. 阵营 / 颜色 / 分组 | `cssVar` | 9 |
+ * | 7. 显示设置（色盲配色、字号） | `syncDisplayUI` | 13 |
+ * | 8. 关系过滤（亲缘 / 实虚线） | `passEdgeFilter` | 5 |
+ * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
+ * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
+ * | 11. 启动与数据加载 | `boot` | 2 |
+ * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 7 |
+ * | 13. 下拉与搜索候选 | `comboSub` | 3 |
+ * | 14. 节点大小、分类与排序 | `nodeDegree` | 6 |
+ * | 15. 聚焦（1–2 跳） | `focusSet` | 1 |
+ * | 16. 力导向布局 | `forceLayout` | 5 |
+ * | 17. ECharts option 装配 | `buildOption` | 1 |
+ * | 18. 位置松弛、适配与标签 | `relaxPositions` | 4 |
+ * | 19. 视口记忆与全屏 | `freezeNow` | 8 |
+ * | 20. 代际布局（横 / 纵） | `buildGenerationPositions` | 4 |
+ * | 21. 图注抽稀 | `measureBands` | 2 |
+ * | 22. 视图切换与记忆 | `setView` | 5 |
+ * | 23. 缩放与离屏提示 | `applyZoom` | 7 |
+ * | 24. 人数提示 / 聚焦条 / 提示气泡 | `updateCountHint` | 3 |
+ * | 25. 跳转与清除查询 | `flashTo` | 8 |
+ * | 26. 锁定（只看这一片） | `neighborhoodOf` | 7 |
+ * | 27. 图上点击与栈栏 | `onGraphClick` | 7 |
+ * | 28. 图表初始化与监听清理 | `initChart` | 2 |
+ * | 29. 查找 / 无障碍播报 | `findRel` | 4 |
+ * | 30. 键盘游标 | `focusNode` | 4 |
+ * | 31. 高亮缓存 | `refreshHighlightCaches` | 3 |
+ * | 32. 右栏：锁定态 | `renderLockedPanel` | 1 |
+ * | 33. 右栏：人物 / 关系 / 事件 | `selectCharacter` | 11 |
+ * | 34. 右栏事件委托 | `handlePanelClick` | 1 |
+ * | 35. 截断文字气泡 | `fullTip` | 4 |
+ * | 36. 地点气泡与地点面板 | `placeTip` | 6 |
+ * | 37. 地点筛选 | `applyPlaceFilter` | 1 |
+ * | 38. 人物卡 / 关系卡 / 事件卡 | `renderCharacterPanel` | 3 |
+ * | 39. 两人关系（BFS 最短路） | `bfs` | 3 |
+ * | 40. 重大事件轴 | `renderTimeline` | 1 |
+ * | 41. 拆书素材（分章解读） | `annotationsReady` | 9 |
+ * | 42. 时间旅行 | `timeCeiling` | 4 |
+ * | 43. 章节视图与推进 | `goChapter` | 2 |
+ * | 44. 导出：通用工具 | `jsSafe` | 7 |
+ * | 45. 导出：单文件 HTML | `standaloneBook` | 2 |
+ * | 46. 导出：分享图 PNG | `roundRectPath` | 3 |
+ * | 47. 导出：位置 / 打印版 SVG | `buildGraphSvg` | 2 |
+ * | 48. 导出：toast 与文字换行 | `toast` | 2 |
+ * | 49. 导出：人物卡 PNG | `buildCharacterPng` | 1 |
+ * | 50. AI 讲解：配置 | `aiConfig` | 3 |
+ * | 51. AI 讲解：剧透天花板与上下文 | `aiCeiling` | 3 |
+ * | 52. AI 讲解：提示词与渲染 | `aiPrompt` | 4 |
+ * | 53. AI 讲解：发问与追问 | `aiAsk` | 3 |
+ * | 54. 导出：位图化 | `rasterizeSvg` | 2 |
+ * | 55. 导出：阅读伴侣 EPUB | `epubPage` | 3 |
+ * | 56. 导出：总入口 | `runExport` | 1 |
+ * | 57. 剧透设置 | `syncSpoilerButton` | 4 |
+ * | 58. 「怎么用」演示 | `runHelpAct` | 1 |
+ * | 59. 人物揭示 | `revealChar` | 3 |
+ * | 60. UI 绑定：搜索 / 两人关系 | `bindSearchUI` | 1 |
+ * | 61. UI 绑定：地点筛选 | `bindPlaceFilterUI` | 1 |
+ * | 62. UI 绑定：人数过滤 | `bindSizeFilterUI` | 1 |
+ * | 63. UI 绑定：面板委托 / 折叠 / 显示 | `bindPanelDelegates` | 1 |
+ * | 64. UI 绑定：关系过滤 | `bindEdgeFilterUI` | 1 |
+ * | 65. UI 绑定：画布 / 复位 / 使用说明 | `bindViewControls` | 1 |
+ * | 66. UI 绑定：章节 / 时间旅行 | `bindChapterTimeUI` | 1 |
+ * | 67. UI 绑定：导出 / AI / 主题 | `bindExportAiUI` | 1 |
+ * | 68. UI 绑定总入口（v0.197 由 503 行拆成上面 8 个） | `bindUI` | 1 |
+ *
+ * ⚠ **表里刻意不写行号。** 第一版写了，结果是**假的**：
+ *   插入这些标记本身会让行号整体后移，表里的坐标立刻对不上
+ *   （实测插入后 L19 已经不是「图注量算」，而是这张表自己的一行）。
+ *   ⇒ 一个会骗人的目录比没有目录更糟。改用**符号名**定位：
+ *   在编辑器里搜 `function <符号名>` 就是这一区的开头。
  */
+
+
+
+
 (() => {
   'use strict';
 
@@ -16,6 +105,8 @@
    * ⚠ 别去猜「几个字 × 字号」：「司马·晋」这种带间隔点的实测 40px，「曹魏」只有 23px。 */
   let bandMeasureCtx = null;
   const bandTextWidthCache = new Map();
+  /* ══ 区域 1/68：图注量算与分组图注 ══ */
+
   function bandTextWidth(text) {
     if (bandTextWidthCache.has(text)) return bandTextWidthCache.get(text);
     let w;
@@ -113,6 +204,8 @@
   };
 
   /* ---------------- 工具 ---------------- */
+  /* ══ 区域 2/68：边的基础工具与扇形布局 ══ */
+
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
@@ -285,6 +378,8 @@
    *   ② 失败时没有 slug 校验 ⇒ 书 A 的失败会写到当前已经是书 B 的状态上。
    * 现在是 { slug, status }：状态跟着书走，A 的失败碰不到 B。
    * 顺带把 seq 也带上，这样"切走之前那次请求的结果"也不会回头污染当前书。 */
+  /* ══ 区域 3/68：文案包预取（首屏只下图包，文案空闲时再取） ══ */
+
   function prefetchText(slug, meta, seq) {
     if (!meta.textFile) return;
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
@@ -351,6 +446,8 @@
   const FOLD_ONESTEP = 40;   // 总数 ≤ 此值时一键展开（不分批）
 
   // 折叠段的视图模型：按 state.fold[key] 算当前显示几条、按钮文案与语义
+  /* ══ 区域 4/68：折叠（次要人物默认收起） ══ */
+
   function foldVM(key, n, unit, total) {
     const shown = Math.min(Math.max(state.fold[key] || n, n), total);
     const open = shown > n;
@@ -423,6 +520,8 @@
     blood: '亲生血缘', marriage: '夫妻（婚姻）', inlaw: '姻亲（配偶方亲属）',
     adoptive: '正式收养', foster: '非正式（被谁带大、寄养）', step: '继亲（继父母/继子女）', sworn: '结义／干亲／教父'
   };
+  /* ══ 区域 5/68：称谓徽章 ══ */
+
   const kinBadge = (rel) => {
     const k = rel && rel.kin;
     return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${KIN_LABEL[k]}：${KIN_HINT[k] || ''}">${KIN_LABEL[k]}</span>` : '';
@@ -433,6 +532,8 @@
     f: '<svg class="sex" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="4"/><path d="M8 9.5V15M5.5 12.5h5"/></svg>女',
     m: '<svg class="sex" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="9.5" r="4"/><path d="M9.5 6.5L14.5 1.5M10.5 1.5h4v4"/></svg>男'
   };
+  /* ══ 区域 6/68：阵营 / 颜色 / 分组 ══ */
+
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
   const charName = (id) => state.byId.get(id)?.name || id;
@@ -469,6 +570,8 @@
     const f = state.book && state.book.factions.find((x) => x.key === key);
     return (f && f.color) || '#8b94a7';
   };
+  /* ══ 区域 7/68：显示设置（色盲配色、字号） ══ */
+
   function syncDisplayUI() {
     document.body.dataset.fontsize = state.fontSize;
     document.querySelectorAll('[data-palette]').forEach((el) => el.classList.toggle('on', (el.dataset.palette === 'a11y') === !!state.a11yPalette));
@@ -507,6 +610,8 @@
     if (k === 'sworn') return 'sworn';
     return 'none';
   };
+  /* ══ 区域 8/68：关系过滤（亲缘 / 实虚线） ══ */
+
   const passEdgeFilter = (r) => {
     if (!r) return true;
     if (state.edgeStyles.size && !state.edgeStyles.has(styleOf(r))) return false;
@@ -537,6 +642,8 @@
     updateCountHint();
   }
   // 折叠：mentioned（没出场）/ minor（只跟一两个人有关系，大书里默认收起）——被高亮/搜索命中时照样显示
+  /* ══ 区域 9/68：可见性与地点筛选 ══ */
+
   const isCharHidden = (c) => {
     if (!c) return false;
     if (state.hlNodes.has(c.id)) return false;
@@ -558,6 +665,8 @@
 
   /* ---------------- 剧透保护（按章节进度锁定） ---------------- */
   const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
+  /* ══ 区域 10/68：剧透：登场章 / 时间旅行判定 ══ */
+
   const charCh = (c) => (typeof c?.firstCh === 'number' ? c.firstCh : (chOf(c?.chapter) || 0));
   /* 关系/人物的最后出场章：随书确定、整个会话内不变 ⇒ 在 loadBook 里一次算好存成 Map。
    * 原来是每次调用都全扫 events + relations（三国 ≈ 2900 次迭代），而它被 tooltip 的
@@ -641,6 +750,8 @@
   };
 
   /* ---------------- 数据加载 ---------------- */
+  /* ══ 区域 11/68：启动与数据加载 ══ */
+
   async function boot() {
     const inline = window.__BA_STANDALONE_BOOK;
     if (inline) {
@@ -835,6 +946,8 @@
   }
 
   /* ---------------- 头部 / 图例 / 表单 ---------------- */
+  /* ══ 区域 12/68：页眉 / 图例 / 页脚 ══ */
+
   function renderHeader() {
     const b = state.book, m = b.meta || {};
     const catalog = state.books.find((x) => x.slug === m.slug) || {};
@@ -965,6 +1078,8 @@
 
   /* ---------------- 输入+下拉（combobox）：搜单个人物 / 两人关系 A、B 共用 ----------------
      选中结果写进 input.dataset.id（精确 id——百年孤独世代重名，按名字找会取错第几个） */
+  /* ══ 区域 13/68：下拉与搜索候选 ══ */
+
   function comboSub(c) {
     const parts = [];
     if (state.groupMode === 'generation') parts.push(genText(c.generation));
@@ -1129,6 +1244,8 @@
   }
 
   /* ---------------- 图表 ---------------- */
+  /* ══ 区域 14/68：节点大小、分类与排序 ══ */
+
   function nodeDegree(id) { return state.adj.get(id)?.length || 0; }
   // 大小＝关系条数（开方压缩：曹操和只有 4 条关系的人也能看出差别，又不至于顶到天花板）
   // 缓存起来：这个函数在松弛/标签里会被调用几十万次
@@ -1168,6 +1285,8 @@
   }
 
   /* —— 聚焦：只看某人 N 跳以内 —— */
+  /* ══ 区域 15/68：聚焦（1–2 跳） ══ */
+
   function focusSet() {
     if (!state.focus) return null;
     // v85：缓存键要带上 showDerived —— 它现在参与集合计算了（见下面的 relVisible 判断），
@@ -1206,6 +1325,8 @@
    *
    * ⚠ shared/graph-core.js 里有一份逐行对应的实现，test/parity.mjs 会对拍；
    *   网页版不是 ES module，graph-core 不会被打进页面，所以这里是手抄的那份。 */
+  /* ══ 区域 16/68：力导向布局 ══ */
+
   function forceLayout(n, links, seed) {
     const xs = new Float64Array(n), ys = new Float64Array(n);
     const disp = new Float64Array(n * 2);
@@ -1338,6 +1459,8 @@
     const set = focusSet();
     return !set || set.has(id) || (state.hlNodes && state.hlNodes.has(id));   // 聚焦模式下点事件，事件人物也要能显示
   };
+
+  /* ══ 区域 17/68：ECharts option 装配 ══ */
 
   function buildOption(opts = {}) {
     const b = state.book;
@@ -1689,6 +1812,8 @@
   }
 
   /** 防重叠松弛：网格邻域 + 数组局部运算（不再每对都查 Map / 重算节点尺寸） */
+  /* ══ 区域 18/68：位置松弛、适配与标签 ══ */
+
   function relaxPositions(iterations = 140) {
     if (state.pos.size < 2) return;
     const nodes = [];
@@ -1869,6 +1994,8 @@
       }
     }
   }
+
+  /* ══ 区域 19/68：视口记忆与全屏 ══ */
 
   function freezeNow() {
     if (state.frozen || !state.chart) return;
@@ -2061,6 +2188,8 @@
     });
   }
 
+  /* ══ 区域 20/68：代际布局（横 / 纵） ══ */
+
   function buildGenerationPositions(view) {
     const rect = document.getElementById('graph').getBoundingClientRect();
     const W = rect.width || 900, H = rect.height || 600;
@@ -2249,6 +2378,8 @@
    *
    * @returns {{stride:number, inside:boolean}} stride = 抽稀步长；inside = 图注翻到内容内侧
    */
+  /* ══ 区域 21/68：图注抽稀 ══ */
+
   function measureBands() {
     if (state.view === 'force' || !state.bands || state.bands.size < 2) {
       state.bandStride = 1; state.bandInside = false; return { stride: 1, inside: false };
@@ -2319,6 +2450,8 @@
       state.chart.setOption(buildOption({ keepView: true }), { notMerge: true });
     }
   }
+
+  /* ══ 区域 22/68：视图切换与记忆 ══ */
 
   function setView(view, opts = {}) {
     state.view = view;
@@ -2481,6 +2614,8 @@
   }
 
   /** 缩放到指定倍率（1:1 = 节点原始大小），可指定视角中心 */
+  /* ══ 区域 23/68：缩放与离屏提示 ══ */
+
   function applyZoom(zoom, center) {
     if (!state.chart) return;
     state.zoom = Math.max(0.02, Math.min(40, zoom || 1));
@@ -2712,6 +2847,8 @@
   }
 
   /* ---------------- 聚焦 / 人数过滤（无限画布的两个"放大镜"） ---------------- */
+  /* ══ 区域 24/68：人数提示 / 聚焦条 / 提示气泡 ══ */
+
   function updateCountHint() {
     const el = document.getElementById('count-hint');
     if (!el || !state.book) return;
@@ -2759,6 +2896,8 @@
   let navTimer = 0;
   /** block 默认 'start'（不是 'nearest'）：档案/关系链面板动辄 2000px 高，'nearest' 会把它的**底边**
    *  对齐视口、让人落在面板末尾；'start' 才是"导航到这个条目的开头"。事件卡小，另传 'center'。 */
+  /* ══ 区域 25/68：跳转与清除查询 ══ */
+
   function flashTo(el, block = 'start', ms = 2400) {
     if (!el) return;
     clearTimeout(navTimer);
@@ -2858,6 +2997,8 @@
   /** v93：一组起点各自的 depth 跳邻域的并集。
    *  原来只有"人物导航"一种，centerId 是单个 id；现在关系（两端）、事件（在场若干人）
    *  也要按同样的口径展开，不能各写一份 BFS —— 口径漂移过一次（见上面 neighborhoodNodes 的注释）。 */
+  /* ══ 区域 26/68：锁定（只看这一片） ══ */
+
   function neighborhoodOf(seeds, depth) {
     const set = new Set();
     for (const id of seeds) {
@@ -2964,6 +3105,8 @@
    *  之前测"图内点击保留原锁"只能新写一份等价代码 —— 那是拿自己的副本测自己，绿了也不算数。
    *  （合成点击事件这条路本身是堵死的：压缩版把 `__ecData` 改名成 `__ec_inner_N`，
    *    N 每次运行都不同，没有稳定可用的字段；详见 test/lock.mjs 里那段说明。） */
+  /* ══ 区域 27/68：图上点击与栈栏 ══ */
+
   function onGraphClick(p) {
     if (!p || !p.data) return;
     if (p.dataType === 'node' && String(p.data.id || '').startsWith('__gen_')) return;
@@ -3086,6 +3229,8 @@
     }
     updateCountHint();
   }
+
+  /* ══ 区域 28/68：图表初始化与监听清理 ══ */
 
   function initChart() {
     const el = $('#graph');
@@ -3237,6 +3382,8 @@
   }
 
   /** 找关系：同一对人可能有多条（阶段关系）——优先按"边上写的类型 + 当前时间可见"匹配 */
+  /* ══ 区域 29/68：查找 / 无障碍播报 ══ */
+
   function findRel(a, b, type, idx) {
     /* 优先按下标精确定位。
      * 同一对之间可能有**类型完全相同**的多条关系：实测刘备—诸葛亮有两条「君臣军师」
@@ -3279,6 +3426,8 @@
     const el = document.getElementById('graph');
     if (el) el.setAttribute('aria-label', graphAriaLabel());
   }
+  /* ══ 区域 30/68：键盘游标 ══ */
+
   function focusNode(id) {
     state.kbCursor = id;
     const p = state.pos.get(id);
@@ -3338,6 +3487,8 @@
     if (!state.chipEls || !state.chipEls.length) state.chipEls = document.querySelectorAll('.event-chip');
     return state.chipEls;
   }
+  /* ══ 区域 31/68：高亮缓存 ══ */
+
   function refreshHighlightCaches() { state.legendEls = null; state.chipEls = null; }
 
   function setHighlight(nodes, edges, activeCharId, eventId) {
@@ -3369,6 +3520,8 @@
     if (updateVisual && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
+  /* ══ 区域 32/68：右栏：锁定态 ══ */
+
   function renderLockedPanel(kind, item) {
     const ch = kind === 'character' ? charCh(item) : (item.ch || 0);
     panel().innerHTML = `
@@ -3383,6 +3536,8 @@
 
   /** nav=true（默认）：把右栏档案滚进视野并闪烁提示。键盘方向键浏览（focusNode）传 false，
    *  否则连按方向键会一路狂闪 —— 浏览是连续的，只有"打开"动作才值得提示一次。 */
+  /* ══ 区域 33/68：右栏：人物 / 关系 / 事件 ══ */
+
   function selectCharacter(id, nav = true) {
     const c = state.byId.get(id);
     if (!c) return;
@@ -3529,6 +3684,8 @@
   function bindGoto(root) { /* 委托已全局注册，这里无需再绑 */ void root; }
 
   /** 右栏/章节面板的委托点击处理（在 bindUI 里注册一次） */
+  /* ══ 区域 34/68：右栏事件委托 ══ */
+
   function handlePanelClick(ev) {
     const goto = ev.target.closest('[data-goto]');
     if (goto) {
@@ -3575,6 +3732,8 @@
    * 用法：给会被剪掉的元素加 `data-tip-full`（可选值＝自定义文案，默认取 textContent）。
    */
   let fullTipEl = null, fullTipOwner = null;
+  /* ══ 区域 35/68：截断文字气泡 ══ */
+
   function fullTip() {
     if (!fullTipEl) {
       fullTipEl = document.createElement('div');
@@ -3633,6 +3792,8 @@
    * 一个委托监听器搞定，不给每个地点挂闭包（v85 已经因此吃过亏：曹操那种枢纽人物
    * 一次渲染几百个 listener，只增不减）。 */
   let placeTipEl = null;
+  /* ══ 区域 36/68：地点气泡与地点面板 ══ */
+
   function placeTip() {
     if (!placeTipEl) {
       placeTipEl = document.createElement('div');
@@ -3732,6 +3893,8 @@
     bindGoto(panel());
   }
 
+  /* ══ 区域 37/68：地点筛选 ══ */
+
   function applyPlaceFilter(id) {
     state.placeFilter = id || null;
     // v93：输入框的显示值统一交给 renderPlaceSelect（那边还要处理"这个地点已不可见"的情况）
@@ -3761,6 +3924,8 @@
     lockFromHighlight((placeName(state.placeFilter) || '这个地点'), 'place', [...nodes], false);
     renderPlacePanel(state.placeFilter, state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e)));
   }
+
+  /* ══ 区域 38/68：人物卡 / 关系卡 / 事件卡 ══ */
 
   function renderCharacterPanel(c) {
     const faction = state.book.factions.find((f) => f.key === effectiveFactionKey(c));
@@ -3870,6 +4035,8 @@
   }
 
   /* ---------------- 两人关系（BFS） ---------------- */
+  /* ══ 区域 39/68：两人关系（BFS 最短路） ══ */
+
   function bfs(fromId, toId) {
     if (fromId === toId) return [];
     const prev = new Map([[fromId, null]]);
@@ -3946,6 +4113,8 @@
   }
 
   /* ---------------- 事件轴 ---------------- */
+  /* ══ 区域 40/68：重大事件轴 ══ */
+
   function renderTimeline() {
     const el = $('#timeline');
     const phases = [...state.book.phases].sort((a, b) => a.order - b.order);
@@ -3981,6 +4150,8 @@
    *   global  —— 全书层面的拆解（结构、反复出现的技术等）
    * 章节模式受剧透保护约束（拆书内容本身就是剧透）。
    */
+  /* ══ 区域 41/68：拆书素材（分章解读） ══ */
+
   function annotationsReady() {
     return !!(state.anno && Array.isArray(state.anno.items));
   }
@@ -4149,6 +4320,8 @@
   }
 
   /* ---------------- 时间旅行：UI 与重绘 ---------------- */
+  /* ══ 区域 42/68：时间旅行 ══ */
+
   function timeCeiling() {
     const total = maxChapter() || 1;
     return state.progress === null ? total : Math.min(total, state.progress);
@@ -4217,6 +4390,8 @@
     updateCountHint();
     refreshPanel();
   }
+
+  /* ══ 区域 43/68：章节视图与推进 ══ */
 
   function goChapter(n) {
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(n) || 1));
@@ -4293,6 +4468,8 @@
 
   /* ---------------- 导出 / 分享（单文件 HTML / 分享图 PNG / 打印版 SVG / 数据 JSON） ---------------- */
   const SITE_URL = 'wakennorman.github.io/book-atlas';
+  /* ══ 区域 44/68：导出：通用工具 ══ */
+
   const jsSafe = (s) => String(s).replace(/<\/script/gi, '<\\/script');
   const xmlEsc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch]));
   const slugOf = () => state.book?.meta?.slug || 'book';
@@ -4330,6 +4507,8 @@
    * 只按"剧透进度 + 时间旅行"裁剪（这是唯一会造成剧透的两个维度）；人数/次要人物/地点/聚焦
    * 属于视图筛选，内联完整数据让对方能自己筛，反而更有用。
    */
+  /* ══ 区域 45/68：导出：单文件 HTML ══ */
+
   function standaloneBook() {
     const b = state.book;
     const keepChars = b.characters.filter((c) => !charLocked(c) && charVisibleAt(c));
@@ -4389,6 +4568,8 @@
       `  <span class="foot-row"><b>导出</b>本文件由《书脉 BookAtlas》导出（${esc(SITE_URL)}）</span>\n</footer>`);
     return html;
   }
+
+  /* ══ 区域 46/68：导出：分享图 PNG ══ */
 
   function roundRectPath(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -4493,6 +4674,8 @@
   /** 关系图的矢量渲染（打印页 / 分享图共用）
    *  page=true：A3 横向打印页（标题 + 图例 + 页脚）
    *  page=false：只出图，画布贴着图形包围盒（分享图内嵌用，不受用户当前缩放影响） */
+  /* ══ 区域 47/68：导出：位置 / 打印版 SVG ══ */
+
   function buildGraphSvg({ page = true } = {}) {
     if (!state.book) return '';
     if (!state.pos.size && state.chart) freezeNow();
@@ -4589,6 +4772,8 @@
   function buildPrintSvg() { return buildGraphSvg({ page: true }); }
 
   /** 轻提示（导出成功/失败等短消息） */
+  /* ══ 区域 48/68：导出：toast 与文字换行 ══ */
+
   function toast(msg, ms = 2800) {
     let el = document.getElementById('ba-toast');
     if (!el) { el = document.createElement('div'); el.id = 'ba-toast'; document.body.appendChild(el); }
@@ -4620,6 +4805,8 @@
   }
 
   /** 人物卡 PNG（返回 dataURL）：身份 / 结局 / 关键关系（带依据事件）；吃剧透保护与关系过滤 */
+  /* ══ 区域 49/68：导出：人物卡 PNG ══ */
+
   async function buildCharacterPng(id) {
     const c = state.byId.get(id);
     if (!c) return '';
@@ -4719,6 +4906,8 @@
    * 所以只对**这两个已进入弃用流程的名字**做一次性迁移，别的一律不动。 */
   const AI_DEFAULT_MODEL = 'deepseek-flash';
   const AI_DEPRECATED_MODELS = { 'deepseek-chat': 'deepseek-flash', 'deepseek-reasoner': 'deepseek-reasoner' };
+  /* ══ 区域 50/68：AI 讲解：配置 ══ */
+
   const aiConfig = () => {
     try {
       let model = localStorage.getItem('ba-ai-model') || AI_DEFAULT_MODEL;
@@ -4765,6 +4954,8 @@
   }
 
   /** 讲解的"进度上限"：剧透保护与时间旅行取更小的那个；都没有＝全书 */
+  /* ══ 区域 51/68：AI 讲解：剧透天花板与上下文 ══ */
+
   const aiCeiling = () => {
     const cands = [state.progress, asOf()].filter((x) => typeof x === 'number');
     return cands.length ? Math.min(...cands) : (maxChapter() || 1);
@@ -4818,6 +5009,8 @@
   const AI_LABEL_RE = /^[\s【[]*(据本书资料|补充)[\s】\]]*[：:·・.、]?\s*(.*)$/;
 
   /** 组装提示词（测试也用它，便于断言"资料里没有未来信息"） */
+  /* ══ 区域 52/68：AI 讲解：提示词与渲染 ══ */
+
   function aiPrompt(kind, payload) {
     const ceiling = aiCeiling();
     const total = maxChapter() || 1;
@@ -4940,6 +5133,8 @@
   }
 
   /** 发一轮请求。turns 追加在 aiThread 上；不传 kind/payload 时＝追问上一轮。 */
+  /* ══ 区域 53/68：AI 讲解：发问与追问 ══ */
+
   async function aiAsk(kind, payload, question) {
     const cfg = aiConfig();
     if (!cfg.key) { openAiModal('还没有配置 API Key —— 填好之后再点一次「🤖 讲一遍」就行。'); return; }
@@ -4995,6 +5190,8 @@
   /* ---------------- 阅读伴侣 EPUB（可传进微信读书：只含整理数据，不含原著正文） ---------------- */
   /** SVG 光栅化成图片（EPUB 里放；顺带把宽度限制住，别让文件太大）
    *  type: 'png' | 'jpeg' —— 线稿+文字用 JPEG 体积小得多（EPUB 里够清楚） */
+  /* ══ 区域 54/68：导出：位图化 ══ */
+
   function rasterizeSvg(svg, scale = 2, maxW = 2000, type = 'image/jpeg', quality = 0.9) {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -5023,6 +5220,8 @@
     for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     return u8;
   }
+
+  /* ══ 区域 55/68：导出：阅读伴侣 EPUB ══ */
 
   function epubPage(title, body) {
     return `<?xml version="1.0" encoding="utf-8"?>
@@ -5194,6 +5393,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     return state.textStatus && state.textStatus.status === 'done';
   }
 
+  /* ══ 区域 56/68：导出：总入口 ══ */
+
   async function runExport(kind) {
     if (!state.book) return;
     const hint = document.getElementById('export-hint');
@@ -5243,6 +5444,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   }
 
   /* ---------------- 剧透保护 UI ---------------- */
+  /* ══ 区域 57/68：剧透设置 ══ */
+
   function syncSpoilerButton() {
     const btn = document.getElementById('spoiler-btn');
     if (!btn) return;
@@ -5288,6 +5491,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
 
   /* ---------------- 搜索 / 主题 / 事件绑定 ---------------- */
   /* ---------------- 使用说明的「试一下」：直接用当前这本书在图上演示 ---------------- */
+  /* ══ 区域 58/68：「怎么用」演示 ══ */
+
   function runHelpAct(act) {
     if (!state.book || !state.chart) return;
     const ranked = (n) => (state.book.characters || []).slice().sort((a, b) => nodeDegree(b.id) - nodeDegree(a.id))[n] || null;
@@ -5387,6 +5592,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   }
 
   /** 被折叠的人物：自动展开层级（次要/提及）再定位——搜索永远找得到 */
+  /* ══ 区域 59/68：人物揭示 ══ */
+
   function revealChar(c) {
     if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch { /* 忽略 */ } }
     if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch { /* 忽略 */ } }
@@ -5407,7 +5614,33 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     lockFromHighlight(c.name, 'search', [c.id], true);
   }
 
-  function bindUI() {
+  /* ---------------- 族谱补全按钮（bindPanelDelegates 与 bindEdgeFilterUI 都要用） ---------------- */
+  /* ⚠ v0.197：拆分 bindUI 时扫出来的**第二个**跨函数局部变量。
+     第一个是 clearQueryInputs（定义于搜索块、被「复位视图」与「重置」两块调用）。
+     ⚠ 我第一次只扫出「34/35 个局部变量都在本块内」，漏了这个 ——
+       漏因：那次按**注释块**切分，而 derivedBtn 与 syncDerivedBtn 落在**同一块**里、
+       而用它的 bindEdgeFilterUI 是**另一个块** ⇒ 老口径看不见「跨块」这件事。
+       ⇒ 改用「每个函数内声明的局部变量 × 其他函数的函数体」两两对拍才兜住；
+         ESLint 的 no-undef 也报了同一个（`5900:7 error syncDerivedBtn is not defined`）。
+     这两个提到顶层，因为它们本来就只读 DOM + state，不依赖任何局部状态。 */
+  const derivedBtn = document.getElementById('derived-btn');
+  const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'; };
+
+  /* ---------------- 清空查询框（bindSearchUI 与 bindViewControls 都要用） ---------------- */
+  /* ⚠ v0.197：它原先是 bindUI 内的局部 const，是那个函数里**唯一**被跨块引用的局部变量
+     （定义于搜索块、被「复位视图」与「重置」两块调用）⇒ 拆成独立函数后就够不到了，
+     只能提到顶层。**这是本次拆分里唯一一处改变作用域的动作**，也是唯一有真实风险的点。 */
+    // v82：「重置 / 复位视图」把查询词一起清掉——残留的查询词只要一按回车就会立刻重新上锁、锁条又回来
+    //      （v89：查询词清掉后锁还在，得再按一次「重置」才真解除 —— 这里只管清词，解锁是各自的事）
+    const clearQueryInputs = () => {
+      clearSearchQuery();
+      clearPathQuery();
+    };
+
+  /* ---------------- 搜索 / 两人关系输入 / 标签按钮 ---------------- */
+  /* ══ 区域 60/68：UI 绑定：搜索 / 两人关系 ══ */
+
+  function bindSearchUI() {
     const search = $('#search-input');
     const doSearch = () => {
       const q = search.value.trim();
@@ -5457,12 +5690,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     attachCombo(pathA, { kind: 'path', onEnter: () => runPath() });
     attachCombo(pathB, { kind: 'path', onEnter: () => runPath() });
 
-    // v82：「重置 / 复位视图」把查询词一起清掉——残留的查询词只要一按回车就会立刻重新上锁、锁条又回来
-    //      （v89：查询词清掉后锁还在，得再按一次「重置」才真解除 —— 这里只管清词，解锁是各自的事）
-    const clearQueryInputs = () => {
-      clearSearchQuery();
-      clearPathQuery();
-    };
 
     const labelBtn = $('#label-btn');
     labelBtn.addEventListener('click', () => {
@@ -5472,6 +5699,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     });
 
+  }
+
+  /* ---------------- 地点筛选（自建 combo） ---------------- */
+  /* ══ 区域 61/68：UI 绑定：地点筛选 ══ */
+
+  function bindPlaceFilterUI() {
     /* v93：地点筛选＝自建 combo（原来是原生 select）。
      * ① 选中候选 → 立刻按该地点筛选；
      * ② 框里被清空 → 取消筛选（和搜索框一致的直觉，也免得留着旧词误导）；
@@ -5546,6 +5779,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       renderPlaceSelect();
     }
 
+  }
+
+  /* ---------------- 人数过滤（大书只看主要人物） ---------------- */
+  /* ══ 区域 62/68：UI 绑定：人数过滤 ══ */
+
+  function bindSizeFilterUI() {
     // 人数过滤（大书：只看主要人物）
     const sizeSel = document.getElementById('size-filter');
     if (sizeSel) {
@@ -5553,6 +5792,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       sizeSel.addEventListener('change', () => applySizeFilter(sizeSel.value));
     }
 
+  }
+
+  /* ---------------- 面板事件委托 / 折叠 / 族谱补全 / 显示设置 ---------------- */
+  /* ══ 区域 63/68：UI 绑定：面板委托 / 折叠 / 显示 ══ */
+
+  function bindPanelDelegates() {
     // 聚焦条 / 聚焦按钮（事件委托，面板和聚焦条都能点）
     document.addEventListener('click', (ev) => {
       const go = ev.target.closest('[data-focus-node]');
@@ -5597,8 +5842,6 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     syncMinorBtn();
 
     // 族谱补全（推导出来的祖孙/叔侄连线）
-    const derivedBtn = document.getElementById('derived-btn');
-    const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'; };
     if (derivedBtn) derivedBtn.addEventListener('click', () => {
       state.showDerived = !state.showDerived;
       try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch { /* 忽略 */ }
@@ -5623,6 +5866,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       });
     }
 
+  }
+
+  /* ---------------- 关系过滤（亲缘桶 + 线条样式 + 预设） ---------------- */
+  /* ══ 区域 64/68：UI 绑定：关系过滤 ══ */
+
+  function bindEdgeFilterUI() {
     // 关系过滤（边的类型）：亲缘桶 + 线条样式 + 快捷预设
     const epPanel = document.getElementById('edge-filter-panel');
     if (epPanel) {
@@ -5689,6 +5938,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.querySelectorAll('.seg').forEach((btn) => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
+  }
+
+  /* ---------------- 画布自救 / 复位 / 人物卡 / 使用说明 ---------------- */
+  /* ══ 区域 65/68：UI 绑定：画布 / 复位 / 使用说明 ══ */
+
+  function bindViewControls() {
     // v90：画布被拖出视野时的自救出口
     const offBtn = $('#offview-btn');
     if (offBtn) offBtn.addEventListener('click', () => { if (state.clickLock) fitLockView(); else resetRoam(); });
@@ -5781,6 +6036,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       clearHighlight();
     });
 
+  }
+
+  /* ---------------- 长列表展开 / 聚焦条跟随 / 章节 / 时间旅行 ---------------- */
+  /* ══ 区域 66/68：UI 绑定：章节 / 时间旅行 ══ */
+
+  function bindChapterTimeUI() {
     // 聚焦条/锁定条跟随图区位置（passive + rAF 节流）
     let barTick = false;
     const scheduleBars = () => { if (barTick) return; barTick = true; requestAnimationFrame(() => { barTick = false; stackBars(); }); };
@@ -5852,6 +6113,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const graphEl = document.getElementById('graph');
     if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch { /* 忽略 */ } });
 
+  }
+
+  /* ---------------- 图上聚焦 / 导出 / AI 讲解 / 主题 ---------------- */
+  /* ══ 区域 67/68：UI 绑定：导出 / AI / 主题 ══ */
+
+  function bindExportAiUI() {
     // 导出 / 分享
     // v85：导出与 AI 的逻辑本来就内联在本文件里，原先 js/export.js / js/ai.js 是同一套逻辑的第二份手抄
     // （且那份把 buildCompanionEpub() 的返回对象当字节数组塞进 Blob，EPUB 直接坏掉），已删除。
@@ -5909,6 +6176,23 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     };
     themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme !== 'dark'));
     setTheme(localStorage.getItem('ba-theme') === 'dark');
+  }
+
+  /* ---------------- 绑定所有控件（v0.197：由 503 行拆成 8 个函数） ---------------- */
+  /* ⚠ **调用顺序不能改**：document 级委托是后注册的会盖掉先注册的，
+     顺序错了会**静默失效**（表现为「点了没反应」，不报错）。
+     各段在原 bindUI 里本来就是这个先后，拆分时按原样保留。 */
+  /* ══ 区域 68/68：UI 绑定总入口（v0.197 由 503 行拆成上面 8 个） ══ */
+
+  function bindUI() {
+    bindSearchUI();
+    bindPlaceFilterUI();
+    bindSizeFilterUI();
+    bindPanelDelegates();
+    bindEdgeFilterUI();
+    bindViewControls();
+    bindChapterTimeUI();
+    bindExportAiUI();
   }
 
   /* ---------------- 启动 ---------------- */
