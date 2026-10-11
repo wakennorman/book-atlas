@@ -106,10 +106,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs scripts/check-ledger-quotes.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/fix-anno-declare.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/fix-first-ch.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/fix-marmeladov-kin.mjs scripts/audit-relation-actors.mjs scripts/check-dup-names-ledger.mjs scripts/lib/dup-names.mjs scripts/fix-dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -763,6 +763,21 @@ jobs:
         # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），
         #   直接 import `checkLedgerQuotes(root, {sourceDir})`，在 tmp 里造最小 data/ 与假 txt。
         run: node test/ledger-quotes-guard.mjs
+
+      - name: 噪声台账读取库的守卫（防「库写了、忘了接」）
+        # v0.183 新增。`audit-search.mjs` 的 ③ 现在读 `data/<slug>.missing-ok.json`，
+        # 读取逻辑放在 `scripts/lib/missing-ok.mjs`（本文件顶层就干活，守卫不能反过来 import 它）。
+        #
+        # 本仓库最常见的病是「判据/库写了、忘了接」—— 测试也绿，可消费方压根没 import。
+        # `test/gate-claims.mjs` 守的是"注释自称的守卫必须在 run 步骤里"；
+        # 这里守的是更靠里的一层：**lib 必须真的被它声称的那个脚本用上**。
+        # 24 条断言：读取 6 + **缺/坏名单必须能区分** 5 + 过滤 4 + 接线 4 + 入口卫生 3 + 真实仓库形状 1。
+        # 值得单说的两条：
+        #   · **名单 JSON 坏了 ⇒ 报 error，而不是静默当空名单** ——
+        #     静默会让**判过的噪声全部复活**，且现象是"报告变多"，看着像有新缺口；
+        #   · 过滤**只认精确相等、不认子串**（与 check-missing-ok 的 M6 同一口径）。
+        # ⚠ 同其余守卫：**刻意不起子进程**（本机 spawnSync 一律 EBUSY），直接 import 判据。
+        run: node test/missing-ok-lib-guard.mjs
 
       - name: 守卫卫生（`test/*-guard.mjs` 自己那一族的类级不变量）
         # v0.180 新增。起因：v0.177/178/179 连着三轮把守卫从「起子进程看退出码」

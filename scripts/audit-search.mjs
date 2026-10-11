@@ -5,7 +5,11 @@
  * 查四件事：
  *   ① 别名覆盖率：有关系但没别名的"主要人物"（读者按字号/简称/译名搜都搜不到）
  *   ② 译名变体：同一人物在不同译本里的写法（内置音译差异表，缺的可以 --write 自动补）
- *   ③ 疑似漏人：全书文案里出现的"姓氏+1~2字"人名，但书里没有这个人物（按出现次数排序，人工确认）
+ *   ③ 文案里的"姓氏+名"：**⚠ 不是漏人检测器**（v0.183 实测，见文件末提示）。
+ *      它扫的是**本项目自己写的文案**，`[百家姓][\u4e00-\u9fa5]{1,2}` 切出来的多半是
+ *      **跨词边界的叙述碎片**（`黄巾起`/`平要术`/`诸侯讨`/`伏兵杀`）。
+ *      **要找漏人请跑 `audit-against-text.mjs`**（扫原著正文，那才是缺口检测器）。
+ *      已判过的噪声按 `data/<slug>.missing-ok.json` 过滤（语义与语料无关，见 lib/missing-ok.mjs）。
  *   ④ 同名重复：去掉括号补充后名字相同的多个人物（可能是同一人被拆成两条，也可能是真重名）
  *
  * 用法：
@@ -24,6 +28,9 @@ import path from 'node:path';
  *   import 它会把主流程也跑一遍，而开头 `if (!files.length) { … process.exit(1) }`
  *   在门禁的 process.argv 下必然为空 ⇒ 门禁直接被 exit 1 掉。 */
 import { baseName, dupeGroups } from './lib/dup-names.mjs';
+/* ③ 的噪声过滤读 `data/<slug>.missing-ok.json`（v0.183）。同样抽成 lib 供守卫 import ——
+   理由与 `lib/dup-names.mjs` 一样：本文件顶层就干活，门禁/守卫不能反过来 import 它。 */
+import { loadMissingOk, dropAdjudicated } from './lib/missing-ok.mjs';
 
 const argv = process.argv.slice(2);
 const write = argv.includes('--write');
@@ -100,7 +107,17 @@ for (const file of files) {
     if (/[的地得了着是不在有和与及然后里上下之]/.test(name)) continue;
     cand.set(name, (cand.get(name) || 0) + 1);
   }
-  const candTop = [...cand.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, candLimit);
+  const candAll = [...cand.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]);
+
+  /* ③.1 扣掉「噪声忽略名单」里**已判过**的那些（v0.183）
+   *
+   * ⚠ 台账的语义是「这个字符串不是人名」，与语料无关 ⇒ 可以在我们自己的文案上复用。
+   *   但它**只能挡掉已判过的**：实测三国 656 条里只挡 91 条（14%）。
+   * ⚠ 挡掉了多少**必须打印**（v0.173：不打印"挡掉了什么"，绿就等于装饰品）。 */
+  const ledger = loadMissingOk(path.join(process.cwd(), 'data'), path.basename(file).replace(/\.json$/, ''));
+  if (ledger.error) console.error(`  ⚠ ${ledger.error}\n     ⇒ 本书 ③ 的噪声过滤**未生效**（不能当成空名单，那会让判过的噪声全部复活）`);
+  const { kept: candKept, dropped: candDropped } = dropAdjudicated(candAll, ledger.names);
+  const candTop = candKept.slice(0, candLimit);
 
   /* ② 译名变体：名字/别名/**又译**里有 A 形式但缺 B 形式
    * ⚠ v0.96：`altNames` 也进池子。不进的话会**误报**：
@@ -130,7 +147,16 @@ for (const file of files) {
   console.log(`\n▶ ${path.basename(file)}（${chars.length} 人 / ${rels.length} 关系）`);
   console.log(`  ① 主要人物但没别名：${noAlias.length} 人` + (noAlias.length ? ` → ${noAlias.slice(0, 12).map((c) => `${c.name}(${deg.get(c.id)})`).join('、')}${noAlias.length > 12 ? ' …' : ''}` : ''));
   console.log(`  ② 缺译名变体：${missingVariants.length} 处` + (missingVariants.length ? ` → ${missingVariants.slice(0, 8).map((m) => `${m.c.name}⇒${m.variant}`).join('、')}${missingVariants.length > 8 ? ' …' : ''}` : ''));
-  console.log(`  ③ 疑似漏人（出现≥2次的"姓氏+名"）：${candTop.length} 个 → ${candTop.slice(0, 16).map(([n, k]) => `${n}×${k}`).join('、')}${candTop.length > 16 ? ' …' : ''}`);
+  /* ⚠ v0.183：**措辞改了**。③ 在**我们自己写的文案**上跑 `[百家姓][\u4e00-\u9fa5]{1,2}`，
+   * 切出来的绝大多数是**跨词边界的叙述碎片**，不是人名。实测三国扣掉台账后剩 406 条，
+   * 与原著检测器重合的只有 5 条（其余 401 条如 `黄巾起`/`平要术`/`诸侯讨`/`伏兵杀`）。
+   * 而 `audit-against-text.mjs` 靠的"出现在已知人物 ±90 字内"那条精度信号，
+   * 在我们文案上**一条都砍不掉**（0/565）—— 我们的文案通篇都在写已知人物。
+   * ⇒ **要找漏人，请跑 `audit-against-text.mjs`（扫原著正文），那才是缺口检测器。**
+   *   这一行保留 ③ 是因为"我们自己的文案里提了谁"偶尔也有用，但**别把它当漏人清单**。 */
+  console.log(`  ③ 文案里的"姓氏+名"（⚠ **不是**漏人检测器，见下）：${candTop.length} 个`
+    + (ledger.entries ? `（已按噪声台账挡掉 ${candDropped.length} 个；台账 ${ledger.entries} 条）` : (ledger.missing ? '（本书无噪声台账）' : ''))
+    + (candTop.length ? ` → ${candTop.slice(0, 16).map(([n, k]) => `${n}×${k}`).join('、')}${candTop.length > 16 ? ' …' : ''}` : ''));
   console.log(`  ④ 去括号后同名：${dupes.length} 组` + (dupes.length ? ` → ${dupes.slice(0, 6).map(([k, v]) => `${k}(${v.length})`).join('、')}${dupes.length > 6 ? ' …' : ''}` : ''));
 
   if (write && missingVariants.length) {
@@ -139,4 +165,8 @@ for (const file of files) {
     console.log(`  ✓ 已补 ${missingVariants.length} 个译名变体别名`);
   }
 }
-console.log('\n提示：③ 是人名候选（含地名人名的误报），人工确认后用编辑器或补丁脚本补进人物；① 建议按"字号/简称/译名"补别名。');
+console.log('\n提示：① 建议按"字号/简称/译名"补别名。');
+console.log('      ③ **不是漏人检测器** —— 它扫的是本项目自己的文案，切出来的多半是叙述碎片'
+  + '（实测三国 406 条里只有 5 条与原著检测器重合）。');
+console.log('      **要找漏人请跑** `node scripts/audit-against-text.mjs data/<slug>.json <原著.txt>`'
+  + '（扫原著正文，那才是缺口检测器；判过的噪声记进 data/<slug>.missing-ok.json）。');
