@@ -89,6 +89,7 @@ function edgeLabel(book, parent, child) {
 }
 
 let grandTotal = 0;
+let reallyChangedTotal = 0;
 for (const rel of files) {
   const file = path.isAbsolute(rel) ? rel : path.join(ROOT, rel);
   if (!fs.existsSync(file)) { console.log(`  (跳过) 找不到 ${rel}`); continue; }
@@ -139,7 +140,28 @@ for (const rel of files) {
 
   const before = (book.relations || []).length;
   const oldDerived = (book.relations || []).filter((r) => r.derived).length;
+
+  /* ⚠ 必须在**替换 `book.relations` 之前**抓现存的推导边 type。
+   *   下面这行 `book.relations = [...非推导, ...fresh]` 会把旧推导边全滤掉，
+   *   而 `derive-kin` 是不动点 ⇒ 那之后再去比永远是「全部相同 / 变化 0」。 */
+  const prevByKey = new Map((book.relations || [])
+    .filter((r) => r.derived)
+    .map((r) => [`${r.from}|${r.to}`, r.type]));
+
   book.relations = [...(book.relations || []).filter((r) => !r.derived), ...fresh];
+
+  /* ⚠ 分开记两个数（v0.194）。
+   *   原来只有一个 `grandTotal += fresh.length`，然后打印成「合计**新生成**推导边 N 条」——
+   *   但 `fresh` 是**这次算出来的全部推导边**，不是「相比上次新增的」。
+   *   实测三本书 146 + 79 + 0 = **225**，而 `derive-kin` 是不动点
+   *   （跑第二遍 fresh 完全一样、落盘零字节变化）⇒ 「新生成 225 条」是**假的**，
+   *   真实的新增量是 **0**。
+   *   这就是本项目反复抓的那族病：**报的数不是它算的数**。 */
+  let reallyChanged = 0;
+  for (const f of fresh) {
+    if (prevByKey.get(`${f.from}|${f.to}`) !== f.type) reallyChanged++;
+  }
+  reallyChangedTotal += reallyChanged;
   grandTotal += fresh.length;
 
   console.log(`  ${bookId}：推导边 ${oldDerived} → ${fresh.length} 条`
@@ -148,8 +170,16 @@ for (const rel of files) {
   for (const s of fresh.slice(0, 4)) console.log(`     ＋ ${name(s.from)} —${s.type}— ${name(s.to)}`);
   if (fresh.length > 4) console.log(`     …另 ${fresh.length - 4} 条`);
   for (const s of skippedFar.slice(0, 3)) console.log(`     － ${name(s.a)} —${s.k.term}— ${name(s.b)}（旁系差 ${s.k.gap} 代，按规则不补）`);
+  console.log(`     ⇒ 相对磁盘上现有的推导边，**真正变化的 ${reallyChanged} 条**`
+    + `（其余 ${fresh.length - reallyChanged} 条逐字相同，属不动点）`);
 
   if (WRITE) fs.writeFileSync(file, JSON.stringify(book, null, 2) + '\n', 'utf8');
 }
 
-console.log(`\n合计新生成推导边 ${grandTotal} 条${WRITE ? '（已写入）' : '（预览，加 --write 才落盘）'}`);
+/* 两个数分别说清楚，不再混成一个「合计」：
+ *   · 推导边总数  —— 脚本算出来的推导边条数（不是新增量）
+ *   · 真正变化     —— 与磁盘上现有的推导边逐条比 type，不一样的条数（这才是「改动量」） */
+console.log(`\n推导边合计 ${grandTotal} 条（这是**推导边总数**，不是新增量）`);
+console.log(`真正变化 ${reallyChangedTotal} 条（与磁盘现状逐条比对 type 的结果）`);
+if (!WRITE) console.log('（预览模式：以上数字均为「将会写入什么」，加 --write 才落盘）');
+else if (reallyChangedTotal === 0) console.log('（已写入，但内容与写入前完全相同 —— 属不动点，符合预期）');

@@ -116,6 +116,32 @@ export function elderSurnameOrder(tree, elder, q) {
   if (typeof a !== 'number' || typeof b !== 'number' || a === b) return '伯叔';
   return a < b ? '伯' : '叔';
 }
+
+/**
+ * 同胞两人里，a 是不是比 b 长？**回答不了就返回 null**。
+ *
+ * ⚠ 为什么同胞侧也必须问「能不能确定」（v0.194）
+ *
+ *   长辈侧的同一个问题早就处理过了：`elderSurnameOrder()` 在没有排行时
+ *   返回「伯叔」而不是硬猜（见本文件 L46 的原则）。
+ *   **同胞侧此前漏了同一件事**，后果是 v0.194 修掉的 19 条错边：
+ *   `computeKin()` 里 `elder = f.da <= f.db ? aId : bId`，而同胞时
+ *   `f.da === f.db` 恒成立 ⇒ **谁排在参数里谁就是「兄/姐」**；
+ *   `derive-kin` 传的 id 按字符串排序 ⇒ **长幼 = id 字母序**。
+ *   于是同一份数据里曹植既是曹贵的「弟」、又是清河公主的「兄」。
+ *
+ *   判据只能是 `birthRank`（那才是原文依据）。**没有就是不知道**，
+ *   与其猜一个 50% 会错的答案，不如输出中性词「同胞」——
+ *   汉语里「同胞」本就是兄弟姐妹的合称，不分长幼。
+ *
+ * @returns {true|false|null} true＝a 是兄/姐；false＝a 是弟/妹；null＝排行不详
+ */
+export function siblingOrder(tree, a, b) {
+  const ra = tree.birthRank.get(a), rb = tree.birthRank.get(b);
+  if (typeof ra !== 'number' || typeof rb !== 'number' || ra === rb) return null;
+  return ra < rb;
+}
+
 function push(map, key, val) {
   if (!map.has(key)) map.set(key, []);
   if (!map.get(key).includes(val)) map.get(key).push(val);
@@ -306,8 +332,28 @@ export function computeKin(tree, aId, bId) {
     /* ⚠ 性别组合有四种，不是两种。
      *   第一版写成 `mE === mY ? '兄弟' : '姐妹'` —— 两人都是女性时 mE===mY 同样成立，
      *   于是「梅梅—阿玛兰妲·乌尔苏拉」「丽贝卡—阿玛兰妲」全被判成「兄弟」。
-     *   对质器一眼就看出来：同一份数据里别处写着「姐妹」，这里算出来「兄弟」。 */
-    const sibWord = (mE && mY) ? '兄弟' : (!mE && !mY) ? '姐妹' : mE ? '兄妹' : '姐弟';
+     *   对质器一眼就看出来：同一份数据里别处写着「姐妹」，这里算出来「兄弟」。
+     *
+     * ⚠⚠ 混合性别时**不能**直接输出「兄妹／姐弟」（v0.194）
+     *   「兄妹」断言兄在妹前、「姐弟」断言姐在弟前 —— 这两个词**都在说长幼**。
+     *   而本分支里的 `elder` 只是 id 排序的结果（`f.da === f.db` 恒成立，
+     *   见 computeKin 开头），拿它判长幼等于拿字母序当年龄序。
+     *   ⇒ 有 birthRank 才敢用方向词，没有就写中性词「同胞」
+     *     （与长辈侧「无排行写『伯叔』」是同一条原则，两侧现在对齐了）。
+     *   「兄弟」「姐妹」不带方向，两人都男性/都女性时照旧，不受影响。 */
+    const sibWord = (() => {
+      if (mE && mY) return '兄弟';
+      if (!mE && !mY) return '姐妹';
+      /* 一男一女：只有确认了排行才敢用方向词。
+       * ⚠ 必须用 aId/bId 问排行，**不能**用 elder/younger ——
+       *   同辈时 elder/younger 是 id 序，那正是要避免的东西。 */
+      const aIsElder = siblingOrder(tree, aId, bId);
+      if (aIsElder === null) return '同胞';
+      /* aIsElder=true ⇒ aId 是兄/姐。aId 男性 ⇒「兄妹」，aId 女性 ⇒「姐弟」。 */
+      const aIsMale = tree.gender.get(aId) === 'm';
+      return (aIsElder === aIsMale) ? '兄妹' : '姐弟';
+    })();
+
     if (shared.length >= 2) term = sibWord;
     else if (shared.length === 1) {
       const p = shared[0];

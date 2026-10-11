@@ -86,6 +86,83 @@ function sameLabel(computed, actual, computedGap) {
   return computedGap === claimedGap(ha, actual);
 }
 
+/* ══ v0.194 新增：同胞**方向**一致性 ══════════════════════════════════
+ *
+ * ## 为什么这道检查必须单独写
+ *
+ * `sameLabel()` 只比两件事：**族**（sibling/collateral/direct）与**代差**（0/1/2/3/4）。
+ * 同胞一律按 `claimedGap = 0` 处理 ⇒「兄妹」和「姐弟」被判成**同一个东西**。
+ * 所以一条方向完全说反的边（把弟弟标成哥哥）能一路绿灯走到 v0.193 ——
+ * 实测三国有 **19 条**推导边中招，`derive-kin` 生成，`check-kin-terms` 全程没报。
+ *
+ * ## 判据（**只管推导边**）
+ *
+ * ⚠ **手写边的方向词不查**，这是刻意的：
+ *   「罗季昂 —兄妹→ 阿芙朵嘉」这类是**人逐条回原著核对后写进去的**，
+ *   那份知识不来自算法、不来自 birthRank、也不来自 id 顺序 ——
+ *   要求它必须同时有 `birthRank` 字段，是拿**数据字段的缺失去否定人的核对**。
+ *   （实测三本书共 20 条这样的手写边，v0.194 一条没动。）
+ *
+ *   推导边则相反：它的 type **完全由 `computeKin()` 生成**，
+ *   方向词只可能来自 `elder`（而同胞时它 = id 顺序）⇒ 没有任何人的知识在里面。
+ *   这才是要拦的。
+ *
+ *   一条推导边若声称「兄妹／姐弟」，只有两种可能：
+ *     ① 两端都有 `birthRank` 且与声称一致 —— 合法，放行；
+ *     ② 否则 —— 算法在没有排行的情况下断言了长幼，报错。
+ *   v0.194 修完数据后实测：② 归零（19 → 0）。
+ */
+
+/**
+ * 方向词 → 「from 是长者」为 true。返回 null 表示不含方向词。
+ *
+ * ⚠ **不能锚定 `^`**（第一版就写成 `/^兄妹/`）：实际 type 前面还有修饰，
+ *   `同父异母的兄妹（推导）`、`养姐弟（推导）` —— headOf 去掉的是
+ *   「／情人」后缀、「（伯父与侄）」说明和「养」前缀，**不去掉「同父异母的」**。
+ *   锚定后 19 条错边里只捞到 3 条（那 3 条恰好是「养姐弟」这类无修饰的），
+ *   **漏报 16 条** —— 门禁比没有更坏，因为它让人以为已经查过了。
+ */
+function claimedDirection(type) {
+  const head = headOf(type);
+  if (/兄妹/.test(head)) return true;
+  if (/姐弟/.test(head)) return false;
+  return null;
+}
+
+/**
+ * 只检查**推导边**的方向（理由见上面那段 ⚠）。
+ * 另有一个反向断言：`kin-terms.mjs` 无排行时必须输出中性词「同胞」，
+ * 所以这里报出来的每一条，在修好之后都应当自动消失。
+ */
+function checkSiblingDirection(bookId, book, tree, byId, nm) {
+  const bad = [];
+  for (const r of book.relations || []) {
+    if (!r.derived) continue;                          // 手写边是人的核对结果，不管
+    const want = claimedDirection(String(r.type || ''));
+    if (want === null) continue;                      // 不是方向词（兄弟/姐妹/堂表…）不管
+    const ra = tree.birthRank.get(r.from), rb = tree.birthRank.get(r.to);
+    if (typeof ra !== 'number' || typeof rb !== 'number' || ra === rb) {
+      bad.push({
+        r, kind: '无排行却断言长幼',
+        detail: `${nm(r.from)} birthRank=${ra ?? '无'}、${nm(r.to)} birthRank=${rb ?? '无'}`
+          + `　⇒ 排行不详，推导边不能写「${headOf(r.type)}」（应输出中性词「同胞」）`,
+      });
+      continue;
+    }
+    const reallyFromElder = ra < rb;
+    if (reallyFromElder !== want) {
+      bad.push({
+        r, kind: '方向与排行相反',
+        detail: `${nm(r.from)} birthRank=${ra}，${nm(r.to)} birthRank=${rb}`
+          + `　⇒ ${nm(r.from)} 是${reallyFromElder ? '长' : '幼'}者，`
+          + `但推导成了「${headOf(r.type)}」`,
+      });
+    }
+  }
+  return bad;
+}
+
+
 /* 豁免清单：手写的 type 与族谱不一致，但**是有意**的。
  * 每条必须写明理由（≥8 字），否则不许加进来 —— "先关掉再说"是最坏的做法。
  * 格式：`{ "book": "书名", "from": "id", "to": "id", "reason": "…" }`
@@ -141,6 +218,7 @@ const isExempt = (bookId, from, to) => exempt.some((e) =>
   && typeof e.reason === 'string' && e.reason.trim().length >= 8);
 
 let errorCount = 0, checkedTotal = 0, mismTotal = 0, shadowedTotal = 0, skipped = 0;
+let dirBadTotal = 0;
 console.log(`亲属称谓对质：豁免清单 ${exempt.length} 条\n`);
 
 for (const rel of files) {
@@ -189,27 +267,39 @@ for (const rel of files) {
   }
 
   checkedTotal += checked; mismTotal += mism.length; shadowedTotal += shadowed;
-  if (!mism.length) {
+  /* v0.194：同胞方向单开一路（推导边也要查，见函数头注释）。 */
+  const dirBad = checkSiblingDirection(bookId, book, tree, byId, nm);
+  dirBadTotal += dirBad.length;
+  if (!mism.length && !dirBad.length) {
     console.log(`  ✓ ${bookId}：对质 ${checked} 条全部一致`
       + (shadowed ? `（另有 ${shadowed} 对族谱能算但没有关系，可考虑补边）` : ''));
     continue;
   }
-  console.log(`  ✗ ${bookId}：对质 ${checked} 条，不一致 ${mism.length} 条`
-    + (shadowed ? `；另有 ${shadowed} 对族谱能算但数据里没有关系` : ''));
+  console.log(`  ${mism.length ? '✗' : '·'} ${bookId}：对质 ${checked} 条，不一致 ${mism.length} 条`
+    + (shadowed ? `；另有 ${shadowed} 对族谱能算但数据里没有关系` : '')
+    + (dirBad.length ? `；同胞方向问题 ${dirBad.length} 条` : ''));
   for (const { r, k } of mism) {
     const ev = (r.events || []).length;
     console.log(`      ${nm(r.from)} — ${r.type} — ${nm(r.to)}`);
     console.log(`        族谱算出：${k.term}（差 ${k.gap} 代）　原文事件 ${ev} 条${ev === 0 ? ' ★零依据' : ''}`);
     errorCount++;
   }
+  for (const b of dirBad) {
+    console.log(`      ${nm(b.r.from)} — ${b.r.type} — ${nm(b.r.to)}${b.r.derived ? '（推导）' : ''}`);
+    console.log(`        ✗ ${b.kind}：${b.detail}`);
+    errorCount++;
+  }
 }
 
 console.log(`\n${'='.repeat(56)}`);
 console.log(`对质 ${checkedTotal} 条，不一致 ${mismTotal} 条，被遮挡的人对 ${shadowedTotal} 对，跳过 ${skipped} 本书`);
+console.log(`同胞方向检查：${dirBadTotal} 处问题`);
 if (errorCount) {
   console.log(`\n✗ ${errorCount} 处不一致。修法二选一：`);
   console.log('  · 改数据里的 type（推荐：让称谓与族谱一致）');
   console.log('  · 确认原文确实另有说法 ⇒ 加进 data/kin-terms-exempt.json 并写明理由（≥8 字）');
+  console.log(`  · 若是「无排行却断言长幼」⇒ 补 \`birthRank\`（要有原文依据）`
+    + '，或把 type 改成中性词「同胞」');
   process.exit(1);
 }
 console.log('✓ 没有不一致');
