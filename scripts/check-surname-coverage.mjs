@@ -3,9 +3,10 @@
  * ## 盲区是什么
  *
  * `audit-against-text.mjs` 找「书里提到、数据里没有的人」靠**候选提取**：
- *   /[百家姓][\u4e00-\u9fa5]{1,2}/g   （`surnameRe`，见该脚本）
+ *   /[百家姓][\u4e00-\u9fa5]{1,2}/g   （`surnameRe`）
  * 也就是「姓氏字 + 1~2 个汉字」。提取不出来的人 ⇒ **即使真漏了也永远不会进缺口清单**，
  * 缺口清单因此「看着干净」。实测三本书有 **183 个主名**落在盲区里。
+ * ⚠ v0.189 起这条规则的**唯一出处**是 `scripts/lib/against-text.mjs`（脚本只留 I/O）。
  *
  * 盲区的两种成因（都不是「数据错了」，是**工具的量程不够**）：
  *   ① 复姓 / 生僻姓 / 音译名：首字不在那张**单字**百家姓表里
@@ -19,9 +20,11 @@
  *
  * ## 判据（**不需要原著文本**，所以能进 CI）
  *
- *   C0  能从 `audit-against-text.mjs` **解析出**提取规则；解析不到就报红
+ *   C0  能从 `scripts/lib/against-text.mjs` **解析出**提取规则；解析不到就报红
  *       —— 门禁与工具同源：规则变了（补复姓、放宽长度）这里自动跟着变，
  *          解析不到则**拒绝跑**而不是猜一套默认值（那会变成假绿）。
+ *   C0b 消费方 `audit-against-text.mjs` 必须**真的 import/调用**那个 lib
+ *       —— 否则"解析到的规则"与"实际跑的规则"会变成两件事，而报告看着完全正常。
  *   C1  台账是数组，或 {_说明…, 明细:[…]}；`_` 开头的说明行不算条目
  *   C2  每条是 `{name, why}` 且 `why` 非空
  *   C3  `name` 不重复
@@ -52,8 +55,20 @@ const ROOT = process.env.BOOKATLAS_ROOT
 const DATA = path.join(ROOT, 'data');
 const LEDGER_SUFFIX = '.surname-blind-ok.json';
 
-/** 从工具源码解析提取规则。**解析不到就抛** —— 不猜默认值（那是假绿的制造机）。 */
-export function readExtractor(toolsFile = path.join(ROOT, 'scripts', 'audit-against-text.mjs')) {
+/** 判据本体所在文件。**v0.189 起提取规则在这里**（原来在 `audit-against-text.mjs` 里）。 */
+const RULE_REL = ['scripts', 'lib', 'against-text.mjs'];
+
+/**
+ * 从判据源码解析提取规则。**解析不到就抛** —— 不猜默认值（那是假绿的制造机）。
+ *
+ * ⚠ v0.189 搬过家：`SURNAMES` / `surnameRe` / `norm` 从 `audit-against-text.mjs`
+ *   搬进了 `scripts/lib/against-text.mjs`（脚本只留 I/O）。本门禁当场报红
+ *   （`C0 提取规则解析失败：解析不到 surnameRe …`）—— **那正是它该做的**：
+ *   同源纪律就是为"定义搬了家、消费方没跟上"这一刻准备的。
+ *   现在解析的是 lib，另加一条 `C0b` 确认**脚本真的在用它**（否则"解析到的规则"
+ *   和"实际跑的规则"会变成两件事，而报告看起来完全正常）。
+ */
+export function readExtractor(toolsFile = path.join(ROOT, ...RULE_REL)) {
   let src;
   try { src = fs.readFileSync(toolsFile, 'utf8'); }
   catch (e) { throw new Error(`读不到 ${toolsFile} —— ${e.message}`); }
@@ -61,8 +76,10 @@ export function readExtractor(toolsFile = path.join(ROOT, 'scripts', 'audit-agai
   const mSur = /const\s+SURNAMES\s*=\s*'([^']*)'/.exec(src);
   if (!mSur) throw new Error('解析不到 `const SURNAMES = …`（工具写法变了？）');
   /* 源文件里这行是 `[\\u4e00-\\u9fa5]`：**双反斜杠**（模板字符串里要转义成一个），
-   * 所以这里不去匹配反斜杠，只取长度区间那一段。 */
-  const mRe = /const\s+surnameRe\s*=\s*new RegExp\(`\[\$\{SURNAMES\}\][^`]*?\{(\d+),(\d+)\}`/.exec(src);
+   * 所以这里不去匹配反斜杠，只取长度区间那一段。
+   * ⚠ `(?:\(\)\s*=>\s*)?` 是 v0.189 加的：搬进 lib 后它变成了箭头函数
+   *   （`const surnameRe = () => new RegExp(…)`），不多认这一层就会误判成"写法变了"。 */
+  const mRe = /const\s+surnameRe\s*=\s*(?:\(\)\s*=>\s*)?new RegExp\(`\[\$\{SURNAMES\}\][^`]*?\{(\d+),(\d+)\}`/.exec(src);
   if (!mRe) throw new Error('解析不到 `surnameRe` 的长度区间（工具写法变了？）');
   const mNorm = /const\s+norm\s*=\s*\(s\)\s*=>.*?replace\(\/\[([^\]]*)\]\/g/.exec(src);
   if (!mNorm) throw new Error('解析不到 `norm` 的去字符类（工具写法变了？）');
@@ -91,6 +108,22 @@ export function checkSurnameCoverage() {
   let rule = null;
   try { rule = readExtractor(); }
   catch (e) { return [`C0 提取规则解析失败：${e.message}\n     ⇒ 门禁与工具同源这条纪律就是为此刻准备的：宁可报红，不要猜一套默认值跑出假绿。`]; }
+
+  /* C0b：解析到的规则必须**真的在跑**（v0.189 新增）。
+   *
+   * 规则搬进 lib 之后，本门禁解析的是 lib；可**真正跑缺口检测的是 `audit-against-text.mjs`**。
+   * 若它哪天不 import lib 了（或只 import 不调用），本门禁解析得再准也没意义 ——
+   * 「库写了、忘了接」正是本仓库最常见的病（`test/missing-ok-lib-guard.mjs` 守的是同一件事，
+   * 这里从"提取规则"这一侧再守一次）。 */
+  try {
+    const consumer = fs.readFileSync(path.join(ROOT, 'scripts', 'audit-against-text.mjs'), 'utf8');
+    if (!/from\s+'\.\/lib\/against-text\.mjs'/.test(consumer) || !/buildGapReport\s*\(/.test(consumer)) {
+      return ['C0b 消费方没接上：`scripts/audit-against-text.mjs` 没有 import/调用 `lib/against-text.mjs`'
+        + '\n     ⇒ 本门禁解析到的规则与**实际跑的**可能不是同一份（那比解析不到更坏：报告看着完全正常）。'];
+    }
+  } catch (e) {
+    return [`C0b 读不到消费方 scripts/audit-against-text.mjs：${e.message}`];
+  }
 
   for (const slug of listBookSlugs()) {
     const book = JSON.parse(fs.readFileSync(path.join(DATA, `${slug}.json`), 'utf8'));

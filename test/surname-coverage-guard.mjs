@@ -13,7 +13,8 @@
  * ## 怎么测：造一个**临时目录**，把 ROOT 指过去
  *
  * 脚本支持 `BOOKATLAS_ROOT`（只给测试用）。tmp 里写：最小 `data/`（books.json + demo.json
- * + 台账）+ **一份 scripts/audit-against-text.mjs 副本**（检查要解析它）。
+ * + 台账）+ **`scripts/lib/against-text.mjs` 与 `scripts/audit-against-text.mjs` 两份副本**
+ * （前者是判据、检查要解析它；后者是消费方、检查要确认它真的在用那个 lib）。
  * 逐场景跑、断言**判据函数返回的问题条数**，**全程不碰真实仓库**。
  *
  * ## demo 书的四个人是刻意挑的
@@ -33,8 +34,8 @@
  *
  * ⚠ `process.env.BOOKATLAS_ROOT` **必须在 import 之前**设好：
  *   该脚本的 `ROOT` 是模块级常量，且它的 `readExtractor()` 默认参数
- *   `path.join(ROOT, 'scripts', 'audit-against-text.mjs')` 也吃这个 ROOT
- *   ⇒ import 之后再设就晚了（会去解析**真仓库**的工具源码，测的就不是 tmp 那份）。
+ *   `path.join(ROOT, 'scripts', 'lib', 'against-text.mjs')` 也吃这个 ROOT
+ *   ⇒ import 之后再设就晚了（会去解析**真仓库**的判据源码，测的就不是 tmp 那份）。
  * ⚠ 入口那段（`pathToFileURL` 判断 + `process.exit`）不在这里测 ——
  *   改由 `test/guard-hygiene.mjs` **静态**守着（不起子进程也能守住）。
  *
@@ -46,6 +47,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/* v0.189：提取规则搬进了 lib。tmp 里要两份：
+ *   · `scripts/lib/against-text.mjs` —— 检查**解析**它（`writeTool` 改的也是它）；
+ *   · `scripts/audit-against-text.mjs` —— 检查**确认它真的在用那个 lib**（C0b）。 */
+const RULE = path.join(ROOT, 'scripts', 'lib', 'against-text.mjs');
 const TOOL = path.join(ROOT, 'scripts', 'audit-against-text.mjs');
 
 let pass = 0, fail = 0;
@@ -55,12 +60,14 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-scv-'));
 const DATA = path.join(tmp, 'data');
 fs.mkdirSync(DATA);
 fs.mkdirSync(path.join(tmp, 'scripts'));
-/* 检查要解析工具源码来保持同源 ⇒ tmp 里必须有一份副本（两条「同源」场景还要改它） */
+fs.mkdirSync(path.join(tmp, 'scripts', 'lib'));
+/* 检查要解析判据源码来保持同源 ⇒ tmp 里必须有副本（两条「同源」场景还要改它） */
+fs.copyFileSync(RULE, path.join(tmp, 'scripts', 'lib', 'against-text.mjs'));
 fs.copyFileSync(TOOL, path.join(tmp, 'scripts', 'audit-against-text.mjs'));
 
 const BOOK = path.join(DATA, 'demo.json');
 const LF = path.join(DATA, 'demo.surname-blind-ok.json');
-const toolText = fs.readFileSync(TOOL, 'utf8');
+const toolText = fs.readFileSync(RULE, 'utf8');
 
 fs.writeFileSync(path.join(DATA, 'books.json'), JSON.stringify({ books: [{ slug: 'demo' }] }, null, 2) + '\n', 'utf8');
 fs.writeFileSync(BOOK, JSON.stringify({
@@ -81,7 +88,7 @@ const GOOD = [
 ];
 const writeLf = (o) => fs.writeFileSync(LF, JSON.stringify(o, null, 2) + '\n', 'utf8');
 const rmLf = () => { try { fs.unlinkSync(LF); } catch { /* 忽略 */ } };
-const writeTool = (s) => fs.writeFileSync(path.join(tmp, 'scripts', 'audit-against-text.mjs'), s, 'utf8');
+const writeTool = (s) => fs.writeFileSync(path.join(tmp, 'scripts', 'lib', 'against-text.mjs'), s, 'utf8');
 
 /* ⚠ 环境变量必须在 import 之前设好（见文件头） */
 process.env.BOOKATLAS_ROOT = tmp;
@@ -158,6 +165,19 @@ writeTool(toolText.replace(/const\s+norm\s*=/, 'const normRenamed ='));
 ok(run().length > 0, 'C0 工具里解析不到 norm ⇒ 报红');
 writeTool(toolText.replace(/\[\$\{SURNAMES\}\]\[\S*?\]\{(\d+),(\d+)\}/, '[${SURNAMES}][\\u4e00-\\u9fa5]{1,2}X'));
 ok(run().length > 0, 'C0 工具里解析不到 surnameRe 的长度区间 ⇒ 报红');
+
+/* C0b：**消费方没接上** ⇒ 也必须报红。
+ * 规则搬进 lib 之后，本门禁解析的是 lib，可真正跑缺口检测的是 `audit-against-text.mjs`。
+ * 它若不 import lib，本门禁解析得再准也是"对着另一份规则在核"—— 而报告看着完全正常。 */
+{
+  const consumerPath = path.join(tmp, 'scripts', 'audit-against-text.mjs');
+  const realConsumer = fs.readFileSync(consumerPath, 'utf8');
+  fs.writeFileSync(consumerPath, realConsumer.replace("'./lib/against-text.mjs'", "'./lib/别的东西.mjs'"), 'utf8');
+  ok(run().length > 0, 'C0b 消费方没 import lib ⇒ 报红（否则"解析到的规则"与"实际跑的"会分家）');
+  fs.writeFileSync(consumerPath, realConsumer, 'utf8');
+  writeTool(toolText);   // ⚠ 上面那条 C0 场景把 lib 也改坏了，这里要一起还原
+  ok(run().length === 0, 'C0b 消费方还原后 ⇒ 0 处问题');
+}
 
 /* 台账自失效：提取器一放宽（姓氏表里加了「丽」），那条豁免立刻变过期 */
 writeTool(toolText.replace("const SURNAMES = '赵", "const SURNAMES = '丽赵"));
