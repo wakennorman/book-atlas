@@ -114,11 +114,7 @@ while ((m = re.exec(f))) {
   CH.push({ n, at: m.index });
 }
 if (!CH.every((c, i) => i === 0 || c.at > CH[i - 1].at)) { console.error('✗ 回次表不单调'); process.exit(1); }
-function chapterAt(pos) {
-  let lo = 1, hi = CH.length, best = 1;
-  while (lo <= hi) { const mid = (lo + hi) >> 1; if (CH[mid - 1].at <= pos) { best = CH[mid - 1].n; lo = mid + 1; } else hi = mid - 1; }
-  return best;
-}
+
 /** 该回原文（用于"新回次是否正确"的核验） */
 const sliceOf = (ch) => f.slice(CH[ch - 1]?.at ?? 0, CH[ch]?.at ?? f.length);
 
@@ -407,7 +403,7 @@ console.log('\n═══ 四之二、删掉 1 条编造的边 ═══\n');
 console.log('\n═══ 五、体检 ═══\n');
 {
   let bad = 0;
-  for (const [, oldName, newName, locate] of RENAMES) {
+  for (const [, , newName, locate] of RENAMES) {
     if (!f.includes(flat(locate))) { console.log(`  ✗ ${newName} 的定位短语在原文里找不到`); bad++; }
   }
   for (const [, , , , , newCh, locate] of CH_FIXES) {
@@ -417,7 +413,7 @@ console.log('\n═══ 五、体检 ═══\n');
   else console.log('  ✓ 所有改名与改回次都已在原文里逐字核过');
 }
 
-const before = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+
 console.log(`\n═══ 六、结果 ═══`);
 console.log(`改名 ${RENAMES.length} 个；改回次/文案 ${chFixed} 处（跳过 ${chSkipped}）`);
 console.log('⚠ 其余 2738 条无引号转述**一条未动** —— 见文件头 §四');

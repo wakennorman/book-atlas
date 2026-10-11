@@ -196,7 +196,7 @@ function testSpoilerNoLockedEdgeTraversable() {
 
   const PROGRESS = 10;
   for (const slug of books) {
-    const { book, core, state } = loadCore(slug, { progress: PROGRESS });
+    const { book, core } = loadCore(slug, { progress: PROGRESS });
     const byId = new Map(book.characters.map((c) => [c.id, c]));
     const nameOf = (id) => (byId.get(id) || {}).name || id;
 

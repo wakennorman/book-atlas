@@ -237,12 +237,15 @@ for (const [from, type, to, text, locate] of EDGES) {
   console.log(`  ＋ ${nm(from).padEnd(6)} —${type}— ${nm(to).padEnd(6)} 第${ch}回`);
   edges++;
 }
+// skipped 以前只自增、从不打印 ⇒ 这个数算出来了却没人看得到（eslint 的 no-unused-vars 逮到的）。
+// 逐条跳过原因上面都打了，这里补一个总数，免得「跳过 4 条」看起来像「新增 4 条」。
+console.log(`\n  ⇒ 新增 ${edges} 条边，跳过 ${skipped} 条（跳过原因见上）`);
 
 /* 体检：新增人物的名字必须在原文里搜得到（v0.118 立，娄子伯事件的直接产物） */
 console.log('\n═══ 三、体检 ═══\n');
 {
   let bad = 0;
-  for (const [id, name] of PEOPLE.map(([id, n]) => [id, n])) {
+  for (const [id] of PEOPLE) {
     const c = byId.get(id);
     if (!c) continue;
     const keys = [c.name, ...(c.aliases || [])].filter(Boolean);

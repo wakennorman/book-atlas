@@ -63,7 +63,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { baseName, dupeGroups } from './lib/dup-names.mjs';
+import { dupeGroups } from './lib/dup-names.mjs';
 
 export const DEFAULT_ROOT = process.env.BOOKATLAS_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -201,7 +201,7 @@ export function checkDupNamesLedger(root = DEFAULT_ROOT) {
   for (const e of led.entries.values()) {
     for (const m of e.errors) problems.push(m);      /* L2 / L3 / L8（无论它是否还有效） */
     if (e.skip || !e.key) continue;
-    const { book, base } = e;
+    const { base } = e;
     const g = byKey.get(e.key);
     if (!g) {
       problems.push(`L5 ${e.key}：数据里现在**没有**这一组「${base}」—— 台账过期了`

@@ -102,7 +102,7 @@ for (const [file, map] of Object.entries(table)) {
   if (!fs.existsSync(file)) { console.log('（跳过，文件不存在）' + file); continue; }
   const b = JSON.parse(fs.readFileSync(file, 'utf8'));
   const byId = new Map(b.characters.map((c) => [c.id, c]));
-  let added = 0, missIds = [];
+  let added = 0; const missIds = [];
   for (const [id, list] of Object.entries(map)) {
     const c = byId.get(id);
     if (!c) { missIds.push(id); continue; }

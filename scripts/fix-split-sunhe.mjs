@@ -49,19 +49,13 @@ const WRITE = process.argv.includes('--write');
 const FILE = path.join(ROOT, 'data', 'three-kingdoms.json');
 
 const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-const nm = (id) => book.characters.find((c) => c.id === id)?.name ?? id;
 
 /** 属于孙河的边：[另一方名字, 边的 type, 原文依据] */
 const TO_HE = [
   ['孙策', '赐姓收养', '「孙策爱之，赐姓孙，因此亦系吴王宗族」'],
   ['孙桓', '父子', '「河生四子，桓居其长」'],
 ];
-/** 属于孙和的边：[另一方名字, 边的 type, 原文依据] */
-const TO_ZONGHE = [
-  ['孙权', '父子', '「先有太子孙登」「遂立次子孙和为太子」'],
-  ['全公主', '公主谮废太子', '「和因与全公主不睦，被公主所谮，权废之，和忧恨而死」'],
-  ['孙皓', '父子', '「大帝孙权太子孙和之子也」'],
-];
+
 
 const cur = book.characters.find((c) => c.id === 'sun-he');
 if (!cur) {
@@ -96,7 +90,7 @@ if (!he) {
   console.log(`\n已存在人物：${he.id}　孙河`);
 }
 
-let moved = 0, kept = 0, missing = 0;
+let moved = 0, missing = 0;
 for (const [otherName, type, why] of TO_HE) {
   const other = book.characters.find((c) => c.name === otherName);
   if (!other) { console.log(`  ⛔ 找不到 ${otherName}`); missing++; continue; }
@@ -109,7 +103,7 @@ for (const [otherName, type, why] of TO_HE) {
   if (wasFrom) r.from = he.id; else r.to = he.id;
   console.log(`  ${otherName} —${type}— ${cur.name}   ⇒   ${otherName} —${type}— ${he.name}`);
   console.log(`      ${why}`);
-  moved++; kept++;
+  moved++;
 }
 
 /* ── 2. sun-he 改回孙和，并把 aliases 里属于孙河的词挪走 ── */

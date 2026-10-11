@@ -121,7 +121,7 @@ for (const [id, name, rank, why] of RANKS) {
 }
 
 console.log('\n=== 五、查无此人，不动，报出来 ===');
-for (const [id, name] of NOVEL_ABSENT) {
+for (const [id] of NOVEL_ABSENT) {
   const c = byId.get(id);
   if (!c) { console.log(`  （已不存在）${id}`); continue; }
   console.log(`  ⚠ ${c.name}：原文出现 0 次`);

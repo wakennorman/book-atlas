@@ -99,7 +99,7 @@ console.log('═══ 一、原文核验 ═══\n');
     曹后哭诉: '吾父功盖寰区',
   };
   let ok = true;
-  for (const [k, v] of Object.entries(P)) {
+  for (const v of Object.values(P)) {
     const hit = f.includes(flat(v));
     console.log(`  ${hit ? '✓' : '✗'} 「${v}」`);
     if (!hit) ok = false;

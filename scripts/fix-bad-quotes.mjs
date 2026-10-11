@@ -24,7 +24,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
-const FILE = path.join(ROOT, 'data', 'crime-and-punishment.json');
 
 /** 精确到"必须完全一致"才动 —— 宁可漏改，不可错改。 */
 const FIXES = [

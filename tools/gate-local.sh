@@ -37,6 +37,11 @@
 #   · gate.mjs 的参数自检没过 ⇒ 同样拒绝跑
 # 宁可现在报错，也不要跑一个"看起来全绿"的门禁。
 #
+# ⚠ **只抽 `run: node …` 会漏掉「不是 node 的检查步骤」**（v0.188 实测）：
+#   check.yml 里 ESLint 那一步写的是 `npx eslint …`，`gate.mjs` 与本脚本的抽取都不认它
+#   ⇒ 本地全量跑绿、CI 上 lint 报红，仍然是"本地绿 ≠ CI 绿"。
+#   所以下面第 2b 段把非 node 的检查步骤也收进来，并用写死的 EXTRA_EXPECT 逼人登记。
+#
 # ⚠ 与 `npm run gate` 的差异：这里**不区分 blocked / failed** ——
 #   能跑起来就是真结果。浏览器测试在本机会真的跑（找得到 Edge），只是慢。
 # ⚠ `GATE_YML` 环境变量**只给测试用**（指一份改了步数的 yml，证明"对不上就拒绝跑"这条真会红）。
@@ -99,6 +104,31 @@ if [ "${#CMDS[@]}" -ne "$EXPECT" ]; then
   exit 2
 fi
 
+# ---- 2b. 非 node 的检查步骤（gate.mjs 与上面第 2 段都不认它们） ----
+# ⚠ EXTRA_EXPECT 是**故意写死**的：check.yml 里多/少一条非 node 检查步骤，必须有人来改这个数，
+#   否则新加的门禁会「本地永远不跑」—— 那正是本脚本存在的理由。
+#   现状：唯一一条非 node 检查步骤 = `npx eslint …`。
+#   （`npm install` 是装依赖、`run: |` 是多行 bash 块，都不是「一条检查」，不收。）
+EXTRA_EXPECT=1
+EXTRA=()
+while IFS= read -r cmd; do
+  case "$cmd" in
+    node\ *|npm\ install*|npm\ ci*|npm\ i) continue ;;
+  esac
+  EXTRA+=("$cmd")
+done < <(grep -E '^[[:space:]]*(-[[:space:]]*)?run:[[:space:]]*[^|[:space:]]' "$YML" \
+        | sed -E 's/^[[:space:]]*(-[[:space:]]*)?run:[[:space:]]*//; s/[[:space:]]+$//')
+
+if [ "${#EXTRA[@]}" -ne "$EXTRA_EXPECT" ]; then
+  echo "✗ 从 yml 抽到 ${#EXTRA[@]} 条「非 node 的检查步骤」，而本脚本记的是 $EXTRA_EXPECT 条。"
+  echo "  ⇒ check.yml 加/删了非 node 步骤。请改本脚本的 EXTRA_EXPECT 把它登记进来，"
+  echo "    否则它会静默不跑 —— 本地绿、CI 红。抽到的是："
+  for c in ${EXTRA[@]+"${EXTRA[@]}"}; do echo "    $c"; done
+  exit 2
+fi
+
+CMDS+=(${EXTRA[@]+"${EXTRA[@]}"})
+
 # ---- 3. 过滤（内建，不起子进程） ----
 SLOW_RE='layout-stable|place-visible|lock|render-scale'
 SELECTED=()
@@ -109,13 +139,13 @@ for c in "${CMDS[@]}"; do
 done
 
 if [ "$LIST_ONLY" = 1 ]; then
-  echo "会跑 ${#SELECTED[@]} 步（check.yml 共 $EXPECT 步）"
+  echo "会跑 ${#SELECTED[@]} 步（check.yml 共 $EXPECT 步 + $EXTRA_EXPECT 条非 node 检查）"
   for c in "${SELECTED[@]}"; do echo "  $c"; done
   exit 0
 fi
 
 # ---- 4. 逐条跑（bash 起 node 没问题；被拦的只是 "node 再起 node"） ----
-echo "本机全量门禁：跑 ${#SELECTED[@]} 步（check.yml 共 $EXPECT 步）"
+echo "本机全量门禁：跑 ${#SELECTED[@]} 步（check.yml 共 $EXPECT 步 + $EXTRA_EXPECT 条非 node 检查）"
 echo
 PASS=0; FAIL=0; FAILED=()
 for c in "${SELECTED[@]}"; do

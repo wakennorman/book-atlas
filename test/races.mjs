@@ -171,7 +171,7 @@ if (!url) {
   console.log('\n▶ E 文案未就绪时不导出残缺 JSON');
   await switchTo('crime-and-punishment');   // 这本文案永远是 500 ⇒ 永远 failed
   await wait(2600);
-  const guarded = await js(`(() => {
+  await js(`(() => {
     const ba = window.__ba, st = ba.state;
     // 拦下下载，验证导出被拦住而不是产出一个空文案的文件
     let downloaded = null;

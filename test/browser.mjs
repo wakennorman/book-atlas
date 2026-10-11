@@ -15,7 +15,7 @@ import { freePort } from './_free-port.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import net from 'node:net';
+
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sweepStaleProfiles, releaseProfile } from './_profile-guard.mjs';
@@ -90,7 +90,7 @@ const proc = spawn(edge, [...browserArgs(),
   '--window-size=1400,900', 'about:blank',
 ], { stdio: 'ignore' });
 
-let ws, SESSION = null;
+let ws; const SESSION = null;
 const pending = new Map();
 let seq = 0;
 const send = (method, params = {}) => new Promise((resolve, reject) => {

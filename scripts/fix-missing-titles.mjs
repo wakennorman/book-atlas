@@ -152,7 +152,7 @@ const FILL = [
  *   「邕女蔡琰与其夫董祀居此」原文是「乃蔡邕庄也。今邕女蔡琰与其夫董祀居此。」⇒ 有。
  */
 let citeBad = 0;
-for (const [id, title, cite] of FILL) {
+for (const [id, , cite] of FILL) {
   if (!f.includes(flat(cite))) { console.log(`  ✗ ${nm(id).padEnd(12)} 「${cite}」查不到`); citeBad++; }
 }
 if (citeBad) { console.error(`\n  ⛔ ${citeBad} 条定位短语核验不过 —— 中止`); process.exit(1); }

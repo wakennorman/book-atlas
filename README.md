@@ -93,6 +93,12 @@ bash tools/gate-local.sh --list / --only <子串> / --skip-slow
 而报告里"21 步全绿"看着完全正常）。
 自检不过就 **exit 2 拒绝跑** —— 宁可现在报错，也不要跑一个"看起来全绿"的门禁。
 
+> ⚠ **`run: node …` 的抽取看不见「不是 node 的步骤」。** `check.yml` 里 ESLint 那一步写的是
+> `npx eslint …` ⇒ `gate.mjs` 与本脚本一度都不跑它：本地全量 72 步跑绿，CI 上 lint 照样能红。
+> v0.188 起 `gate-local.sh` 另有一段专收「非 node 的检查步骤」（`run: |` 多行块与 `npm install`
+> 不算），并用**写死的 `EXTRA_EXPECT`** 逼人登记新步骤 —— 现在 `--list` 是 **73 步**。
+> 往 yml 里多塞一条非 node 步骤而不改这个数 ⇒ `exit 2` 拒绝跑（已实测）。
+
 > ⚠ **本机 node 起不了任何子进程**（`spawnSync` 一律 EBUSY），所以 `npm run gate` 在这台机器上
 > **一步都跑不了**（它会自己说明）。本机验收请用 `bash tools/gate-local.sh` ——
 > 它读的是**同一个** `check.yml`、跟 `npm run gate --list` 对过步数与参数自检，只是把执行交给 bash。
@@ -215,7 +221,7 @@ npm run test:place-visible # 点开地点后画布不能空白（比例实测对
 npm run test:build         # 页脚构建版本水印（防"老访客仍跑旧代码"）＋ 弃用模型名迁移
 
 # ESLint 代码检查（需要先 npm install）
-npm run lint
+npm run lint                 # 带 --max-warnings 0：**一条 warning 也当红**（v0.188 起）
 ```
 
 CI（`.github/workflows/check.yml`）会自动跑**上面这些**（完整清单以该文件为准，不在别处抄第二遍；
@@ -449,7 +455,7 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 | `scripts/make-icons.py` | 把 logo 的矢量源文件渲染成站点用的位图资源（Pillow + 本机 Edge 无头截图）：`python scripts/make-icons.py` |
 | `tools/local-sink.mjs` | 本地小接收器：编辑器「导出 JSON」直接写进 `data/`（无头浏览器里下载会落到别处）：`node tools/local-sink.mjs` |
 | `tools/push-via-api.ps1` | GitHub API 发布（本机 `git push` 被墙时用），自动遵守 `.gitignore`，同时开/查 Pages |
-| `tools/gate-local.sh` | **本机全量门禁**。`npm run gate` 靠 `spawnSync`，而本机 node 起不了子进程 ⇒ 一步都跑不了；这个脚本读**同一个** `check.yml`、跑之前跟 `node tools/gate.mjs --list` 对步数与参数自检，再把执行交给 bash。`bash tools/gate-local.sh [--list|--only <子串>|--skip-slow]` |
+| `tools/gate-local.sh` | **本机全量门禁**。`npm run gate` 靠 `spawnSync`，而本机 node 起不了子进程 ⇒ 一步都跑不了；这个脚本读**同一个** `check.yml`、跑之前跟 `node tools/gate.mjs --list` 对步数与参数自检，再把执行交给 bash。除 `run: node …` 外还收「非 node 的检查步骤」（`npx eslint …`，靠写死的 `EXTRA_EXPECT` 登记）⇒ 共 **73 步**。`bash tools/gate-local.sh [--list|--only <子串>|--skip-slow]` |
 
 ---
 

@@ -16,7 +16,7 @@ export function getAiConfig() {
       model: localStorage.getItem('ba-ai-model') || AI_DEFAULT_MODEL,
       key: localStorage.getItem('ba-ai-key') || '',
     };
-  } catch (e) {
+  } catch {
     return { base: AI_DEFAULT_BASE, model: AI_DEFAULT_MODEL, key: '' };
   }
 }
@@ -26,5 +26,5 @@ export function saveAiConfig(base, model, key) {
     localStorage.setItem('ba-ai-base', (base || AI_DEFAULT_BASE).replace(/\/+$/, ''));
     localStorage.setItem('ba-ai-model', model || AI_DEFAULT_MODEL);
     localStorage.setItem('ba-ai-key', key || '');
-  } catch (e) { /* 隐私模式忽略 */ }
+  } catch { /* 隐私模式忽略 */ }
 }

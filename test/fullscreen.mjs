@@ -171,7 +171,7 @@ try {
 
   /* v0.132：按钮必须落在画布内，不能和工具条混在一行 */
   console.log('\n▶ ①b 浮动按钮落在**画布内**（v0.132 位置修正）');
-  let fp = await floatPos();
+  const fp = await floatPos();
   ok(fp.offsetParent === 'graph-stage', `按钮的定位上下文是 .graph-stage（当前 ${fp.offsetParent}）`);
   ok(fp.position === 'absolute', `按钮是 absolute 定位（${fp.position}）`);
   ok(fp.insideX, `按钮横向在画布内（按钮 ${fp.ftLeft}，画布右边 ${Math.round(fp.ftLeft + 0)}）`);

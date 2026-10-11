@@ -67,7 +67,7 @@ Page({
         g.state.a11yPalette = !!disp.palette;
         g.state.fontSize = ['s', 'm', 'l'].includes(disp.fontSize) ? disp.fontSize : 'm';
       }
-    } catch (e) { /* 忽略 */ }
+    } catch { /* 忽略 */ }
     g.state.chapter = Math.max(1, Math.min(g.maxChapter(), g.state.chapter || g.state.progress || 1));
     const total = g.maxChapter();
     this.highlight = null;
@@ -331,7 +331,7 @@ Page({
   saveDisplay() {
     try {
       wx.setStorageSync('ba-display', { palette: this.g.state.a11yPalette, fontSize: this.g.state.fontSize });
-    } catch (e) { /* 忽略 */ }
+    } catch { /* 忽略 */ }
   },
 
   /* ---------------- 工具栏 ---------------- */
@@ -461,7 +461,7 @@ Page({
     const g = this.g;
     g.state.progress = idx === 0 ? null : idx;
     if (g.state.timeTravel) g.state.chapter = Math.min(g.state.chapter, g.timeCeiling());
-    try { wx.setStorageSync('ba-spoiler-' + g.pack.slug, { on: idx !== 0, ch: idx }); } catch (err) { /* 忽略 */ }
+    try { wx.setStorageSync('ba-spoiler-' + g.pack.slug, { on: idx !== 0, ch: idx }); } catch { /* 忽略 */ }
     this.highlight = null;
     this.setData({ progress: g.state.progress, timeCeil: g.timeCeiling(), chapter: g.state.chapter, pathHint: '' });
     this.refreshSelectable();
@@ -472,7 +472,7 @@ Page({
   setChapter(n) {
     const g = this.g;
     g.state.chapter = Math.max(1, Math.min(g.maxChapter(), n || 1));
-    try { wx.setStorageSync('ba-chapter-' + g.pack.slug, g.state.chapter); } catch (e) { /* 忽略 */ }
+    try { wx.setStorageSync('ba-chapter-' + g.pack.slug, g.state.chapter); } catch { /* 忽略 */ }
     this.setData({ chapter: g.state.chapter });
     if (g.state.timeTravel) { this.highlight = null; this.refreshSelectable(); this.render(); }
   },
@@ -494,7 +494,7 @@ Page({
     const ch = g.state.chapter;
     g.state.progress = ch;
     if (g.state.timeTravel) g.state.chapter = Math.min(g.state.chapter, g.timeCeiling());
-    try { wx.setStorageSync('ba-spoiler-' + g.pack.slug, { on: true, ch }); } catch (e) { /* 忽略 */ }
+    try { wx.setStorageSync('ba-spoiler-' + g.pack.slug, { on: true, ch }); } catch { /* 忽略 */ }
     this.setData({ progress: ch, timeCeil: g.timeCeiling(), chapter: g.state.chapter });
     this.refreshSelectable();
     this.render();

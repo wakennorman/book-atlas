@@ -49,7 +49,13 @@ const cdpUrl = () => new Promise((res, rej) => {
  *   （`test/` 里其余测试还是 40 次的旧预算，改它们和端口改造一起做。） */
 let url = null;
 for (let i = 0; i < 150 && !url; i++) { try { url = await cdpUrl(); } catch { await new Promise((r) => setTimeout(r, 250)); } }
-if (!url) { console.error('  ✗ 连不上 Edge 的 CDP 端点（等了 37 秒）—— 这是**环境/负载**问题，不是断言失败'); process.exit(1); }
+if (!url) {
+  console.error('  ✗ 连不上 Edge 的 CDP 端点（等了 37 秒）—— 这是**环境/负载**问题，不是断言失败');
+  try { proc.kill(); } catch { /* 忽略 */ }
+  try { server.close(); } catch { /* 忽略 */ }
+  releaseProfile(profile);
+  process.exit(1);
+}
 const ws = new WebSocket(url);
 await Promise.race([
 
@@ -249,5 +255,7 @@ try {
 
   console.log(`\n${failed ? '✗' : '✓'} 截断文字的全文浮层：${passed} 通过，${failed} 失败`);
 } catch (e) { failed++; console.error('异常：' + e.message); }
+try { proc.kill(); } catch { /* 忽略 */ }
+try { server.close(); } catch { /* 忽略 */ }
 releaseProfile(profile);
 process.exit(failed ? 1 : 0);

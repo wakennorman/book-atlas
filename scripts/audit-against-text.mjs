@@ -347,7 +347,6 @@ if (all) {
 }
 
 if (nameMode) {
-  let bad = 0;
   const strict = argv.includes('--strict');
   const rep = pairs.map(([bf, tf]) => checkNames(bf, tf));
   if (asJson) { console.log(JSON.stringify(rep, null, 1)); process.exit(0); }

@@ -40,7 +40,6 @@ const FILE = path.join(ROOT, 'data', 'three-kingdoms.json');
 
 const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));
 const byName = new Map(book.characters.map((c) => [c.name, c]));
-const nm = (id) => book.characters.find((c) => c.id === id)?.name ?? id;
 
 const adopt = byName.get('夏侯惇');   // 收养者
 const child = byName.get('夏侯楙');     // 被收养者

@@ -66,7 +66,6 @@ function shouldDerive(k) {
 /** 从 younger 一路往上到 elder 的亲子边序列，用来写推导链。 */
 function chainUp(tree, from, to, edgeLabel) {
   const out = [];
-  let frontier = [from];
   let cur = from;
   for (let step = 0; step < 12; step++) {
     if (cur === to) return out.reverse();
@@ -75,7 +74,6 @@ function chainUp(tree, from, to, edgeLabel) {
     if (!next) break;
     out.push([next, cur]);
     cur = next;
-    frontier = [cur];
   }
   return out.reverse();
 }

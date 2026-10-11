@@ -430,7 +430,7 @@ async function runScene(name, def) {
     }
     if (step.dragNode) {
       // 拖动一个节点：自动找到节点位置，拖到偏移处
-      const { sel, dx, dy } = step.dragNode;
+      const { dx, dy } = step.dragNode;
       const pos = await js(`(() => {
         const chart = __ba.chart();
         const data = chart.getOption().series[0].data;
@@ -483,7 +483,7 @@ async function main() {
     `--window-size=${WIDTH},${HEIGHT}`, 'about:blank',
   ], { stdio: 'ignore' });
 
-  let results = [];
+  const results = [];
   try {
     const url = await cdpConnect();
     ws = new WebSocket(url);

@@ -442,7 +442,9 @@ jobs:
       - name: ESLint 代码检查
         # v85：原先结尾是 `|| true`，而 ESLint 9 已不认 .eslintrc.json —— 这一步一直在崩溃，
         # 又被 || true 吞掉，门禁是"假绿"的。现在改用 eslint.config.js，并且不再吞错误。
-        run: npx eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs
+        # v0.188：再加 `--max-warnings 0`。在此之前这一步只拦 error，而本仓的问题**全是 warning**
+        #   （实测 135 条）⇒「0 条 warning 的绿」和「135 条的绿」长得一模一样，等于没检查。
+        run: npx eslint js/ miniprogram/utils/ miniprogram/pages/ scripts/ shared/ test/ --ext .js,.mjs --max-warnings 0
 
       - name: 网页版核心逻辑冒烟测试
         run: node test/smoke.mjs

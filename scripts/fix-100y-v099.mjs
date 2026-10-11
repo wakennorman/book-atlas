@@ -189,7 +189,6 @@ for (const n of NEW) {
   book.characters.push({ id: n.id, name: n.name, aliases: n.aliases ?? [], gender: n.gender, generation: n.generation, note: n.note });
 }
 for (const n of NEW) {
-  const exists = byName.has(n.name) || book.characters.some((c) => c.id === n.id && c.firstCh != null);
   const c = book.characters.find((x) => x.id === n.id);
   if (!c) { console.log(`   ✗ 没能创建 ${n.name}`); continue; }
   if (c.firstCh != null) { console.log(`   · 已存在：${n.name}`); continue; }

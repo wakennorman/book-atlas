@@ -27,7 +27,7 @@ import path from 'node:path';
  * ⚠ 门禁**不能**反过来 import 本脚本：这里是**顶层就干活**的，
  *   import 它会把主流程也跑一遍，而开头 `if (!files.length) { … process.exit(1) }`
  *   在门禁的 process.argv 下必然为空 ⇒ 门禁直接被 exit 1 掉。 */
-import { baseName, dupeGroups } from './lib/dup-names.mjs';
+import { dupeGroups } from './lib/dup-names.mjs';
 /* ③ 的噪声过滤读 `data/<slug>.missing-ok.json`（v0.183）。同样抽成 lib 供守卫 import ——
    理由与 `lib/dup-names.mjs` 一样：本文件顶层就干活，门禁/守卫不能反过来 import 它。 */
 import { loadMissingOk, dropAdjudicated } from './lib/missing-ok.mjs';
@@ -73,7 +73,6 @@ for (const file of files) {
   const book = JSON.parse(fs.readFileSync(file, 'utf8'));
   const chars = book.characters || [];
   const rels = book.relations || [];
-  const byId = new Map(chars.map((c) => [c.id, c]));
   const deg = new Map();
   for (const r of rels) { deg.set(r.from, (deg.get(r.from) || 0) + 1); deg.set(r.to, (deg.get(r.to) || 0) + 1); }
 

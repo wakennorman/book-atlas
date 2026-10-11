@@ -111,7 +111,6 @@ let movedEdges = 0;
     }
     movedEdges = moved;
     // 「夫妻」→「妾室」：原文明写「妾刘氏」，且曹操—邹氏已用「妾室」（有先例）
-    const before = book.relations.length;
     for (const r of book.relations) {
       if (r.type === '夫妻' && ((r.from === 'cao-cao' && r.to === KEEP) || (r.to === 'cao-cao' && r.from === KEEP))) {
         r.type = '妾室'; typeChanged++;

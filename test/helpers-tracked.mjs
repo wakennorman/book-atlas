@@ -56,7 +56,7 @@ let tracked = null;
 try {
   const out = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   tracked = new Set(out.split(/\r?\n/).filter(Boolean).map((p) => p.replace(/\\/g, '/')));
-} catch (e) {
+} catch {
   console.log('  (跳过) 不在 git 仓库里，无法核对入库状态 —— 本守卫只在 clone 出来的仓库里有意义');
   process.exit(0);
 }

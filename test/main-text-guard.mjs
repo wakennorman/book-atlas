@@ -26,7 +26,7 @@
  * 用法：node test/main-text-guard.mjs
  */
 import fs from 'node:fs';
-import os from 'node:os';
+
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractChapters, mainTextOnly } from '../scripts/lib/main-text.mjs';

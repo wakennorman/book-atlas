@@ -274,7 +274,7 @@
       renderTimeline();
       updateCountHint();
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
-    } catch (e) { /* 文案刷新失败不影响图本身 */ }
+    } catch { /* 文案刷新失败不影响图本身 */ }
   }
 
   /* v85：文案状态**按书记**，不能是全局一个标志。
@@ -480,7 +480,7 @@
     try {
       localStorage.setItem('ba-a11y-palette', state.a11yPalette ? '1' : '0');
       localStorage.setItem('ba-fontsize', state.fontSize);
-    } catch (e) { /* 隐私模式忽略 */ }
+    } catch { /* 隐私模式忽略 */ }
     syncDisplayUI();
     renderLegend();
     if (state.chart) { computeLabels(state.zoom); state.chart.clear(); state.chart.setOption(buildOption(), { notMerge: true }); }
@@ -527,7 +527,7 @@
     if (dv) dv.checked = !!state.showDerived;
   }
   function saveEdgeFilter() {
-    try { localStorage.setItem('ba-edge-filter', JSON.stringify({ styles: [...state.edgeStyles], kins: [...state.edgeKins] })); } catch (e) { /* 隐私模式忽略 */ }
+    try { localStorage.setItem('ba-edge-filter', JSON.stringify({ styles: [...state.edgeStyles], kins: [...state.edgeKins] })); } catch { /* 隐私模式忽略 */ }
   }
   function applyEdgeFilter() {
     saveEdgeFilter();
@@ -616,7 +616,6 @@
 
   const visibleRelEvents = (r) => (r.events || []).filter((ev) =>
     (state.progress === null || eventChOf(ev) <= state.progress) && !beforeAsOf(eventChOf(ev)));
-  const relHiddenEventCount = (r) => (r.events || []).length - visibleRelEvents(r).length;
   // 人物的「最后出场章」＝本人出场章、相关事件章、相关关系事件章的最大值（用来决定结局能不能显示）
   const charLastCh = (c) => {
     if (!c || !state.book) return 0;
@@ -682,7 +681,7 @@
           continue;
         }
         state.books.push(entry);
-      } catch (e) { /* 忽略坏草稿 */ }
+      } catch { /* 忽略坏草稿 */ }
     }
 
     const sel = $('#book-select');
@@ -721,7 +720,7 @@
         const g = await fetch(meta.graphFile, { cache: 'no-cache' });
         if (!g.ok) throw new Error(String(g.status));
         book = await g.json();
-      } catch (e) {
+      } catch {
         const res = await fetch(meta.file, { cache: 'no-cache' });
         book = await res.json();
       }
@@ -773,19 +772,19 @@
     state.annoStatus = { slug, status: 'idle' };
     state.annoMode = 'chapter';
     state.maxDeg = Math.max(1, ...book.characters.map((c) => nodeDegree(c.id)));
-    try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch (e) { state.sizeFilter = 'all'; }
+    try { state.sizeFilter = localStorage.getItem('ba-size-filter') || 'all'; } catch { state.sizeFilter = 'all'; }
     const sizeSel0 = document.getElementById('size-filter');
     if (sizeSel0) sizeSel0.value = state.sizeFilter;
     renderFocusBar();
-    try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch (e) { state.showMentioned = false; }
-    try { state.showMinor = localStorage.getItem('ba-minor') === '1'; } catch (e) { state.showMinor = false; }
-    try { state.showDerived = localStorage.getItem('ba-derived') !== '0'; } catch (e) { state.showDerived = true; }
+    try { state.showMentioned = localStorage.getItem('ba-mentioned') === '1'; } catch { state.showMentioned = false; }
+    try { state.showMinor = localStorage.getItem('ba-minor') === '1'; } catch { state.showMinor = false; }
+    try { state.showDerived = localStorage.getItem('ba-derived') !== '0'; } catch { state.showDerived = true; }
     // 无障碍：配色与字号
     try {
       state.a11yPalette = localStorage.getItem('ba-a11y-palette') === '1';
       const fs = localStorage.getItem('ba-fontsize');
       state.fontSize = ['s', 'm', 'l'].includes(fs) ? fs : 'm';
-    } catch (e) { state.a11yPalette = false; state.fontSize = 'm'; }
+    } catch { state.a11yPalette = false; state.fontSize = 'm'; }
     syncDisplayUI();
     // 关系过滤（边的类型）也跟着记住
     state.edgeStyles = new Set();
@@ -794,18 +793,18 @@
       const f = JSON.parse(localStorage.getItem('ba-edge-filter') || '{}');
       if (Array.isArray(f.styles)) state.edgeStyles = new Set(f.styles);
       if (Array.isArray(f.kins)) state.edgeKins = new Set(f.kins);
-    } catch (e) { /* 坏数据忽略 */ }
+    } catch { /* 坏数据忽略 */ }
     syncEdgeFilterUI();
     const savedSpoiler = localStorage.getItem('ba-spoiler-' + book.meta.slug);
     state.progress = null;
     if (savedSpoiler) {
-      try { const s = JSON.parse(savedSpoiler); state.progress = s.on ? s.ch : null; } catch (e) { state.progress = null; }
+      try { const s = JSON.parse(savedSpoiler); state.progress = s.on ? s.ch : null; } catch { state.progress = null; }
     }
     // 章节视图：默认停在你读到的进度（没开保护就回到上次翻到的那一章）
     let savedCh = 0;
-    try { savedCh = Number(localStorage.getItem('ba-chapter-' + book.meta.slug)) || 0; } catch (e) { savedCh = 0; }
+    try { savedCh = Number(localStorage.getItem('ba-chapter-' + book.meta.slug)) || 0; } catch { savedCh = 0; }
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, savedCh || state.progress || 1));
-    try { state.timeTravel = localStorage.getItem('ba-timetravel') === '1'; } catch (e) { state.timeTravel = false; }
+    try { state.timeTravel = localStorage.getItem('ba-timetravel') === '1'; } catch { state.timeTravel = false; }
     if (state.timeTravel) state.chapter = Math.min(state.chapter, timeCeiling());
     clearHighlight(false);
     // 换书清掉上一本书的选中残留：两人关系输入值/精确 id、搜索框精确 id（id 是旧书人物的）
@@ -817,7 +816,7 @@
     }
     const ph0 = document.getElementById('path-hint');
     if (ph0) ph0.textContent = '';
-    try { history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`); } catch (e) { /* file:// 或沙箱里可能不允许改地址 */ }
+    try { history.replaceState(null, '', `?book=${encodeURIComponent(slug)}`); } catch { /* file:// 或沙箱里可能不允许改地址 */ }
     renderHeader();
     renderLegend();
     renderTimeline();
@@ -864,7 +863,7 @@
     try {
       const src = document.currentScript && document.currentScript.src;
       return new URL(src || '', location.href).searchParams.get('v') || '';
-    } catch (e) { return ''; }
+    } catch { return ''; }
   })();
 
   function renderBuildStamp() {
@@ -1813,7 +1812,6 @@
     // 屏幕上的实际符号直径（含放大补偿 + 间距缩放，和 buildOption 里一致）
     const zc = zoom > 1 ? 1 / zoom : 1;
     const px = state.pxScale || 1;                       // 见 fitPositions 的 pxScale 说明
-    const fitK = px / (Math.abs(state.fitLast) || 1);
     const spacingScreen = (state.stepWorld || 40) * px * zoom;
     const symScale = state.view === 'force' ? 1 : Math.max(0.12, Math.min(1, spacingScreen / 40));
     const eff = (id) => symbolSize(id) * zoom * zc * symScale;
@@ -1990,7 +1988,7 @@
     applyViewHeight();
     keepViewAcrossFullscreen(keep);
     updateOffscreenHint();
-    try { saveViewMemory(); } catch (e) { /* 隐私模式下忽略 */ }
+    try { saveViewMemory(); } catch { /* 隐私模式下忽略 */ }
     announce(state.fullscreen ? '已进入全屏，点右上角可展开工具条与右栏' : '已退出全屏');
   }
 
@@ -2141,7 +2139,7 @@
     const blockW = (c) => c * stepCross;
     const blockH = (r) => r * stepCross;
     const wantWH = (W && H) ? W / H : 1.7;
-    let cols = 1, rows = maxCount, stepMain = Math.max(200, 240);
+    let cols = 1, stepMain = Math.max(200, 240);
     {
       let best = null;
       const take = (c, r, sm, bWx, bHx) => {
@@ -2165,7 +2163,7 @@
           if (ratio <= wantWH) break;
         }
       }
-      cols = best.c; rows = best.r; stepMain = best.sm;
+      cols = best.c; stepMain = best.sm;
     }
     /* 群组中心之间的总距离；不足 2 组时就是 0（此时只有一个块，用块自身尺寸）。 */
     const mainLen = (groups.length - 1) * stepMain;
@@ -2330,7 +2328,7 @@
     state.focus = null;
     state.focusCache = null;
     unlockClick();                              // 「重置」＝锁定解除路径之一
-    try { localStorage.setItem('ba-view', view); } catch (e) { /* 隐私模式忽略 */ }
+    try { localStorage.setItem('ba-view', view); } catch { /* 隐私模式忽略 */ }
     syncViewButtons();
     applyViewHeight();
     updateCountHint();
@@ -2413,15 +2411,15 @@
     try {
       localStorage.setItem('ba-viewmem:' + state.book.slug,
         JSON.stringify({ v: 1, view: state.view, z: +z.toFixed(4), c: [+vc[0].toFixed(2), +vc[1].toFixed(2)], w: W, h: H }));
-    } catch (e) { /* 隐私模式忽略 */ }
+    } catch { /* 隐私模式忽略 */ }
   }
   function loadViewMemory() {
     if (!state.book || !state.bbox) return null;
     let raw = null;
-    try { raw = localStorage.getItem('ba-viewmem:' + state.book.slug); } catch (e) { return null; }
+    try { raw = localStorage.getItem('ba-viewmem:' + state.book.slug); } catch { return null; }
     if (!raw) return null;
     let m;
-    try { m = JSON.parse(raw); } catch (e) { return null; }
+    try { m = JSON.parse(raw); } catch { return null; }
     if (!m || m.v !== 1 || m.view !== state.view || !(m.z > 0)) return null;
     // 视口尺寸差太多就别硬套了（换了屏幕/折叠了面板），那时的 zoom 意图已经不成立
     const el = $('#graph');
@@ -2519,7 +2517,7 @@
   function measuredUnitPxBase() {
     const ch = state.chart;
     if (!ch) return null;
-    const data = state.drawnData || (() => { try { return ch.getOption().series[0].data; } catch (e) { return null; } })();
+    const data = state.drawnData || (() => { try { return ch.getOption().series[0].data; } catch { return null; } })();
     if (!data || data.length < 2) return null;
     // 均匀采样：三国 871 个点时 O(n²) 比对 + convertToPixel 太贵
     const MAXP = 10;
@@ -2540,7 +2538,7 @@
         try {
           pa = ch.convertToPixel({ seriesIndex: 0 }, [a.x, a.y]);
           pb = ch.convertToPixel({ seriesIndex: 0 }, [b.x, b.y]);
-        } catch (e) { continue; }
+        } catch { continue; }
         if (!pa || !pb || !isFinite(pa[0]) || !isFinite(pb[0]) || !isFinite(pa[1]) || !isFinite(pb[1])) continue;
         bestDw = dw; bestDp = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
       }
@@ -2764,7 +2762,7 @@
   function flashTo(el, block = 'start', ms = 2400) {
     if (!el) return;
     clearTimeout(navTimer);
-    try { el.scrollIntoView({ behavior: 'smooth', block }); } catch (e) { el.scrollIntoView({ block }); }
+    try { el.scrollIntoView({ behavior: 'smooth', block }); } catch { el.scrollIntoView({ block }); }
     el.classList.remove('nav-flash'); void el.offsetWidth; el.classList.add('nav-flash');
     setTimeout(() => el.classList.remove('nav-flash'), ms);
   }
@@ -2927,7 +2925,7 @@
     const next = Math.max(LOCK_DEPTH_MIN, Math.min(LOCK_DEPTH_MAX, Number(d) || 1));
     if (next === lock.depth) return;
     lock.depth = next;
-    if (lock.origin === 'search') { try { localStorage.setItem('ba-lock-depth', String(next)); } catch (e) { /* 隐私模式忽略 */ } }
+    if (lock.origin === 'search') { try { localStorage.setItem('ba-lock-depth', String(next)); } catch { /* 隐私模式忽略 */ } }
     expandLock(lock);
     applyLockFilter();
     renderLockBar();
@@ -3073,7 +3071,7 @@
 
   function applySizeFilter(v) {
     state.sizeFilter = v || 'all';
-    try { localStorage.setItem('ba-size-filter', state.sizeFilter); } catch (e) { /* 忽略 */ }
+    try { localStorage.setItem('ba-size-filter', state.sizeFilter); } catch { /* 忽略 */ }
     const sel = document.getElementById('size-filter');
     if (sel && sel.value !== state.sizeFilter) sel.value = state.sizeFilter;
     if (state.chart) {
@@ -3229,7 +3227,7 @@
   /** 解绑上一次 initChart 挂的 ResizeObserver 与 resize 监听（v85：见 initChart 开头） */
   function teardownChartListeners() {
     if (state.chartObserver) {
-      try { state.chartObserver.disconnect(); } catch (e) { /* 忽略 */ }
+      try { state.chartObserver.disconnect(); } catch { /* 忽略 */ }
       state.chartObserver = null;
     }
     if (state.chartResizeHandler) {
@@ -3455,7 +3453,7 @@
         .filter((e) => !state.placeFilter || e.place === state.placeFilter)
         .sort((a, b) => (pOrder.get(a.phase) ?? 99) - (pOrder.get(b.phase) ?? 99) || (a.order || 0) - (b.order || 0));
       return cand[0] || null;
-    } catch (e) { return null; }
+    } catch { return null; }
   }
 
   /** 滚到事件轴上那张事件卡并闪烁。delay＝隔一拍再走，让上一步（关系卡/关系链）的闪烁先被看见。
@@ -3826,7 +3824,6 @@
       ${state.placeFilter ? `<p class="hint">📍 正在按地点「${placeRef(state.placeFilter)}」筛选：图上只高亮该范围内的人与关系。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
       ${lordHist.length ? `<p class="card-sub">效力变化（旧主 → 新主）：${lordHist.map((s) => {
-        const lordName = s.lord && state.byId.has(s.lord) ? esc((state.byId.get(s.lord) || {}).name) : '自立';
         const link = s.lord && state.byId.has(s.lord) ? charLink(s.lord) : `<b>自立</b>`;
         return `${link}<span class="hint">（第 ${s.fromCh} 回）</span>`;
       }).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回）</span>`}
@@ -4209,7 +4206,7 @@
     }
   }
   function applyTimeTravel() {
-    try { localStorage.setItem('ba-timetravel', state.timeTravel ? '1' : '0'); } catch (e) { /* 隐私模式忽略 */ }
+    try { localStorage.setItem('ba-timetravel', state.timeTravel ? '1' : '0'); } catch { /* 隐私模式忽略 */ }
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, state.chapter || 1));
     syncTimeTravelUI();
     clearHighlight(false);
@@ -4223,7 +4220,7 @@
 
   function goChapter(n) {
     state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(n) || 1));
-    try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch (e) { /* 忽略 */ }
+    try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch { /* 忽略 */ }
     renderChapter();
     if (state.timeTravel) applyTimeTravel();
     else syncTimeTravelUI();
@@ -4734,7 +4731,7 @@
         model,
         key: localStorage.getItem('ba-ai-key') || '',
       };
-    } catch (e) {
+    } catch {
       return { base: AI_DEFAULT_BASE, model: AI_DEFAULT_MODEL, key: '' };
     }
   };
@@ -4761,7 +4758,7 @@
       localStorage.setItem('ba-ai-base', base.replace(/\/+$/, ''));
       localStorage.setItem('ba-ai-model', model);
       localStorage.setItem('ba-ai-key', key);
-    } catch (e) { /* 隐私模式忽略 */ }
+    } catch { /* 隐私模式忽略 */ }
     const modal = document.getElementById('ai-modal');
     if (modal) modal.hidden = true;
     toast(key ? '已保存 AI 配置（只在本机，与编辑器共用）' : '已清空 API Key');
@@ -5190,7 +5187,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         const r = await fetch(meta.textFile, { cache: 'no-cache' });
         if (!r.ok) throw new Error(String(r.status));
         attachText(slugOf(), await r.json());
-      } catch (e) {
+      } catch {
         return false;
       }
     }
@@ -5274,7 +5271,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const slug = state.book?.meta?.slug || 'book';
     try {
       localStorage.setItem('ba-spoiler-' + slug, JSON.stringify(on ? { on: true, ch } : { on: false }));
-    } catch (e) { /* 隐私模式忽略 */ }
+    } catch { /* 隐私模式忽略 */ }
     try {
       clearHighlight(false);
       renderTimeline();
@@ -5356,7 +5353,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       }
       case 'derived': {
         state.showDerived = !state.showDerived;
-        try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+        try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch { /* 忽略 */ }
         const btn = document.getElementById('derived-btn');
         if (btn) btn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏';
         if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
@@ -5391,8 +5388,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
 
   /** 被折叠的人物：自动展开层级（次要/提及）再定位——搜索永远找得到 */
   function revealChar(c) {
-    if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch (e) { /* 忽略 */ } }
-    if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch (e) { /* 忽略 */ } }
+    if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch { /* 忽略 */ } }
+    if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch { /* 忽略 */ } }
     const minorBtn2 = document.getElementById('minor-btn');
     if (minorBtn2) minorBtn2.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏';
     const mentionBtn2 = document.getElementById('mentioned-btn');
@@ -5579,7 +5576,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏'; };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
       state.showMentioned = !state.showMentioned;
-      try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch { /* 忽略 */ }
       syncMentionBtn();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       updateCountHint();
@@ -5591,7 +5588,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏'; };
     if (minorBtn) minorBtn.addEventListener('click', () => {
       state.showMinor = !state.showMinor;
-      try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch { /* 忽略 */ }
       syncMinorBtn();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
@@ -5604,7 +5601,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'; };
     if (derivedBtn) derivedBtn.addEventListener('click', () => {
       state.showDerived = !state.showDerived;
-      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch { /* 忽略 */ }
       syncDerivedBtn();
       syncEdgeFilterUI();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
@@ -5662,7 +5659,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const derivedBox = document.getElementById('edge-derived');
     if (derivedBox) derivedBox.addEventListener('change', () => {
       state.showDerived = derivedBox.checked;
-      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch (e) { /* 忽略 */ }
+      try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch { /* 忽略 */ }
       syncDerivedBtn();
       if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
       refreshPanel();
@@ -5810,7 +5807,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       let sliderTimer = null;
       timeSlider.addEventListener('input', () => {
         state.chapter = Math.max(1, Math.min(maxChapter() || 1, Number(timeSlider.value) || 1));
-        try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch (e) { /* 忽略 */ }
+        try { localStorage.setItem('ba-chapter-' + (state.book?.meta?.slug || 'book'), String(state.chapter)); } catch { /* 忽略 */ }
         syncTimeTravelUI();
         renderChapter();
         clearTimeout(sliderTimer);
@@ -5853,7 +5850,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     });
     // 点一下图就聚焦它，之后方向键直接可用
     const graphEl = document.getElementById('graph');
-    if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch (e) { /* 忽略 */ } });
+    if (graphEl) graphEl.addEventListener('mousedown', () => { try { graphEl.focus({ preventScroll: true }); } catch { /* 忽略 */ } });
 
     // 导出 / 分享
     // v85：导出与 AI 的逻辑本来就内联在本文件里，原先 js/export.js / js/ai.js 是同一套逻辑的第二份手抄

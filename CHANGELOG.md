@@ -5,6 +5,110 @@
 
 ---
 
+## v0.188 · ESLint 归零，并让它真的会红 —— 顺带逮到「本地验收根本不跑 lint」和一条死清单
+
+`check.yml` 里的 ESLint 步骤**只拦 error，从不拦 warning**（命令结尾没有 `--max-warnings`）。
+而本仓的 lint 结果**全是 warning**：`0 errors / 135 warnings`。
+⇒ 「一条 warning 都没有的绿」和「135 条的绿」长得一模一样 —— 这是本仓最熟的那一族病。
+
+### 一、135 → 0：按性质分三类
+
+| 类别 | 条数 | 处理 |
+|---|---|---|
+| `catch (e)` 里 `e` 没用 | 68 | 改成可选 catch 绑定 `catch {`（ES2019，espree 支持） |
+| `prefer-const`（`let` 没被重新赋值） | 12 | `eslint --fix` |
+| `no-unused-vars` | 55 | 逐条判断：死代码删掉、有副作用保留调用、真缺陷补上（见下） |
+
+集中在 `js/app.js`（47 条）与 `js/editor.js`（17 条）。
+
+### 二、里面有 **4 处不是死代码**，是缺陷
+
+1. **`test/full-tip.mjs`：全仓唯一一个不 kill 浏览器的测试。**
+   其余 20 多个开 Edge 的测试收尾都有 `try { proc.kill(); } catch {}`，只有它没有；
+   而 `releaseProfile()` 的注释写明「调用方应已 `proc.kill()` 过」。
+   后果是它的临时 profile **10 次重试全部删不掉**、必然泄漏在 Temp
+   （`_profile-guard.mjs` 文件头记着这个坑：24 小时泄漏过 1012 个目录 / 60.5 GB）。
+   连带 `if (!url)` 那条早退路径也不清进程、不关服务器 —— 一并补齐。
+
+2. **`test/parity.mjs` 的 `FN` 是条死清单。**
+   ```js
+   // 需要对拍的纯函数（两边都有同名实现）
+   const FN = ['chOf', 'charCh', … 'maxChapter'];   // 22 个名字，从没被任何代码读过
+   ```
+   逐个数过：其中 **16 个**确实被下方的显式用例对拍（`charCh` / `relLocked` / `groupKeyOf` …）；
+   **6 个从来没被对拍过** —— `chOf`、`lockedCh`、`eventLocked`、`eventChOf`、
+   `eventVisibleAt`、`symbolSize`。
+   更麻烦的是这 6 个里有两个**连名字都只有网页版有**：
+
+   | 名字 | `js/app.js` | `shared/graph-core.js` | `miniprogram/utils/graph.js` |
+   |---|---|---|---|
+   | `eventChOf` | 具名定义 | **0 次**（内联） | **0 次**（内联） |
+   | `eventVisibleAt` | 具名定义 | **0 次**（内联） | **0 次**（内联） |
+
+   ⇒ 注释里那句「两边都有同名实现」对事件谓词**根本不成立**，所以「事件的第几回 / 可见性」
+   三份口径的漂移不会被任何门禁发现。清单本身是**假信号源**（读它的人会以为这里有 22 项对拍），
+   已删除；**但 6 个未对拍的名字记在这里，别让它随清单一起消失**。
+
+3. **`js/editor.js` 的 `autoSave()` 从没被调用。**
+   防抖存盘写好了，而 `body.addEventListener('input', …)` 只把值写进 `ed.form`、不存盘
+   ⇒ 它是个孤儿。所有存盘路径本来就走显式 `saveDraft()`（14 处），故删除，未改行为。
+
+4. **`scripts/add-liuyao-six.mjs` 的 `skipped` 只自增、从不打印。**
+   4 条 `skipped++; continue;` 分支都逐条打了 ⛔，但没有总数 ⇒
+   「跳过 4 条」看起来和「新增 4 条」一样。补了一行
+   `⇒ 新增 N 条边，跳过 M 条（跳过原因见上）`。
+
+### 三、让这一步真的会红，并且本地也真的跑它
+
+**(a) 加 `--max-warnings 0`**（`check.yml` 与 `package.json` 的 `lint` 同步）。
+负向证据（同一份代码，只差这个 flag）：
+
+```
+塞 1 条 warning：--max-warnings 0 → exit=1     不加 → exit=0
+```
+
+**(b) 发现本地验收**根本不跑** lint。**
+`tools/gate-local.sh` 只抽 `run: node …` 的行，而 ESLint 那一步写的是 `npx eslint …`
+⇒ `node tools/gate.mjs`（72 步）和 `gate-local.sh`（72 步）都不含它。
+**把 lint 变成硬门禁，本地也照样是绿的** —— 和 v0.186 修的是同一个病。
+
+`gate-local.sh` 补了 **2b 段**：把「非 node 的检查步骤」也收进来
+（`run: |` 多行块与 `npm install` 不算检查，不收），并用**写死的 `EXTRA_EXPECT=1`**
+逼人登记新步骤。负向证据（往 yml 里多塞一条 `run: echo`）：
+
+```
+✗ 从 yml 抽到 2 条「非 node 的检查步骤」，而本脚本记的是 1 条。  → exit=2
+```
+
+现在 `bash tools/gate-local.sh --list` = **73 步**（72 + 1）。
+
+### 四、其余 51 条是死代码，删掉（不删就永远看不出哪条是真缺陷）
+
+- **死函数**：`_patch-v96-chars.addRel`、`add-missing-nine.nm`、`fix-rest.nm`、
+  `fix-split-sunhe.nm`、`fix-xiahou.nm`、`fix-wrong-chapters.chapterAt`、
+  `audit-search.byId`、`audit-against-text` 的 `bad`、`_patch-v93.countIn`、
+  `layout-stable.grab`、`parity.nodesIn`。
+- **死常量 / 死数组**：`_patch-v96-chars.R`、`fix-bad-quotes.FILE`、`fix-100y-v099.exists`、
+  `fix-fate-and-merge-liu.before`、`fix-wrong-chapters.before`、`fix-other-two-books.TYPES`、
+  `purge-history-only.byId`、`fix-split-sunhe.TO_ZONGHE`（脚本实际走 `TO_HE`；
+  这些边与原文依据已在 `data/*.json` 与 CHANGELOG 里）。
+- **未用的解构位 / 导入**：`check-dup-names-ledger.book`、`core.state`、`parity.nodesIn`、
+  `test/browser.net`、`test/e2e.freePort`、`test/main-text-guard.os`、`lib/main-text.path`、
+  `audit-search.baseName`、`check-dup-names-ledger.baseName`。
+- **有副作用、只删绑定的两处**（删调用会真的丢覆盖，已加注释说明）：
+  `parity.mjs` 的 `multiPair` IIFE（作用是往 `starts` 里 push）、
+  `races.mjs` 的 `await js(...)`（在页面里改写 `createObjectURL` 拦下载）。
+
+### 五、没做、记下来
+
+- `scripts/` 94 个 `.mjs` 里 22 个全仓无人引用（历史 `fix-*.mjs` 的证据链）⇒ **建索引，不删**（另开）。
+- 上面第 2 条的 6 个未对拍谓词：补对拍要先把 `eventChOf` / `eventVisibleAt` 在 core 与小程序里
+  抽成具名函数，属于改动三份实现，另开。
+
+改了前端资源（`js/app.js` / `js/editor.js`）⇒ **bump 到 v188**。
+
+---
+
 ## v0.187 · 「改了数据要重生成」这条还有个第三个出口：**规程**
 
 v0.186 把这条补进了 README 与项目记忆。复核时发现**同一件事还有第三个出口**——

@@ -26,11 +26,6 @@ const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));
 const byName = (n) => book.characters.find((c) => c.name === n);
 const relBetween = (a, z) => book.relations.find(
   (r) => (r.from === a.id && r.to === z.id) || (r.to === a.id && r.from === a.id));
-const addRel = (from, to, type, extra = {}) => {
-  const r = { from, to, type, style: 'solid', events: [] , ...extra };
-  book.relations.push(r);
-  return r;
-};
 const ev = (text, chapter, place) => ({ text, chapter, place: place || '' });
 
 /* ---------------- ① 新增人物（每条都注明原文出处） ---------------- */
@@ -163,7 +158,6 @@ console.log('  （没有需要修正的既有错名：同名不同人已逐条�
 
 /* ---------------- ③ 新增关系（每条都注明原文出处） ---------------- */
 const get = (id) => book.characters.find((c) => c.id === id);
-const R = [];
 
 /** 加一条关系。extra 里可以带 kin（validate 会检查 type 的措辞与 kin 是否一致）。 */
 const push = (fromId, toId, type, events = [], extra = {}) => {

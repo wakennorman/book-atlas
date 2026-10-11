@@ -55,7 +55,6 @@ if (!novel) console.warn(`⚠ 找不到原文 ${NOVEL}，无法核实！不执�
 const count = (k) => (novel ? novel.split(k).length - 1 : -1);
 
 const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-const byId = new Map(book.characters.map((c) => [c.id, c]));
 const nm = (id) => book.characters.find((c) => c.id === id)?.name ?? id;
 
 console.log('=== 原著核实（《三国演义》全文逐字计数）===');

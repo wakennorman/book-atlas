@@ -88,7 +88,6 @@ for (const slug of ['three-kingdoms', 'crime-and-punishment']) {
   const file = path.join(ROOT, 'data', `${slug}.json`);
   const book = JSON.parse(fs.readFileSync(file, 'utf8'));
   const byName = new Map(book.characters.map((c) => [c.name, c]));
-  const nm = (id) => book.characters.find((c) => c.id === id)?.name ?? id;
   const touched = new Set();
 
   console.log(`\n${'═'.repeat(66)}\n【${slug}】`);

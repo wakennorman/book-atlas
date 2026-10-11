@@ -192,7 +192,7 @@ console.log('\n═══ 四、补 2 个原文真实称谓作别名 ═══\n'
     ['wu-yayu-qi', '吴押狱怒骂其妻', '吴押狱怒骂其妻'],
     ['guan-lu-jiu', '其舅大骂辂为狂子', '其舅大涨辂为狂子而去'],
   ];
-  for (const [id, alias, cite] of add) {
+  for (const [id, alias] of add) {
     const c = byId.get(id);
     if (!c) { console.log(`  (跳过) 找不到 ${id}`); continue; }
     if (!f.includes(flat(alias))) { console.error(`  ⛔ ${c.name}：别名「${alias}」原文里 0 次 —— 不加`); process.exitCode = 1; continue; }

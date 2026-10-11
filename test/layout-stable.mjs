@@ -274,8 +274,7 @@ try {
     ws.onmessage = (ev) => { const m = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString()); if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.reject(new Error(m.error.message)) : p.resolve(m.result || {}); } };
     const send = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); setTimeout(() => { if (pending.has(id)) { pending.delete(id); reject(new Error(method + ' 超时')); } }, 60000); });
     const js = async (e) => { const r = await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text); return r.result.value; };
-    const grab = () => js(`(() => { const st = window.__ba.state; const m = {};
-      for (const [id, p] of st.pos) m[id] = [p.x, p.y]; return m; })()`);
+
     /* v0.130：量**未适配**的力导向原始坐标，而不是 st.pos。
      *
      * 起因（一次性探针实测，用完即删）：
@@ -361,11 +360,7 @@ try {
     sweepStaleProfiles();
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-vm-'));
     const proc = spawn(EDGE, [...browserArgs(), `--remote-debugging-port=${CDP_PORT}`, `--user-data-dir=${profile}`, '--headless=new', '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' });
-    const PIN = `(() => {
-      let s = document.getElementById('ba-test-pin');
-      if (!s) { s = document.createElement('style'); s.id = 'ba-test-pin'; document.head.appendChild(s); }
-      s.textContent = '#graph { height: ${PIN_H}px !important; }';
-    })()`;
+
     const cdpUrl = () => new Promise((res, rej) => {
       http.get({ host: '127.0.0.1', port: CDP_PORT, path: '/json/list', headers: { Connection: 'close' } }, (r) => {
         let s = ''; r.on('data', (d) => { s += d; });

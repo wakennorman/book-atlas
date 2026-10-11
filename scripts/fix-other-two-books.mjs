@@ -86,7 +86,7 @@ for (const slug of Object.keys(BOOKS)) {
     if (dup.length) hits.push({ c, dup });
   }
   if (!hits.length) { console.log(`  ${BOOKS[slug].label}：无`); continue; }
-  for (const { c, dup } of hits) {
+  for (const { c } of hits) {
     const before = c.aliases.length;
     c.aliases = c.aliases.filter((a) => a !== c.name);
     console.log(`  ${BOOKS[slug].label}  ${c.name.padEnd(18)} 别名 ${before} → ${c.aliases.length}`);
@@ -110,7 +110,7 @@ let edgesAdded = 0;
   const NIK_LOC = '他就是本区警察分局的局长，尼科丁佛米奇';
   const ILYA_LOC = '尼科丁佛米奇带着亲切的好意对伊里亚彼得罗维奇说';
   const RASK_LOC = '我要跟您说，他是个极其高尚的人，然而又是炮筒子';
-  for (const [w, loc] of [['尼科丁', NIK_LOC], ['伊里亚', ILYA_LOC], ['罗季昂', RASK_LOC]]) {
+  for (const [, loc] of [['尼科丁', NIK_LOC], ['伊里亚', ILYA_LOC], ['罗季昂', RASK_LOC]]) {
     if (!f.includes(flat(loc))) { console.error(`  ⛔ 定位短语核验不过：「${loc}」`); process.exit(1); }
   }
   console.log('  原文核验通过（三处定位短语都逐字存在）');
@@ -126,7 +126,6 @@ let edgesAdded = 0;
    *   责备   —— 已有（用于副局长大骂女房东那场：「你是要在拘留所吗…」）
    *   辩护   —— 已有（局长替副局长说情那场：「他是个极其高尚的人，然而又是炮筒子」）
    */
-  const TYPES = new Set(book.relations.map((r) => r.type));
   const SHARED = (() => {
     const s = new Set();
     for (const slug of Object.keys(BOOKS)) {

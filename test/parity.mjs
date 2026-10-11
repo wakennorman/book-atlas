@@ -175,11 +175,7 @@ if (!url) {
     { label: '剧透=20+旅行@6', o: { progress: 20, timeTravel: true, chapter: 6 } },
   ];
 
-  // 需要对拍的纯函数（两边都有同名实现）
-  const FN = ['chOf', 'charCh', 'relCh', 'relFrom', 'lockedCh', 'charLocked', 'relLocked',
-    'eventLocked', 'eventChOf', 'eventVisibleAt', 'charVisibleAt', 'relVisibleAt', 'relVisible',
-    'passEdgeFilter', 'symbolSize', 'groupKeyOf', 'groupLabelOf', 'effectiveFactionKey',
-    'charLastCh', 'fateLocked', 'periodText', 'maxChapter'];
+
 
   // 聚焦（focusSet）：三份的 state 形状不同（app 的 state 挂在 __ba 上、还带 focusCache），
   // 所以每次现建一个实例再问它，不做任何缓存。
@@ -344,7 +340,7 @@ if (!url) {
      * 小程序 graph.js 各有一份手抄。任何一份改了而另两份没改，锁定后的图就会不一样。
      * （锁定本身只画集合内的东西，所以这里错一点点 = 用户看到的人/线就不一样。） ---- */
     const lockViewOf = async (book, o, side) => {
-      const nodesIn = JSON.stringify(o.nodes);
+
       if (side === 'web') {
         return js(`(() => {
           const st = window.__ba.state;
@@ -372,7 +368,8 @@ if (!url) {
 
     // 起点用两个人物对（有并行边）和一个 hub，覆盖"邻域很小"与"邻域很大"两种
     const starts = [hub];
-    const multiPair = (() => {
+    // 这个 IIFE 的**作用是往 starts 里 push**，返回值没人要 —— 不能因为「返回值没用」就删掉调用。
+    (() => {
       const key = new Map();
       for (const r of book.relations) {
         const k = [r.from, r.to].sort().join('|');

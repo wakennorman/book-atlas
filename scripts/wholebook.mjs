@@ -60,7 +60,6 @@ function chaptersFromDocs(text) {
   const parts = text.split(/^==== \[(\d+)\] (\S+) ====\s*$/m);
   // 形如 ['', '001', 'xhtml/1.xhtml', '正文…', '002', ...]
   for (let i = 1; i + 2 < parts.length + 1; i += 3) {
-    const href = parts[i + 1];
     const body = parts[i + 2];
     if (!body) continue;
     const firstLine = (body.split('\n').map((s) => s.trim()).find(Boolean) || '').slice(0, 40);
@@ -154,7 +153,7 @@ function parseLooseJson(raw) {
   const start = text.indexOf('{');
   if (start < 0) throw new Error('返回里没有找到 JSON：' + text.slice(0, 120));
   const body = text.slice(start);
-  try { return JSON.parse(body.slice(0, body.lastIndexOf('}') + 1 || undefined)); } catch (e) { /* 修复 */ }
+  try { return JSON.parse(body.slice(0, body.lastIndexOf('}') + 1 || undefined)); } catch { /* 修复 */ }
   const marks = [];
   const stack = [];
   let inStr = false, esc = false;
@@ -176,7 +175,7 @@ function parseLooseJson(raw) {
       else if (ch === '}' || ch === ']') s.pop();
     }
     if (inS) continue;
-    try { return JSON.parse(cand + s.reverse().join('')); } catch (e) { /* 再往前退 */ }
+    try { return JSON.parse(cand + s.reverse().join('')); } catch { /* 再往前退 */ }
   }
   throw new Error('返回的 JSON 无法解析（多半是这一章太长、输出被截断）；可以重跑这一章');
 }

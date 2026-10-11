@@ -36,7 +36,6 @@
  *   ⇒ `罗贯中`/`毛宗岗` 被当成正文。改成"同一回号取最后一次"才对。
  */
 import fs from 'node:fs';
-import path from 'node:path';
 
 /** 回目标题行：`第N回`。⚠ 必须**行首**锚定（MEMORY 记过：正文里也可能出现「第N回」三个字）。 */
 const CHAPTER_HEAD = /^\s*第([一二三四五六七八九十百零〇\d]+)回/;

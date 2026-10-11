@@ -89,7 +89,7 @@ function guard(id, expect) {
 }
 
 console.log('=== 一、删掉原著里查无此人的人物 ===');
-for (const [id, name, why] of PURGE) {
+for (const [id, name] of PURGE) {
   const c = guard(id, name);
   if (!c) continue;
   const edges = book.relations.filter((r) => r.from === id || r.to === id);

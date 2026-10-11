@@ -438,7 +438,7 @@ try {
 
   console.log('\n▶ v93 图上点节点／点线**不**建锁（要在图里接着走关系链）');
   await unlockAll();
-  const beforeCanvas = await probe();
+
   const canvasRes = await js(`(() => {
     const ch = window.__ba.chart();
     return ch.getOption().series[0].data.find((d) => !String(d.id).startsWith('__gen_') && d.id !== 'cao-cao')?.id || null;

@@ -221,7 +221,6 @@ const EDGES = [
 const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));
 const byName = new Map(book.characters.map((c) => [c.name, c]));
 const byId = new Map(book.characters.map((c) => [c.id, c]));
-const nm = (id) => byId.get(id)?.name ?? id;
 let added = 0, skipped = 0;
 
 /* ── 1. 蔡氏 → 蔡夫人 的别名 ── */

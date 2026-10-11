@@ -11,7 +11,7 @@
  * 用法：node test/e2e.mjs
  */
 import http from 'node:http';
-import { freePort } from './_free-port.mjs';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

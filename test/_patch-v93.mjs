@@ -39,7 +39,6 @@ function unstash() {
 }
 const read = (rel) => fs.readFileSync(p(rel), 'utf8');
 const write = (rel, s) => fs.writeFileSync(p(rel), s);
-const countIn = (s, frag) => s.split(frag).length - 1;
 
 /** 把所有补丁列出来；每项 = { id, desc, test, edits: [[文件, 源, 目标]] } */
 const PATCHES = [
@@ -149,7 +148,7 @@ const PATCHES = [
 ];
 
 /* ---------- 主体 ---------- */
-const [, , cmd, arg] = process.argv;
+const [, , cmd] = process.argv;
 if (!cmd || cmd === 'list') {
   console.log('可回退项：');
   for (const x of PATCHES) console.log(`  ${x.id.padEnd(16)} ${x.desc}\n  ${''.padEnd(16)} → 验证 ${x.test}`);
@@ -174,7 +173,7 @@ if (!patch) { console.error('没有这一项：' + cmd + '（用 list 看可选�
  *   每次都快照"调用这一刻"的状态，restore 才能回到"刚才那次调用之前"。 */
 stash(patch.id);
 
-let n = 0, miss = [];
+let n = 0; const miss = [];
 for (const [file, from, to] of patch.edits) {
   const s = read(file);
   if (typeof from === 'string') {

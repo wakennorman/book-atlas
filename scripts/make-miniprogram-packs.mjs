@@ -14,7 +14,7 @@ import path from 'node:path';
 
 const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, 'miniprogram', 'data');
-const chOf = (s) => { const m = String(s || '').match(/(\d+)/); return m ? Number(m[1]) : null; };
+
 /* 稳定的字符串比较（按码点）。
    不能用 localeCompare：它走 ICU，Windows 与 Ubuntu 对中文名的排序不同，
    同一份数据在两个系统上会生成不同的布局 ⇒ CI 上"重新生成 + git diff"天天红。 */
@@ -93,7 +93,7 @@ function forceLayout(book, { symbolSize }) {
     // 斥力（n 大时用网格近似，只和邻格互斥）
     if (n <= 400) {
       for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-        let dx = xs[i] - xs[j], dy = ys[i] - ys[j];
+        const dx = xs[i] - xs[j], dy = ys[i] - ys[j];
         const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
         const f = (k * k) / d;
         const ux = dx / d, uy = dy / d;
@@ -116,7 +116,7 @@ function forceLayout(book, { symbolSize }) {
           if (!arr) continue;
           for (const j of arr) {
             if (j <= i) continue;
-            let dx = xs[i] - xs[j], dy = ys[i] - ys[j];
+            const dx = xs[i] - xs[j], dy = ys[i] - ys[j];
             const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
             const f = (k * k) / d;
             const ux = dx / d, uy = dy / d;
@@ -128,7 +128,7 @@ function forceLayout(book, { symbolSize }) {
     }
     // 引力（沿边）
     for (const [a, b] of links) {
-      let dx = xs[a] - xs[b], dy = ys[a] - ys[b];
+      const dx = xs[a] - xs[b], dy = ys[a] - ys[b];
       const d = Math.max(0.01, Math.sqrt(dx * dx + dy * dy));
       const f = (d * d) / k;
       const ux = dx / d, uy = dy / d;

@@ -45,7 +45,7 @@
     document.body.classList.toggle('ed-preview-on', on);
     const btn = document.getElementById('ed-preview');
     if (btn) { btn.classList.toggle('primary', on); btn.textContent = on ? '预览：开' : '预览'; }
-    try { localStorage.setItem('ba-ed-preview', on ? '1' : '0'); } catch (e) { /* 忽略 */ }
+    try { localStorage.setItem('ba-ed-preview', on ? '1' : '0'); } catch { /* 忽略 */ }
     if (on) refreshPreview(0);
   }
 
@@ -55,7 +55,7 @@
     let books = [];
     try {
       books = (await (await fetch('data/books.json', { cache: 'no-cache' })).json()).books || [];
-    } catch (e) { /* 允许纯本地使用 */ }
+    } catch { /* 允许纯本地使用 */ }
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k || !k.startsWith('ba-draft-')) continue;
@@ -63,7 +63,7 @@
         const d = JSON.parse(localStorage.getItem(k));
         const slug = d?.meta?.slug || k.replace('ba-draft-', '');
         if (!books.some((b) => b.slug === slug)) books.push({ slug, title: `${d?.meta?.title || slug}（本地草稿）`, local: true });
-      } catch (e) { /* 忽略坏草稿 */ }
+      } catch { /* 忽略坏草稿 */ }
     }
     sel.innerHTML = books.length
       ? books.map((b) => `<option value="${esc(b.slug)}" data-local="${b.local ? 1 : 0}" data-file="${esc(b.file || '')}">${esc(b.title)}</option>`).join('')
@@ -189,11 +189,6 @@
     } catch (e) { setStatus('保存失败：' + e.message); }
   }
 
-  function autoSave() {
-    clearTimeout(ed.timer);
-    ed.timer = setTimeout(saveDraft, 800);
-  }
-
   async function exportJson() {
     const slug = ed.book.meta.slug || slugify(ed.book.meta.title);
     const json = JSON.stringify(ed.book, null, 2);
@@ -201,7 +196,7 @@
     try {
       const res = await fetch(`http://localhost:8766/save?name=${encodeURIComponent(slug)}.json`, { method: 'POST', body: json });
       if (res.ok) { toast(`✓ 已写入 data/${slug}.json（本地接收器）——接着在 data/books.json 里登记一行即可`); return; }
-    } catch (e) { /* 没起接收器就走下载 */ }
+    } catch { /* 没起接收器就走下载 */ }
     const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -528,7 +523,7 @@
     document.body.appendChild(ta);
     ta.select();
     try { document.execCommand('copy'); done(); }
-    catch (e) { alert('复制失败，可以手动复制下面这段：\n\n' + text.slice(0, 800)); }
+    catch { alert('复制失败，可以手动复制下面这段：\n\n' + text.slice(0, 800)); }
     ta.remove();
   }
 
@@ -664,7 +659,6 @@
 
   /* —— 人物 —— */
   function listCharacters() {
-    const gen = {};
     const rows = ed.book.characters.map((c, i) => `
       <tr>
         <td>${esc(c.name)}</td><td>${esc(c.id)}</td><td>${c.generation}</td>
@@ -890,7 +884,7 @@
       localStorage.setItem('ba-ai-key', key);
       localStorage.setItem('ba-ai-base', base);
       localStorage.setItem('ba-ai-model', model);
-    } catch (e) { /* 忽略 */ }
+    } catch { /* 忽略 */ }
     out.className = 'ed-msg';
     out.textContent = '正在生成…（长文本可能要 1–2 分钟，请勿关闭页面）';
     const system = '你是文学作品的资料整理员，为「人物关系 + 事件时间轴」应用生成数据草稿。硬性要求：严格输出 JSON（不要 markdown 围栏、不要解释）；人物 25–45 个（主要出场人物尽量都收）；关系 40–75 条且每条至少 1 个「定义关系的小事件」并尽量给章节；事件 18–30 个并按 5–8 个阶段分组；地点（places）6–15 个（城镇/宅邸/酒馆/机构这类能当筛选维度的），事件的 place 与关系小事件的 place 必须引用 places 里已有的 id；**血缘/收养/继亲/姻亲必须分开写**（父子、母子、养父、养女、继母、岳父…，别把收养写成"母子"）；没有明确年份就禁止编造年份，用 phase+order 排序；style 约定 solid=亲缘/同盟、dashed=对立/伤害、dotted=情人/过去/间接；**同一对人如果关系变了（同盟→反目、主从→仇敌），拆成两条并各给 fromCh/toCh**（toCh 独占，第 3–8 章写作 fromCh:3, toCh:9）；易混同名人物在 note 里写消歧提示；全部字段中文，id 用拼音 kebab-case。';
@@ -952,7 +946,7 @@
       localStorage.setItem('ba-ai-base', cfg.base);
       localStorage.setItem('ba-ai-key', cfg.key);
       localStorage.setItem('ba-ai-model', cfg.model);
-    } catch (e) { /* 忽略 */ }
+    } catch { /* 忽略 */ }
   }
 
   // AI 返回的 JSON 偶发被 max_tokens 截断：从后往前退到最近的完整元素，自动补齐括号
@@ -961,7 +955,7 @@
     const start = text.indexOf('{');
     if (start < 0) throw new Error('返回里没有找到 JSON：' + text.slice(0, 120));
     const body = text.slice(start);
-    try { return JSON.parse(body.slice(0, body.lastIndexOf('}') + 1 || undefined)); } catch (e) { /* 继续修复 */ }
+    try { return JSON.parse(body.slice(0, body.lastIndexOf('}') + 1 || undefined)); } catch { /* 继续修复 */ }
     const marks = [];
     const stack = [];
     let inStr = false, esc = false;
@@ -977,7 +971,7 @@
      * 而这恰恰是最常见的截断形态。现在把未闭合的括号补齐再试一次。
      * 只在栈非空、且没停在字符串中间时补，避免把半截内容拼成看似合法的脏数据。 */
     if (stack.length && !inStr) {
-      try { return JSON.parse(body + stack.reverse().join('')); } catch (e) { /* 补不齐就算了，走下面的老路 */ }
+      try { return JSON.parse(body + stack.reverse().join('')); } catch { /* 补不齐就算了，走下面的老路 */ }
     }
     for (let k = marks.length - 1; k >= 0; k--) {
       const cand = body.slice(0, marks[k] + 1);
@@ -990,7 +984,7 @@
         else if (ch === '}' || ch === ']') s.pop();
       }
       if (inS) continue;
-      try { return JSON.parse(cand + s.reverse().join('')); } catch (e) { /* 再往前退一格 */ }
+      try { return JSON.parse(cand + s.reverse().join('')); } catch { /* 再往前退一格 */ }
     }
     throw new Error('返回的 JSON 无法解析（多半是这一章内容太长、输出被截断）。可以先跳过这章，或把这一章拆成两半再跑');
   }
@@ -1043,7 +1037,7 @@
   }
 
   const decodeBytes = (bytes) => {
-    try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch (e) { return ''; }
+    try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch { return ''; }
   };
 
   // 汉字数字 → 阿拉伯数字（一百二十 → 120）
@@ -1114,7 +1108,7 @@
   }
 
   /* —— PDF：内置 pdf.js 在浏览器里抽文字层（扫描件没有文字层，会明确提示） —— */
-  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=179';
+  const PDF_WORKER = 'vendor/pdf.worker.min.js?v=188';
 
   // 页面文字层 → 行：按 y 坐标分行（比只看 hasEOL 稳），行距突然变大就空一行
   function pageToLines(items) {
@@ -1254,14 +1248,14 @@
         at: Date.now(),
         results: ed.genResults || []
       }));
-    } catch (e) { /* 超配额就算了 */ }
+    } catch { /* 超配额就算了 */ }
   }
 
   function savedBatch() {
     try {
       const d = JSON.parse(localStorage.getItem(batchKey()) || 'null');
       return d && Array.isArray(d.results) && d.results.some(Boolean) ? d : null;
-    } catch (e) { return null; }
+    } catch { return null; }
   }
 
   // 分章完成后：如果本地存的批次章数对得上，自动把上次的结果接回来
@@ -1596,7 +1590,7 @@
     body.addEventListener('input', (ev) => {
       const id = ev.target.id;
       if (id === 'ai-base' || id === 'ai-key' || id === 'ai-model') {
-        try { localStorage.setItem('ba-' + id, ev.target.value); } catch (e) { /* 忽略 */ }
+        try { localStorage.setItem('ba-' + id, ev.target.value); } catch { /* 忽略 */ }
         return;
       }
       if (id === 'batch-text') { ed.batchText = ev.target.value; return; }
@@ -1609,7 +1603,7 @@
     body.addEventListener('change', (ev) => {
       const id = ev.target.id;
       if (id === 'ai-base' || id === 'ai-key' || id === 'ai-model') {
-        try { localStorage.setItem('ba-' + id, ev.target.value); } catch (e) { /* 忽略 */ }
+        try { localStorage.setItem('ba-' + id, ev.target.value); } catch { /* 忽略 */ }
       }
     });
 
