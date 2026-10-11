@@ -218,7 +218,8 @@ npm run test:build         # 页脚构建版本水印（防"老访客仍跑旧�
 npm run lint
 ```
 
-CI（`.github/workflows/check.yml`）会自动跑上面全部 26 项。一把跑完：`npm run check`。
+CI（`.github/workflows/check.yml`）会自动跑**上面这些**（完整清单以该文件为准，不在别处抄第二遍；
+本地 `bash tools/gate-local.sh --list` 可列出全部）。一把跑完：`bash tools/gate-local.sh`。
 
 ### 命令行跑整本（长篇推荐，`scripts/wholebook.mjs`）
 
