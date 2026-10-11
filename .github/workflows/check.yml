@@ -11,6 +11,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # v0.198 新增。GitHub Actions 的 job 默认超时是 **6 小时** ——
+    #   不写这一行的话，19 个无头浏览器测试里任何一个挂死（不是失败，是**永不返回**），
+    #   都会让整个 job 空烧 6 小时算力直到被平台强杀。
+    #   本机实测全量门禁 ~58 分钟（本机 Windows、还被残留 profile 拖慢），
+    #   ubuntu runner 更快 ⇒ 60 分钟是「正常跑完」与「某步挂死」之间的宽裕分界。
+    # ⚠ 别把这个数调小去卡性能：本机 `lock.mjs` 单个就8 分钟，
+    #   机器差异能到好几倍（与 test/perf-budget.mjs 用「相对基线倍数」同一思路）。
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -895,6 +903,25 @@ jobs:
         # ⚠ 这条守卫自己也踩了同一个坑两次（先是配平箭头函数、再是被模板串骗到），
         #   两次都是「算出来的长度离谱但没报错」⇒ 判据必须自己验自己。
         run: node test/app-func-size-guard.mjs
+
+      - name: 首屏性能预算
+        # v0.198 新增。本项目此前**零性能预算**：实测
+        #   `grep -rn '性能预算|budget' js/ scripts/` 是零命中，
+        #   而 test/browser.mjs 明明从v85 起就在测首屏耗时 ——
+        #   但它拿到 window.__baPerf 之后**只 console.log、不断言**
+        #   （那个文件里 perf 只出现在一行日志里）。
+        # ⇒ 首屏从 0.8 秒劣化到 3 秒，门禁全绿。
+        #   「量了但不管」的指标等于没量：CI 日志没人看。
+        #
+        # 判定用「相对基线的倍数」而不是绝对毫秒 —— 机器快慢差好几倍
+        #（CI 的 ubuntu runner vs 本机 Windows），写死毫秒数换台机器就全红。
+        # >1.5× 只提示、>2.5× 报红；实测同机抖动约 ±5%，所以这个分界不虚。
+        #
+        # ⚠ 每本书记得清 Cache Storage + Service Worker
+        #   （第一版没清，三国量到 86.6 KB、另两本量到 **0.0 KB**
+        #    —— sw.js 对 /data/ 走 stale-while-revalidate，第二本直接命中缓存、
+        #    一个字节都没下载 ⇒ 量的是「缓存命中」不是「首屏」，假绿）。
+        run: node test/perf-budget.mjs
 
       - name: Temp 临时目录前缀白名单的守卫
         # v0.192 新增。起因：2026-10-11 用户报「C 盘又变红了」。查下来 `%TEMP%` 里堆着

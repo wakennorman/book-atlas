@@ -1,0 +1,31 @@
+{
+  "_note": "首屏性能基线。改法：node test/perf-budget.mjs --bless",
+  "_judge": "相对基线 >1.5× 提示、>2.5× 报红（机器差异约 ±5%）",
+  "_blessedAt": "2026-10-11",
+  "books": {
+    "three-kingdoms": {
+      "booted": true,
+      "wallMs": 1396,
+      "fetchParseMs": 53,
+      "chartMs": 802,
+      "totalBytes": 1629517,
+      "jsonBytes": 88637
+    },
+    "one-hundred-years-of-solitude": {
+      "booted": true,
+      "wallMs": 339,
+      "fetchParseMs": 12,
+      "chartMs": 149,
+      "totalBytes": 1597327,
+      "jsonBytes": 56447
+    },
+    "crime-and-punishment": {
+      "booted": true,
+      "wallMs": 293,
+      "fetchParseMs": 5,
+      "chartMs": 167,
+      "totalBytes": 1622271,
+      "jsonBytes": 81391
+    }
+  }
+}
