@@ -34,6 +34,25 @@
  * 实测波动（同机连续三次，三国首屏到图可交互）：
  * 1349 / 1287 / 1402 ms ⇒ 抖动约±5%，所以 1.5× 足够宽松、2.5× 足够灵敏。
  *
+ * ## ⚠ v0.200：这条守卫自己也有「量了不管」的那一段
+ *
+ * 第一版只判 `wallMs`，把 `totalBytes` / `jsonBytes` **量了落进基线就不管了**
+ * —— 与本文件开头批评 `browser.mjs` 的是同一条毛病，自己犯了。
+ * 传输量恰恰是**最不该不管**的那个：它没有机器差异（不依赖 CPU / 时钟），
+ * 数据变胖就是真变胖。
+ *
+ * ⇒ v0.200 补两条判定，且**刻意用两套判据**：
+ *   · `wallMs` → 相对**倍数**（跨机器差好几倍，写死毫秒换台机器就全红）
+ *   · 字节数 → 相对**倍数**但阈值更紧（1.5× / 1.25×），因为它不该抖
+ *
+ * ⚠ 而 `totalBytes` 与 `jsonBytes` 量的**不是同一件事**，必须分开判：
+ *   实测三本书 `totalBytes` 离散度只有 2.0%，**非 JSON 部分三本完全相同**
+ *   （都 1505 KB）—— 它量的是 echarts + app.js + css 那套**固定骨架**，
+ *   有人往 index.html 里多加一个 `<script>` 就会动它。
+ *   `jsonBytes` 才是每本书各不相同的**数据文件**。
+ *   ⚠ 别把它们合成一个"总传输量"阈值：那样加一个全局库反而不会红，
+ *     而数据文件悄悄胖 30% 也不会红 —— 两头都漏。
+ *
  * 用法：
  *   node test/perf-budget.mjs            # 比对基线（有基线才有效）
  *   node test/perf-budget.mjs --bless    # 实测并写入基线
@@ -81,6 +100,10 @@ const MIME = {
   '.png': 'image/png', '.webmanifest': 'application/manifest+json',
 };
 
+/** 真实静态托管会为这些类型开 gzip（GitHub Pages 对 .js/.css/.json 都开）。
+ *  ⚠ 图片/字体已经压缩过，再 gzip 是浪费 —— 不列进来。 */
+const COMPRESSIBLE = /\.(json|js|mjs|css|html|svg|webmanifest|xml|txt)$/;
+
 function serve() {
   return new Promise((res) => {
     const s = http.createServer((req, rq) => {
@@ -90,9 +113,18 @@ function serve() {
       if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { rq.writeHead(404); return rq.end(); }
       const body = fs.readFileSync(f);
       const hdrs = { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' };
-      /* JSON 走 gzip，模拟真实静态托管（GitHub Pages / Nginx 默认都开）。
-       * ⚠ 不开就量的是"本地磁盘读JSON"，比真实网络快一个量级，测出来没意义。 */
-      if (/\.json$/.test(f) && body.length > 4096) {
+      /* 文本类资源走 gzip，模拟真实静态托管（GitHub Pages / Nginx 默认都开）。
+       * ⚠ 不开就量的是"本地磁盘读文件"，比真实网络快一个量级，测出来没意义。
+       *
+       * ⚠⚠ v0.200 更正：**第一版只给 `.json` 开 gzip，`.js` / `.css` / `.html` 全是明文** ——
+       *   而 `vendor/echarts.min.js` 一个人就有 1007 KB、`js/app.js` 361 KB。
+       *   ⇒ `totalBytes` 一直在量**未压缩的 JS**，却把输出标成「网络传输走gzip」。
+       *   实测证据：那三本书的 `totalBytes` 非 JSON 部分**完全相同（1505 KB）**，
+       *   正是 echarts(1007)+app.js(361)+css(54)+其余 ≈ 明文字节数。
+       *   ⇒ 这个数既不等于真实传输量、也不能用来判断"骨架有没有变胖"
+       *     （gzip 后 echarts 只有 327 KB，差 3 倍）。
+       *   GitHub Pages 对 .js 也开 gzip，所以这里必须跟真实托管一致。 */
+      if (COMPRESSIBLE.test(f) && body.length > 1024) {
         const gz = gzipSync(body, { level: 9 });
         hdrs['Content-Encoding'] = 'gzip';
         rq.writeHead(200, { ...hdrs, 'Content-Length': gz.length });
@@ -224,8 +256,39 @@ async function measure() {
       const wall = Date.now() - t0;
       const r = await send('Runtime.evaluate', { expression: 'window.__baPerf||{}', returnByValue: true });
       const perf = r.result?.result?.value || {};
-      /* 等后台预取（text / annotations）跑完，再量完整传输量。 */
-      await new Promise((r) => setTimeout(r, 3000));
+      /* 等文案包预取**真正完成**，再量完整传输量。
+       *
+       * ⚠⚠⚠ v0.200：**连着错了三版**，都表现为「同一台机器两次跑出两个数」
+       *   （罪与罚 JSON 在 9.9 KB 与 77.9 KB 之间跳）。错法各不相同：
+       *
+       * ① `setTimeout(3000)` —— 赌预取 3 秒内跑完。
+       * ② 轮询「网络静默」 —— **"没有变化"不等于"已经完成"**：
+       *    页面刚起来时网络本来就很安静，于是连测三次就退出，量到的是只下图包的半个首屏。
+       * ③ 等「text.json 出现在网络记录里」—— 方向对了，但仍不可靠：
+       *    `responseReceived` 只说明**响应头到了**，`loadingFinished` 才说明**body 收完**，
+       *    而统计读的是 `bytes`（来自 `loadingFinished`）⇒ 看到响应就退出会**少算**。
+       *
+       * ⇒ 正确口径：**问应用自己**。`app.js` 的 `attachText()` 会把
+       *   `state.textStatus = { slug, status: 'done' }` 置上 —— 那是"文案包已解析完成"
+       *   的**权威信号**，不必从网络侧猜。
+       *   （`requestIdleCallback` 让它几时才发不可预测，所以任何"等固定时长"都是赌。）
+       *   上限 20s 兜底；超时**按未完成报出来**，不静默放过 —— 宁可吵，不可假绿。 */
+      const textUrl = `${b.slug}.text.json`;
+      let textDone = false;
+      for (let i = 0; i < 50 && !textDone; i++) {
+        const rr = await send('Runtime.evaluate', {
+          expression: 'window.__ba?.state?.textStatus?.status === "done"',
+          returnByValue: true,
+        });
+        textDone = rr.result?.result?.value === true;
+        if (!textDone) await new Promise((r) => setTimeout(r, 400));
+      }
+      const sawText = [...net.values()].some((v) => v?.url?.includes(textUrl));
+      if (!textDone || !sawText) {
+        console.error(`  ⚠ ${b.slug}：等了 20 秒文案包仍未确认完成`
+          + `（state.textStatus=${textDone ? 'done' : '非 done'}、网络记录里${sawText ? '有' : '没有'} ${textUrl}）`
+          + ' —— 首屏传输量会偏小。这不是"数据变小了"，是没量全。');
+      }
       const rows = [...net.values()].filter((v) => v && v.bytes);
       const total = rows.reduce((s, v) => s + v.bytes, 0);
       const jsonBytes = rows.filter((v) => /\.json/.test(v.url || ''))
@@ -280,9 +343,10 @@ console.log('  实测（到图可交互 / 网络传输走gzip）：');
 for (const b of BOOKS) {
   const m = measured[b.slug];
   const kb = (m.jsonBytes / 1024).toFixed(1);
+  const tot = (m.totalBytes / 1024).toFixed(0);
   console.log(`  ${b.slug.padEnd(28)} ${String(m.wallMs).padStart(5)}ms   `
     + `（自报 fetch+parse ${m.fetchParseMs ?? '?'}ms / chart ${m.chartMs ?? '?'}ms）`
-    + `   JSON ${kb} KB`);
+    + `   JSON ${kb} KB / 总 ${tot} KB`);
   if (!m.booted) fail++;
 }
 
@@ -331,6 +395,49 @@ for (const b of BOOKS) {
     console.log(`  ⚠ ${label}：${ratio.toFixed(2)}×（${now.wallMs}ms vs 基线 ${was.wallMs}ms）—— 未达红线，但值得看一眼`);
   } else {
     ok(true, `${label}：${now.wallMs}ms（基线 ${was.wallMs}ms 的 ${ratio.toFixed(2)}×）`);
+  }
+
+  /* ── ② 传输量：**字节数不会有机器差异**（不依赖 CPU/时钟），所以判据用**绝对值**，
+   *      不用相对倍数。数据涨了就是真涨了 —— 这与 wallMs 必须用倍数的理由相反
+   *      （wallMs 跨机器差好几倍，写死毫秒数换台机器就全红）。
+   *
+   * ⚠ v0.200：这三条**此前只被记录、从未被判定**（`totalBytes` / `jsonBytes`
+   *   落进基线文件，却没有任何一条 if 去读它们）—— 与 v0.198「性能只被量了
+   *   从来没被管过」、v0.199「预缓存只被校验了 data 一段」是同一族病。
+   *
+   * ⚠ 为什么 `totalBytes` 单独定阈值而不是跟 jsonBytes 一起：
+   *   实测三本书的 `totalBytes` 离散度只有 **2.0%**，且**非 JSON 部分三本完全相同**
+   *   （都是 1505 KB）—— 它量的其实是 echarts+app.js+css 那套**固定骨架**，
+   *   不是"这本书有多重"。所以：
+   *     · `jsonBytes` 才是**每本书各不相同**、真正该守的那个（数据文件变胖要有人管）
+   *     · `totalBytes` 守的是**骨架**（谁往 <script> 里多加了一个库）——
+   *       它三本同值，正好说明它测的是骨架，用一个统一阈值判即可。 */
+  const jNow = now.jsonBytes ?? 0, jWas = was.jsonBytes;
+  if (typeof jWas === 'number' && jWas > 0) {
+    const dKB = (jNow - jWas) / 1024;
+    const pct = jNow / jWas;
+    if (pct > 1.5 || pct < 0.5) {
+      ok(false, `${label}：首屏 JSON ${(jNow / 1024).toFixed(1)} KB，`
+        + `与基线 ${(jWas / 1024).toFixed(1)} KB 差 ${dKB >= 0 ? '+' : ''}${dKB.toFixed(1)} KB（${pct.toFixed(2)}×）`);
+      console.error('      ⇒ 数据文件变胖/变瘦了。改了 data/*.json 记得重跑 make-slim-packs，');
+      console.error('        确实是有意为之（书加内容、字段变多）就 --bless，并在 CHANGELOG 写明差多少。');
+    } else {
+      ok(true, `${label}：首屏 JSON ${(jNow / 1024).toFixed(1)} KB（基线 ${(jWas / 1024).toFixed(1)} KB）`);
+    }
+  }
+
+  const tNow = now.totalBytes ?? 0, tWas = was.totalBytes;
+  if (typeof tWas === 'number' && tWas > 0) {
+    const pct = tNow / tWas;
+    if (pct > 1.25) {
+      ok(false, `${label}：首屏总传输 ${(tNow / 1024).toFixed(0)} KB，`
+        + `是基线 ${(tWas / 1024).toFixed(0)} KB 的 ${pct.toFixed(2)}×（骨架阈值 1.25×）`);
+      console.error('      ⇒ 骨架变大了：多半是往 index.html / editor.html 里新加了 <script> 或 <link>。');
+      console.error('        ⚠ 注意 SW 预缓存改动也会动这个数（v0.199 删了 402 KB 的 pdf 库）——');
+      console.error('          那是有意的减小，bless 即可；别为了让门禁绿而把库加回来。');
+    } else {
+      ok(true, `${label}：首屏总传输 ${(tNow / 1024).toFixed(0)} KB（基线 ${(tWas / 1024).toFixed(0)} KB）`);
+    }
   }
 }
 
