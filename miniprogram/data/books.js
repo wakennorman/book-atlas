@@ -5,14 +5,14 @@ module.exports = {
       "title": "百年孤独",
       "author": "加西亚·马尔克斯",
       "file": "./one-hundred-years-of-solitude.js",
-      "kb": 145
+      "kb": 146
     },
     {
       "slug": "crime-and-punishment",
       "title": "罪与罚",
       "author": "陀思妥耶夫斯基",
       "file": "./crime-and-punishment.js",
-      "kb": 113
+      "kb": 115
     },
     {
       "slug": "three-kingdoms",
