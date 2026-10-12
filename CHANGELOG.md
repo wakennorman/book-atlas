@@ -110,7 +110,26 @@
 
 ---
 
-## v0.204 · 三国那 2580 条：**结论成立，但一直是"印象"而不是判据** —— 把它变成可重跑的机械分层
+## v0.205.1 · CI 全绿了（93/93）—— 但它是剥了五层洋葱才绿的
+
+> v0.205 主线见上。本节记**推送之后**的事：CI 自 v0.172 起连续 **20+ 轮秒退**
+> （startup_failure，一步都没跑），本机新装 gh CLI 才发现。修完工作流后，
+> 每推一轮露一个**被 startup_failure 掩护已久的存量红**，共五层：
+
+| 层 | 症状 | 根因 | 修法 |
+|---|---|---|---|
+| 1 | 整个工作流不合法（0 秒失败） | step 名里裸 `` `transition: all` `` 的 `: ` 被 YAML 解析成嵌套映射 | name 加双引号；用 yaml 包全量解析验 |
+| 2 | `make-scripts-index --check` | archive 里 2 个 `_` 开头已归档脚本被 `_*.mjs` ignore 吞掉、从没入库（README 说 58 个，CI 上 56） | `git add -f`；`helpers-tracked` 判据② 改**递归**扫描 |
+| 3 | `books-registry` | `data/perf-baseline.json` 是 `--bless` 写的性能基线台账，被 `listBooks()` 当成“没登记的书” | `SIDECAR` 正则补 `^perf-baseline\.json$`（该文件头记的第五次同类事件） |
+| 4 | `check-surname-coverage` / `check-relation-actors-ledger` / `parent-child` 崩 | v0.202 建“拉维扎”时两份台账没同步；parent-child 豁免路径还写着 v0.195 归档前的 `scripts/fix-*.mjs` | 回 `.text/` 原著逐句核后登记两本台账；豁免路径改 `scripts/archive/` |
+| 5 | 首屏性能预算（百年孤独 JSON 11.8 KB vs 基线 53.5） | 量到“哪些 .json 走网络”随环境跳（v0.200 之后第四变：三国 text 的 loadingFinished 稳定记 0 字节） | 字节判据改“实测 vs 确定性期望”（服务器同参 gzip 现算）；挡 sw.js；总量判据 json 分量归一 |
+
+**共同教训**：这五层每一层单独看都是绿的（本机单跑全过）——
+`tools/gate.mjs` 的逐行解析器对 YAML 病免疫、本地磁盘上有未入库文件、
+perf 测量本就不稳。**“本地绿”累计了二十轮，直到装上 gh 看了 CI 历史才穿帮。**
+⇒ `gh` CLI 已装机（`D:\Hermes\gh`，v2.102.0，用户 PATH 持久化，node 同批入 PATH）。
+
+---
 
 v0.201–v0.203 已两次证明「旧结论会被新证据推翻」，所以这轮回头验 v0.184/v0.185 那个结论：
 「三国真缺口只有 `姜子牙`/`张子房` 两个，其余 2919 条是碎片」。
