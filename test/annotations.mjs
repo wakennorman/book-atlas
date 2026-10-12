@@ -19,9 +19,13 @@ import { requireBrowser, browserArgs } from './browser-locator.mjs';
  *   ⑤ 没写的章要**明说"还没写"**，不能让人以为"这一章无需拆解"
  *   ⑥ 覆盖进度常驻（已拆 N / M 章）
  *   ⑦ 全书模式能切，且切了之后 chapter 模式的内容不串
- *   ⑧ 三本书各就各位：每本书的拆书能加载、**id 都属于它自己**（跨书写入事故的拦截）。
- *      「0 条 ⇒ 不显示分区」这条现在没有真实数据能触发（三本书都写满了）——
+ *   ⑧ 四本书各就各位：每本书的拆书能加载、**id 都属于它自己**（跨书写入事故的拦截）。
+ *      「0 条 ⇒ 不显示分区」这条现在没有真实数据能触发（四本书都写满了）——
  *      未测，不假装测了。
+ *   ⑨ **理论类（《刻意练习》）的拆书路径真的跑过**（v0.207）：v0.206 之前
+ *      `prefetchAnnotations` 里有一道 `meta.type !== '叙事类'` 的闸 ⇒ 理论类
+ *      连一次请求都没发过，而界面上看不出任何异常。这一段是**唯一**会碰到
+ *      理论类拆书路径的断言，并且顺带守「措辞走术语层」（概念 / 案例，不是人物 / 事件）。
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -598,6 +602,86 @@ try {
     `《百年孤独》正文里没有残留的 **（${yBold.strayAsterisk} 处${yBold.badCh.length ? `；出现在第 ${yBold.badCh.join('、')} 章` : ''}）`);
   /* v0.176：行内引用扫描也要跑第三本。实测该书 dataIds=37。 */
   await assertInlineRefs('《百年孤独》', 25);
+
+  /* ★ v0.207：第四本《刻意练习》是**理论类**。
+   *   这一段存在的直接原因：`prefetchAnnotations` 里原来有一道
+   *   `meta.type !== '叙事类'` 的闸 ⇒ 理论类的拆书**一次请求都没发过**，
+   *   而界面上看不出任何异常 —— 分区不出现，和"这本书没写拆书"一模一样。
+   *   ⇒ 闸拆了之后，理论类必须真跑一遍端到端：能加载 / 能渲染 / 引用点得动 /
+   *     id 属于它自己 / **措辞走术语层**（概念、案例 —— 不是人物、事件）。
+   *   ⚠ 前三本书都是叙事类，这一段是**唯一**会碰到理论类拆书路径的断言。 */
+  head('《刻意练习》（理论类）：拆书闸已放开，措辞走术语层');
+  await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?book=peak` });
+  for (let i = 0; i < 300; i++) {
+    if (await js(`!!(window.__ba && window.__ba.state.book && window.__ba.state.book.meta.slug === 'peak' && window.__ba.state.anno && window.__ba.state.anno.items.length > 10)`).catch(() => false) === true) break;
+    await wait(100);
+  }
+  await wait(3000);
+  const pSt = await js(`(() => { const s = window.__ba.state; return {
+    slug: s.anno && s.anno.slug, status: s.annoStatus && s.annoStatus.status, type: s.book.meta.type,
+    nItems: s.anno ? s.anno.items.length : 0, nGlobal: s.anno ? (s.anno.global || []).length : 0,
+    chapters: s.book.meta.chapters }; })()`);
+  ok(pSt.type === '理论类', `meta.type 是「理论类」（实际 ${JSON.stringify(pSt.type)}）`);
+  /* ⚠ 这条就是那道闸的回归断言：闸一旦加回来，status 会停在换书时写的 `'idle'`
+   *   （= 从没试过），而不是 `'done'` / `'absent'`（= 试过了）。 */
+  ok(pSt.status === 'done', `拆书已加载（status=${JSON.stringify(pSt.status)}；停在 'idle' 说明那道按书型放的闸又回来了）`);
+  ok(pSt.slug === 'peak', `标注文件自称 peak（实际 ${JSON.stringify(pSt.slug)}）`);
+  ok(pSt.nItems >= 20, `《刻意练习》有 ${pSt.nItems} 条章节条目 + ${pSt.nGlobal} 条全局`);
+  ok(pSt.nGlobal >= 3, `全书拆解有 ${pSt.nGlobal} 条`);
+
+  await gotoChapter(1);
+  const p1 = await annoDom();
+  ok(p1.present, '《刻意练习》第 1 章显示了拆书分区');
+  ok(p1.tabs.length === 2, `两个视角都在（${p1.tabs.map((t) => t.text).join(' / ')}）`);
+  ok((p1.items || []).length >= 1, `第 1 章渲染出 ${(p1.items || []).length} 条`);
+  ok(new RegExp(`已拆\\s*${pSt.chapters}\\s*/\\s*${pSt.chapters}\\s*章`).test(p1.secText || ''),
+    `覆盖进度显示「已拆 ${pSt.chapters} / ${pSt.chapters} 章」：${((p1.secText || '').match(/已拆[^\n]*/) || [''])[0]}`);
+
+  /* ★ 术语层：芯片的 tooltip 必须说「概念 / 案例」，图标不能还是人头。
+   *   这一条同时守两件事：① 拆书措辞按书型走；② 理论类里不会再给一个概念画人头。 */
+  const pChips = await js(`(() => {
+    const sec = document.querySelector('#chapter-body .anno-sec'); if (!sec) return [];
+    return [...sec.querySelectorAll('.anno-ref')].map((b) => ({
+      kind: b.dataset.event ? 'event' : 'char', text: b.textContent.trim(), title: b.title })); })()`);
+  ok(pChips.length > 0, `第 1 章有 ${pChips.length} 个引用芯片`);
+  const pCharChips = pChips.filter((c) => c.kind === 'char');
+  const pEvChips = pChips.filter((c) => c.kind === 'event');
+  ok(pCharChips.length > 0 && pCharChips.every((c) => c.title.startsWith('概念 ·')),
+    `概念芯片的 tooltip 以「概念 ·」开头（样例：${(pCharChips[0] || {}).title || '无'}）`);
+  ok(pEvChips.length > 0 && pEvChips.every((c) => c.title.startsWith('案例 ·')),
+    `案例芯片的 tooltip 以「案例 ·」开头（样例：${(pEvChips[0] || {}).title || '无'}）`);
+  ok(pCharChips.every((c) => !c.text.includes('👤')),
+    `概念芯片不再用人头图标（样例：${(pCharChips[0] || {}).text || '无'}）`);
+
+  /* ★ 关键断言（第四本书再拦一次跨书写入）：标注里每个 id 必须真属于本书。 */
+  const pIdsOwn = await js(`(() => {
+    const A = window.__ba.state.anno, B = window.__ba.state.book;
+    const charIds = new Set(B.characters.map(c => c.id));
+    const evIds = new Set(B.events.map(e => e.id));
+    let nChar = 0, nEv = 0; const foreign = [];
+    for (const it of A.items) {
+      for (const c of it.chars || []) { nChar++; if (!charIds.has(c)) foreign.push('概念 ' + c); }
+      for (const e of it.events || []) { nEv++; if (!evIds.has(e)) foreign.push('案例 ' + e); }
+    }
+    return { nChar, nEv, foreign: foreign.slice(0, 6), total: foreign.length }; })()`);
+  ok(pIdsOwn.nChar + pIdsOwn.nEv > 60, `扫到了足够的引用（概念 ${pIdsOwn.nChar} + 案例 ${pIdsOwn.nEv}）`);
+  ok(pIdsOwn.total === 0,
+    `每个 id 都属于《刻意练习》（混入 ${pIdsOwn.total} 个外来的${pIdsOwn.total ? '：' + JSON.stringify(pIdsOwn.foreign) : ''}）`);
+
+  /* 引用真的点得动：点一个概念芯片，右栏要打开那个概念 */
+  const pWant = await js(`(() => { const b = document.querySelector('#chapter-body .anno-sec .anno-ref[data-goto]'); return b ? b.dataset.goto : null; })()`);
+  if (pWant) {
+    await js(`document.querySelector('#chapter-body .anno-sec .anno-ref[data-goto]').click()`);
+    await wait(700);
+    const pCur = await js(`window.__ba.state.activeChar`);
+    ok(pCur === pWant, `点了概念引用打开了对应概念（activeChar=${JSON.stringify(pCur)}，期望 ${JSON.stringify(pWant)}）`);
+  } else { ok(false, '没找到概念引用芯片'); }
+
+  /* v0.175 / v0.176 的理由在第四本上同样成立：判据没错，错在只扫一本书。 */
+  const pBold = await scanMarkup();
+  ok(pBold.strayAsterisk === 0,
+    `《刻意练习》正文里没有残留的 **（${pBold.strayAsterisk} 处${pBold.badCh.length ? `；出现在第 ${pBold.badCh.join('、')} 章` : ''}）`);
+  await assertInlineRefs('《刻意练习》', 25);
 
   ok(!errs.length, '没有未捕获异常');
 } catch (e) {

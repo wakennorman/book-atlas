@@ -1,8 +1,8 @@
 /* 书脉 BookAtlas · Service Worker（离线可用） */
-const CACHE = 'bookatlas-v206';
+const CACHE = 'bookatlas-v207';
 // 只列页面真正会用到的 URL。
 // v85：删掉了重复项 —— 之前 editor.html / css/editor.css / js/editor.js / css/style.css / js/app.js
-// 各存了两份（一份无 ?v=、一份带 ?v=206），Cache Storage 的 key 不同 ⇒ app.js 白白占了两份 193KB。
+// 各存了两份（一份无 ?v=、一份带 ?v=207），Cache Storage 的 key 不同 ⇒ app.js 白白占了两份 193KB。
 // 页面里引用的是带 ?v= 的那份，这里就只留带 ?v= 的。
 // 另：js/export.js、js/ai.js 已删除（逻辑并入 app.js），不再预缓存；
 //     补上 data/three-kingdoms.json —— 之前唯独它不在预缓存里，首次离线访问拿不到三国。
@@ -19,10 +19,10 @@ const SHELL = [
   // ⚠ 文件本身留在 assets/（生成脚本还要用），只是不再预缓存。
   './assets/logo-mark.svg',
   './editor.html',
-  './css/style.css?v=206',
-  './css/editor.css?v=206',
-  './js/app.js?v=206',
-  './js/editor.js?v=206',
+  './css/style.css?v=207',
+  './css/editor.css?v=207',
+  './js/app.js?v=207',
+  './js/editor.js?v=207',
   './vendor/echarts.min.js',
   './vendor/fflate.min.js',
   // v0.199：**删掉** vendor/pdf.min.js 与 vendor/pdf.worker.min.js（原 v85 起就在这儿）。
@@ -32,7 +32,7 @@ const SHELL = [
   //     这与本文件下面 textFile 那条是同一条规矩（"预缓存会在首次访问时就下载"），
   //     当时用在了 textFile 上，漏了 pdf 库。
   //  ② 更糟：**key 根本对不上**。这里 precache 的是不带 query 的 './vendor/pdf.min.js'，
-  //     而 editor.html 请求的是 './vendor/pdf.min.js?v=206' —— Cache Storage 按完整 URL
+  //     而 editor.html 请求的是 './vendor/pdf.min.js?v=207' —— Cache Storage 按完整 URL
   //     建 key，两个是两条记录 ⇒ 这 402 KB **从来没有被任何一次请求命中过**，
   //     连"离线时能用"这个初衷也没实现（离线打开编辑器会拿不到 pdf.js）。
   //     所以删掉它不是"少一个离线兜底"，是**删掉一份纯白占的缓存**。

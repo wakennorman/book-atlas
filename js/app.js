@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6232 行、265 个顶层符号，68 个分区。
+ * 文件共 6255 行、265 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -399,14 +399,19 @@
    * ⚠ 术语层不是"两套代码"：能用同一个函数、同一个模板的地方就只换词。
    *   一旦某处需要"理论类走另一条渲染分支"，那说明**数据结构**该改了，不是措辞该改。
    */
+  /* ⚠ `charIcon` / `eventIcon` 也在术语层里（v0.207）：拆书条目末尾那两排可点芯片
+   *   是 `⚡ 事件名` / `👤 人物名` —— 理论类里 `chars` 挂的是**概念**，
+   *   给一个概念画一个人头，比措辞错更刺眼。图标和措辞一样，是**同一处**要换的东西。 */
   const TERMS = {
     narrative: {
       char: '人物', rel: '关系', event: '事件', place: '地点', faction: '阵营', gen: '代际',
       charN: '人', relN: '段关系', eventN: '个事件', placeN: '个地点',
+      charIcon: '👤', eventIcon: '⚡',
     },
     theory: {
       char: '概念', rel: '关联', event: '案例', place: '领域', faction: '主题', gen: '层次',
       charN: '个概念', relN: '段关联', eventN: '个案例', placeN: '个领域',
+      charIcon: '◆', eventIcon: '⚡',
     },
   };
   const isTheoryBook = () => !!(state.book && state.book.meta && state.book.meta.type === '理论类');
@@ -454,7 +459,19 @@
        *   第一版在函数开头判 `meta.type !== '叙事类'` ⇒ 恒为真 ⇒ 一次请求都没发过，
        *   界面表现是「拆书分区不出现」—— 和没接一样，且没有任何报错。 */
       if (!state.book || state.book.meta?.slug !== slug) return;
-      if (state.book.meta.type !== '叙事类') return;      // 非叙事类暂不支持拆书
+      /* ⚠⚠ v0.207：这里原来有一道闸 —— `if (state.book.meta.type !== '叙事类') return;`
+       *   注释写着「非叙事类暂不支持拆书」。它拦的不只是《刻意练习》：
+       *   它让**整条拆书路径对理论类一次都没跑过** —— 不发请求、不报错、
+       *   分区就是不出现，和「这本书没写拆书」长得一模一样（`state.annoStatus` 永远停在
+       *   换书时写的 `'idle'`，连 `'absent'` 都不是 —— 而 `'idle'` 与 `'absent'`
+       *   恰恰是「从没试过」与「试过了，这本没写」的区别）。
+       *
+       *   现在拆书与书型**无关**：写没写拆书的唯一信号是
+       *   `data/annotations/<slug>.json` 在不在（404 ⇒ `absent`，那是正常路径）。
+       *   书型只影响**措辞**（`T()`：人物/事件 ⇒ 概念/案例）。
+       *
+       *   ⚠ 不要再加回任何「按书型放行」的白名单：新书型会被静默挡掉，
+       *     而症状（分区不出现）和「这本书没写拆书」无法区分 —— 一个假信号源比没有更坏。 */
       try {
         const r = await fetch(`data/annotations/${slug}.json`, { cache: 'no-cache' });
         /* 404 是**正常路径**：一本书可能还没写拆书内容。那时右栏不显示该分区，
@@ -4403,18 +4420,24 @@
     return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${inferred ? '整理者推断' : '原文依据'}</span>${esc(rest)}</p>`;
   }
 
-  /** 引用的事件/人物：可点回去逐条核对 —— 「不编造」在界面上的出口 */
+  /** 引用的${事件} / ${人物}：可点回去逐条核对 —— 「不编造」在界面上的出口
+   *
+   *  ⚠ v0.207：措辞与图标都从 `T()` 取。理论类里 `chars` 挂的是**概念**、`events` 是**案例**，
+   *    沿用 `👤` 会给一个概念画上一个人头。tooltip 也补上类别前缀 ——
+   *    叙事类从「魏武帝」变成「人物 · 魏武帝」，读者一眼知道这排芯片是什么。
+   *    ⚠ 这仍然是**同一个模板只换词**，不是"理论类走另一条分支"（见 TERMS 的注释）。 */
   function annoRefs(it) {
+    const t = T();
     const evs = Array.isArray(it.events) ? it.events : [];
     const chs = Array.isArray(it.chars) ? it.chars : [];
     if (!evs.length && !chs.length) return '';
     const evHtml = evs.map((id) => {
       const e = state.book.events.find((x) => x.id === id);
-      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc(e.summary || e.name)}">⚡ ${esc(e.name)}</button>` : '';
+      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc([t.event, e.summary || e.name].join(' · '))}">${t.eventIcon} ${esc(e.name)}</button>` : '';
     }).join('');
     const chHtml = chs.map((id) => {
       const c = state.byId.get(id);
-      return c ? `<button class="anno-ref" type="button" data-goto="${esc(id)}" title="${esc(c.title || '')}">👤 ${esc(c.name)}</button>` : '';
+      return c ? `<button class="anno-ref" type="button" data-goto="${esc(id)}" title="${esc([t.char, c.title].filter(Boolean).join(' · '))}">${t.charIcon} ${esc(c.name)}</button>` : '';
     }).join('');
     return (evHtml || chHtml) ? `<p class="anno-refs">${evHtml}${chHtml}</p>` : '';
   }

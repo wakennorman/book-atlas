@@ -34,6 +34,15 @@
  *      **管不到正文里的行内引用** —— 这里补上。
  *      实测（v0.176 前）：三本书 974 处（按条去重）**全部存在**，0 处违规 ⇒
  *      这条门禁加进来是**防回归**，不是修存量。
+ *   ⑩ **缺文件 = 判红；空文件必须写明理由**（v0.207）。
+ *      原来缺文件只往 `--fix` 那张表里塞一行「文件不存在」，**不计入 `bad`** ⇒
+ *      印的是「✓ N 本书全部通过」、`exit 0`。于是「这本书**没写**拆书」与
+ *      「这本书的拆书**全部合格**」在门禁上长得一模一样，而那张表不传 `--fix` 根本不打印。
+ *      《刻意练习》的拆书就是这么漏掉的（前端另有一道按书型放的闸挡着请求 ⇒
+ *      两边都沉默）。⇒ 现在：缺文件 ⇒ `bad++` + 明确报错。
+ *      ⚠ 「缺文件」与「0 条」**不是一回事**：0 条是**显式写下**的「这本不拆」
+ *        （`items`/`global` 都为空时必须带 `note` 说明理由），缺文件是**从来没人决定过**。
+ *      ⚠ 现有 4 本都有内容 ⇒ 「0 条」那条分支**没有真实数据能踩到**，未测，不假装测了。
  *
  * 用法：node scripts/check-annotations.mjs            # 校验全部
  *      node scripts/check-annotations.mjs --fix      # 顺带报告每本书的覆盖率
@@ -121,7 +130,23 @@ for (const slug of bookList()) {
   const annPath = path.join(ANN, `${slug}.json`);
   const problems = [];
   if (!fs.existsSync(annPath)) {
-    rows.push([slug, '—', '—', '文件不存在']);
+    /* ⚠⚠ v0.207：**缺文件 = 判红**。原来这里只 `rows.push([slug,'—','—','文件不存在'])` 就
+     * `continue`，而 `bad` **不加一** ⇒ 印出来的是「✓ 4 本书全部通过」、`exit 0`。
+     * 于是「这本书**没写**拆书」与「这本书的拆书**全部合格**」在门禁上**长得一模一样**；
+     * 更糟的是那张表只在 `--fix` 时才打印 ⇒ 不传 `--fix` 时连「文件不存在」四个字都看不到。
+     * 《刻意练习》的拆书就是这么漏掉的（前端另有一道按书型放的闸挡着请求，
+     * 于是**没有任何东西**会告诉你这本书缺内容）。
+     *
+     * ⚠ 「缺文件」与「0 条」**不是一回事**，别混：
+     *   · 0 条 = 有人**显式写下**「这本不拆」（下面那条规则要求它带 `note` 说明理由）；
+     *   · 缺文件 = **从来没人决定过**。
+     *   ⇒ 要豁免就写一个 `items`/`global` 为空、`note` 里写明理由的文件 ——
+     *     它会在 diff 里留下一个文件，而不是"什么都没发生"。 */
+    bad++;
+    rows.push([slug, '—', '—', `缺 data/annotations/${slug}.json`]);
+    console.error(`✗ ${slug}：没有 data/annotations/${slug}.json —— 这本书**没有拆书内容**`);
+    console.error('    右栏的「拆书素材」分区对这本书永远不会出现，而界面上看不出这是"没写"还是"不该有"。');
+    console.error('    要豁免：写一个 items/global 为空、note 写明理由的 annotations 文件（0 条是**显式**的，缺文件不是）。');
     continue;
   }
   let ann;
@@ -224,6 +249,13 @@ for (const slug of bookList()) {
 
   const n = Array.isArray(ann.items) ? ann.items.length : 0;
   const g = Array.isArray(ann.global) ? ann.global.length : 0;
+  /* 规则⑩（v0.207）：空文件必须**说明理由**。
+   * 「这本不拆」是允许的，但必须是**显式**的 —— 一个 `items: []` / `global: []`
+   * 而没有 note 的文件，光看文件本身分不清「决定不拆」和「写空了 / 被谁清掉了」。
+   * ⚠ 现有 4 本都有内容，这条分支**没有真实数据能踩到** —— 未测，不假装测了。 */
+  if (!n && !g && !(typeof ann.note === 'string' && ann.note.trim())) {
+    problems.push('items 与 global 都是空的 —— 空文件必须用 note 写明「这本书为什么不拆」');
+  }
   rows.push([slug, `${n} 条 / ${covered.size} 章`, `${g} 条`, problems.length ? `${problems.length} 处问题` : 'OK']);
 
   if (problems.length) {
@@ -238,7 +270,9 @@ if (showFix) {
   console.log('\n书\t章节条目\t全局条目\t状态');
   for (const r of rows) console.log(`${r[0]}\t${r[1]}\t${r[2]}\t${r[3]}`);
   console.log('\n覆盖率：见上面「N 条 / M 章」两列（M = 已覆盖章数，该书章号上限见 books 的 meta.chapters）。');
-  console.log('提示：某本书 0 条时，右栏不显示拆书分区（这是正常的，不是错误）。');
+  console.log('提示：**缺** `data/annotations/<slug>.json` 是**错误**（v0.207 起判红）——');
+  console.log('      文件在但 0 条是**允许**的（那是显式写下的「这本不拆」，需带 note 说明理由）；');
+  console.log('      两种情况下右栏都不显示拆书分区，所以门禁必须替读者把前者拦下来。');
 }
 
 if (bad) { console.error(`\n拆书标注校验：${bad} 本书有问题`); process.exit(1); }
