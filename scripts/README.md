@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 62 个 `.mjs`（另加 `scripts/archive/` 58 个）。
+`scripts/` 现在有 63 个 `.mjs`（另加 `scripts/archive/` 58 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -52,11 +52,11 @@
 
 | 类别 | 个数 |
 |---|---|
-| 门禁 | 27 |
+| 门禁 | 28 |
 | 库 | 8 |
 | 工具 | 27 |
 | 一次性补丁 | 0 |
-| **合计** | **62** |
+| **合计** | **63** |
 
 ## ⚠ 没进 CI、没被 import、文档里也没提的
 
@@ -86,12 +86,13 @@
 
 </details>
 
-## 门禁（27 个）
+## 门禁（28 个）
 
 每轮 CI 都跑；`CI 里的调用`一列**连参数一起抄**（参数丢了就是另一个命令，见 `tools/gate.mjs` 的文件头）。
 
 | 脚本 | CI 里的调用 | 一句话 |
 |---|---|---|
+| `audit-3k-fragments.mjs` | `node scripts/audit-3k-fragments.mjs --selftest` | 【长期】工具：把三国「姓氏+1~2字」的碎片候选**机械分层**，并复核 v0.185 的结论。 |
 | `audit-kin-gender.mjs` | `node scripts/audit-kin-gender.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `audit-relation-actors.mjs` | `node scripts/audit-relation-actors.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `audit-search.mjs` | `node scripts/audit-search.mjs --all` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
