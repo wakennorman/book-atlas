@@ -247,6 +247,15 @@ jobs:
         # 忘了加不会白屏（/data/ 走 stale-while-revalidate），但会静默不一致。
         run: node scripts/check-sw-precache.mjs
 
+      - name: sw 预缓存守卫的有效性自测（它必须能红）
+        # v0.199 新增。P3/P4（SHELL 条目必须是页面真实请求的**精确 URL**）是纯判据，
+        # 一旦写错就会「见谁都报」或「见谁都放过」—— 而这两种错都表现为**全绿**。
+        # ⇒ 用真实的坏样本（key 对不上 / 纯白占 / data 条目应放行）跑一遍判据本身。
+        # 注意靠环境变量触发：同一个文件直接跑是真实校验。
+        env:
+          SW_PRECACHE_SELFTEST: '1'
+        run: node scripts/check-sw-precache.mjs
+
       - name: 书目注册表与 data/ 实际内容一致（加书别忘登记）
         # v0.155 新增。「哪些是书」有两份定义、互不知情：
         #   · data/books.json 的 books[]（前端 + 约 10 个脚本读它）
