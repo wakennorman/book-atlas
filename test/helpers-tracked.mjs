@@ -32,10 +32,19 @@
  * 例外名单只有 `_tmp-*` / `_y*.mjs`（`audit-against-text.mjs` 的中间产物）两条，
  * 是白名单而不是"凡被忽略就放过" —— 否则这条守卫等于没有。
  *
+ * ## ⚠ v0.205.1：判据② 原来只扫**顶层**，`scripts/archive/` 整个漏掉
+ *
+ * 现场：`scripts/archive/` 里躺着 `_fix-ledger-quotes-v182.mjs`（v0.182）和
+ * `_patch-v96-chars.mjs`（v0.96）两个**带【已归档】标记的证据链脚本**，
+ * 名字以 `_` 开头 ⇒ 被 `.gitignore` 的 `_*.mjs` 静默吞掉，从没进过仓库。
+ * 本地 README 计数 58（含它们）、CI 上只有 56 ⇒ `make-scripts-index --check` 红，
+ * 而本守卫因为"只读顶层"一声不响。⇒ **改为递归扫描**（test/ 与 scripts/ 全部层级），
+ * 并实测：先扫到这 2 个孤儿（红）、补 `git add -f` 后转绿。
+ *
  * ## 边界
  *
  * · 不在 git 仓库里（拿到的源码包）⇒ 全部跳过并说明，不硬报红。
- * · 只看 `test/` 与 `scripts/`：这两个目录放的是要长期维护的代码，
+ * · 只看 `test/` 与 `scripts/`（**含子目录**）：这两个目录放的是要长期维护的代码，
  *   不是临时产物；根目录的 `_*.mjs` 才是本地脚本，仍然照旧忽略。
  *
  * 用法：node test/helpers-tracked.mjs
@@ -83,22 +92,27 @@ console.log('① check.yml 引用的脚本必须真的在磁盘上');
 }
 
 /* ---------- ② test/ 与 scripts/ 下的 .mjs 必须已入库（或命中例外名单）---------- */
-console.log('\n② test/ 与 scripts/ 下的 .mjs 必须已入库（否则本地绿、CI 崩）');
+console.log('\n② test/ 与 scripts/（含子目录）下的 .mjs 必须已入库（否则本地绿、CI 崩）');
 {
   // 白名单：check.yml 的注释里已说明用途的临时产物
   const ALLOW = [/^_tmp-/, /^_y.*\.mjs$/];
+  /* v0.205.1：改递归 —— 第一版 readdirSync 只读顶层，`scripts/archive/` 里
+   * 两个 `_` 开头的已归档脚本被 ignore 吞掉整整三个版本没人发现（现场见文件头）。 */
+  const walk = (d, base = '') => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+    const rel = base ? `${base}/${e.name}` : e.name;
+    return e.isDirectory() ? walk(path.join(d, e.name), rel) : [rel];
+  });
   const dirs = ['test', 'scripts'];
   let examined = 0;
   const orphans = [];
   for (const d of dirs) {
     const abs = path.join(ROOT, d);
     if (!fs.existsSync(abs)) continue;
-    for (const f of fs.readdirSync(abs)) {
-      if (!f.endsWith('.mjs')) continue;
+    for (const rel of walk(abs, d)) {
+      if (!rel.endsWith('.mjs')) continue;
       examined++;
-      const rel = `${d}/${f}`;
       if (tracked.has(rel)) continue;
-      if (ALLOW.some((re) => re.test(f))) continue;
+      if (ALLOW.some((re) => re.test(path.basename(rel)))) continue;
       orphans.push(rel);
     }
   }
