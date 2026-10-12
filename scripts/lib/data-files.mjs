@@ -54,6 +54,9 @@ export const DATA = path.join(ROOT, 'data');
  *   first-ch-ok.json              firstCh 已核台账（v0.178 新增：按 book+主名 记账）
  *   relation-actors-ok.json       行为人审计已核台账（v0.179 新增：按 book+from+to 记账）
  *   dup-names-ok.json             ④「去括号后同名」已核台账（v0.181 新增：按 book+去括号后的主名 记账）
+ *   perf-baseline.json            首屏性能基线台账（v0.198 由 perf-budget --bless 写；
+ *                                  v0.205.1 补：它不是书，但忘了进正则 ⇒ books-registry
+ *                                  从 v0.198 起一直红，又被同轮的 CI startup_failure 掩盖）
  *
  * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
  *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
@@ -63,8 +66,10 @@ export const DATA = path.join(ROOT, 'data');
  *   报告里多出一行「relation-actors-ok 缺原著」——**看起来像真的**，很容易放过去。
  *   ⚠ v0.181 加 `dup-names-ok.json` 时，**这一条注释本身就是现成的证据**：
  *   它已经列在上面的清单里了却还没进正则 —— 所以下面那行也补上了。
+ *   ⚠ v0.205.1 第五次：`perf-baseline.json` 是**性能基线**（`--bless` 产物，
+ *   不是书），漏在这里 ⇒ 同上。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$|^dup-names-ok\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$|^dup-names-ok\.json$|^perf-baseline\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。
