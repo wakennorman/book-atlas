@@ -196,14 +196,20 @@ async function measure() {
   ], { stdio: 'ignore' });
 
   try {
-    const WS = (await import('ws')).default;
-    const ws = new WS(await cdpUrl(cdpPort), { perMessageDeflate: false });
-    await new Promise((r) => ws.on('open', r));
+    /* v0.205.1：`await import('ws')` 是**从来没跑通过**的一行 —— `ws` 不在 package.json
+     * 里（本机 node_modules 也没有），v0.198 写下这行起，浏览器模式下必崩；
+     * 以前没人发现是因为 CI 从 v0.172 起 startup_failure、本地也没人完整跑过门禁。
+     * 按 v0.165.5 的既定决策改用 Node 22 全局 WebSocket（其余 19 个浏览器测试同款）。 */
+    const ws = new WebSocket(await cdpUrl(cdpPort));
+    await new Promise((res, rej) => {
+      ws.onopen = res;
+      ws.onerror = () => rej(new Error('CDP WebSocket 连不上'));
+    });
     let seq = 0;
     const pending = new Map();
     const net = new Map();
-    ws.on('message', (m) => {
-      const d = JSON.parse(m);
+    ws.onmessage = (ev) => {
+      const d = JSON.parse(typeof ev.data === 'string' ? ev.data : ev.data.toString());
       if (d.id && pending.has(d.id)) { pending.get(d.id)(d); pending.delete(d.id); return; }
       if (d.method === 'Network.responseReceived') {
         net.set(d.params.requestId, { url: d.params.response.url, bytes: 0 });
@@ -212,7 +218,7 @@ async function measure() {
         const e = net.get(d.params.requestId);
         if (e) e.bytes = d.params.encodedDataLength;
       }
-    });
+    };
     const send = (method, params = {}) => new Promise((rs) => {
       const i = ++seq; pending.set(i, rs);
       ws.send(JSON.stringify({ id: i, method, params }));
