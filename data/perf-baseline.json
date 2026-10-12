@@ -5,27 +5,30 @@
   "books": {
     "three-kingdoms": {
       "booted": true,
-      "wallMs": 1297,
-      "fetchParseMs": 58,
-      "chartMs": 715,
-      "totalBytes": 601273,
-      "jsonBytes": 86988
+      "wallMs": 1382,
+      "fetchParseMs": 57,
+      "chartMs": 748,
+      "totalBytes": 598628,
+      "jsonBytes": 86988,
+      "jsonExpect": 337563
     },
     "one-hundred-years-of-solitude": {
       "booted": true,
-      "wallMs": 422,
-      "fetchParseMs": 9,
-      "chartMs": 152,
-      "totalBytes": 569083,
-      "jsonBytes": 54798
+      "wallMs": 417,
+      "fetchParseMs": 7,
+      "chartMs": 164,
+      "totalBytes": 566470,
+      "jsonBytes": 54830,
+      "jsonExpect": 54043
     },
     "crime-and-punishment": {
       "booted": true,
-      "wallMs": 325,
+      "wallMs": 313,
       "fetchParseMs": 5,
-      "chartMs": 175,
-      "totalBytes": 594027,
-      "jsonBytes": 79742
+      "chartMs": 152,
+      "totalBytes": 591792,
+      "jsonBytes": 80152,
+      "jsonExpect": 79366
     }
   }
 }

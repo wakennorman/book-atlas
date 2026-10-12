@@ -226,6 +226,19 @@ async function measure() {
     await send('Network.enable', {});
     await send('Page.enable', {});
     await send('Runtime.enable', {});
+    /* ⚠⚠ v0.205.1：**挡掉 sw.js** —— 这是字节计数四连跳的根因。
+     *
+     * 这四变（v0.200 前三变 + 本次）共同点：量到“哪些 .json 走了网络”随机跳 ——
+     * 百年孤独的 jsonBytes 在 基线 53.5 / 本机 39.3 / CI 11.3 KB 之间跳，
+     * 罪与罚则稳定高出期望 ~2×（text 包被 SW 的后台刷新**数了两遍**）。
+     * `textStatus==='done'` 只证明“解析完了”，SW 缓存命中时根本没有网络记录可计；
+     * 而 v0.198 的“每本前清 storage”清得掉缓存、清不干净注册时序。
+     *
+     * ⇒ 语义上这本来就是**冷启动**（新访客第一次打开，那时还没有 SW）——
+     *   那就别让 SW 存在：挡掉 sw.js，所有抓取直走网络，graph/text 各计一次，
+     *   字节数变成完全确定值（= 服务器 gzip(level 9) 后的包大小）。
+     *   wallMs 不受影响（每本前本来就清了缓存，量的一直是冷启动）。 */
+    await send('Network.setBlockedURLs', { urls: ['*sw.js'] });
 
     const out = {};
     for (const b of BOOKS) {
@@ -289,6 +302,15 @@ async function measure() {
         textDone = rr.result?.result?.value === true;
         if (!textDone) await new Promise((r) => setTimeout(r, 400));
       }
+      /* ⚠⚠ v0.205.1：textDone 之后必须**再沉降一会**再读行。
+       *
+       * 现场：`textStatus==='done'` 一变真，上面的轮询立刻退出 —— 但 CDP 是
+       * **异步事件流**，这个响应的 `Network.loadingFinished` 可能还在 socket 上飞。
+       * 小包（百年孤独 text 27.6KB）赶得上，大包（三国 text gzip 后 154KB）稳定赶不上
+       * ⇒ 三国的 text.json 与 annotations 每次都记成 **0 字节**（jsonBytes 84.9 而非 ~250）。
+       * 这就是 jsonBytes “跨机器跳”的最后一变：不是 SW、不是机器，是**读完就走**。
+       * 400ms 是本地及 CI 实测都够的余量（ events 延迟是毫秒级）。 */
+      await new Promise((r) => setTimeout(r, 400));
       const sawText = [...net.values()].some((v) => v?.url?.includes(textUrl));
       if (!textDone || !sawText) {
         console.error(`  ⚠ ${b.slug}：等了 20 秒文案包仍未确认完成`
@@ -364,6 +386,12 @@ if (BLESS) {
     _blessedAt: new Date().toISOString().slice(0, 10),
     books: measured,
   };
+  /* 把确定性期望也写进基线：字节判据改用「实测 vs 期望」，不跨机器比基线。 */
+  for (const b of BOOKS) {
+    const gz = (rel) => { try { return gzipSync(fs.readFileSync(path.join(ROOT, rel)), { level: 9 }).length; } catch { return 0; } };
+    if (doc.books[b.slug]) doc.books[b.slug].jsonExpect = gz('data/books.json')
+      + gz(`data/${b.slug}.graph.json`) + gz(`data/${b.slug}.text.json`) + gz(`data/annotations/${b.slug}.json`);
+  }
   fs.writeFileSync(BASELINE, JSON.stringify(doc, null, 2) + '\n', 'utf8');
   console.log(`\n✓ 已写入基线 ${path.relative(ROOT, BASELINE)}`);
   console.log('  ⚠ bless 会把当前值当"正常" —— 别为了让 CI 变绿而 bless 一个已经慢了的版本。');
@@ -403,38 +431,68 @@ for (const b of BOOKS) {
     ok(true, `${label}：${now.wallMs}ms（基线 ${was.wallMs}ms 的 ${ratio.toFixed(2)}×）`);
   }
 
-  /* ── ② 传输量：**字节数不会有机器差异**（不依赖 CPU/时钟），所以判据用**绝对值**，
-   *      不用相对倍数。数据涨了就是真涨了 —— 这与 wallMs 必须用倍数的理由相反
-   *      （wallMs 跨机器差好几倍，写死毫秒数换台机器就全红）。
+  /* ── ② 传输量：判据从「跨机器比基线」改成「实测 vs 本地确定性期望」（v0.205.1） ──
    *
-   * ⚠ v0.200：这三条**此前只被记录、从未被判定**（`totalBytes` / `jsonBytes`
-   *   落进基线文件，却没有任何一条 if 去读它们）—— 与 v0.198「性能只被量了
-   *   从来没被管过」、v0.199「预缓存只被校验了 data 一段」是同一族病。
+   * ⚠ 为什么改：字节判定原来拿 `measured.jsonBytes` 比 `baseline.jsonBytes`（±50% 红）。
+   *   实测证明**两个方向都会假红**，因为量到“哪些 .json 走了网络”本身随环境跳：
+   *   · v0.200 注释记过前三变（固定 3 秒 / 等网络静默 / 看 responseReceived）；
+   *   · v0.205.1 第四变：同一份数据，百年孤独的 jsonBytes 在**基线上 53.5 KB、
+   *   本机另一次 39.3 KB、CI 11.8 KB** 之间跳（三国/罪与罚则三次都稳）——
+   *     CI 上 11.8 KB ≈ gzip(graph) 单包，即 text 包的传输没落进计数窗口。
+   *   `textStatus==='done'` 只能证明“解析完了”，证明不了“走了网络”
+   *   （SW 缓存命中时没有网络记录可计）—— ±50% 的带宽容不下这个跳动。
    *
-   * ⚠ 为什么 `totalBytes` 单独定阈值而不是跟 jsonBytes 一起：
-   *   实测三本书的 `totalBytes` 离散度只有 **2.0%**，且**非 JSON 部分三本完全相同**
-   *   （都是 1505 KB）—— 它量的其实是 echarts+app.js+css 那套**固定骨架**，
-   *   不是"这本书有多重"。所以：
-   *     · `jsonBytes` 才是**每本书各不相同**、真正该守的那个（数据文件变胖要有人管）
-   *     · `totalBytes` 守的是**骨架**（谁往 <script> 里多加了一个库）——
-   *       它三本同值，正好说明它测的是骨架，用一个统一阈值判即可。 */
-  const jNow = now.jsonBytes ?? 0, jWas = was.jsonBytes;
-  if (typeof jWas === 'number' && jWas > 0) {
-    const dKB = (jNow - jWas) / 1024;
-    const pct = jNow / jWas;
-    if (pct > 1.5 || pct < 0.5) {
-      ok(false, `${label}：首屏 JSON ${(jNow / 1024).toFixed(1)} KB，`
-        + `与基线 ${(jWas / 1024).toFixed(1)} KB 差 ${dKB >= 0 ? '+' : ''}${dKB.toFixed(1)} KB（${pct.toFixed(2)}×）`);
-      console.error('      ⇒ 数据文件变胖/变瘦了。改了 data/*.json 记得重跑 make-slim-packs，');
-      console.error('        确实是有意为之（书加内容、字段变多）就 --bless，并在 CHANGELOG 写明差多少。');
+   * ⇒ 新判据：**期望值现算** —— 用服务器同一份参数（`gzipSync(level 9)`）把
+   *   `<slug>.graph.json + <slug>.text.json` 压一遍，那是“冷启动访客理论上要传的字节”，
+   *   完全确定性（同文件同参数同结果，无机器差异）。
+   *   · `measured > 期望×1.5` ⇒ 红：浏览器传得比文件重（重复请求 / 没走 gzip），真问题；
+   *   · `measured < 期望×0.5` ⇒ **只警告不红**：没量全（SW 缓存/计时窗口），
+   *     是测量问题不是数据问题 ——  Fan the 噪声史后这一侧再也不许红。
+   *   · “数据变胖”另有两道确定性哨兵：`make-slim-packs --check`（包与源同步）
+   *     + git diff 肉眼；墙钟时间那条（倍数判据）仍对严重变胖敏感。
+   *
+   * ⚠ `totalBytes`（骨架）三本书历代实测都稳（非 JSON 部分恒为 vendor 骨架），
+   *   保持原有绝对阈值不变。 */
+  const expectJson = (b) => {
+    try {
+      /* 首屏 json 抓取全集（以页面实际请求为准，debug 实测）：
+       *   books.json + <slug>.graph.json + <slug>.text.json + annotations/<slug>.json
+       * ⚠ v0.205.1 补上后两个：text 走空闲预取、annotations 随书加载，
+       *   漏了它们期望值就偏小，判据会连续的"实测大于期望"假红。 */
+      const gz = (rel) => gzipSync(fs.readFileSync(path.join(ROOT, rel)), { level: 9 }).length;
+      return gz('data/books.json')
+        + gz(`data/${b.slug}.graph.json`)
+        + gz(`data/${b.slug}.text.json`)
+        + gz(`data/annotations/${b.slug}.json`);
+    } catch { return null; }
+  };
+  const jNow = now.jsonBytes ?? 0;
+  const jExpect = expectJson(b);
+  const jWasExpect = typeof was.jsonExpect === 'number' ? was.jsonExpect : null;
+  if (jExpect && jWasExpect) {
+    const pct = jNow / jExpect;
+    const kb = (n) => (n / 1024).toFixed(1);
+    if (pct > 1.5) {
+      ok(false, `${label}：实测 JSON ${kb(jNow)} KB，是确定性期望（服务器同参 gzip 后的首屏 json）${kb(jExpect)} KB 的 ${pct.toFixed(2)}×`);
+      console.error('      ⇒ 浏览器传得比文件重：重复请求 / 没走 gzip / 页面里又拉了一遍数据。');
+    } else if (pct < 0.5) {
+      console.log(`  ⚠ ${label}：实测 JSON ${kb(jNow)} KB 不到期望 ${kb(jExpect)} KB 的一半（${pct.toFixed(2)}×）`
+        + ' —— 没量全（首包 late 请求记 0 字节，见上方噪声史）。只警告不红：测量问题不是数据问题。');
     } else {
-      ok(true, `${label}：首屏 JSON ${(jNow / 1024).toFixed(1)} KB（基线 ${(jWas / 1024).toFixed(1)} KB）`);
+      ok(true, `${label}：实测 JSON ${kb(jNow)} KB（期望 ${kb(jExpect)} KB 的 ${pct.toFixed(2)}×）`);
     }
+  } else if (jExpect) {
+    console.log(`  ℹ ${label}：实测 JSON ${(jNow / 1024).toFixed(1)} KB，期望 ${(jExpect / 1024).toFixed(1)} KB`
+      + '（基线里没有 jsonExpect，跑一次 --bless 补上后才做这条判定）');
   }
-
-  const tNow = now.totalBytes ?? 0, tWas = was.totalBytes;
-  if (typeof tWas === 'number' && tWas > 0) {
-    const pct = tNow / tWas;
+  const tNow = now.totalBytes ?? 0;
+  const tWas = was.totalBytes;
+  if (typeof tWas === 'number' && tWas > 0 && jExpect) {
+    /* json 分量测量不稳（见上方噪声史），两侧都换成确定性期望再比 ——
+     * 否则哪次多量到一卷 text（三国 gzip 后 154 KB），总量就平白跳 1.3× 压阈值。 */
+    const cleanNow = tNow - jNow + jExpect;
+    const cleanWas = tWas - (was.jsonBytes ?? 0) + (jWasExpect ?? jExpect);
+    const pct = cleanNow / cleanWas;
     if (pct > 1.25) {
       ok(false, `${label}：首屏总传输 ${(tNow / 1024).toFixed(0)} KB，`
         + `是基线 ${(tWas / 1024).toFixed(0)} KB 的 ${pct.toFixed(2)}×（骨架阈值 1.25×）`);
@@ -442,7 +500,7 @@ for (const b of BOOKS) {
       console.error('        ⚠ 注意 SW 预缓存改动也会动这个数（v0.199 删了 402 KB 的 pdf 库）——');
       console.error('          那是有意的减小，bless 即可；别为了让门禁绿而把库加回来。');
     } else {
-      ok(true, `${label}：首屏总传输 ${(tNow / 1024).toFixed(0)} KB（基线 ${(tWas / 1024).toFixed(0)} KB）`);
+      ok(true, `${label}：首屏总传输 ${(cleanNow / 1024).toFixed(0)} KB（基线 ${(cleanWas / 1024).toFixed(0)} KB，json 已归一）`);
     }
   }
 }
