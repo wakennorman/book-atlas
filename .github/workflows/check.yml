@@ -114,10 +114,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs scripts/lib/profile-prefixes.mjs \
+                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -939,6 +939,24 @@ jobs:
         # ⚠ 这条守卫自己也踩了同一个坑两次（先是配平箭头函数、再是被模板串骗到），
         #   两次都是「算出来的长度离谱但没报错」⇒ 判据必须自己验自己。
         run: node test/app-func-size-guard.mjs
+
+      - name: 书型术语层（TERMS）自洽与接线
+        # v0.208 新增。v0.206 引入术语层（理论类把「人物/关系/事件」换成「概念/关联/案例」），
+        #   v0.208 把词条从 20 个扩到 58 个、并加了「句级」模板（`TW('chHead', …)`）。
+        # 为什么必须有这条守卫 —— 两类错误**都不会有任何东西报红**：
+        #   ① 给 `narrative` 加了词条、忘了给 `theory` 加（或反过来）⇒ 理论类上取到 `undefined`，
+        #      界面上直接印出 `undefined`；
+        #   ② 句子里的措辞改回了叙事类（`'结局：'` 之类）⇒ 术语层那一句白写，界面看着完全正常。
+        # 六条判据（G1–G8）：两侧词条一一对应 / 占位符集合一致 / `T().x` 与 `TW('x')` 都能解析到
+        #   / 句级不许用 `T()` 取（会印出字面量 `{0}`）/ `index.html` 的 `data-term` 都能查到
+        #   / 没有死词条 / 长词级值不许再作为裸字符串写死在别处。
+        # ⚠ 判据本体在 `scripts/lib/type-terms.mjs`（**纯文本分析**：本机起不了子进程，
+        #   也不 import `js/app.js`，它顶层就要 DOM）。
+        # ⚠ 那个小词法器必须认正则字面量：`/[&<>"']/g` 这种"正则里带引号"的写法会让
+        #   "遇引号就当字符串"的简易剥离器**永久失同步**（实测把整份文件的注释都当成代码）。
+        # ⚠ 判"某处引用在不在"必须在**只剥注释**的那份源码上找：`${T().charN}` 全在模板字面量里，
+        #   用"注释与字符串都剥掉"的那份会把它们全看成"没引用过"（实测 G7 误报 16 条）。
+        run: node test/type-terms-guard.mjs
 
       - name: 首屏性能预算
         # v0.198 新增。本项目此前**零性能预算**：实测

@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=207">
+  <link rel="stylesheet" href="css/style.css?v=208">
 </head>
 <body>
 
@@ -104,7 +104,7 @@
               <button class="ghost tiny" type="button" data-palette="default">默认</button>
               <button class="ghost tiny" type="button" data-palette="a11y">色盲友好</button>
             </div>
-            <p class="hint">色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。</p>
+            <p class="hint" data-term="paletteHint">色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。</p>
           </div>
           <div class="ep-group">
             <b>字号</b>
@@ -117,7 +117,7 @@
           </div>
         </div>
         <div id="edge-filter-panel" class="edge-panel" hidden>
-          <div class="ep-group">
+          <div class="ep-group" id="edge-kin-group">
             <b>亲缘</b>
             <label><input type="checkbox" data-edge-kin="blood">血缘</label>
             <label><input type="checkbox" data-edge-kin="marriage">婚姻 · 姻亲</label>
@@ -127,9 +127,9 @@
           </div>
           <div class="ep-group">
             <b>线条</b>
-            <label><input type="checkbox" data-edge-style="solid">实线 · 亲缘 / 同盟</label>
-            <label><input type="checkbox" data-edge-style="dashed">虚线 · 对立 / 伤害</label>
-            <label><input type="checkbox" data-edge-style="dotted">点线 · 情人 / 过去 / 间接</label>
+            <label><input type="checkbox" data-edge-style="solid"><span data-term="lineSolidLabel">实线 · 亲缘 / 同盟</span></label>
+            <label><input type="checkbox" data-edge-style="dashed"><span data-term="lineDashedLabel">虚线 · 对立 / 伤害</span></label>
+            <label><input type="checkbox" data-edge-style="dotted"><span data-term="lineDottedLabel">点线 · 情人 / 过去 / 间接</span></label>
           </div>
           <div class="ep-group">
             <b>其它</b>
@@ -222,7 +222,7 @@
     <div class="panel timeline-panel">
       <div class="pane-head">
         <h2>重大事件轴</h2>
-        <span class="hint">按阶段 · 点事件看详情</span>
+        <span class="hint" data-term="timelineHint">按阶段 · 点事件看详情</span>
       </div>
       <div id="timeline" class="timeline"></div>
     </div>
@@ -504,7 +504,7 @@
       <h2 id="ai-title">🤖 AI 讲解设置</h2>
       <button type="button" class="modal-close" data-ai-close="1" title="关闭">✕</button>
     </div>
-    <p class="hint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
+    <p class="hint" data-term-html="aiPanelHint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
     <div class="ai-form">
       <label>接口地址<input id="ai-base" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
       <label>模型<input id="ai-model" placeholder="deepseek-flash" autocomplete="off"></label>
@@ -524,7 +524,7 @@
       <h2 id="export-title">⬇️ 导出 / 分享</h2>
       <button type="button" class="modal-close" data-export-close="1" title="关闭">✕</button>
     </div>
-    <p class="hint">导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。</p>
+    <p class="hint" data-term="exportHint">导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。</p>
     <div class="export-list">
       <button class="spoiler-opt" type="button" data-export="html">
         <b>① 单文件 HTML —— 把这本书发给别人</b>
@@ -532,7 +532,7 @@
       </button>
       <button class="spoiler-opt" type="button" data-export="png">
         <b>② 分享图 PNG</b>
-        <span>当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。</span>
+        <span data-term="exportPngDesc">当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。</span>
       </button>
       <button class="spoiler-opt" type="button" data-export="svg">
         <b>③ 打印版 SVG（A3）</b>
@@ -544,7 +544,7 @@
       </button>
       <button class="spoiler-opt" type="button" data-export="epub">
         <b>⑤ 阅读伴侣 EPUB —— 传进微信读书</b>
-        <span>关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
+        <span data-term-html="exportEpubDesc">关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
       </button>
     </div>
     <p class="hint" id="export-hint"></p>
@@ -557,11 +557,11 @@
       <h2 id="spoiler-title">开始前，先选一条路线</h2>
       <button type="button" class="modal-close" id="spoiler-close" title="关闭（＝不开启剧透保护，全部解锁）">✕</button>
     </div>
-    <p class="hint">这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。</p>
+    <p class="hint" data-term="spoilerIntro">这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。</p>
     <div class="spoiler-options">
       <button type="button" class="spoiler-opt" id="spoiler-off">
         <b>① 我不介意剧透，全部解锁</b>
-        <span>直接看完整关系图</span>
+        <span data-term="spoilerOffDesc">直接看完整关系图</span>
       </button>
       <div class="spoiler-opt" id="spoiler-on-box">
         <b>② 我在读，按进度解锁</b>
@@ -575,6 +575,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=207"></script>
+<script src="js/app.js?v=208"></script>
 </body>
 </html>

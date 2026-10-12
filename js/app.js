@@ -402,20 +402,129 @@
   /* ⚠ `charIcon` / `eventIcon` 也在术语层里（v0.207）：拆书条目末尾那两排可点芯片
    *   是 `⚡ 事件名` / `👤 人物名` —— 理论类里 `chars` 挂的是**概念**，
    *   给一个概念画一个人头，比措辞错更刺眼。图标和措辞一样，是**同一处**要换的东西。 */
+  /* ⚠⚠ v0.208：这张表里**同时有两种条目**，别混：
+   *   · **词级**（值里没有 `{}`）：直接嵌进句子的名词，用 `T().key` 取；
+   *   · **句级**（值里有 `{0}` `{1}`）：整句/半句的骨架，用 `TW('key', …)` 取。
+   *
+   *   为什么必须有句级 —— v0.207 只加了词级，于是理论类拼出了这些**错句**：
+   *     「本章 5 个概念**出场** · 新增关联 0 条**关联**」（"个概念出场"不通）
+   *     「这一章的出场**人物、关系与事件**先锁起来」（三个词各自替换后整句不通顺）
+   *   根因：`本章 N 人出场 · 新增关系 N 条 · 事件 N 个 · 地点 N 处` 里的
+   *   「人出场」「条」「个」「处」是**跟量词绑在一起**的，拆成 4 个词级槽位必然拼歪。
+   *   ⇒ 一整句就存一整句，**同一个调用点、同一个模板**，只是取出来的字符串不同。
+   *     这仍然不是"两套渲染分支"（§7.1 那条规矩管的是**逻辑**分叉，不是措辞）。 */
   const TERMS = {
     narrative: {
+      /* ── 词级 ── */
       char: '人物', rel: '关系', event: '事件', place: '地点', faction: '阵营', gen: '代际',
-      charN: '人', relN: '段关系', eventN: '个事件', placeN: '个地点',
+      charN: '人', relN: '段关系', eventN: '个事件',
+      charMany: '人',            // 泛指多个（「人太多看不清」）
+      charPron: '他/她',         // 第三人称（「与他/她有关的人」）
+      charVerb: '出场',          // 首次出现的动词（「第 3 章才出场」「首次出场」）
+      fate: '结局',
+      nameLabel: '姓名',
       charIcon: '👤', eventIcon: '⚡',
+      placeThis: '这个地点', placeLocal: '本地点', placeAll: '显示全部地点',
+      keyRels: '关键关系', noRels: '（暂无可显示的关系）', pairRel: '两人关系',
+      /* ── 句级 ── */
+      chHead: '本章 <b>{0}</b> 人出场 · 新增关系 <b>{1}</b> 条 · 事件 <b>{2}</b> 个 · 地点 <b>{3}</b> 处',
+      chLocked: '你现在读到第 {0} 章——这一章的出场人物、关系与事件先锁起来，读完再来。',
+      secNewChar: '✨ 初次登场',
+      relsTitle: '与谁有关 · 凭什么事件',
+      secNewRels: '🤝 本章新关系',
+      secEvents: '⚡ 本章事件',
+      secPlaces: '📍 出现的地点',
+      timelineBtn: '在时间轴里看本章事件',
+      placeEventsH: '在这里发生的事',
+      exportNote: '（导出时：剧透保护开到第 {0} 章，之后的人物与事件没有写进来）',
+      epubGraphH: '关系总图',
+      epubEventsH: '重大事件轴',
+      /* ⚠ 人称是**运行时**才定的（叙事类看 `c.gender` 是「她」还是「他」，理论类则用名词
+       *   「概念」）⇒ 必须留 `{0}`，**不能写成固定值**。
+       *   v0.208 一度写成 `'他的一生（按章）'` ⇒ 女性角色的 EPUB 小节标题变成「他的一生」，
+       *   而当时**所有门禁全绿**（术语表两侧对称、引用都在、`data-term` 都在）。
+       *   现在由守卫 G9 咬这一类（`scripts/lib/type-terms.mjs`）。 */
+      epubLifeH: '{0}的一生（按章）',
+      epubSpoilNote: '这份文件<b>跟随导出时的阅读进度</b>——之后的剧情没写进来。读到后面想更新，回网页版/小程序再导出一次即可。',
+      aiNoSpoil: '不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；',
+      epubCharsH: '人物志（按出场章排序）',
+      epubCover: '把这本书的人物关系、定义关系的小事件与标志性事件，整理成一份<b>可以放',
+      aiCharTask: '用几句话说清这个人是谁、和他人的关系是怎么来的。',
+      legendShapes: '圆＝男 / 圆角方＝女 · 大小＝关系条数 · 虚线＝推导或对立',
+      shapeLegend: '● 圆＝男　▢ 圆角方＝女　大小＝关系条数',
+      edgeFilterTitle: '按关系类型过滤：只看亲缘 / 只看对立 / 隐藏某类线条',
+      mentionedTitle: '「仅被提及」的人物（没出场、没台词）默认折叠',
+      minorTitle: '只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）',
+      timeTitle: '把图谱拨回第 N 章：只画当时已经发生的关系（「同盟→反目」这类变化会跟着时间变）',
+      pathAria: '（可输入名字，下拉可选）',
+      /* ── 给 `index.html` 的静态整句用（`data-term` / `data-term-html`）── */
+      paletteHint: '色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。',
+      timelineHint: '按阶段 · 点事件看详情',
+      lineSolidLabel: '实线 · 亲缘 / 同盟',
+      lineDashedLabel: '虚线 · 对立 / 伤害',
+      lineDottedLabel: '点线 · 情人 / 过去 / 间接',
+      exportHint: '导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。',
+      exportPngDesc: '当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。',
+      exportEpubDesc: '关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
+      spoilerIntro: '这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。',
+      spoilerOffDesc: '直接看完整关系图',
+      aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
     },
     theory: {
+      /* ── 词级 ── */
       char: '概念', rel: '关联', event: '案例', place: '领域', faction: '主题', gen: '层次',
-      charN: '个概念', relN: '段关联', eventN: '个案例', placeN: '个领域',
+      charN: '个概念', relN: '段关联', eventN: '个案例',
+      charMany: '概念',
+      charPron: '它',
+      charVerb: '提出',
+      fate: '全书定位',
+      nameLabel: '名称',
       charIcon: '◆', eventIcon: '⚡',
+      placeThis: '这个领域', placeLocal: '本领域', placeAll: '显示全部领域',
+      keyRels: '关键关联', noRels: '（暂无可显示的关联）', pairRel: '两个概念的关系',
+      /* ── 句级 ── */
+      chHead: '本章 <b>{0}</b> 个概念 · 新增关联 <b>{1}</b> 条 · 案例 <b>{2}</b> 个 · 领域 <b>{3}</b> 个',
+      chLocked: '你现在读到第 {0} 章——这一章的概念、关联与案例先锁起来，读完再来。',
+      secNewChar: '✨ 本章新概念',
+      relsTitle: '与什么相关 · 凭什么案例',
+      secNewRels: '🤝 本章新关联',
+      secEvents: '⚡ 本章案例',
+      secPlaces: '📍 出现的领域',
+      timelineBtn: '在时间轴里看本章案例',
+      placeEventsH: '这个领域的案例',
+      exportNote: '（导出时：剧透保护开到第 {0} 章，之后的概念与案例没有写进来）',
+      epubGraphH: '关联总图',
+      epubEventsH: '重大案例轴',
+      epubLifeH: '{0}沿革（按章）',      // `{0}` = 名词（传 `T().char` ⇒「概念沿革（按章）」）
+      epubSpoilNote: '这份文件<b>跟随导出时的阅读进度</b>——之后的内容没写进来。读到后面想更新，回网页版/小程序再导出一次即可。',
+      aiNoSpoil: '不要提任何更后面的内容，也不要用"后来 / 最终 / 定位 / 最后 / 真相是"这类预示；',
+      epubCharsH: '概念志（按首次提出章排序）',
+      epubCover: '把这本书的概念关联、支撑关联的案例与标志性案例，整理成一份<b>可以放',
+      aiCharTask: '用几句话说清这个概念是什么、它和别的概念是什么关系。',
+      legendShapes: '',            // 概念没有性别、没有推导边 ⇒ 整条图例不画（空串 = 不输出）
+      shapeLegend: '',
+      edgeFilterTitle: '按关联类型过滤：只看对立 / 隐藏某类线条',
+      mentionedTitle: '「仅被提及」的概念（没展开、没细节）默认折叠',
+      minorTitle: '只跟一两个概念有关系的次要概念，默认折叠（搜索/点案例照样能找到）',
+      timeTitle: '把图谱拨回第 N 章：只画当时已经发生的关联（「支撑→驳斥」这类变化会跟着时间变）',
+      pathAria: '（可输入名字，下拉可选）',
+      paletteHint: '色盲友好用 Okabe–Ito 八色（按主题顺序分配）；图例里的主题名始终是主要线索。',
+      timelineHint: '按阶段 · 点案例看详情',
+      lineSolidLabel: '实线 · 支撑 / 属于',
+      lineDashedLabel: '虚线 · 对立 / 误读',
+      lineDottedLabel: '点线 · 间接',
+      exportHint: '导出的内容跟随你当前的筛选：剧透进度、概念数、次要概念、领域、聚焦都会生效。',
+      exportPngDesc: '当前视图的关联图 + 书名、概念统计与图例；适合发到想法、圈子或朋友圈。',
+      exportEpubDesc: '关联总图 + 概念志 + 案例轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
+      spoilerIntro: '选「我在读」后，你进度之后的概念、关联与案例都会被锁起来，避免提前看到后面的内容。',
+      spoilerOffDesc: '直接看完整关联图',
+      aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（概念定位、未解锁的关联与案例都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
     },
   };
   const isTheoryBook = () => !!(state.book && state.book.meta && state.book.meta.type === '理论类');
   const T = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
+  /** 取术语：值里带 `{N}` 就按参数填，否则原样返回（见 TERMS 上方那段"两种条目"）。 */
+  const TW = (key, ...args) => String(T()[key]).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? ''));
 
   /* ══ 区域 3/68：文案包预取（首屏只下图包，文案空闲时再取） ══ */
 
@@ -434,7 +543,7 @@
         if (typeof seq === 'number' && seq !== state.loadSeq) return;
         if (state.book && state.book.meta?.slug !== slug) return;
         state.textStatus = { slug, status: 'failed' };
-        console.warn(`《${slug}》的文案包没拿到（${(e && e.message) || e}）—— 人物描述与结局会缺失，图与剧透判定不受影响。`);
+        console.warn(`《${slug}》的文案包没拿到（${(e && e.message) || e}）—— ${T().char}描述与${T().fate}会缺失，图与剧透判定不受影响。`);
       }
     });
   }
@@ -674,7 +783,11 @@
     const btn = document.getElementById('edge-filter-btn');
     if (btn) {
       const n = edgeFilterCount();
-      btn.textContent = n ? `关系：筛选 ${n} 项` : '关系：全部';
+      /* ⚠⚠ v0.208：这里原来写死「关系：…」。`applyTypeTerms()` 也设过同一个按钮
+       *   （`setTyped($('#edge-filter-btn'), …)`），而**本函数在它之后才跑**
+       *   ⇒ 理论类上写好的「关联：全部」被这里改回「关系：全部」，
+       *   界面看着正常，只是"术语层那一句白写了"。⇒ 措辞归这一处（唯一的写者）。 */
+      btn.textContent = n ? `${T().rel}：筛选 ${n} 项` : `${T().rel}：全部`;
       btn.classList.toggle('active', n > 0);
     }
     document.querySelectorAll('[data-edge-kin]').forEach((el) => { el.checked = state.edgeKins.has(el.dataset.edgeKin); });
@@ -1071,7 +1184,7 @@
     } else if (gens.length <= 1) {
       parts.push(`本书没有代际差异：所有${T().char}同属一代（generation 一律为 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
     } else {
-      parts.push(`「分组视图」按阵营（${facs.join('／')}）排列，数据另标代际（${genSpanText(gens)}）`);
+      parts.push(`「分组视图」按${T().faction}（${facs.join('／')}）排列，数据另标${T().gen}（${genSpanText(gens)}）`);
     }
     if (m.chapters) parts.push(`剧透保护按章节顺序解锁（全书 ${m.chapters} 章）`);
     if (m.note) parts.push(esc(m.note));
@@ -1174,6 +1287,12 @@
     setPh('path-a', `${t.char} A`);
     setPh('path-b', `${t.char} B`);
     setPh('place-filter', `按${t.place}筛选…`);
+    /* ⚠ v0.208：`placeholder` 和 `aria-label` 是**两个**属性 —— v0.206 只设了前者，
+     *   于是理论类上输入框里写着「概念 A」而读屏念的是「人物 A（可输入名字，下拉可选）」。 */
+    for (const id of ['path-a', 'path-b']) {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('aria-label', `${t.char} ${id === 'path-a' ? 'A' : 'B'}${t.pathAria}`);
+    }
     const pf = document.getElementById('place-filter');
     if (pf) pf.setAttribute('aria-label', `按${t.place}筛选${t.event}与${t.char}`);
     const lg = document.getElementById('legend');
@@ -1195,8 +1314,19 @@
       const want = [`${t.char}数：全部`, `${t.char}数：中等（前 200）`, `${t.char}数：主要（前 60）`];
       for (let i = 0; i < size.options.length && i < want.length; i++) setTyped(size.options[i], 'textContent', want[i]);
     }
-    setTyped($('[data-view="gen-h"]'), 'textContent', `${t.gen}·横`);
-    setTyped($('[data-view="gen-v"]'), 'textContent', `${t.gen}·纵`);
+    /* ⚠⚠ v0.208：这里原来设过「代际·横 / 代际·纵」，**是死代码**：
+     *   `syncViewButtons()` 按 `state.groupMode`（有代际按代际、否则按阵营）写同一个按钮，
+     *   而它在本函数之后才跑 ⇒ 这里写的必被覆盖。
+     *   而且**判据本来就不该是书型** —— 理论类里 `meta.groupMode = 'faction'`，
+     *   按钮该说「分组·横」，说成「层次·横」是错的（它压根不按层次分组）。
+     *   ⇒ 措辞归 `syncViewButtons` 一处管，这里删掉。 */
+    setTyped($('#mentioned-btn'), 'title', t.mentionedTitle);
+    setTyped($('#minor-btn'), 'title', t.minorTitle);
+    setTyped($('#edge-filter-btn'), 'title', t.edgeFilterTitle);
+    setTyped($('#time-btn'), 'title', t.timeTitle);
+    /* 提及 / 次要 两个开关的**当前态**文案。`revealChar` / `syncMentionBtn` / `syncMinorBtn`
+     * 三处也写同一个按钮 —— 它们统一用 `T().char`，所以这里写的是"隐藏态"的初值就够了
+     * （v0.208 之前它们写死「人物」，点一下按钮就把术语层那一句改回去了）。 */
     setTyped($('#mentioned-btn'), 'textContent', `提及${t.char}：隐藏`);
     setTyped($('#minor-btn'), 'textContent', `次要${t.char}：隐藏`);
     setTyped($('#edge-filter-btn'), 'textContent', `${t.rel}：全部`);
@@ -1208,6 +1338,10 @@
      * 推导链恒为空 ⇒ 藏 —— 留着会是一个"点了没反应"的按钮，比没有更糟。 */
     setShown('.shape-legend', !th);
     setShown('#derived-btn', !th);
+    /* v0.208：边过滤面板的**亲缘组**对理论类整组藏掉 —— 概念之间没有血缘/婚姻/收养/结义，
+     *   留着会是一排"勾了没反应"的复选框。`data-edge-kin="none"`（无亲缘标注）也一样：
+     *   理论类所有关联都没有 kin，等于恒真，过滤它没有意义。 */
+    setShown('#edge-kin-group', !th);
     setShown('#edge-filter-panel [data-edge-preset="kin"]', !th);
     const derivedBox = document.getElementById('edge-derived');
     const derivedGrp = derivedBox && derivedBox.closest ? derivedBox.closest('.ep-group') : null;
@@ -1222,6 +1356,21 @@
           `<b>本书是理论类</b>：图上的节点是书里的<b>${t.char}</b>，连线是${t.char}之间的<b>${t.rel}</b>，事件轴上是书中的<b>实验与${t.event}</b>。<br>`);
       }
     }
+    /* ⚠ v0.208：`index.html` 里那些**整句都要换**的静态文案（导出菜单说明、剧透引导、
+     *   图例补充句…），用 `data-term="key"` / `data-term-html="key"` 标在 HTML 上。
+     *   为什么不在上面逐个写 `document.querySelector('#xxx')`：那样每加一句文案就得回来改一处，
+     *   **忘了改没有任何东西会报错**（本仓最常见的病，见 `test/missing-ok-lib-guard.mjs`）。
+     *   标在 HTML 上 ⇒ 加了新文案只要标一下，术语层自动接管。
+     *   `data-term-html` 用于元素里带 `<b>` 等标签的（换 textContent 会把标签吃掉）；
+     *   key 在术语表里查不到时**原样保留**（不会写坏），所以漏加 key 是"没换"而不是"换坏"。 */
+    document.querySelectorAll('[data-term]').forEach((el) => {
+      const v = t[el.dataset.term];
+      if (typeof v === 'string') setTyped(el, 'textContent', v);
+    });
+    document.querySelectorAll('[data-term-html]').forEach((el) => {
+      const v = t[el.dataset.termHtml];
+      if (typeof v === 'string') setTyped(el, 'innerHTML', v);
+    });
   }
 
   /* ══ 区域 13/68：下拉与搜索候选 ══ */
@@ -1251,7 +1400,7 @@
         .sort((a, b) => (a.firstCh ?? 0) - (b.firstCh ?? 0) || a.name.localeCompare(b.name))
         .map((p) => ({
           id: p.id, name: p.name, aliases: p.aliases || [],
-          sub: `${p.type || '地点'}${p.firstCh != null ? ` · 第 ${p.firstCh} 章` : ''}`,
+          sub: `${p.type || T().place}${p.firstCh != null ? ` · 第 ${p.firstCh} 章` : ''}`,
           desc: p.desc || '',
         }));
     }
@@ -1882,17 +2031,17 @@
             const hidden = (rel.events || []).length - vis.length;
             const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
             return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
-              (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条事件在你读到的进度之后</span>` : '');
+              (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
           if (!c) return '';
           if (charLocked(c)) {
-            return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个${T().char}在第 ${charCh(c)} 章才出场；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
+            return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个${T().char}在第 ${charCh(c)} 章才${T().charVerb}；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
             `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
-            `<span style="color:${muted}">结局：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>` +
-            (isMentioned(c) ? `<br><span style="color:${muted}">（仅被提及 · 未出场；第 ${charCh(c)} 章）</span>` : '');
+            `<span style="color:${muted}">${T().fate}：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>` +
+            (isMentioned(c) ? `<br><span style="color:${muted}">（仅被提及 · 未${T().charVerb}；第 ${charCh(c)} 章）</span>` : '');
         },
       },
       series: [{
@@ -2465,11 +2614,15 @@
   }
 
   function syncViewButtons() {
+    /* 判据是 `state.groupMode`（**这本书有没有代际**），不是书型 ——
+     * 理论类里 groupMode='faction'（按主题分组），说「层次·横」是错的。
+     * ⚠ v0.208：分组名词按书型换（阵营 / 主题），其余不变。 */
     const isGen = state.groupMode === 'generation';
+    const fac = T().faction;
     const bh = document.querySelector('.seg[data-view="gen-h"]');
     const bv = document.querySelector('.seg[data-view="gen-v"]');
-    if (bh) { bh.textContent = isGen ? '代际·横' : '分组·横'; bh.title = isGen ? '按代际分列，从左到右' : '按阵营分组分列，从左到右'; }
-    if (bv) { bv.textContent = isGen ? '代际·纵' : '分组·纵'; bv.title = isGen ? '按代际分行，从上到下' : '按阵营分组分行，从上到下'; }
+    if (bh) { bh.textContent = isGen ? '代际·横' : '分组·横'; bh.title = isGen ? '按代际分列，从左到右' : `按${fac}分组分列，从左到右`; }
+    if (bv) { bv.textContent = isGen ? '代际·纵' : '分组·纵'; bv.title = isGen ? '按代际分行，从上到下' : `按${fac}分组分行，从上到下`; }
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
@@ -3000,14 +3153,15 @@
     if (!el || !state.book) return;
     const total = state.book.characters.length;
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
-    let text = shown >= total ? `${total} 人` : `显示 ${shown} / ${total} 人`;
+    const t = T();
+    let text = shown >= total ? `${total} ${t.charN}` : `显示 ${shown} / ${total} ${t.charN}`;
     // 关系数也报一下：过滤/剧透/折叠挡住多少条，一眼能看出来
     const rels = state.book.relations;
     const shownRels = rels.filter((r) =>
       state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r) && relVisible(r) && passEdgeFilter(r) && relVisibleAt(r)
       && !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to))
       && passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to)).length;
-    if (shownRels < rels.length) text += ` · 关系 ${shownRels} / ${rels.length}`;
+    if (shownRels < rels.length) text += ` · ${t.rel} ${shownRels} / ${rels.length}`;
     const n = asOf();
     el.textContent = (n !== null ? `🕰 第 ${n} 章 · ` : '') + text;
     updateAria();
@@ -3019,7 +3173,7 @@
     const c = state.byId.get(state.focus.id) || { name: state.focus.id };
     const n = (focusSet() || new Set()).size;
     bar.hidden = false;
-    bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} 人
+    bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} ${T().charN}
       <button class="ghost tiny" type="button" data-focus-nav="dec">− 跳</button>
       <button class="ghost tiny" type="button" data-focus-nav="inc">＋ 跳</button>
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
@@ -3278,7 +3432,7 @@
   function blockLockClick() {
     const lock = state.clickLock;
     if (!lock) return;
-    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的人和线（「重置」或右栏人名后点击「清除」可解除；「复位视图」和双击空白只复位视野，不解除）`;
+    const msg = `🔒 聚焦「${lock.label}」中：只能点图上亮着的${T().charMany}和线（「重置」或右栏${T().char}名后点击「清除」可解除；「复位视图」和双击空白只复位视野，不解除）`;
     toast(msg);
     announce(msg);
   }
@@ -3295,14 +3449,14 @@
      * 两人关系链不加（集合就是那条最短链）；阵营／地点也不加 ——
      * 它们本身已经是"一整片"，再扩一跳就把整张图吞进来了，所以 grow=false。 */
     const depthCtl = lock.grow
-      ? `<span class="lock-depth" role="group" aria-label="显示几跳以内的关系">
+      ? `<span class="lock-depth" role="group" aria-label="显示几跳以内的${T().rel}">
            <button class="ghost tiny" type="button" data-lock-depth="dec" ${lock.depth <= LOCK_DEPTH_MIN ? 'disabled' : ''} aria-label="减少显示范围">−跳</button>
            <span class="lock-depth-n">${lock.depth} 跳</span>
            <button class="ghost tiny" type="button" data-lock-depth="inc" ${lock.depth >= LOCK_DEPTH_MAX ? 'disabled' : ''} aria-label="扩大显示范围">＋跳</button>
          </span>`
       : '';
-    bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的人和线 ${depthCtl}
-      <span class="lock-hint">「重置」或右栏人名后点「清除」可解除</span>`;
+    bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的${T().charMany}和线 ${depthCtl}
+      <span class="lock-hint">「重置」或右栏${T().char}名后点「清除」可解除</span>`;
     stackBars();
   }
   /** 聚焦条/锁定条：fixed 悬浮，按「顶栏下沿、图区顶端」定位；两条同时可见时上下叠放 */
@@ -3558,15 +3712,16 @@
     setTimeout(() => { el.textContent = msg; }, 40);   // 先清空，重复内容也会被念
   }
   function graphAriaLabel() {
-    if (!state.book) return '人物关系网络图（加载中）';
+    const t = T();
+    if (!state.book) return `${t.char}${t.rel}网络图（加载中）`;
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const cur = state.kbCursor ? state.byId.get(state.kbCursor) : null;
     const n = asOf();
-    return `《${titleOf()}》${T().char}${T().rel}图：显示 ${shown} / ${state.book.characters.length} ${T().charN}`
+    return `《${titleOf()}》${t.char}${t.rel}图：显示 ${shown} / ${state.book.characters.length} ${t.charN}`
       + (n !== null ? `，时间旅行在第 ${n} 章` : '')
       + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
-      + (cur ? `；当前选中 ${cur.name}（关系 ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章出场）` : '')
-      + '。Tab 聚焦后可用方向键在人物间移动，回车查看档案。';
+      + (cur ? `；当前选中 ${cur.name}（${t.rel} ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章${t.charVerb}）` : '')
+      + `。Tab 聚焦后可用方向键在${t.char}间移动，回车查看档案。`;
   }
   function updateAria() {
     const el = document.getElementById('graph');
@@ -3586,7 +3741,7 @@
     selectCharacter(id, false);                 // 面板 + 高亮（读屏读的是面板里的文字）；方向键浏览不闪
     updateAria();
     const c = state.byId.get(id);
-    if (c) announce(`${c.name}，关系 ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章出场${c.title ? `，${c.title}` : ''}`);
+    if (c) announce(`${c.name}，${T().rel} ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章${T().charVerb}${c.title ? `，${c.title}` : ''}`);
   }
   /** 方向键在人物之间移动：选"最正对该方向、最近"的那个 */
   function moveCursor(key) {
@@ -3710,7 +3865,7 @@
          * 不加这一句的话：setHighlight 已经把锁丢了，而调用方（chooseCharById）接着会按
          * 「这个人自己的一跳邻域」重新上锁 —— 那个集合**不看地点筛选**，于是图上会冒出
          * 一堆和这个地点无关的人，比改之前还乱。所以这里按地点范围原地补一把（grow=false）。 */
-        lockFromHighlight(`${c.name}（${placeName(state.placeFilter) || '本地点'}）`, 'place', [...nodes], false);
+        lockFromHighlight(`${c.name}（${placeName(state.placeFilter) || T().placeLocal}）`, 'place', [...nodes], false);
         return;
       }
     }
@@ -3968,7 +4123,7 @@
     const tip = placeTip();
     tip.id = 'place-tip';
     tip.innerHTML = `<div class="pt-name">📍 ${esc(p.name)}</div>
-      <div class="pt-meta">${esc(p.type || '地点')}${p.firstCh != null ? ` · 首次出现：第 ${p.firstCh} 章` : ''}${p.aliases && p.aliases.length ? ` · 又称 ${esc(p.aliases.join('、'))}` : ''}</div>
+      <div class="pt-meta">${esc(p.type || T().place)}${p.firstCh != null ? ` · 首次出现：第 ${p.firstCh} 章` : ''}${p.aliases && p.aliases.length ? ` · 又称 ${esc(p.aliases.join('、'))}` : ''}</div>
       ${p.desc ? `<div class="pt-desc">${esc(p.desc)}</div>` : '<div class="pt-desc" style="color:var(--muted)">（暂无介绍）</div>'}`;
     tip.hidden = false;
     if (placeTipOwner && placeTipOwner !== target) placeTipOwner.removeAttribute('aria-describedby');
@@ -4028,14 +4183,14 @@
     if (!p) return;
     panel().innerHTML = `
       <div class="card-title">📍 ${esc(p.name)}</div>
-      <div class="card-sub">${esc(p.type || '地点')} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
+      <div class="card-sub">${esc(p.type || T().place)} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
       <p class="card-desc">${esc(p.desc || '')}</p>
-      <h3 style="margin-top:12px;font-size:14px">在这里发生的事（${evs.length}）</h3>
+      <h3 style="margin-top:12px;font-size:14px">${T().placeEventsH}（${evs.length}）</h3>
       ${evs.length ? foldSection({ key: `place:${id}`, n: 10, unit: '条', cls: 'rel-list', items: evs.map((e) => `<li class="rel">
         <div class="rel-head">${esc(e.name)} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
         <div class="rel-event">· ${esc(e.summary)}</div>
       </li>`) }) : '<ul class="rel-list"><li class="hint">暂无（或都在你读到的进度之后）</li></ul>'}
-      <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">显示全部地点</button></p>`;
+      <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">${T().placeAll}</button></p>`;
     bindGoto(panel());
   }
 
@@ -4055,7 +4210,7 @@
     if (!nodes.size) {
       clearHighlight();
       renderPlacePanel(state.placeFilter, []);
-      toast(`「${placeName(state.placeFilter) || '这个地点'}」还没有关联的人物或事件，暂时看不了。`);
+      toast(`「${placeName(state.placeFilter) || T().placeThis}」还没有关联的${T().char}或${T().event}，暂时看不了。`);
       return;
     }
     const edges = new Set();
@@ -4067,7 +4222,7 @@
     /* v93：地点筛选同样建锁（grow=false）。placeNodeScope 已经是"在这个地点出现过的所有人"，
      * 本身就是一个闭合的集合，再扩一跳会把这个地点相关的人的外围全拉进来，没意义。
      * 取消筛选（id=null）走上面 clearHighlight()，锁自然一起解除。 */
-    lockFromHighlight((placeName(state.placeFilter) || '这个地点'), 'place', [...nodes], false);
+    lockFromHighlight((placeName(state.placeFilter) || T().placeThis), 'place', [...nodes], false);
     renderPlacePanel(state.placeFilter, state.book.events.filter((e) => e.place === state.placeFilter && !eventLocked(e)));
   }
 
@@ -4094,7 +4249,7 @@
     const lifeHtml = lifeEvs.length ? `
       <h3 style="margin-top:12px;font-size:14px">${lifeName}（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
       ${foldSection({ key: `life:${c.id}`, n: 8, unit: '个', cls: 'life-list', items: lifeItems })}
-      ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个事件在你读到的进度之后</p>` : ''}` : '';
+      ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个${T().event}在你读到的进度之后</p>` : ''}` : '';
     const relItems = rels.map((r) => {
       const other = r.from === c.id ? r.to : r.from;
       const vis = visibleRelEvents(r);
@@ -4103,9 +4258,9 @@
         `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
-          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条关系">定位这条线</button>
+          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条${T().rel}">定位这条线</button>
         </div>
-        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
       </li>`;
     });
 
@@ -4115,36 +4270,36 @@
       ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
-        <span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>
+        ${isTheoryBook() ? '' : `<span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>`}
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
         ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
         <span class="badge">${T().rel} ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
-      ${factionHist.length > 1 ? `<p class="card-sub">阵营变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
-      <p class="card-fate"><b>结局：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
-      <p class="hint" style="margin-top:8px">人太多看不清？只看这个人的关系网：
+      ${factionHist.length > 1 ? `<p class="card-sub">${T().faction}变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
+      <p class="card-fate"><b>${T().fate}：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
+      <p class="hint" style="margin-top:8px">${T().charMany}太多看不清？只看这个${T().char}的${T().rel}网：
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
-        <button class="ghost tiny" type="button" data-char-card="${esc(c.id)}" title="导出这个人的 PNG 卡片：身份、结局、关键关系与依据事件">🖼 人物卡</button>
+        <button class="ghost tiny" type="button" data-char-card="${esc(c.id)}" title="导出这个${T().char}的 PNG 卡片：身份、${T().fate}、${T().keyRels}与依据${T().event}">🖼 ${T().char}卡</button>
         ${state.focus ? '<button class="ghost tiny" type="button" data-focus-exit="1">退出聚焦</button>' : ''}
       </p>
       ${lifeHtml}
-      <h3 style="margin-top:12px;font-size:14px">与谁有关 · 凭什么事件</h3>
-      ${state.placeFilter ? `<p class="hint">📍 正在按地点「${placeRef(state.placeFilter)}」筛选：图上只高亮该范围内的人与关系。
+      <h3 style="margin-top:12px;font-size:14px">${T().relsTitle}</h3>
+      ${state.placeFilter ? `<p class="hint">📍 正在按${T().place}「${placeRef(state.placeFilter)}」筛选：图上只高亮该范围内的${T().charMany}与${T().rel}。
         <button class="ghost tiny" type="button" data-place-filter="">看全部</button></p>` : ''}
       ${lordHist.length ? `<p class="card-sub">效力变化（旧主 → 新主）：${lordHist.map((s) => {
         const link = s.lord && state.byId.has(s.lord) ? charLink(s.lord) : `<b>自立</b>`;
         return `${link}<span class="hint">（第 ${s.fromCh} 回）</span>`;
       }).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回）</span>`}
         <span class="hint">${lordHist.map((s) => `${s.fromCh}：${esc(s.label || '')}`).join('；')}</span></p>` : ''}
-      ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条关系在你读到的进度之后</p>` : ''}
-      ${filteredCount ? `<p class="hint">🫥 ${filteredCount} 条关系被「关系过滤」挡住
+      ${lockedCount ? `<p class="hint">🔒 还有 ${lockedCount} 条${T().rel}在你读到的进度之后</p>` : ''}
+      ${filteredCount ? `<p class="hint">🫥 ${filteredCount} 条${T().rel}被「${T().rel}过滤」挡住
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
       ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
       <p style="margin-top:10px">
-        <button class="ghost tiny" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个人（不剧透）</button>
+        <button class="ghost tiny" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
         <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
       </p>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
@@ -4158,9 +4313,9 @@
     panel().innerHTML = `
       <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
       <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
-      ${periodText(r) ? `<p class="card-sub">关系时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
+      ${periodText(r) ? `<p class="card-sub">${T().rel}时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
       ${evItems.length ? foldSection({ key: `relev:${first}|${second}`, n: 10, unit: '条', cls: 'rel-events', wrap: 'div', bare: true, items: evItems }) : '<p class="hint">暂无记录</p>'}
-      <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
+      <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着${T().rel}链继续走。</p>`;
     bindGoto(panel());
   }
 
@@ -4240,7 +4395,7 @@
         `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
-        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条事件在你读到的进度之后</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
       </li>`;
     });
     panel().innerHTML = `
@@ -4274,7 +4429,7 @@
       return `<div class="phase">
         <div class="phase-title">${esc(p.name)}</div>
         ${evs.map((e) => eventLocked(e)
-          ? `<button type="button" class="event-chip locked" disabled title="剧透保护：第 ${e.ch} 章的事件">
+          ? `<button type="button" class="event-chip locked" disabled title="剧透保护：第 ${e.ch} 章的${T().event}">
                <span class="ev-name">🔒 第 ${e.ch} 章的事件</span>
                <span class="ev-sum">剧透保护中 · 读到再解锁</span>
              </button>`
@@ -4497,7 +4652,7 @@
     if (hint) {
       if (!state.timeTravel) hint.textContent = '';
       else if (state.progress !== null && state.chapter > state.progress) hint.textContent = `（剧透保护：图谱最多拨到第 ${state.progress} 章）`;
-      else hint.textContent = '只画当时已发生的关系';
+      else hint.textContent = `只画当时已发生的${T().rel}`;
     }
   }
   function applyTimeTravelGraph() {
@@ -4572,7 +4727,7 @@
     if (lockedCh(n)) {
       body.innerHTML = `
         <div class="ch-locked">🔒 <b>第 ${n} 章还没解锁</b>
-          <p class="hint">你现在读到第 ${state.progress} 章——这一章的出场人物、关系与事件先锁起来，读完再来。</p>
+          <p class="hint">${TW('chLocked', state.progress)}</p>
           <button class="primary tiny" type="button" data-ch-mark="${n}">我已读到第 ${n} 章 →</button>
         </div>
         ${renderAnnotations(n, total)}`;
@@ -4580,9 +4735,9 @@
       const d = chapterDigest(n);
       const nd = chapterDigest(n + 1);
       const parts = [];
-      if (nd.charsNew.length) parts.push(`${nd.charsNew.length} 个新人物`);
-      if (nd.relsNew.length) parts.push(`${nd.relsNew.length} 条新关系`);
-      if (nd.events.length) parts.push(`${nd.events.length} 个事件`);
+      if (nd.charsNew.length) parts.push(`${nd.charsNew.length} 个新${T().char}`);
+      if (nd.relsNew.length) parts.push(`${nd.relsNew.length} 条新${T().rel}`);
+      if (nd.events.length) parts.push(`${nd.events.length} ${T().eventN}`);
       const teaser = n < total
         ? `<span><b>下一章</b>（第 ${n + 1} 章）：${parts.length ? '将解锁 ' + parts.join(' · ') : '没有新的整理内容'}</span>`
         : '<span><b>已是最后一章</b></span>';
@@ -4590,15 +4745,15 @@
         ? `<span class="hint">✓ 剧透保护：正读到第 ${n} 章</span>`
         : `<button class="primary tiny" type="button" data-ch-mark="${n}">${state.progress === null ? '🔒 从这一章开始防剧透' : `✓ 我读到第 ${n} 章了`}</button>`;
       body.innerHTML = `
-        <p class="card-sub">本章 <b>${d.charsHere.length}</b> 人出场 · 新增关系 <b>${d.relsNew.length}</b> 条 · 事件 <b>${d.events.length}</b> 个 · 地点 <b>${d.places.length}</b> 处</p>
-        ${d.charsNew.length ? `<div class="ch-sec"><h4>✨ 初次登场</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
-        ${d.relsNew.length ? `<div class="ch-sec"><h4>🤝 本章新关系（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
-        ${d.events.length ? `<div class="ch-sec"><h4>⚡ 本章事件（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
-        ${d.places.length ? `<div class="ch-sec"><h4>📍 出现的地点</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
+        <p class="card-sub">${TW('chHead', d.charsHere.length, d.relsNew.length, d.events.length, d.places.length)}</p>
+        ${d.charsNew.length ? `<div class="ch-sec"><h4>${T().secNewChar}</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>${T().secNewRels}（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
+        ${d.events.length ? `<div class="ch-sec"><h4>${T().secEvents}（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
+        ${d.places.length ? `<div class="ch-sec"><h4>${T().secPlaces}</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
         ${renderAnnotations(n, total)}
         <div class="ch-teaser">${teaser}</div>
         <div class="ch-foot">${mark}
-          ${d.events.length ? '<button class="ghost tiny" type="button" data-ch-timeline="1">在时间轴里看本章事件</button>' : ''}
+          ${d.events.length ? `<button class="ghost tiny" type="button" data-ch-timeline="1">${T().timelineBtn}</button>` : ''}
         </div>`;
     }
     body.querySelectorAll('[data-ch-mark]').forEach((btn) => btn.addEventListener('click', () => applySpoiler(true, Number(btn.dataset.chMark))));
@@ -4679,7 +4834,7 @@
     });
     const progNote = state.progress === null
       ? '（导出时：未开启剧透保护，含全书信息）'
-      : `（导出时：剧透保护开到第 ${state.progress} 章，之后的人物与事件没有写进来）`;
+      : TW('exportNote', state.progress);
     return {
       ...b,
       characters: keepChars,
@@ -4764,7 +4919,9 @@
     const m = state.book.meta || {};
     ctx.fillText(`${m.author || ''} · ${state.book.characters.length} ${T().charN} / ${state.book.relations.length} ${T().relN} / ${state.book.events.length} ${T().eventN} · ${prog}`, 52, 120);
     ctx.textAlign = 'right';
-    ctx.fillText('● 圆＝男　▢ 圆角方＝女　大小＝关系条数', W - 52, 120);
+    /* v0.208：形状图例（圆＝男 / 圆角方＝女）对概念**整条不画** —— peak 的 44 个概念
+     * `gender` 全缺，照画会把每一个都标成男性（错误的性别暗示，不只是措辞）。空串 = 不输出。 */
+    if (T().shapeLegend) ctx.fillText(T().shapeLegend, W - 52, 120);
     ctx.textAlign = 'left';
     const gx = 40, gy = 146, gw = W - 80, gh = H - 146 - 112;
     ctx.save();
@@ -4907,11 +5064,11 @@
     const unit = page ? 'mm' : '';
     const head = !page ? '' : `
   <text x="${M}" y="13" font-size="7" font-weight="700" fill="#232a35">《${xmlEsc(titleOf())}》${T().char}${T().rel}图</text>
-  <text x="${M}" y="20" font-size="3.3" fill="#6c7482">${xmlEsc(state.book.meta.author || '')} · 显示 ${nodes.length} / ${state.book.characters.length} 人 · 关系 ${links.length} 段 · 事件 ${state.book.events.length} 个 · ${progText}</text>
+  <text x="${M}" y="20" font-size="3.3" fill="#6c7482">${xmlEsc(state.book.meta.author || '')} · 显示 ${nodes.length} / ${state.book.characters.length} ${T().charN} · ${T().rel} ${links.length} 段 · ${T().event} ${state.book.events.length} 个 · ${progText}</text>
   ${legend}`;
     const foot = !page ? '' : `
   <text x="${M}" y="${PH - 6}" font-size="3.2" fill="#6c7482">书脉 BookAtlas · ${SITE_URL} · ${date}</text>
-  <text x="${PW - M}" y="${PH - 6}" font-size="3.2" fill="#6c7482" text-anchor="end">圆＝男 / 圆角方＝女 · 大小＝关系条数 · 虚线＝推导或对立</text>`;
+  ${T().legendShapes ? `<text x="${PW - M}" y="${PH - 6}" font-size="3.2" fill="#6c7482" text-anchor="end">${T().legendShapes}</text>` : ''}`;
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${PW}${unit}" height="${PH}${unit}" viewBox="0 0 ${PW} ${PH}" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
   <rect x="0" y="0" width="${PW}" height="${PH}" fill="#ffffff"/>${head}
@@ -4998,24 +5155,26 @@
     ctx.fillStyle = f.color || '#8b94a7';
     roundRectPath(ctx, L, y, 120, 8, 4); ctx.fill();
     ctx.fillStyle = muted; ctx.font = font(19);
-    const badges = [f.name || '其他', c.gender === 'f' ? '♀ 女' : '♂ 男',
+    /* v0.208：性别徽章对理论类**整条不画** —— 概念没有性别，`c.gender` 全缺 ⇒
+     *   原来的 `c.gender === 'f' ? '♀ 女' : '♂ 男'` 会把每个概念都标成男性。 */
+    const badges = [f.name || '其他', isTheoryBook() ? '' : (c.gender === 'f' ? '♀ 女' : '♂ 男'),
       state.groupMode === 'generation' ? genText(c.generation) : '', c.title || '',
-      `关系 ${(state.adj.get(c.id) || []).length} 条`].filter(Boolean).join(' · ');
+      `${T().rel} ${(state.adj.get(c.id) || []).length} 条`].filter(Boolean).join(' · ');
     ctx.fillText(badges, L, y + 30);
     y += 66;
     ctx.fillStyle = ink; ctx.font = font(21);
     for (const ln of wrapText(ctx, c.desc, R - L, 3)) { ctx.fillText(ln, L, y); y += 32; }
     y += 4;
-    ctx.fillStyle = muted; ctx.font = font(19, 700); ctx.fillText('结局', L, y);
+    ctx.fillStyle = muted; ctx.font = font(19, 700); ctx.fillText(T().fate, L, y);
     ctx.font = font(19);
     const fateText = fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : (c.fate || '—');
     for (const ln of wrapText(ctx, fateText, R - L - 60, 2)) { ctx.fillText(ln, L + 56, y); y += 28; }
     y += 12;
     ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(R, y); ctx.stroke();
     y += 32;
-    ctx.fillStyle = ink; ctx.font = font(21, 700); ctx.fillText('关键关系', L, y); y += 32;
+    ctx.fillStyle = ink; ctx.font = font(21, 700); ctx.fillText(T().keyRels, L, y); y += 32;
     if (!rels.length) {
-      ctx.fillStyle = muted; ctx.font = font(19); ctx.fillText('（暂无可显示的关系）', L, y); y += 34;
+      ctx.fillStyle = muted; ctx.font = font(19); ctx.fillText(T().noRels, L, y); y += 34;
     }
     for (const r of rels) {
       const other = r.from === c.id ? r.to : r.from;
@@ -5035,7 +5194,7 @@
     }
     if (lockedRels) {
       ctx.fillStyle = muted; ctx.font = font(17);
-      ctx.fillText(`🔒 还有 ${lockedRels} 条关系在你读到的进度之后`, L, y - 8);
+      ctx.fillText(`🔒 还有 ${lockedRels} 条${T().rel}在你读到的进度之后`, L, y - 8);
     }
     ctx.fillStyle = muted; ctx.font = font(19);
     ctx.fillText(`书脉 BookAtlas · ${SITE_URL}`, L, H - 60);
@@ -5117,20 +5276,21 @@
   function aiChainContext(steps) {
     return steps.map((s, i) => {
       const evs = visibleRelEvents(s.rel).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
-      const period = periodText(s.rel) ? `（关系时段：${periodText(s.rel)}）` : '';
+      const period = periodText(s.rel) ? `（${T().rel}时段：${periodText(s.rel)}）` : '';
       return `${i + 1}. ${charName(s.from)} — ${s.rel.type} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
     }).join('\n');
   }
 
   /** 人物资料：档案 + 关系 + 事件；结局按剧透保护决定给不给 */
   function aiCharContext(c) {
+    const t = T();
     const head = [
-      `姓名：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}${(c.altNames || []).length ? `（又译：${c.altNames.join('，')}）` : ''}`,
+      `${t.nameLabel}：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}${(c.altNames || []).length ? `（又译：${c.altNames.join('，')}）` : ''}`,
       c.title ? `身份：${c.title}` : '',
-      state.groupMode === 'generation' ? `代际：${genText(c.generation)}` : `阵营：${factionTextOf(c)}`,
-      `首次出场：第 ${charCh(c)} 章`,
+      state.groupMode === 'generation' ? `${t.gen}：${genText(c.generation)}` : `${t.faction}：${factionTextOf(c)}`,
+      `首次${t.charVerb}：第 ${charCh(c)} 章`,
       c.desc ? `简介：${c.desc}` : '',
-      fateLocked(c) ? '' : (c.fate ? `结局：${c.fate}` : ''),
+      fateLocked(c) ? '' : (c.fate ? `${t.fate}：${c.fate}` : ''),
     ].filter(Boolean).join('\n');
     const rels = state.book.relations
       .filter((r) => (r.from === c.id || r.to === c.id) && !relLocked(r) && relVisibleAt(r) && passEdgeFilter(r))
@@ -5145,7 +5305,7 @@
       .slice(0, 16)
       .map((e) => `- 第 ${e.ch} 章《${e.name}》：${e.summary}`)
       .join('\n');
-    return `${head}\n\n与他/她有关的人（只列你读到的部分）：\n${rels || '（暂无）'}\n\n相关事件（只列你读到的部分）：\n${evs || '（暂无）'}`;
+    return `${head}\n\n与${t.charPron}有关的${t.char}（只列你读到的部分）：\n${rels || '（暂无）'}\n\n相关${t.event}（只列你读到的部分）：\n${evs || '（暂无）'}`;
   }
 
   /* v0.96 方案 A：回答分成两段，各自标注来源。
@@ -5175,7 +5335,7 @@
       `你是《${titleOf()}》的阅读助手。`,
       prog,
       `硬性要求：① 只描述发生在第 ${ceiling} 章及之前的事；`,
-      `② 不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；`,
+      `② ${T().aiNoSpoil}`,
       `③ 语气平实、口语化，不要小标题、不要列表。`,
       '',
       `【回答必须分成下面两段，每段用一行以对应标签开头】`,
@@ -5189,8 +5349,8 @@
       '· 第一段不超过 180 字，第二段不超过 120 字。',
     ].join('\n');
     const user = kind === 'chain'
-      ? `【任务】用几句话说清这段关系链是怎么一环扣一环的。\n\n【关系链（按跳数）】\n${aiChainContext(payload)}\n\n【读者进度】第 ${ceiling} 章`
-      : `【任务】用几句话说清这个人是谁、和他人的关系是怎么来的。\n\n【人物资料】\n${aiCharContext(payload)}\n\n【读者进度】第 ${ceiling} 章`;
+      ? `【任务】用几句话说清这段${T().rel}链是怎么一环扣一环的。\n\n【${T().rel}链（按跳数）】\n${aiChainContext(payload)}\n\n【读者进度】第 ${ceiling} 章`
+      : `【任务】${T().aiCharTask}\n\n【${T().char}资料】\n${aiCharContext(payload)}\n\n【读者进度】第 ${ceiling} 章`;
     return { system, user, ceiling };
   }
 
@@ -5421,15 +5581,19 @@ ${body}
         .sort((x, y) => (x.ch || 0) - (y.ch || 0))
         .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${esc(e.summary)}</li>`)
         .join('');
+      /* EPUB 人物小节标题里的那个人称：叙事类按性别（她/他），理论类用名词（概念）。
+       * ⚠ 这不是"两套渲染分支"—— 换的只有 `{0}` 这一个词（`TERMS.epubLifeH`）。
+       *   写成 `T().epubLifeH` 取固定值就会**丢掉性别**（v0.208 的真事故，见 G9）。 */
+      const lifeWho = isTheoryBook() ? T().char : (c.gender === 'f' ? '她' : '他');
       return `<section class="char">
   <h2>${esc(c.name)}</h2>
-  <p class="meta">${esc([factionTextOf(c), c.gender === 'f' ? '女' : '男', c.title, `第 ${charCh(c)} 章出场`].filter(Boolean).join(' · '))}</p>
+  <p class="meta">${esc([factionTextOf(c), isTheoryBook() ? '' : (c.gender === 'f' ? '女' : '男'), c.title, `第 ${charCh(c)} 章${T().charVerb}`].filter(Boolean).join(' · '))}</p>
   ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
   ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
   ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
-  <p class="meta">结局：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
-  ${life ? `<h3>${c.gender === 'f' ? '她' : '他'}的一生（按章）</h3><ul>${life}</ul>` : ''}
-  ${relHtml ? `<h3>与谁有关 · 凭什么事件</h3><ul>${relHtml}</ul>` : ''}
+  <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
+  ${life ? `<h3>${TW('epubLifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
+  ${relHtml ? `<h3>${T().relsTitle}</h3><ul>${relHtml}</ul>` : ''}
 </section>`;
     }).join('\n');
 
@@ -5442,7 +5606,7 @@ ${body}
   <h3>第 ${e.ch ?? '?'} 章 · ${esc(e.name)}</h3>
   <p>${esc(e.summary)}</p>
   ${e.impact ? `<p class="meta">影响：${esc(e.impact)}</p>` : ''}
-  ${e.place ? `<p class="meta">地点：${placeRef(e.place)}</p>` : ''}
+  ${e.place ? `<p class="meta">${T().place}：${placeRef(e.place)}</p>` : ''}
   <p class="meta">涉及：${esc((e.chars || []).map(charName).join('、'))}</p>
   ${e.quote ? `<blockquote>「${esc(e.quote)}」</blockquote>` : ''}
 </section>`).join('\n');
@@ -5453,22 +5617,22 @@ ${body}
       'cover.xhtml': epubPage('封面', `<div class="cover">
   <h1>${esc(title)}</h1>
   <p class="meta">${esc(m.author || '')} · ${esc(stats)}</p>
-  <p>把这本书的人物关系、定义关系的小事件与标志性事件，整理成一份<b>可以放在手边</b>的小册子。</p>
+  <p>${T().epubCover}在手边</b>的小册子。</p>
   <p class="meta">不含原著正文 · 阅读辅助用途 · 数据 CC BY-SA 4.0 · 由「书脉 BookAtlas」生成于 ${dateStr} ${esc(progNote)}</p>
 </div>`),
       'howto.xhtml': epubPage('怎么用', `<h1>怎么用这份伴侣</h1>
 <ol>
   <li><b>配合原著读</b>：在微信读书里把这份文件当作一本"配套小册子"（传书导入后与原著并排读）。</li>
-  <li><b>剧透保护</b>：这份文件<b>跟随导出时的阅读进度</b>——之后的剧情没写进来。读到后面想更新，回网页版/小程序再导出一次即可。</li>
+  <li><b>剧透保护</b>：${T().epubSpoilNote}</li>
   <li><b>${T().rel}总图</b>：下一节的图是全书${T().rel}网络（放大看）；每段${T().rel}的<b>依据${T().event}</b>写在${T().char}志里。</li>
-  <li><b>想按进度解锁、查两人关系、看时间旅行</b>：用在线版 <b>${esc(SITE_URL)}</b> 或微信小程序（同一个数据，可按章解锁）。</li>
+  <li><b>想按进度解锁、查${T().pairRel}、看时间旅行</b>：用在线版 <b>${esc(SITE_URL)}</b> 或微信小程序（同一个数据，可按章解锁）。</li>
 </ol>`),
-      'graph.xhtml': epubPage('关系总图', `<h1>关系总图</h1>
+      'graph.xhtml': epubPage(T().epubGraphH, `<h1>${T().epubGraphH}</h1>
 <p class="meta">${esc(stats)}${state.progress === null ? '' : ` · 剧透保护读到第 ${state.progress} 章`}</p>
 <div class="fig"><img src="${imgName}" alt="${T().char}${T().rel}图"/></div>
 <p class="meta">${esc((b.factions || []).map((x) => x.name).join(' / '))}</p>`),
-      'characters.xhtml': epubPage('人物志', `<h1>人物志（按出场章排序）</h1>${charHtml || '<p>（暂无可写的人物）</p>'}`),
-      'events.xhtml': epubPage('事件轴', `<h1>重大事件轴</h1>${evHtml || '<p>（暂无可写的事件）</p>'}`),
+      'characters.xhtml': epubPage(`${T().char}志`, `<h1>${T().epubCharsH}</h1>${charHtml || `<p>（暂无可写的${T().char}）</p>`}`),
+      'events.xhtml': epubPage(T().epubEventsH, `<h1>${T().epubEventsH}</h1>${evHtml || `<p>（暂无可写的${T().event}）</p>`}`),
     };
 
     // 4) 打包（mimetype 必须第一个、且不压缩）
@@ -5504,7 +5668,7 @@ ${Object.keys(pages).map((p, i) => `    <itemref idref="p${i}"/>`).join('\n')}
   <head><meta name="dtb:uid" content="bookatlas-${esc(slugOf())}"/></head>
   <docTitle><text>${esc(title)}</text></docTitle>
   <navMap>
-${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}"><navLabel><text>${esc(['封面', '怎么用', '关系总图', '人物志', '事件轴'][i] || p)}</text></navLabel><content src="${p}"/></navPoint>`).join('\n')}
+${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}"><navLabel><text>${esc(['封面', '怎么用', T().epubGraphH, `${T().char}志`, T().epubEventsH][i] || p)}</text></navLabel><content src="${p}"/></navPoint>`).join('\n')}
   </navMap>
 </ncx>`),
       'OEBPS/style.css': f.strToU8(css),
@@ -5557,7 +5721,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       // ★ 所有导出都要文案：JSON 会被提交回 data/（缺了就是永久数据丢失），
       //   而单文件 HTML / EPUB / 人物卡里全是描述、结局、摘要，空着等于废掉。
       if (!await ensureTextForExport()) {
-        say('文案还没加载出来（网络问题），现在导出会缺人物描述与结局。等几秒再试一次。');
+        say(`文案还没加载出来（网络问题），现在导出会缺${T().char}描述与${T().fate}。等几秒再试一次。`);
         toast('文案还没加载完，稍等一下再导出');
         return;
       }
@@ -5574,19 +5738,19 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         const url = await buildSharePng();
         if (!url) { say('画布还没准备好，稍等一下再试。'); return; }
         const a = document.createElement('a');
-        a.href = url; a.download = `${titleOf()}-关系图.png`;
+        a.href = url; a.download = `${titleOf()}-${T().rel}图.png`;
         document.body.appendChild(a); a.click(); a.remove();
         say('已导出分享图 PNG。');
       } else if (kind === 'svg') {
         const svg = buildPrintSvg();
         if (!svg) { say('布局还没准备好：先在图上点一下（或等布局跑完）再试。'); return; }
-        downloadText(`${titleOf()}-关系图-A3.svg`, svg, 'image/svg+xml');
+        downloadText(`${titleOf()}-${T().rel}图-A3.svg`, svg, 'image/svg+xml');
         say('已导出打印版 SVG —— 用浏览器打开后可「打印 → 另存为 PDF」。');
       } else if (kind === 'epub') {
-        say('正在打包阅读伴侣（含关系总图，稍等）…');
+        say(`正在打包阅读伴侣（含${T().epubGraphH}，稍等）…`);
         const res = await buildCompanionEpub();
         downloadBlob(`${titleOf()}-阅读伴侣.epub`, new Blob([res.bytes], { type: 'application/epub+zip' }));
-        say(`已导出 EPUB（${Math.round(res.bytes.length / 1024)} KB · ${res.pages} 节 · ${res.chars} 人 · 图 ${res.imgW}×${res.imgH}）—— 传进微信读书：用「传书到手机」或文件传输助手导入。`);
+        say(`已导出 EPUB（${Math.round(res.bytes.length / 1024)} KB · ${res.pages} 节 · ${res.chars} ${T().charN} · 图 ${res.imgW}×${res.imgH}）—— 传进微信读书：用「传书到手机」或文件传输助手导入。`);
       }
     } catch (e) {
       say('导出失败：' + ((e && e.message) || e));
@@ -5750,9 +5914,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch { /* 忽略 */ } }
     if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch { /* 忽略 */ } }
     const minorBtn2 = document.getElementById('minor-btn');
-    if (minorBtn2) minorBtn2.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏';
+    if (minorBtn2) minorBtn2.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`;
     const mentionBtn2 = document.getElementById('mentioned-btn');
-    if (mentionBtn2) mentionBtn2.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏';
+    if (mentionBtn2) mentionBtn2.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`;
     updateCountHint();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
@@ -5970,7 +6134,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.addEventListener('click', handlePanelClick);
 
     const mentionBtn = document.getElementById('mentioned-btn');
-    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = state.showMentioned ? '提及人物：显示' : '提及人物：隐藏'; };
+    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`; };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
       state.showMentioned = !state.showMentioned;
       try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch { /* 忽略 */ }
@@ -5982,7 +6146,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
 
     // 次要人物折叠（大书默认收起）
     const minorBtn = document.getElementById('minor-btn');
-    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = state.showMinor ? '次要人物：显示' : '次要人物：隐藏'; };
+    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`; };
     if (minorBtn) minorBtn.addEventListener('click', () => {
       state.showMinor = !state.showMinor;
       try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch { /* 忽略 */ }
@@ -6077,9 +6241,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         const url = await buildCharacterPng(id);
         if (!url) { toast('这张卡暂时生成不了'); return; }
         const a = document.createElement('a');
-        a.href = url; a.download = `${charName(id)}-人物卡.png`;
+        a.href = url; a.download = `${charName(id)}-${T().char}卡.png`;
         document.body.appendChild(a); a.click(); a.remove();
-        toast(`已导出「${charName(id)}」人物卡`);
+        toast(`已导出「${charName(id)}」${T().char}卡`);
       } catch (e) {
         toast('导出失败：' + ((e && e.message) || e));
       } finally {
