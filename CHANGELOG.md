@@ -86,7 +86,18 @@
 两者的共同点：**守卫写好了，但"跑整门禁"这件事本身没有兜底** —— 本轮只是撞上，
 不是修了根因（根因要等这个仓库合回 `main` 或每次提交都跑 `npm run gate`，单独记一笔）。
 
-### 六、验证
+### 六、⚠ 装上新装的 gh CLI 一查：**CI 秒退了 20 轮**（v0.172 起每一轮 push 都是 startup_failure）
+
+- **根因**：`- name: transition 缓动一致性（展开 \`transition: all\` 时不许改手感）` ——
+  YAML **纯量值里的 `: `（冒号+空格）被解析成嵌套映射** ⇒ 整个工作流文件不合法 ⇒ 每一步都没跑。
+- **为什么 20 轮没人发现**：本地 `npm run gate` 走的是 `tools/gate.mjs` 的**逐行**解析
+  （对这个问题免疫，门禁显示 83 步全在）；只有 GitHub 的真 YAML 解析器会拒。
+  ⇒ 与 v0.165 那次「浏览器测试在 CI 上从没真跑过」同族：**尺子和被测物不是同一个**。
+- **修法**：name 加双引号；用 `yaml` 包全量解析验证（89 步、87 个命名步骤、新守卫在）。
+  v0.172 当时提交进的还有 GBK 乱码，后续轮次已修掉，这次是最后一颗雷。
+- 本轮在 `D:\Hermes\gh` 装了 gh CLI v2.102.0（用户 PATH 已持久化，node 也一并入了 PATH）。
+
+### 七、验证
 
 - 三个生成物未动（无数据改动）· `validate --all` 三本 **0 error / 112 warning**（汇总行）
 - `test/validate-summary-guard.mjs` **24/24**（含四类变异各自报红）
@@ -95,7 +106,7 @@
   `gate-claims` · `gate-effectiveness`（83 步全可能报红）· `app-partitions` ·
   `app-func-size` · `kin-check` · `check-version` / `check-version-bump` 全绿
 - 全量 ESLint `js/ miniprogram/ scripts/ shared/ test/` **0 error 0 warning**（`--max-warnings 0`）
-- 门禁解析器（`tools/gate.mjs --list`）认得新步骤与其参数
+- 门禁解析器（`tools/gate.mjs --list`）认得新步骤与其参数；check.yml 用 `yaml` 包解析**合法**
 
 ---
 

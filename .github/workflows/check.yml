@@ -123,7 +123,7 @@ jobs:
             node --check "$f"
           done
 
-      - name: transition 缓动一致性（展开 `transition: all` 时不许改手感）
+      - name: "transition 缓动一致性（展开 `transition: all` 时不许改手感）"
         # v0.172 新增。v0.171 按 web-design-guidelines 把 15 处 `transition: all` 展开成
         # 显式属性列表 —— 方向是对的（`all` 会把布局属性也纳入过渡），但展开时**擅自给
         # 不同属性分配了不同缓动**（`.seg` 的 color/border-color/box-shadow 从 spring 改成
