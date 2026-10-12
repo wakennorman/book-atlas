@@ -5,7 +5,9 @@
  *
  * 这个定义在项目里**抄了 8 份以上**，而且已经漂出 3 种行为：
  *   · 权威   `scripts/kin-terms.mjs` 的 `isParentChild`（PARENT_CHILD + 去括号说明）—— **含「养父子」**
- *   · 漏「养」`scripts/fix-gongsun.mjs` / `fix-wu-tail.mjs`（一次性补丁脚本）
+ *   · 漏「养」`scripts/archive/fix-gongsun.mjs` / `archive/fix-wu-tail.mjs`（一次性补丁脚本，
+ *     v0.195 债二 B1 已归档到 `scripts/archive/`；v0.205.1 修正：豁免路径还写着归档前的
+ *     `scripts/fix-*.mjs` ⇒ 本测试从 v0.195 起一直是红的，被 CI startup_failure 掩盖）
  *   · 只认血缘 `js/editor.js` 的「亲子成环」检测（v0.153 之前：`kin === 'blood'` 且 type 以 父/母 开头）
  *     ⇒ **全部收养亲子边对编辑器不可见**（三国 7 条、百年孤独 2 条）
  *
@@ -68,7 +70,7 @@ console.log('\n▶ 结构级：全项目只有「权威 + 编辑器手抄」两�
 /* 一次性补丁脚本（已执行完、只留档）**显式豁免**：它们用的是「缺 养」的旧变体，
  * 改它们等于改一个跑完的补丁的行为，没意义。列在这里是为了让豁免是"看得见的决定"，
  * 而不是漏检 —— 真正该做的是把这类脚本清掉（见 CHANGELOG 遗留）。 */
-const EXEMPT = ['scripts/fix-gongsun.mjs', 'scripts/fix-wu-tail.mjs'];
+const EXEMPT = ['scripts/archive/fix-gongsun.mjs', 'scripts/archive/fix-wu-tail.mjs'];
 for (const f of EXEMPT) {
   ok(fs.existsSync(path.join(ROOT, f)), `豁免项仍然存在（${f}）—— 若已删除，请把这条豁免也删掉`);
 }
