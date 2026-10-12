@@ -35,6 +35,14 @@
  * v0.201–v0.203 已三次证明**没有可靠机械判据**（详见 CHANGELOG v0.203）。
  * ⇒ 这个工具的价值是**把 2580 变成一个可信的小数字**，不是替人做判断。
  *
+ * ## ⭐ v0.205 裁定：③ 桶（待人读）**不再人判，也不是待办**
+ *
+ * 用户拍板、理由充分：这 4477 条是 `[百家姓][\u4e00-\u9fa5]{1,2}` 这个提取正则的
+ * **必然产物**（`后人有` 153× / `于地` 48× / `从其言` 42×… 全是常用词被切开），
+ * 不是数据缺陷 —— 判它们等于审一个正则的切法。依据见
+ * `docs/待判候选-原著到手-2026-10-12.md` §五。
+ * ⇒ 脚本尾部按此改写：③ 只是一个**如实印出来的数**，不再挂着"需要人读"三个字。
+ *
  * ## 有效性自测（守卫必须能红）
  *
  * `--selftest` 用**造出来的**坏样本跑同一份判据：真名形态、地名形态、
@@ -145,14 +153,17 @@ console.log(`原著 ${txtPath}\n`);
 console.log(`候选（≥${MIN} 次、既不在人物池也不在台账）：${cands.length}`);
 console.log(`  ① 地名（整体等于 places 里一项）      ${String(buckets.地名.length).padStart(5)}`);
 console.log(`  ② 碎片（已知人/地名 + 尾字/前截）    ${String(buckets.碎片.length).padStart(5)}`);
-console.log(`  ③ **待人读**                        ${String(buckets.待判.length).padStart(5)}`);
-console.log(`\n⇒ 可机械判掉 ${buckets.地名.length + buckets.碎片.length} 条，`
-  + `**${buckets.待判.length} 条需要人读**（v0.185 的「2580 条全是碎片」就落在这个缺口上）。`);
+console.log(`  ③ 待人读（v0.205 起不再人判）        ${String(buckets.待判.length).padStart(5)}`);
+console.log(`\n⇒ 可机械判掉 ${buckets.地名.length + buckets.碎片.length} 条；`
+  + `③ 剩 ${buckets.待判.length} 条 —— v0.185 的「2580 条全是碎片」就落在这个缺口上。`);
 
 buckets.待判.sort((a, b) => b.c - a.c);
 console.log(`\n--- 待判前 ${SHOW} 条（按出现次数）---`);
 for (const r of buckets.待判.slice(0, SHOW)) {
   console.log(`  ${String(r.c).padStart(3)}× ${r.n.padEnd(5)} ${r.why}`);
 }
-console.log(`\n⚠ 本脚本**不判定**剩下的是不是人 —— v0.201–v0.203 已三次证明这类判断没有可靠机械判据。`);
-console.log(`  要核就回原著逐条读（docs/新书处理规程.md §四 0.5）。`);
+console.log(`\n⚠ v0.205 裁定：③ 这 ${buckets.待判.length} 条**不再逐条人读，也不是待办**。`);
+console.log(`  它们是「姓氏+1~2字」这个提取正则的必然产物（后人有 153× / 于地 48× / 从其言 42×…），`);
+console.log(`  不是数据缺陷 —— 判它们等于审一个正则的切法，不是审这本书的数据。`);
+console.log(`  本脚本的价值停在"机械分层"：可指认的剥掉，剩下的如实印出来。`);
+console.log(`  依据：docs/待判候选-原著到手-2026-10-12.md §五。`);

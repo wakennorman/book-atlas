@@ -11,9 +11,34 @@
  *  - relations[].style 必须是 solid|dashed|dotted
  *  - 每条关系至少有一个「定义关系的小事件」
  * 退出码：有 error 时为 1（方便接 CI）。
+ *
+ * ## v0.205：warning 改成**一行汇总**（`--detail` 才逐条）
+ *
+ * 为什么：warning 不是 KPI，它从来没能被收敛 —— 三本书常年 112 条，
+ * 而逐条读过的只有 3 条（v0.203 查过其中 46 条，结论是"没有机械判据、只能人判"）。
+ * 每次跑都刷 112 行 ⇒ 谁也不看，于是**"没人看"和"没有"长得一模一样**。
+ * 这与 v0.129 那条「静默跳过会让『改好了』和『没检查』看起来一样」是同一个病，
+ * 只不过方向相反：不是藏起来，是**吵到没人看**。
+ *
+ * ⇒ 判据三条，全部可机械核验（见 `test/validate-summary-guard.mjs`）：
+ *   ① **error 一条都不许被折叠** —— error 才进退出码，折叠它等于藏回归。
+ *   ② 汇总行里的条数 = 实际收集到的条数（自己算自己，不许手填）。
+ *   ③ `--detail` 打印的条数与默认模式**完全相同**（汇总不许少算）。
+ *
+ * ⚠ v0.205 收尾时抓到两个"写了一半"的洞（已修，各有守卫/机检守）：
+ *   · `flushWarnings()` 写好了却**从没被调用** ⇒ 112 行噪音变成**一行都没有**。
+ *     静默比噪音更坏（读日志的人会以为"这本书没有 warning"）—— 调用点由守卫守；
+ *   · import 了 `pathToFileURL` 却没用 ⇒ ESLint 当场红（CI 是 `--max-warnings 0`），
+ *     且入口缺 isMain 判断 ⇒ 守卫一 import 就会触发全量校验。
+ *   共同点：**改动停在"写了"而不是"接上"** —— 这类半成品比没改更危险。
+ *
+ * ⚠ 顺带修掉一个**假绿**：`errors` 原本在每本书开头清零，于是 `--all` 的退出码
+ *   只反映**最后一本书** —— 前面的书红了、最后一本干净就 exit 0。
+ *   三本书现在都是 0 error，所以这个洞一直没露出来过。
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { checkKin, KIN, KIN_KEYS } from './kin.mjs';
 /* 亲子边的定义（含「养父子」这类收养边）—— 单一来源，见 kin-terms.mjs。
  * 这里原先内联了一份同样的正则：不 import 的话，哪天 kin-terms.mjs 改了（比如再加一类
@@ -22,17 +47,72 @@ import { isParentChild } from './kin-terms.mjs';
 
 const STYLES = new Set(['solid', 'dashed', 'dotted']);
 let errors = 0, warns = 0;
-const err = (m) => { errors++; console.error('  ✗ ' + m); };
-const warn = (m) => { warns++; console.warn('  ⚠ ' + m); };
+/* ⚠ `errors` 是**跨文件累加**的（v0.205 修）。原来每个文件开头清零，
+ *   而退出码只看最后剩下的那个数 ⇒ 前面的书报红、最后一本干净就 exit 0。 */
+let errorsAll = 0, warnsAll = 0;
 
-function validate(file) {
-  errors = 0; warns = 0;                 // 每个文件单独计数（--all 时不要累加）
+/* v0.205：warning 先收进 `warnings`，每本书结束时**汇成一行**。
+ * 第二参数是**归类标签**（不是给读者看的措辞，是给汇总分组用的）——
+ * 显式在调用点写死，而不是拿正则去猜消息长什么样：
+ *   · 正则分类会随文案改措辞而漂（而没人会注意到它漂了）；
+ *   · 猜不出来的那条会落进「未归类」，于是汇总里出现一个看不懂的桶。 */
+const warnings = [];
+const warningsAll = [];     // 跨书累计，只为最后那一行总计
+const err = (m) => { errors++; console.error('  ✗ ' + m); };
+const warn = (m, kind = '未归类') => { warns++; warnings.push({ kind, msg: m }); };
+
+/** `--detail` 才逐条打印。默认只打印汇总行。 */
+const DETAIL = process.argv.includes('--detail');
+
+/** 一行汇总：条数 + 按归类从多到少。条数由数组长度算，不手填。 */
+export function summarizeWarnings(list) {
+  if (!list.length) return '';
+  const byKind = new Map();
+  for (const w of list) byKind.set(w.kind, (byKind.get(w.kind) || 0) + 1);
+  const parts = [...byKind]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([k, n]) => `${k} ${n}`);
+  return `⚠ ${list.length} 条：${parts.join(' · ')}`;
+}
+
+/**
+ * 打印一批 warning：默认一行汇总；`detail` 时先逐条再汇总。返回汇总行文本。
+ *
+ * ⚠⚠ 这个函数**必须被调用**。v0.205 第一版把 warning 收进数组、写好了它，
+ *   却忘了在 validate() 里调 ⇒ 每本书的 112 行噪音变成**一行都没有**。
+ *   噪音和静默是两个方向的病，但**静默更坏**：读日志的人会以为"这本书没有 warning"。
+ *   调用点由 `test/validate-summary-guard.mjs` 守着（默认模式必须打出汇总行，
+ *   且汇总条数必须等于 warn() 实际收到的条数）。
+ */
+export function flushWarnings(list, { detail = DETAIL, indent = '  ' } = {}) {
+  if (!list.length) return '';
+  warningsAll.push(...list);
+  if (detail) for (const w of list) console.warn(`${indent}⚠ ${w.msg}`);
+  const line = `${indent}${summarizeWarnings(list)}`
+    + ' —— warning 是建议不是 KPI（只有 error 进退出码）；要逐条看：加 --detail';
+  console.log(line);
+  return line;
+}
+
+/**
+ * 校验**一本书**并把计数回收出来（守卫用；import 本模块不会触发全量校验）。
+ * 退出码只在 main 里由 `errorsAll` 算 —— 跨书累计，不看最后一本书。
+ */
+export function validateBook(file, opts = {}) {
+  validate(file, opts);
+  return { errors, warns, errorsAll, warnsAll, warnings: [...warnings] };
+}
+
+function validate(file, opts = {}) {
+  errors = 0; warns = 0;                 // 每本书**单独**计数（报告里要逐本给）
+  warnings.length = 0;
   console.log(`\n▶ ${file}`);
   let book;
   try {
     book = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (e) {
     err(`JSON 解析失败：${e.message}`);
+    errorsAll += errors; warnsAll += warns;
     return;
   }
 
@@ -57,18 +137,18 @@ function validate(file) {
     for (const k of ['faction', 'title', 'desc', 'fate']) {
       const v = c?.[k];
       if (v === undefined || v === null || v === '') {
-        warn(`${where} 缺少 ${k}${k === 'faction' ? '（图上不会有阵营色）' : '（档案里会空着，建议补一句）'}`);
+        warn(`${where} 缺少 ${k}${k === 'faction' ? '（图上不会有阵营色）' : '（档案里会空着，建议补一句）'}`, '角色字段缺');
       }
     }
-    if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`);
-    if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`);
-    if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`);    if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
+    if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`, '角色字段缺');
+    if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`, '角色字段缺');
+    if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`, '角色 tier 不合法');    if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
     if (ids.has(c.id)) err(`角色 id 重复：${c.id}`);
     ids.add(c.id);
     const n = names.get(c.name) || [];
     n.push(c.id); names.set(c.name, n);
   }
-  for (const [name, list] of names) if (list.length > 1) warn(`角色名重复：${name}（${list.join(', ')}）——记得用 note 写清消歧提示`);
+  for (const [name, list] of names) if (list.length > 1) warn(`角色名重复：${name}（${list.join(', ')}）——记得用 note 写清消歧提示`, '角色名重复');
 
   /* ---------- v0.94：血缘必须可核对（parents 字段 + 双向一致检查） ----------
    *
@@ -121,7 +201,7 @@ function validate(file) {
       if (!p || !k) continue;
       const kHas = Array.isArray(k.parents) && k.parents.includes(p.id);
       const pHas = Array.isArray(p.parents) && p.parents.includes(k.id);
-      if (!kHas && !pHas) warn(`亲子边 ${p.name} —${r.type}→ ${k.name} 双方都没有用 parents 登记 —— 建议在子女那侧写 parents（长辈那侧写 children）`);
+      if (!kHas && !pHas) warn(`亲子边 ${p.name} —${r.type}→ ${k.name} 双方都没有用 parents 登记 —— 建议在子女那侧写 parents（长辈那侧写 children）`, '亲子边未登记 parents');
     }
   }
   console.log(`  ℹ 血缘声明：${parentsDeclared}/${chars.length} 个人物填了 parents（填了就会双向校验一致性）`);
@@ -134,7 +214,7 @@ function validate(file) {
   if (declared && !['generation', 'faction'].includes(declared)) {
     err(`meta.groupMode「${declared}」不合法（应为 generation | faction，或留空自动判定）`);
   } else if (declared === 'generation' && genSet.size < 2) {
-    warn('meta.groupMode=generation，但数据里只有 1 种代际——没有代际差异就不要按代际分组（补全 generation，或改为 faction）');
+    warn('meta.groupMode=generation，但数据里只有 1 种代际——没有代际差异就不要按代际分组（补全 generation，或改为 faction）', 'meta.groupMode 不合适');
   } else if (declared === 'faction' && genSet.size > 1) {
     console.log(`  ℹ 声明按阵营分组；数据里有 ${genSet.size} 种代际（想按代际就把 meta.groupMode 改成 generation）`);
   }
@@ -146,22 +226,22 @@ function validate(file) {
   // 数据格式版本：让以后改 schema 时能识别老数据
   const SCHEMA = 2;
   const sv = book.meta && book.meta.schemaVersion;
-  if (sv === undefined) warn('meta.schemaVersion 缺失（当前格式建议写 2）');
-  else if (typeof sv !== 'number' || sv < 1) warn(`meta.schemaVersion「${sv}」不合法（应为正整数）`);
-  else if (sv > SCHEMA) warn(`meta.schemaVersion=${sv} 比本工具支持的 ${SCHEMA} 新——升级脚本再跑`);
+  if (sv === undefined) warn('meta.schemaVersion 缺失（当前格式建议写 2）', 'meta.schemaVersion');
+  else if (typeof sv !== 'number' || sv < 1) warn(`meta.schemaVersion「${sv}」不合法（应为正整数）`, 'meta.schemaVersion');
+  else if (sv > SCHEMA) warn(`meta.schemaVersion=${sv} 比本工具支持的 ${SCHEMA} 新——升级脚本再跑`, 'meta.schemaVersion');
   const metaNow = book.meta || {};
-  if (metaNow.prophecy && !metaNow.prophecySrc) warn('meta.prophecy 写了「一句话」但缺 prophecySrc（页脚会没有出处）');
+  if (metaNow.prophecy && !metaNow.prophecySrc) warn('meta.prophecy 写了「一句话」但缺 prophecySrc（页脚会没有出处）', 'meta 缺 prophecySrc');
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     if (!ids.has(r.from)) err(`${where} 的 from 不存在`);
     if (!ids.has(r.to)) err(`${where} 的 to 不存在`);
     req(r, 'type', where);
     if (!STYLES.has(r.style)) err(`${where} 的 style「${r.style}」不合法（solid|dashed|dotted）`);
-    for (const k of checkKin(r)) (k.level === 'error' ? err : warn)(`${where} ${k.msg}`);
-    if (!Array.isArray(r.events) || !r.events.length) warn(`${where} 没有「定义关系的小事件」`);
+    for (const k of checkKin(r)) (k.level === 'error' ? err : warn)(`${where} ${k.msg}`, 'kin 与 type 不自洽');
+    if (!Array.isArray(r.events) || !r.events.length) warn(`${where} 没有「定义关系的小事件」`, '关系没有定义事件');
     for (const e of r.events || []) {
       if (!e.text) err(`${where} 的事件缺少 text`);
-      else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`);
+      else if (e.chapter && !/(\d+)/.test(e.chapter)) warn(`${where} 的事件章节「${e.chapter}」里没有数字（剧透保护要靠它）`, '事件章节缺数字');
     }
     // 时间区间（时间旅行用）：fromCh＝成立章、toCh＝结束章（独占）
     if (r.fromCh !== undefined && (!Number.isInteger(r.fromCh) || r.fromCh < 1)) err(`${where} 的 fromCh 必须是 ≥1 的整数`);
@@ -176,7 +256,7 @@ function validate(file) {
         const n = (String(e.chapter || '').match(/\d+/) || [null])[0];
         if (n === null) continue;
         const num = Number(n);
-        if (num < lo || num > hi) warn(`${where} 的第 ${num} 章事件落在时间区间 [${lo}, ${hi === Infinity ? '∞' : hi}] 之外（时间旅行时这条事件看不到）`);
+        if (num < lo || num > hi) warn(`${where} 的第 ${num} 章事件落在时间区间 [${lo}, ${hi === Infinity ? '∞' : hi}] 之外（时间旅行时这条事件看不到）`, '事件落在时间区间外');
       }
     }
   }
@@ -215,7 +295,7 @@ function validate(file) {
     }
     const finalSeg = h[h.length - 1];
     if (finalSeg && finalSeg.faction !== c.faction) {
-      warn(`角色 ${c.id} 最后一段阵营（${finalSeg.faction}）与 faction（${c.faction}）不一致——final 归属应当等于最后一段`);
+      warn(`角色 ${c.id} 最后一段阵营（${finalSeg.faction}）与 faction（${c.faction}）不一致——final 归属应当等于最后一段`, '末段阵营与 faction 不一致');
     }
   }
   const withHist = chars.filter((c) => Array.isArray(c.factionHistory) && c.factionHistory.length > 1);
@@ -248,7 +328,7 @@ function validate(file) {
   const noAlias = chars.filter((c) => !(c.aliases || []).length && (relCount.get(c.id) || 0) >= 8);
   if (noAlias.length) {
     const names = noAlias.slice(0, 6).map((c) => `${c.name}(${relCount.get(c.id)})`).join('、');
-    warn(`${noAlias.length} 个主要人物没有任何别名（${names}${noAlias.length > 6 ? ' …' : ''}）——建议补字号/俗称/异体译名，否则按俗称搜不到（跑 node scripts/audit-search.mjs 看全量报告）`);
+    warn(`${noAlias.length} 个主要人物没有任何别名（${names}${noAlias.length > 6 ? ' …' : ''}）——建议补字号/俗称/异体译名，否则按俗称搜不到（跑 node scripts/audit-search.mjs 看全量报告）`, '主要人物无别名');
   }
 
   // ---------- altNames 卫生 + 名字形式跨人物冲突 ----------
@@ -293,7 +373,7 @@ function validate(file) {
       const show = dupForms.slice(0, 5).map(([f, who]) => `${f}（${[...new Set(who)].join(' / ')}）`).join('；');
       warn(`${dupForms.length} 个名字形式挂在多个人物上：${show}${dupForms.length > 5 ? ' …' : ''}`
         + `——搜到它时**候选会全部列出**（不是只落一个），读者能自己挑；`
-        + `真正要处理的是「该给谁挂哪个形式」：同一称谓下人物挤在一起，靠翻找分辨`);
+        + `真正要处理的是「该给谁挂哪个形式」：同一称谓下人物挤在一起，靠翻找分辨`, '名字形式挂多人');
       /*⚠ 这条**不是**"错了"，是"值得看一眼"：数据如实、交互也如实。
        *   它的价值在于提醒「太后/丞相/大都督」这类共用称谓在搜索里会挤成一堆，
        *   而挤在一起本身就是可用性问题（要靠翻找分辨）—— 与其报一个假的
@@ -319,7 +399,7 @@ function validate(file) {
       stack.pop(); color.set(u, 2);
     };
     for (const k of adj.keys()) if (!color.get(k)) dfs(k, []);
-    for (const cy of [...new Set(cycles)].slice(0, 5)) warn(`亲子关系成环（多半是方向写反了）：${cy}——跑 node scripts/fix-parent-cycles.mjs`);
+    for (const cy of [...new Set(cycles)].slice(0, 5)) warn(`亲子关系成环（多半是方向写反了）：${cy}——跑 node scripts/fix-parent-cycles.mjs`, '亲子关系成环');
   }
 
   const phases = new Set((book.phases || []).map((p) => p.id));
@@ -333,14 +413,14 @@ function validate(file) {
     evIds.add(e.id);
     if (e.phase && !phases.has(e.phase)) err(`${where} 的 phase「${e.phase}」未定义`);
     if (typeof e.order !== 'number') err(`${where} order 必须是数字`);
-    if (typeof e.ch !== 'number') warn(`${where} 缺少 ch（发生章）——剧透保护要用`);
+    if (typeof e.ch !== 'number') warn(`${where} 缺少 ch（发生章）——剧透保护要用`, '事件缺 ch');
     for (const cid of e.chars || []) if (!ids.has(cid)) err(`${where} 引用了不存在的角色 ${cid}`);
   }
 
   // ---------- 「仅被提及」人物与地点 ----------
   const mentioned = chars.filter((c) => c.tier === 'mentioned');
   const orphanMentioned = mentioned.filter((c) => !(book.relations || []).some((r) => r.from === c.id || r.to === c.id));
-  for (const c of orphanMentioned) warn(`「仅被提及」人物「${c.name}」没有任何关系——纯背景名字建议不建节点，写进 note 即可`);
+  for (const c of orphanMentioned) warn(`「仅被提及」人物「${c.name}」没有任何关系——纯背景名字建议不建节点，写进 note 即可`, '仅被提及无关系');
   if (mentioned.length) console.log(`  ℹ 人物层级：仅被提及 ${mentioned.length} 人（默认折叠，可在图上开关）`);
 
   const places = book.places || [];
@@ -348,8 +428,8 @@ function validate(file) {
   for (const p of places) {
     const where = `地点 ${p.id || '(无 id)'}`;
     req(p, 'id', where); req(p, 'name', where);
-    if (typeof p.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出现章）——剧透保护与地点筛选要用`);
-    if (placeIds.has(p.id)) warn(`地点 id 重复：${p.id}`);
+    if (typeof p.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出现章）——剧透保护与地点筛选要用`, '地点缺 firstCh');
+    if (placeIds.has(p.id)) warn(`地点 id 重复：${p.id}`, '地点 id 重复');
     placeIds.add(p.id);
   }
   const checkPlace = (ev, where) => { if (ev.place && !placeIds.has(ev.place)) err(`${where} 的 place「${ev.place}」不在 places[] 里`); };
@@ -471,7 +551,7 @@ function validate(file) {
        * 视为文案提到的是组里那位，不报（见上面 nameOwners 的理由）。 */
       const group = nameOwners.get(nameKey(n[0]));
       if (group && [...group].some((g) => (e.chars || []).includes(g))) continue;
-      warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`);
+      warn(`${where} 文案提到「${n[0]}」但 chars 未包含该角色`, '文案提到未入 chars');
     }
     /* 用了共用称谓的，**不报但要记账** —— 静默跳过会让"改好了"和"没检查"看起来一样。
      * 顺手把原文那句记下来，好让最后那条提示能举**本书真实**的例子，而不是写死某一本的。 */
@@ -479,21 +559,26 @@ function validate(file) {
       if (mentions(a)) skippedShared.push({ where, form: a, text });
     }
     if (/^[他她]/.test(firstSentence(text))) {
-      warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`);
+      warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`, '文案代词开头');
     }
     for (const s of sentences(text)) {
-      if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+      if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
     }
   }
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     for (const ev of r.events || []) {
       for (const s of sentences(ev.text)) {
-        if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`);
+        if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
       }
     }
   }
 
+  /* ⚠ 汇总行必须打在结果行**之前**：结果行的 `${warns} warning` 是计数，
+   *   汇总行是清单的压缩，两行并排才对得上（汇总条数 ≠ warns 时守卫会红）。 */
+  flushWarnings(warnings, { detail: opts.detail ?? DETAIL });
+  errorsAll += errors;
+  warnsAll += warns;
   console.log(`  角色 ${chars.length} · 关系 ${rels.length} · 事件 ${events.length} ⇒ ${errors ? 'FAIL' : 'OK'}（${errors} error / ${warns} warning）`);
   /* v0.129：把"跳过了什么"显式打出来 —— 静默跳过会让"改好了"和"没检查"长得一样 */
   if (sharedAliases.size) {
@@ -517,18 +602,33 @@ function validate(file) {
   }
 }
 
-const args = process.argv.slice(2);
-if (!args.length || args[0] === '--all') {
-  // 只校验 data/books.json 里登记的那些整本数据。
-  // v85 起 data/ 里多了 <slug>.graph.json / <slug>.text.json 两份**生成物**
-  // （由 scripts/make-slim-packs.mjs 从整本拆出来），它们本来就缺 text/summary 这类字段，
-  // 拿它们当整本校验会报一堆假错误。以 books.json 为准，不扫目录。
-  const dir = path.join(process.cwd(), 'data');
-  const idx = JSON.parse(fs.readFileSync(path.join(dir, 'books.json'), 'utf8'));
-  const files = (idx.books || []).map((b) => path.join(dir, `${b.slug}.json`)).filter((f) => fs.existsSync(f));
-  files.forEach(validate);
-} else {
-  args.filter((a) => !a.startsWith('--')).forEach((a) => validate(a));
+/* 入口判断：被 import（守卫 import 判据函数）时**不**自动跑全量校验。
+ * ⚠ 必须写成 `import.meta.url === pathToFileURL(process.argv[1]).href`，
+ *   不能写 endsWith —— 本仓库目录名带空格，import.meta.url 里是 %20，
+ *   两边永远不相等 ⇒ 主流程一次都不跑、退出码还是 0（v0.146 那条同款，
+ *   且 test/guard-hygiene.mjs 的 H4 就钉这个写法）。
+ *   （v0.205 第一版 import 了 pathToFileURL 却没用它 —— 就是这段没接完。） */
+const isMain = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMain) {
+  const args = process.argv.slice(2);
+  if (!args.length || args[0] === '--all') {
+    // 只校验 data/books.json 里登记的那些整本数据。
+    // v85 起 data/ 里多了 <slug>.graph.json / <slug>.text.json 两份**生成物**
+    // （由 scripts/make-slim-packs.mjs 从整本拆出来），它们本来就缺 text/summary 这类字段，
+    // 拿它们当整本校验会报一堆假错误。以 books.json 为准，不扫目录。
+    const dir = path.join(process.cwd(), 'data');
+    const idx = JSON.parse(fs.readFileSync(path.join(dir, 'books.json'), 'utf8'));
+    const files = (idx.books || []).map((b) => path.join(dir, `${b.slug}.json`)).filter((f) => fs.existsSync(f));
+    files.forEach((f) => validate(f, { detail: DETAIL }));
+    if (files.length > 1) {
+      console.log(`\n合计 ${files.length} 本：${errorsAll} error / ${warnsAll} warning`
+        + ' —— 退出码只看 error，且看**跨书累计**（v0.205 前它只反映最后一本书：'
+        + '前面的书报红、最后一本干净就 exit 0）');
+    }
+  } else {
+    args.filter((a) => !a.startsWith('--')).forEach((a) => validate(a, { detail: DETAIL }));
+  }
+  console.log('');
+  process.exit(errorsAll ? 1 : 0);
 }
-console.log('');
-process.exit(errors ? 1 : 0);

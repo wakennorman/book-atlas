@@ -52,9 +52,15 @@ export const PROFILE_PREFIXES = [
   'ba-roam-', 'ba-scale-', 'ba-smoke-', 'ba-tip-', 'ba-tut-', 'ba-vm-',
   /* ── 只开个空目录当"假仓库根/临时目录"的台账守卫：体积可忽略，
    *    但它们**同样**在 Temp 下开 `ba-*` ⇒ 一并收进白名单，免得下次又有人只补一半。 ── */
-  'ba-actors-guard-', 'ba-anl-', 'ba-cc-', 'ba-dupnames-', 'ba-firstch-',
-  'ba-kte-', 'ba-ledgerq-', 'ba-mok-', 'ba-nfl-', 'ba-scv-', 'ba-vb-',
-];
+  'ba-actors-guard-', 'ba-anl-', 'ba-arc-', 'ba-cc-', 'ba-dupnames-', 'ba-firstch-',
+  'ba-hyg-', 'ba-kte-', 'ba-ledgerq-', 'ba-mok-', 'ba-nfl-', 'ba-perf-',
+  'ba-scv-', 'ba-vb-', 'ba-vsg-',
+  /* ⚠ v0.205 补了上表 3 条（`ba-arc-` v0.195 / `ba-hyg-` v0.195 / `ba-perf-` v0.198）——
+   *   它们都是**立了本文件之后**新开的 Temp 目录，白名单又漂了一次（v0.192 那个病复发）。
+   *   为什么当时没红：CI 只 push 到 `main` 触发，而这个仓库日常在 `master` 上开发，
+   *   本机又只跑单条命令 ⇒ 「守卫在、但从没被整门禁跑过」。
+   *   ⇒ 新增 Temp 目录的脚本，先跑一遍 `node test/profile-prefix-guard.mjs` 再提交。 */
+]
 
 /**
  * 这个名字是不是"本仓库自己的临时目录"。
