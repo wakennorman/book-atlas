@@ -7,12 +7,12 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6103 行、260 个顶层符号，68 个分区。
+ * 文件共 6232 行、265 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 5 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 7 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
@@ -22,7 +22,7 @@
  * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
  * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
  * | 11. 启动与数据加载 | `boot` | 2 |
- * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 7 |
+ * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 10 |
  * | 13. 下拉与搜索候选 | `comboSub` | 3 |
  * | 14. 节点大小、分类与排序 | `nodeDegree` | 6 |
  * | 15. 聚焦（1–2 跳） | `focusSet` | 1 |
@@ -86,6 +86,12 @@
  *   ⇒ 一个会骗人的目录比没有目录更糟。改用**符号名**定位：
  *   在编辑器里搜 `function <符号名>` 就是这一区的开头。
  */
+
+
+
+
+
+
 
 
 
@@ -378,6 +384,34 @@
    *   ② 失败时没有 slug 校验 ⇒ 书 A 的失败会写到当前已经是书 B 的状态上。
    * 现在是 { slug, status }：状态跟着书走，A 的失败碰不到 B。
    * 顺带把 seq 也带上，这样"切走之前那次请求的结果"也不会回头污染当前书。 */
+  /* ══════════ v0.206：书型术语层 ══════════
+   *
+   * 数据模型是同一套（characters / relations / events / places / factions），
+   * 但**书型不同，读法不同**：
+   *   叙事类（小说）：节点＝人物，边＝关系，事件＝情节，地点＝场景
+   *   理论类（《刻意练习》）：节点＝**概念**，边＝**关联**，事件＝**案例**，地点＝**领域**
+   *
+   * ⇒ 只换**显示措辞**：不碰数据结构、不碰渲染逻辑、不碰任何判定
+   *   （剧透锁定 / 搜索 / 两人关系 / 导出 全都走原来的路，一个字不改）。
+   *   判据是 `meta.type` 这个**显式声明**（与 scripts/lib/data-files.mjs 的 isTheoryBook 同口径），
+   *   不靠"猜这本书像不像理论书" —— 猜错会在某本书上悄悄说错话，而界面看起来完全正常。
+   *
+   * ⚠ 术语层不是"两套代码"：能用同一个函数、同一个模板的地方就只换词。
+   *   一旦某处需要"理论类走另一条渲染分支"，那说明**数据结构**该改了，不是措辞该改。
+   */
+  const TERMS = {
+    narrative: {
+      char: '人物', rel: '关系', event: '事件', place: '地点', faction: '阵营', gen: '代际',
+      charN: '人', relN: '段关系', eventN: '个事件', placeN: '个地点',
+    },
+    theory: {
+      char: '概念', rel: '关联', event: '案例', place: '领域', faction: '主题', gen: '层次',
+      charN: '个概念', relN: '段关联', eventN: '个案例', placeN: '个领域',
+    },
+  };
+  const isTheoryBook = () => !!(state.book && state.book.meta && state.book.meta.type === '理论类');
+  const T = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
+
   /* ══ 区域 3/68：文案包预取（首屏只下图包，文案空闲时再取） ══ */
 
   function prefetchText(slug, meta, seq) {
@@ -847,6 +881,7 @@
     if (stale()) return;          // 等待期间用户又切了书 ⇒ 这次的响应已经过期，直接丢掉
     perf.fetchParse = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0));
     state.book = book;
+    applyTypeTerms();              // v0.206：按书型刷一遍静态文案（只改措辞，见该函数注释）
     state.byId = new Map(book.characters.map((c) => [c.id, c]));
     state.adj = new Map(book.characters.map((c) => [c.id, []]));
     for (const r of book.relations) {
@@ -954,7 +989,7 @@
     const links = (catalog.links || []).map((l) =>
       `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('');
     $('#book-meta').innerHTML =
-      esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} 人 / ${b.relations.length} 段关系 / ${b.events.length} 个事件`) +
+      esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} ${T().charN} / ${b.relations.length} ${T().relN} / ${b.events.length} ${T().eventN}`) +
       (links ? ` <span class="meta-links">${links}</span>` : '');
     document.title = `《${m.title || '书脉'}》· 书脉 BookAtlas`;
     renderFooter();
@@ -1017,7 +1052,7 @@
     if (state.groupMode === 'generation') {
       parts.push(`「分组视图」按代际排列（${genSpanText(gens)}）`);
     } else if (gens.length <= 1) {
-      parts.push(`本书没有代际差异：所有人物同属一代（generation 一律为 1），「分组视图」按阵营（${facs.join('／')}）排列`);
+      parts.push(`本书没有代际差异：所有${T().char}同属一代（generation 一律为 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
     } else {
       parts.push(`「分组视图」按阵营（${facs.join('／')}）排列，数据另标代际（${genSpanText(gens)}）`);
     }
@@ -1050,7 +1085,7 @@
       .slice(0, 3)
       .map((c) => c.name)
       .join(' / ');
-    input.placeholder = top ? `搜单个人物：${top}…` : '搜单个人物…';
+    input.placeholder = top ? `搜单个${T().char}：${top}…` : `搜单个${T().char}…`;
   }
 
   function renderLegend() {
@@ -1078,6 +1113,100 @@
 
   /* ---------------- 输入+下拉（combobox）：搜单个人物 / 两人关系 A、B 共用 ----------------
      选中结果写进 input.dataset.id（精确 id——百年孤独世代重名，按名字找会取错第几个） */
+  /* ⚠ 叙事类文案的**快照**（v0.206）。`applyTypeTerms` 每次 `loadBook` 都跑，而书型会切换，
+   *   所以「切回叙事类」必须能把 `index.html` 的原样文案写回去。
+   *   快照**存在函数外**（模块级）：放在函数里每次调用都重建 ⇒ 第二次调用会把**理论类的文案**
+   *   当成"原样"存下来，于是切回叙事类时写回去的是「概念」。
+   * ⚠ 为什么不在这里再抄一份叙事类文案：那就是"同一个定义抄第二份"（铁律 7）——
+   *   HTML 改了、这里没改，切换书型时就会把**旧文案**写回去，而且没有任何东西会报错。 */
+  const TYPE_TERM_SNAP = new Map();
+  /** 按书型写某个属性：叙事类 ⇒ 写回 `index.html` 的原样值；理论类 ⇒ 写 `theoryText`。 */
+  function setTyped(el, field, theoryText) {
+    if (!el) return;
+    let snap = TYPE_TERM_SNAP.get(el);
+    if (!snap) { snap = {}; TYPE_TERM_SNAP.set(el, snap); }
+    if (!(field in snap)) snap[field] = el[field];   // 只存第一次 —— 那才是 HTML 原样
+    el[field] = isTheoryBook() ? theoryText : snap[field];
+  }
+  /** 显示 / 隐藏一个控件（**两个方向都要写**，否则从理论类切回来它不会回来）。
+   *  ⚠ 用 `style.display` 而不是 `hidden` 属性：`.ghost` / `.shape-legend` 在 CSS 里
+   *    显式写着 `display: inline-flex`，会把 `[hidden]` 的 `display:none` 盖掉。 */
+  function setShown(sel, on) {
+    const el = $(sel);
+    if (el) el.style.display = on ? '' : 'none';
+  }
+
+  /** ══ v0.206：把 index.html 里的**静态文案**换成当前书型的措辞 ══
+   *
+   * 为什么要有它：`index.html` 里的文案（搜索框占位符、「两人关系」、右栏提示…）
+   * 是**写死在 HTML 里**的 —— 叙事类用着正好，理论类就不对味。
+   * ⇒ 换书时按 `meta.type` 刷一遍。**只动措辞，不动任何行为**：
+   *   搜索、锁定、剧透、导出全都还是原来那条路。
+   *   （动态生成的文案在各自的模板里已经用 `T()` 了，不在这里重复处理。）
+   */
+  function applyTypeTerms() {
+    const t = T();
+    /* ⚠ 这里**不设 `document.title`**（v0.206 当场逮到的一处"写了但没用"）：
+     *   本函数在 `loadBook` 里 `state.book = book` 之后立刻调，而同一个 `loadBook` 在
+     *   **82 行之后**才调 `renderHeader()`，后者**无条件**写 `document.title`
+     *   （「《书名》· 书脉 BookAtlas」）⇒ 写在这里的那句必被覆盖。
+     *   而覆盖后的那句（用书名）对两种书型都成立，所以这里就不该有它。
+     *   ⇒ 页签标题归 `renderHeader` 一处管；这里只管 HTML 里写死的**占位符与提示文案**。 */
+    const setPh = (id, v) => { const el = document.getElementById(id); if (el) el.placeholder = v; };
+    setPh('search-input', `搜单个${t.char}…`);
+    setPh('path-a', `${t.char} A`);
+    setPh('path-b', `${t.char} B`);
+    setPh('place-filter', `按${t.place}筛选…`);
+    const pf = document.getElementById('place-filter');
+    if (pf) pf.setAttribute('aria-label', `按${t.place}筛选${t.event}与${t.char}`);
+    const lg = document.getElementById('legend');
+    if (lg) lg.setAttribute('aria-label', `按${t.faction}筛选`);
+    const lbl = document.querySelector('.pathbar-label');
+    if (lbl) lbl.textContent = `${t.char}${t.rel}`;
+    const panel = document.querySelector('#panel > p.hint');
+    if (panel) panel.textContent = `点节点看${t.char}档案 · 点连线看${t.rel}与「定义${t.rel}的小${t.event}」 · 拖拽可移动节点`;
+    const g = document.getElementById('graph');
+    if (g) g.setAttribute('aria-label', `${t.char}${t.rel}网络图（加载中）`);
+    const kb = document.getElementById('graph-kb-hint');
+    if (kb) kb.textContent = `用 Tab 聚焦这张图后，方向键在${t.char}之间移动，回车打开这个${t.char}的档案，Esc 取消选中。`;
+    /* ── 工具栏：能 1:1 换词的换词，换不出人话的藏掉 ── */
+    const th = isTheoryBook();
+    setTyped($('#label-btn'), 'title', `显示全部名字会重叠，默认只显示主要${t.char}`);
+    const size = $('#size-filter');
+    if (size) {
+      setTyped(size, 'title', `${t.char}太多看不清时，只显示${t.rel}较多的${t.char}（放大后名字会越来越多）`);
+      const want = [`${t.char}数：全部`, `${t.char}数：中等（前 200）`, `${t.char}数：主要（前 60）`];
+      for (let i = 0; i < size.options.length && i < want.length; i++) setTyped(size.options[i], 'textContent', want[i]);
+    }
+    setTyped($('[data-view="gen-h"]'), 'textContent', `${t.gen}·横`);
+    setTyped($('[data-view="gen-v"]'), 'textContent', `${t.gen}·纵`);
+    setTyped($('#mentioned-btn'), 'textContent', `提及${t.char}：隐藏`);
+    setTyped($('#minor-btn'), 'textContent', `次要${t.char}：隐藏`);
+    setTyped($('#edge-filter-btn'), 'textContent', `${t.rel}：全部`);
+    setTyped($('.timeline-panel .pane-head h2'), 'textContent', `重大${t.event}轴`);
+    setTyped($('#edge-filter-panel > p.hint'), 'textContent',
+      `勾选＝只显示勾选的类型；一个都不勾＝全部显示。${t.char}${t.rel}（底部）也会跟着过滤。`);
+    /* 形状图例（圆＝男 / 圆角方＝女）：概念没有性别 ⇒ 藏。
+     * 族谱补全（`#derived-btn` ＋ 边过滤面板里那个勾选框 ＋「只看亲缘」预设）：概念之间没有亲子边，
+     * 推导链恒为空 ⇒ 藏 —— 留着会是一个"点了没反应"的按钮，比没有更糟。 */
+    setShown('.shape-legend', !th);
+    setShown('#derived-btn', !th);
+    setShown('#edge-filter-panel [data-edge-preset="kin"]', !th);
+    const derivedBox = document.getElementById('edge-derived');
+    const derivedGrp = derivedBox && derivedBox.closest ? derivedBox.closest('.ep-group') : null;
+    if (derivedGrp) derivedGrp.style.display = th ? 'none' : '';
+    /* 帮助弹窗整体是照叙事类写的（「点一个圆点，看这个人」）—— 理论类时在顶部补一句说明，
+     * 而不是去改那 14 条图文：它们讲的操作本身仍然成立，只是对象从「人」变成了「概念」。 */
+    if (isTheoryBook()) {
+      const help = document.querySelector('#help-modal .hint');
+      if (help && !help.dataset.typed) {
+        help.dataset.typed = '1';
+        help.insertAdjacentHTML('afterbegin',
+          `<b>本书是理论类</b>：图上的节点是书里的<b>${t.char}</b>，连线是${t.char}之间的<b>${t.rel}</b>，事件轴上是书中的<b>实验与${t.event}</b>。<br>`);
+      }
+    }
+  }
+
   /* ══ 区域 13/68：下拉与搜索候选 ══ */
 
   function comboSub(c) {
@@ -1741,7 +1870,7 @@
           const c = state.byId.get(p.data.id);
           if (!c) return '';
           if (charLocked(c)) {
-            return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个人物在第 ${charCh(c)} 章才出场；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
+            return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个${T().char}在第 ${charCh(c)} 章才出场；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
             `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
@@ -3416,7 +3545,7 @@
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const cur = state.kbCursor ? state.byId.get(state.kbCursor) : null;
     const n = asOf();
-    return `《${titleOf()}》人物关系图：显示 ${shown} / ${state.book.characters.length} 人`
+    return `《${titleOf()}》${T().char}${T().rel}图：显示 ${shown} / ${state.book.characters.length} ${T().charN}`
       + (n !== null ? `，时间旅行在第 ${n} 章` : '')
       + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
       + (cur ? `；当前选中 ${cur.name}（关系 ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章出场）` : '')
@@ -3666,7 +3795,7 @@
 
   function renderPanelWelcome() {
     panel().innerHTML = `
-      <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」<br>
+      <p class="hint">点节点看${T().char}档案 · 点连线看${T().rel}与「定义${T().rel}的小${T().event}」<br>
       <b>在图上</b>按住空白处拖动＝平移画布（<b>要按在图的范围里</b>，工具条 / 两人关系 / 事件轴 / 右栏上拖是无效的），
       滚轮＝缩放，<b>双击图的空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
       万一把画布拖到看不见了：图中间会浮出「画布拖到视野外了 · 点这里复位」，<b>点任意一个人</b>也会把视野拉回来。<br>
@@ -3973,7 +4102,7 @@
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
         ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
         ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
-        <span class="badge">关系 ${allRels.length} 条</span>
+        <span class="badge">${T().rel} ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${esc(c.desc)}</p>
       ${factionHist.length > 1 ? `<p class="card-sub">阵营变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
@@ -4011,7 +4140,7 @@
       `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`);
     panel().innerHTML = `
       <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
-      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : '定义这段关系的事件'}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
+      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
       ${periodText(r) ? `<p class="card-sub">关系时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
       ${evItems.length ? foldSection({ key: `relev:${first}|${second}`, n: 10, unit: '条', cls: 'rel-events', wrap: 'div', bare: true, items: evItems }) : '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着关系链继续走。</p>`;
@@ -4098,7 +4227,7 @@
       </li>`;
     });
     panel().innerHTML = `
-      <div class="card-title">关系链：${esc(charName(a))} → ${esc(charName(b))}</div>
+      <div class="card-title">${T().rel}链：${esc(charName(a))} → ${esc(charName(b))}</div>
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
       ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
       <p style="margin-top:10px">
@@ -4610,7 +4739,7 @@
     ctx.fillStyle = muted; ctx.font = font(23);
     const prog = state.progress === null ? '剧透保护：关（全部解锁）' : `剧透保护：读到第 ${state.progress} 章`;
     const m = state.book.meta || {};
-    ctx.fillText(`${m.author || ''} · ${state.book.characters.length} 人 / ${state.book.relations.length} 段关系 / ${state.book.events.length} 个事件 · ${prog}`, 52, 120);
+    ctx.fillText(`${m.author || ''} · ${state.book.characters.length} ${T().charN} / ${state.book.relations.length} ${T().relN} / ${state.book.events.length} ${T().eventN} · ${prog}`, 52, 120);
     ctx.textAlign = 'right';
     ctx.fillText('● 圆＝男　▢ 圆角方＝女　大小＝关系条数', W - 52, 120);
     ctx.textAlign = 'left';
@@ -4754,7 +4883,7 @@
     const progText = state.progress === null ? '全部解锁' : `剧透保护：读到第 ${state.progress} 章（灰色＝未解锁）`;
     const unit = page ? 'mm' : '';
     const head = !page ? '' : `
-  <text x="${M}" y="13" font-size="7" font-weight="700" fill="#232a35">《${xmlEsc(titleOf())}》人物关系图</text>
+  <text x="${M}" y="13" font-size="7" font-weight="700" fill="#232a35">《${xmlEsc(titleOf())}》${T().char}${T().rel}图</text>
   <text x="${M}" y="20" font-size="3.3" fill="#6c7482">${xmlEsc(state.book.meta.author || '')} · 显示 ${nodes.length} / ${state.book.characters.length} 人 · 关系 ${links.length} 段 · 事件 ${state.book.events.length} 个 · ${progText}</text>
   ${legend}`;
     const foot = !page ? '' : `
@@ -5296,7 +5425,7 @@ ${body}
 </section>`).join('\n');
     }).join('\n');
 
-    const stats = `显示 ${chars.length} / ${b.characters.length} 人 · ${b.relations.length} 段关系 · ${b.events.length} 个事件`;
+    const stats = `显示 ${chars.length} / ${b.characters.length} ${T().charN} · ${b.relations.length} ${T().relN} · ${b.events.length} ${T().eventN}`;
     const pages = {
       'cover.xhtml': epubPage('封面', `<div class="cover">
   <h1>${esc(title)}</h1>
@@ -5308,12 +5437,12 @@ ${body}
 <ol>
   <li><b>配合原著读</b>：在微信读书里把这份文件当作一本"配套小册子"（传书导入后与原著并排读）。</li>
   <li><b>剧透保护</b>：这份文件<b>跟随导出时的阅读进度</b>——之后的剧情没写进来。读到后面想更新，回网页版/小程序再导出一次即可。</li>
-  <li><b>关系总图</b>：下一节的图是全书关系网络（放大看）；每段关系的<b>依据事件</b>写在人物志里。</li>
+  <li><b>${T().rel}总图</b>：下一节的图是全书${T().rel}网络（放大看）；每段${T().rel}的<b>依据${T().event}</b>写在${T().char}志里。</li>
   <li><b>想按进度解锁、查两人关系、看时间旅行</b>：用在线版 <b>${esc(SITE_URL)}</b> 或微信小程序（同一个数据，可按章解锁）。</li>
 </ol>`),
       'graph.xhtml': epubPage('关系总图', `<h1>关系总图</h1>
 <p class="meta">${esc(stats)}${state.progress === null ? '' : ` · 剧透保护读到第 ${state.progress} 章`}</p>
-<div class="fig"><img src="${imgName}" alt="人物关系图"/></div>
+<div class="fig"><img src="${imgName}" alt="${T().char}${T().rel}图"/></div>
 <p class="meta">${esc((b.factions || []).map((x) => x.name).join(' / '))}</p>`),
       'characters.xhtml': epubPage('人物志', `<h1>人物志（按出场章排序）</h1>${charHtml || '<p>（暂无可写的人物）</p>'}`),
       'events.xhtml': epubPage('事件轴', `<h1>重大事件轴</h1>${evHtml || '<p>（暂无可写的事件）</p>'}`),

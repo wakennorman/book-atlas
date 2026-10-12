@@ -32,6 +32,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listBooks } from './lib/data-files.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -39,9 +40,7 @@ const write = args.includes('--write');
 const files = args.filter((a) => !a.startsWith('--'));
 const targets = files.length
   ? files.map((f) => path.resolve(f))
-  : fs.readdirSync(path.join(root, 'data'))
-      .filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.'))
-      .map((f) => path.join(root, 'data', f));
+  : listBooks().map((f) => path.join(root, 'data', f));
 
 const pairKey = (r) => [r.from, r.to].sort().join('|');
 

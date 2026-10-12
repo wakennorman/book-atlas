@@ -108,3 +108,25 @@ export function listBookSlugs() {
 export function bookPath(file) {
   return path.join(DATA, file);
 }
+
+/**
+ * 书型（v0.206 新增）。`meta.type` 这个字段**早就存在** —— 现有三本都写着「叙事类」，
+ * 而全仓只有一处读过它（`js/app.js` 的拆书素材：非叙事类不发请求）。
+ *
+ * 理论类书籍的节点是**概念/术语**（《刻意练习》里的「心理表征」「甜蜜点」），不是人物
+ * ⇒ 一切「按人名做的判据」对它**结构性不成立**：
+ *   · 姓氏提取器盲区（`check-surname-coverage`）—— 概念名的首字不是姓；
+ *   · 关系引文·行为人审计（`audit-relation-actors`）—— 概念之间没有"行为人"；
+ *   · 漏人检测 / 译名台账 / 重名台账 —— 没有"人"可漏、可译、可重名。
+ *
+ * ⇒ 判据集中在这一处，各处 import。**别把 `=== '理论类'` 抄到每个门禁里**
+ *   （铁律 7：同一个定义抄多份，然后各改各的，漂移了就静默出错）。
+ *
+ * ⚠ 分流的判据必须是**显式声明**（`meta.type`），不是"猜这本书像不像理论书"——
+ *   猜出来的类型会在某本书上悄悄判错，而报告看起来完全正常。
+ * ⚠ 各门禁跳过的分支**必须打印**：静默少一本书会被读成「这本书 0 处问题」，那是假绿。
+ */
+export const THEORY_TYPE = '理论类';
+export function isTheoryBook(book) {
+  return !!book && !!book.meta && book.meta.type === THEORY_TYPE;
+}

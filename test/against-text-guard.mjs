@@ -424,6 +424,60 @@ const PLAUSIBLE = GOOD.length;             // 3
     ok(/classifyScript\s*\(/.test(src), '脚本调了 classifyScript（否则这个判据是死的）');
     ok(/script\.isTranslation/.test(src), '按 isTranslation 分流（不是算完不用）');
     ok(/script:\s*r\.script/.test(src), '把 script 传给两份 render（否则报告印不出实测数字）');
+    /* v0.206：理论类那一支也要接线，且**分流必须三选一**（见下 14h）。 */
+    ok(/isTheoryBook\s*\(\s*book\s*\)/.test(src),
+      '书型从 data-files 的 isTheoryBook 取（不是自己再抄一份 meta.type === 理论类）');
+    ok(/script\.isTheory/.test(src), '按 isTheory 分流（理论类两条规则都不跑）');
+    /* ⚠ 这一条守的是一个**当场踩到的崩溃**：理论类时 report / interp **都是 null**，
+     *   老写法 `(report || interp).total` 直接 TypeError。而崩溃的红和"检查不通过"的红
+     *   在门禁里长得一样，会被误判成数据有问题。 */
+    ok(/\(report \|\| interp\) \?/.test(src),
+      '取 total/rows 时对"两份都是 null"做了兜底（理论类会把 (report||interp).total 打成 TypeError）');
+  }
+
+  /* 14h. ⚠ v0.206：**理论类**——前两类问的是"书里的人怎么写"，这一类问的是"节点是不是人"。
+   *
+   * 起因（实测）：《刻意练习》正文 `·` 密度 11.5 个/万字（它引用了大量西方人名），
+   * 旧判据把它判成**译本**、跑规则二、报出 **30 条人名候选** ——
+   * 而那些人是**案例里的主角**，一条都不该建节点。那是一份**假清单**：
+   * 人会一条条去判，判完发现"这些人本来就不该进这张图"。
+   * （本项目的老话：一个假信号源比没有更坏。）
+   *
+   * 本组两个方向都要能红：
+   *   · 去掉 `isTheory` 的压过逻辑 ⇒ 14h.1 红（书被判成译本，理由还是错的）；
+   *   · 把理论类那一支的 render 分支删掉 ⇒ 14h.2 红（会印成"译本/中文原著"）。
+   */
+  {
+    /* 同一份**密布间隔号**的正文：不加 isTheory 就是译本，加了就是理论类。 */
+    const theory = classifyScript({ raw: TR_RAW, names: TR_NAMES, isTheory: true });
+    /* 14h.1 理论类**压过**量出来的判据 —— 那两个量的是"人名怎么写"，而本书没有人名节点。 */
+    ok(theory.isTheory === true, '显式声明理论类 ⇒ isTheory');
+    ok(theory.isTranslation === false,
+      `理论类**压过**按正文量出来的判据（本例 per10k=${theory.per10k.toFixed(1)} 本会判成译本；`
+      + '不压的话报告会说"它是译本"——结论碰巧一样，**理由却是错的**）');
+    ok(theory.per10k > DOT_PER10K && theory.translationShare > DOT_NAME_SHARE,
+      '而且两个来源**确实都成立**（否则这条断言测不出"压过"这个动作，只是个巧合）');
+    /* 反向：不传 isTheory 时同一份语料仍判成译本 —— 否则上面那条可能只是"永远 false"。 */
+    ok(classifyScript({ raw: TR_RAW, names: TR_NAMES }).isTranslation === true,
+      '同一份语料不声明理论类时仍判成译本（红绿两边都验，不是把它删了就绿）');
+
+    /* 14h.2 ⚠ 两节都要**明说不适用**，且说清**为什么**（理论类 ≠ 译本 ≠ 中文原著）。
+     *      三者的"不适用"长得像，但该做的事完全不同 —— 混着写会让人以为
+     *      "换个规则就能扫出理论类的缺口"。 */
+    for (const [label, text] of [
+      ['规则一', renderGapReport(null, { slug: 'demo', script: theory }).join('\n')],
+      ['规则二', renderInterpReport(null, { slug: 'demo', script: theory }).join('\n')],
+    ]) {
+      ok(/不适用于本书/.test(text), `理论类上 ${label} 那一节明写「不适用于本书」`);
+      ok(/理论类/.test(text), `${label} 那一节说得出是**理论类**`);
+      ok(/个\/万字/.test(text), `${label} 把实测的判据数字印出来（判错了人要能自己看出来）`);
+      ok(!/它是\*\*译本\*\*|它是\*\*中文原著\*\*/.test(text),
+        `${label} **不**说成"译本/中文原著"（理由错了比没理由更坏）`);
+      ok(!/待判/.test(text),
+        `${label} **不是**"待判 0 条"那种写法（那会被读成"书里没人漏"，而这里根本不该找）`);
+      ok(/--names/.test(text),
+        `${label} 指向 --names（核**概念名**在原文里搜不搜得到 —— 那一条对理论类**完全适用**）`);
+    }
   }
 }
 

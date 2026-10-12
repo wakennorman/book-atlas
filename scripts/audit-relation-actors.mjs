@@ -65,7 +65,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { listBooks, listBooksIn } from './lib/data-files.mjs';
+import { listBooks, listBooksIn, isTheoryBook } from './lib/data-files.mjs';
 /* 原著文件名的**单一来源**（v0.179）。原先这里有一张硬编码的 SOURCES 表，
  * 且《百年孤独》指到了 `%TEMP%\opencode\epub.txt` —— 一个与 `ba-books/百年孤独.txt`
  * **不同**的抽取产物，而其余脚本用的都是后者。详见 lib 里的注释。 */
@@ -144,6 +144,8 @@ export function auditRelationActors(opts = {}) {
   const stats = {};
   /** slug → { slug, path, text }（text 为 null 表示**没判**，不是"没问题"）。 */
   const srcInfo = {};
+  /** v0.206：按书型（理论类）跳过的书 —— 必须打印，见下面分流处的注释。 */
+  const theorySkipped = [];
 
   for (const bf of bookFiles) {
     const slug = bf.replace(/\.json$/, '');
@@ -151,6 +153,19 @@ export function auditRelationActors(opts = {}) {
     srcInfo[slug] = info;
     const src = info.text;
     const book = JSON.parse(fs.readFileSync(path.join(root, 'data', bf), 'utf8'));
+    /* ---------- v0.206：理论类分流 ----------
+     * 这个审计叫「关系引文·**行为人**审计」：A 级问「引文里只有代词、指不出是谁做的」，
+     * B 级问「引文里另有与一方有亲属关系的第三方」，C 级问「这句引文在原书里查得到吗」。
+     * 理论类书籍的边是**概念关联**（「心理表征 —是核心产物→ 刻意练习」）——
+     * 没有"行为人"、没有亲属关系，而它的「」是用来标注**术语**的、不是引文
+     * ⇒ 三级判据对它**结构性不成立**（实测：A 级报出来的那条，命中的是「别人」里的「人」）。
+     * ⇒ 跳过，但**必须打印**：静默少一本书会被读成「这本书 0 处问题」，那是假绿。
+     *   同时也把它从 srcInfo 里摘掉，免得报告里多一行「缺原著」——那看着像真的。 */
+    if (isTheoryBook(book)) {
+      delete srcInfo[slug];
+      theorySkipped.push(slug);
+      continue;
+    }
     const byId = new Map((book.characters || []).map((c) => [c.id, c]));
     const nm = (id) => byId.get(id)?.name ?? id;
     const allNames = (book.characters || []).map((c) => ({ id: c.id, name: c.name, flat: flat(c.name) }))
@@ -238,7 +253,7 @@ export function auditRelationActors(opts = {}) {
   const byFlag = { A: [], B: [], C: [] };
   for (const r of rows) for (const f of r.flags) byFlag[f].push(r);
   const missingSrc = Object.values(srcInfo).filter((i) => !i.text);
-  return { books: bookFiles, stats, byFlag, rows, srcInfo, missingSrc, context: CTX };
+  return { books: bookFiles, stats, byFlag, rows, srcInfo, missingSrc, theorySkipped, context: CTX };
 }
 
 /** 生成 markdown 报告正文（不含任何 IO）。 */
@@ -258,6 +273,12 @@ export function renderReport(res) {
   L.push('⚠ 逐条读过的结论记在 `data/relation-actors-ok.json`，由 `scripts/check-relation-actors-ledger.mjs` 守着：');
   L.push('**新冒出来的 A/B/C 必须回原著读过并登记**，否则门禁报红。');
   L.push('');
+  /* v0.206：跳过谁要说出来 —— 否则读报告的人会以为"这本书没有 A/B/C 级问题"。 */
+  if (res.theorySkipped && res.theorySkipped.length) {
+    L.push(`> ℹ **按书型跳过**：${res.theorySkipped.map((s) => `\`${s}\``).join('、')}`
+      + '（理论类 —— 节点是概念不是人物，边是概念关联，没有"行为人"，A/B/C 判据对它不适用）。');
+    L.push('');
+  }
   for (const [slug, s] of Object.entries(res.stats)) {
     L.push(`- \`${slug}\`：引文事件 ${s.events} 条 / 关系 ${s.rels} / 人物 ${s.chars}`);
   }

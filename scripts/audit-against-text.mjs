@@ -44,6 +44,15 @@
  *   而"清单是空的"和"这条规则没跑"长得一模一样。
  *   现在不适用的那节**照样打印**，只是内容改成"本规则不适用于本书 + 实测判据数字"。
  *
+ * ⚠ v0.206：**第三条路 —— 理论类**（《刻意练习》）。前两条路问的都是"书里的人**怎么写**"
+ *   （按正文量 `·` 密度与名字形状判）；理论类问的是"这本书的节点**是不是人**"——
+ *   那个**量不出来**，只能看数据里的**显式声明** `meta.type`（`data-files.mjs` 的 `isTheoryBook`）。
+ *   实测：《刻意练习》正文 `·` 密度 **11.5 个/万字**（它引用了大量西方人名）
+ *   ⇒ 旧判据会把它判成**译本**、跑规则二、报出 **30 条人名候选**，
+ *   而那些人是**案例里的主角**，一条都不该建节点 —— 一份"待判 30 条"的假清单。
+ *   ⇒ 理论类现在**两条规则都跳过**，两节都打印"不适用 + 实测数字"；
+ *      本书该走的是 `--names`（核**概念名**在原文里搜不搜得到，那一条对它**完全适用**）。
+ *
  * 起因：用户拿《百年孤独》第 16/17 章那段问"乌尔苏拉的母亲佩德罗妮拉·伊瓜兰
  * 为什么没加进去"—— 她的外祖母、父亲、表兄、曾外祖父**全在建档**，唯独母亲不在。
  * 原因是规则一锚在"首字＝姓"上，而 `佩德罗妮拉·伊瓜兰` 的首字「佩」不是百家姓，
@@ -66,6 +75,9 @@ import { mainTextOnly, extractChapters as chaptersOf } from './lib/main-text.mjs
  * 原著 txt 不在仓库里，这条链**没法**做成跑 CLI 的门禁（本机也起不了子进程）。 */
 import { buildGapReport, renderGapReport, buildInterpReport, renderInterpReport,
   classifyScript, plain, MIN, TOP_N, NEAR } from './lib/against-text.mjs';
+/* v0.206：书型的**唯一来源**（`meta.type`）。这里只用来把报告里的"人物"改成"节点"，
+ * 判据本身在 lib 的 `classifyScript`（它也从同一处 import 那个常量）。 */
+import { isTheoryBook } from './lib/data-files.mjs';
 
 const argv = process.argv.slice(2);
 const asJson = argv.includes('--json');
@@ -154,8 +166,17 @@ function audit(bookFile, textFile) {
    * ⚠ 不适用的那一节**照样渲染**，只是改成打印"本规则不适用于本书"——
    *   "少打印一节"和"这一节 0 条"长得一模一样，而 0 条会被读成"书里没人漏"。
    *   两份报告都收 `script`，好把实测数字印出来（判错了人要能自己看出来）。 */
-  const script = classifyScript({ raw, names });
-  const report = script.isTranslation
+  /* ⚠ 书型由这里**显式**算好再传进去（lib 不 import `data-files.mjs`，
+   *   为的是保住"lib 零依赖、守卫能直接 import"那条不变量，见 `classifyScript` 的注释）。 */
+  const script = classifyScript({ raw, names, isTheory: isTheoryBook(book) });
+  /* ⚠ 这两行的**语义是"三选一"**，不是两个独立的开关 ——
+   *   中文原著 ⇒ 只跑规则一（report 有、interp 为 null）；
+   *   译本     ⇒ 只跑规则二（report 为 null、interp 有）；
+   *   理论类   ⇒ 两条都不跑（**两个都是 null**，v0.206 新增）。
+   *   ⚠ 别写成 `skipBoth ? null : build` 那种对称形式 —— 那会让**中文原著同时跑两条**
+   *     （实测：三国会多出一节"规则二扫出 0 条"，而它本来就该打印"不适用"）。
+   *     这处回归正是靠"拿 HEAD 版对三本原书做逐字 diff"当场逮到的。 */
+  const report = (script.isTheory || script.isTranslation)
     ? null : buildGapReport({ raw, names, okSet, min: MIN_ARG, near: NEAR, topN });
   const interp = script.isTranslation
     ? buildInterpReport({ raw, names, okSet, min: MIN_ARG, topN }) : null;
@@ -169,8 +190,11 @@ function audit(bookFile, textFile) {
      * ⚠ v0.189 之前 `total` 是"已知名字个数"、`rows.length` 是截断后的窗口数，
      *   报告把后者当缺口总数印出来（280 → 印 5）。两个字段的语义都改了。
      * ⚠ v0.192 起**两者只会有一个非 null**（书型决定走哪条规则），取那个非 null 的。 */
-    total: (report || interp).total,
-    rows: (report || interp).rows,
+    /* ⚠ v0.206：理论类**两份都是 null**（两条规则都不跑）⇒ 这里要能兜住。
+     *   老写法 `(report || interp).total` 当场 TypeError —— 而崩溃的红和
+     *   "检查不通过"的红在门禁里长得一样，会被误判成数据有问题。 */
+    total: (report || interp) ? (report || interp).total : 0,
+    rows: (report || interp) ? (report || interp).rows : [],
   };
 }
 
@@ -292,6 +316,9 @@ function checkNames(bookFile, textFile) {
 
   return {
     slug,
+    /* v0.206：只用来把"人物"改成"节点"（措辞），不参与任何判据 ——
+     * 这条检查（名字在原文里搜不搜得到）对理论类**同样成立**，不跳过。 */
+    isTheory: isTheoryBook(book),
     total: rows.length,
     declared: rows.filter((r) => r.declared),
     dead: rows.filter((r) => !r.hits.length && !r.declared),
@@ -330,7 +357,11 @@ if (nameMode) {
   if (asJson) { console.log(JSON.stringify(rep, null, 1)); process.exit(0); }
   for (const r of rep) {
     console.log(`\n=== ${r.slug}（--names：原文里能不能搜到）===`);
-    console.log(`  共 ${r.total} 个人物；书里那个写法一个都不命中的 ${r.dead.length} 个`);
+    /* ⚠ v0.206：理论类的节点是**概念**，不是人物 —— 这条检查对**两者都成立**
+     *   （问的都是"数据里的名字在原文里搜不搜得到"），只是措辞要跟着变。
+     *   写死"人物"会让理论书的报告读起来像出了错。 */
+    const unit = r.isTheory ? '个节点（概念/术语）' : '个人物';
+    console.log(`  共 ${r.total} ${unit}；书里那个写法一个都不命中的 ${r.dead.length} 个`);
     console.log(`  主名不是本书用字、靠别名才搜得到的 ${r.offName.length} 个`
       + (strict ? '（--strict：这是错误）' : '（这是正常的译名差异，不算错）'));
     console.log(`  已申报"主名不可能是原书原样字"的 ${r.declared.length} 个`

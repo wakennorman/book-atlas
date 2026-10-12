@@ -283,6 +283,24 @@ export function renderGapReport(r, o = {}) {
    *   **拿百家姓规则去扫译本**（外国人名不适用百家姓）。 */
   if (!r) {
     L.push(`=== ${slug} ===`);
+    /* ⚠ v0.206：跳过有两种**完全不同的理由**，报告必须分开说 ——
+     *   译本：人名**怎么写的**不一样（间隔号 vs 姓氏），换规则二照样能找；
+     *   理论类：这本书**压根没有"人名节点"**，换哪条规则都不该找。
+     *   混着写会让人以为"换个规则就能扫出理论类的缺口"。 */
+    if (script && script.isTheory) {
+      L.push('  ⚠ **本规则（姓氏 + 1~2 字）不适用于本书** —— 它是**理论类**，'
+        + '节点是**概念/术语**（心理表征、甜蜜点），**不是人名**。');
+      L.push(`     判据（按原著正文算）：正文里「·」密度 **${script.per10k.toFixed(1)} 个/万字**`
+        + `（门槛 ≥${DOT_PER10K}）；已知名字里含「·」的占 **${(script.translationShare * 100).toFixed(1)}%**`
+        + `（门槛 ≥${(DOT_NAME_SHARE * 100).toFixed(0)}%）。`);
+      L.push('     ⚠ 这两个数**在理论类上不构成判据**：它们量的是"人名怎么写"，而本书没有人名节点。'
+        + `本例正文 ${script.per10k.toFixed(1)} 个/万字（引用了大量西方人名）本会把书判成**译本**，`
+        + '从而跑规则二、报出几十条人名候选 —— 那些人**一条都不该建节点**。');
+      L.push('  ⇒ 已**跳过**（人名提取器对概念名没有意义），'
+        + '下面的**规则二（间隔号全名）同样跳过**（同一理由）。');
+      L.push('  ⇒ 本书该走的是 `--names`：核**概念名**在原文里搜不搜得到（那一条对理论类**完全适用**）。');
+      return L;
+    }
     L.push('  ⚠ **本规则（姓氏 + 1~2 字）不适用于本书** —— 它是**译本**，人名不按中文姓氏构词。');
     if (script) {
       L.push(`     判据（按原著正文算，不按书名猜）：正文里「·」密度 **${script.per10k.toFixed(1)} 个/万字**`
@@ -395,16 +413,43 @@ export const DOT_PER10K = 5;
 export const DOT_NAME_SHARE = 0.20;
 
 /**
- * 判"这本书该走哪条规则"。**纯函数**：只吃文本与名字，不碰文件系统。
+ * 判"这本书该走哪条规则"。**纯函数**：只吃文本与名字（外加一个显式声明的书型），不碰文件系统。
+ *
+ * ## v0.206：加了**第三类**——理论类（节点是概念，不是人名）
+ *
+ * 前两类（中文原著 / 译本）都是**按原著正文量出来的**（`·` 密度、名字形状），
+ * 因为它们问的是同一个问题："这本书里的人是**怎么写的**"。
+ * 理论类问的是**另一个**问题："这本书的节点**是不是人**" —— 这个**量不出来**，
+ * 只能看数据里的显式声明（`meta.type`）。所以它走 `isTheory` 参数，不参与量。
+ *
+ * 实测（《刻意练习》，v0.206）：正文 `·` 密度 **11.5 个/万字** ⇒ 旧判据会把它判成**译本**
+ * （因为它引用了大量西方人名：史蒂夫·法隆、比尔·蔡斯…），于是规则二照跑，
+ * 报出 **30 条人名候选**（全是书里的研究者与案例主角）。
+ * 而这本书的节点是**概念**（心理表征 / 甜蜜点 / 长时记忆）——
+ * 那 30 条**一条都不该建节点**，报告却把它们印成"待判 30 条"。
+ * ⇒ 一个**假信号源**：人会一条条去判，判完发现"这些人本来就不该进这张图"。
+ *   （本项目的老话：一个假信号源比没有更坏。）
+ *
+ * ⚠ 所以判据是**显式声明**而不是"猜这本书像不像理论书" —— 猜出来的类型会在某本书上
+ *   悄悄判错，而报告看起来完全正常（同 `data-files.mjs` 里 `isTheoryBook` 的注释）。
+ * ⚠ 理论类**两条规则都不跑**，但**两节都照样渲染**，内容改成"本规则不适用于本书 + 实测数字"。
+ *   静默少一节 = 和"这一节 0 条"长得一样 = 假绿。
+ *
+ * ⚠ `isTheory` 由**调用方**传（`audit-against-text.mjs` 拿 `data-files.mjs` 的
+ *   `isTheoryBook(book)` 算），本模块**不 import 它** —— 这里有一条真在守的不变量：
+ *   「lib 零依赖、无顶层副作用，守卫才能直接 import 调」（见 `test/against-text-guard.mjs`）。
+ *   引一个带 `fs` 的模块进来，那条不变量就从"真的"变成"字面上还成立"。
  *
  * @param {object} o
  * @param {string} o.raw      原著正文（已 `plain`、已按需要切掉评点/附录）
  * @param {string[]} [o.names] 数据里的已知名字（人物主名/别名/地点名…）
- * @returns {{isTranslation:boolean, byDots:boolean, byNames:boolean,
+ * @param {boolean} [o.isTheory] 数据里**显式声明**的书型是不是理论类（`meta.type === '理论类'`）
+ * @returns {{isTheory:boolean, isTranslation:boolean, byDots:boolean, byNames:boolean,
  *            translationShare:number, dotCount:number, per10k:number, nameCount:number}}
- *   `isTranslation` 是两个来源的**或**；另外几个字段是**实测值**，要印进报告供人复核。
+ *   `isTranslation` 是两个来源的**或**（理论类恒 false）；另外几个字段是**实测值**，
+ *   要印进报告供人复核 —— 判错了人要能自己看出来。
  */
-export function classifyScript({ raw, names = [] }) {
+export function classifyScript({ raw, names = [], isTheory = false }) {
   const text = String(raw || '');
   const compact = text.replace(/\s/g, '');
   const dotCount = (text.match(/·/g) || []).length;
@@ -416,8 +461,13 @@ export function classifyScript({ raw, names = [] }) {
   const translationShare = forms.length ? dotted / forms.length : 0;
   const byDots = per10k >= DOT_PER10K;
   const byNames = translationShare >= DOT_NAME_SHARE;
+  const theory = !!isTheory;
   return {
-    isTranslation: byDots || byNames,
+    isTheory: theory,
+    /* 理论类**压过**量出来的判据：那两条量的都是"人名怎么写"，而本书压根没有人名节点。
+     * 不压的话，`isTranslation` 会因正文里的西方人名而变 true，报告会说"它是译本" ——
+     * 结论碰巧一样（两条都跳过），**理由却是错的**，而错的理由比没理由更坏。 */
+    isTranslation: !theory && (byDots || byNames),
     byDots,
     byNames,
     translationShare,
@@ -680,6 +730,20 @@ export function renderInterpReport(r, o = {}) {
    *   必须**明说**，理由同上 —— 静默少一节会被读成"这条规则没意见"。 */
   if (!r) {
     L.push(`=== ${slug} · 规则二：间隔号全名 ===`);
+    /* ⚠ v0.206：同 `renderGapReport`，理论类与译本要分开说（理由见那里的注释）。 */
+    if (script && script.isTheory) {
+      L.push('  ⚠ **本规则（间隔号全名）不适用于本书** —— 它是**理论类**，'
+        + '节点是**概念/术语**，不是人名。');
+      L.push(`     判据（按原著正文算）：正文里「·」密度 **${script.per10k.toFixed(1)} 个/万字**`
+        + `（门槛 ≥${DOT_PER10K}）；已知名字里含「·」的占 **${(script.translationShare * 100).toFixed(1)}%**`
+        + `（门槛 ≥${(DOT_NAME_SHARE * 100).toFixed(0)}%）。`);
+      L.push('     ⚠ 正文里的间隔号来自**书中引用的西方人名**（史蒂夫·法隆、比尔·蔡斯…），'
+        + '那些人是**案例里的主角**，不是这本书的节点 —— 它们进 `events[].summary` 的叙述，不建节点。');
+      L.push('  ⇒ 已**跳过**（本规则在理论类上只会产出"本来就不该建节点"的候选，'
+        + '**一个假信号源比没有更坏**）。');
+      L.push('  ⇒ 本书该走的是 `--names`：核**概念名**在原文里搜不搜得到。');
+      return L;
+    }
     L.push('  ⚠ **本规则（间隔号全名）不适用于本书** —— 它是**中文原著**，人名不带间隔号。');
     if (script) {
       L.push(`     判据（按原著正文算）：正文里「·」密度 **${script.per10k.toFixed(1)} 个/万字**`

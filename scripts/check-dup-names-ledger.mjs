@@ -65,6 +65,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dupeGroups } from './lib/dup-names.mjs';
+/* ⚠ v0.206：`data/` 里"哪些文件是书"的**唯一来源**。别在这里再抄一份后缀名单 ——
+ *   本文件正是踩过那个坑（`perf-baseline.json` 漏了 ⇒ 报告印「5 本书」而真实是 4 本）。 */
+import { listBooksIn } from './lib/data-files.mjs';
 
 export const DEFAULT_ROOT = process.env.BOOKATLAS_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -152,11 +155,14 @@ export function currentGroups(root = DEFAULT_ROOT) {
   const dataDir = path.join(root, 'data');
   const out = [];
   if (!fs.existsSync(dataDir)) return { groups: out, books: [] };
-  const files = fs.readdirSync(dataDir)
-    .filter((f) => f.endsWith('.json') && !f.startsWith('.')
-      && !/\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$/.test(f)
-      && !/^(books|kin-terms-exempt|cross-chapter-ok|first-ch-ok|relation-actors-ok|dup-names-ok)\.json$/.test(f))
-    .sort();
+  /* ⚠ v0.206：这里原先**自己抄了一份 sidecar 名单**（正则里列 graph/text/missing-ok/… 七个后缀
+   *   加六份台账名）。`data/perf-baseline.json`（v0.205.1 新增）没被抄进去 ⇒
+   *   它被**当成第 5 本书**，报告里印出「5 本书」（真实是 4 本）。
+   *   危害不大（它没有 `characters`，不产出任何 ④ 组，判据本身没错），
+   *   但"**报的数不是它算的数**"正是本项目反复栽的那一类 —— 而且它长得完全正常。
+   *   ⇒ 改从唯一来源取（`data-files.mjs` 的 `listBooksIn`，铁律 7）。
+   *     下次加 sidecar 只需改那一处，这里自动跟上。 */
+  const files = listBooksIn(dataDir);
   const books = [];
   for (const f of files) {
     let book;

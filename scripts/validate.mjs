@@ -44,6 +44,8 @@ import { checkKin, KIN, KIN_KEYS } from './kin.mjs';
  * 这里原先内联了一份同样的正则：不 import 的话，哪天 kin-terms.mjs 改了（比如再加一类
  * 收养写法），validate 会静默用旧规则判成环 —— 正是 v0.110 出过的那个事故。 */
 import { isParentChild } from './kin-terms.mjs';
+/* 书型判定（v0.206）—— 单一来源，见 lib/data-files.mjs 的注释。 */
+import { isTheoryBook } from './lib/data-files.mjs';
 
 const STYLES = new Set(['solid', 'dashed', 'dotted']);
 let errors = 0, warns = 0;
@@ -124,6 +126,17 @@ function validate(file, opts = {}) {
 
   req(book.meta, 'slug', 'meta');
   req(book.meta, 'title', 'meta');
+  /* ---------- v0.206：理论类书型 ----------
+   * `meta.type` 早就存在（现有三本都是「叙事类」），前端也只在一处用过它（拆书素材）。
+   * 理论类书籍的节点是**概念/术语**，不是人物 ⇒ 两项检查对它不成立：
+   *   ① 概念没有性别 —— 形状区分男女对它没有意义；
+   *   ② 书里讨论「父亲/女儿」这类称谓是**内容本身**（莫扎特的父亲、波尔加的三个女儿），
+   *      不是「用了称谓却没配人名」。
+   * ⚠ 这不是「例外放行」：理论类多出来的东西有自己的判据 ——
+   *   概念图没有人物，所以姓氏/译名/漏人那几套台账对它一律不适用（各自按类型分流），
+   *   而它真正要守的是「概念与关系引用完整」（上面那些 error 判据对它照跑）。
+   * ⇒ 判据看 `meta.type` 这个**显式声明**，不靠"猜这本书像不像理论书"。 */
+  const isTheory = isTheoryBook(book);
   const factions = new Set((book.factions || []).map((f) => f.key));
   if (!factions.size) err('factions 为空');
 
@@ -140,7 +153,7 @@ function validate(file, opts = {}) {
         warn(`${where} 缺少 ${k}${k === 'faction' ? '（图上不会有阵营色）' : '（档案里会空着，建议补一句）'}`, '角色字段缺');
       }
     }
-    if (!c.gender || !['m', 'f'].includes(c.gender)) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`, '角色字段缺');
+    if (!isTheory && (!c.gender || !['m', 'f'].includes(c.gender))) warn(`${where} 缺少 gender（m/f）——用于形状区分男女`, '角色字段缺');
     if (typeof c.firstCh !== 'number') warn(`${where} 缺少 firstCh（首次出场章）——剧透保护要用`, '角色字段缺');
     if (c.tier && !['main', 'minor', 'mentioned'].includes(c.tier)) warn(`${where} 的 tier「${c.tier}」不合法（main | minor | mentioned）`, '角色 tier 不合法');    if (c.faction && !factions.has(c.faction)) err(`${where} 的 faction「${c.faction}」未在 factions 中定义`);
     if (ids.has(c.id)) err(`角色 id 重复：${c.id}`);
@@ -562,14 +575,14 @@ function validate(file, opts = {}) {
       warn(`${where} 文案以代词开头（「${firstSentence(text).slice(0, 6)}…」），主语不明`, '文案代词开头');
     }
     for (const s of sentences(text)) {
-      if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
+      if (!isTheory && KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
     }
   }
   for (const r of rels) {
     const where = `关系 ${r.from}→${r.to}`;
     for (const ev of r.events || []) {
       for (const s of sentences(ev.text)) {
-        if (KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
+        if (!isTheory && KIN_WORD.test(s) && !hasName(s)) warn(`${where} 这句「${s.slice(0, 20)}…」用了亲属称谓却没配具体人名`, '亲属称谓无人名');
       }
     }
   }

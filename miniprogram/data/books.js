@@ -20,6 +20,13 @@ module.exports = {
       "author": "罗贯中",
       "file": "./three-kingdoms.js",
       "kb": 1108
+    },
+    {
+      "slug": "peak",
+      "title": "刻意练习：如何从新手到大师",
+      "author": "安德斯·艾利克森、罗伯特·普尔",
+      "file": "./peak.js",
+      "kb": 64
     }
   ]
 };

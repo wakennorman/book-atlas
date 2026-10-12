@@ -14,6 +14,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { listBooks } from './lib/data-files.mjs';
 
 const argv = process.argv.slice(2);
 const write = argv.includes('--write');
@@ -22,7 +23,7 @@ const demote = (() => {
   return i >= 0 ? Number(argv[i + 1] ?? 2) : null;
 })();
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(process.cwd(), 'data')).filter((f) => f.endsWith('.json') && f !== 'books.json' && !f.startsWith('.')).map((f) => path.join(process.cwd(), 'data', f))
+  ? listBooks().map((f) => path.join(process.cwd(), 'data', f))
   : argv.filter((a) => !a.startsWith('--') && !/^\d+$/.test(a));
 
 if (!files.length) { console.error('用法：node scripts/prune.mjs data/xx.json [--write] [--demote 2]'); process.exit(1); }

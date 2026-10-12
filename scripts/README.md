@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 63 个 `.mjs`（另加 `scripts/archive/` 58 个）。
+`scripts/` 现在有 63 个 `.mjs`（另加 `scripts/archive/` 59 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -128,7 +128,7 @@
 | `against-text.mjs` | import · 文档 | 「对着原著正文找漏人」的**唯一**判据实现（v0.189）。 |
 | `anno-cross-chapter.mjs` | import | 「事件章号」与「跨章声明（A3）」的**唯一定义** —— v0.177 新增。 |
 | `book-sources.mjs` | import | 「哪本书对应哪份原著 txt」的**唯一**定义（v0.179）。 |
-| `data-files.mjs` | import | data/ 目录里"哪些文件是书、哪些是附属文件"的**唯一**定义。 |
+| `data-files.mjs` | import · 文档 | data/ 目录里"哪些文件是书、哪些是附属文件"的**唯一**定义。 |
 | `dup-names.mjs` | import | 「去括号后同名」的定义 —— `scripts/audit-search.mjs` ④ 与 |
 | `main-text.mjs` | import | 「只含**正文**」的切分 —— v0.184 新建。 |
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
@@ -176,7 +176,7 @@
 
 ## 已归档
 
-`scripts/archive/` 里有 58 个更早的一次性补丁（v0.11–v0.44 一带）。
+`scripts/archive/` 里有 59 个更早的一次性补丁（v0.11–v0.44 一带）。
 它们**同样不删**：早期那几轮的数据是靠它们改出来的，出问题时得能翻回去看当时怎么改的。
 
 * `scripts/archive/_fix-ledger-quotes-v182.mjs`
@@ -223,6 +223,7 @@
 * `scripts/archive/fix-name-ledger-and-dailing-note.mjs`
 * `scripts/archive/fix-other-two-books.mjs`
 * `scripts/archive/fix-parent-cycles.mjs`
+* `scripts/archive/fix-peak-rel-labels.mjs`
 * `scripts/archive/fix-rest.mjs`
 * `scripts/archive/fix-shared-courtesy-names.mjs`
 * `scripts/archive/fix-split-sunhe.mjs`

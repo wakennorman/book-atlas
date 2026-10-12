@@ -49,7 +49,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 /* 「data/ 里哪些是书」只有一个定义（scripts/lib/data-files.mjs，v0.155 起）——
    本脚本**不自己**读 books.json 再过滤，那正是"同一个定义抄多份"的第 N 例。
    v0.164 实测：新增 sidecar 后忘了登记进它的 SIDECAR 正则，books-registry 立刻报红。 */
-import { listBookSlugs } from './lib/data-files.mjs';
+import { listBookSlugs, isTheoryBook } from './lib/data-files.mjs';
 
 const ROOT = process.env.BOOKATLAS_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -128,6 +128,16 @@ export function checkSurnameCoverage() {
 
   for (const slug of listBookSlugs()) {
     const book = JSON.parse(fs.readFileSync(path.join(DATA, `${slug}.json`), 'utf8'));
+    /* ---------- v0.206：按书型分流 ----------
+     * 「姓氏提取器盲区」问的是「书里这个人名，`[百家姓][汉字]{1,2}` 产得出来吗」。
+     * 理论类书籍的节点是**概念/术语**（「刻意练习」「心理表征」「甜蜜点」），
+     * 它们的首字不是姓 ⇒ 这套判据对它**结构性不适用**，44 个节点会全被判成"盲区"。
+     * ⇒ 跳过，但**必须打印**：静默少一本书会被读成「这本书 0 个盲区」，那是假绿。
+     * （与 v0.192 的 `classifyScript` 同一思路：判据只在其成立的那类语料上跑。） */
+    if (isTheoryBook(book)) {
+      console.log(`${slug}：理论类书型（节点是概念/术语，不是人名）⇒ 姓氏提取器不适用，跳过`);
+      continue;
+    }
     const chars = book.characters || [];
     const mainNames = new Set(chars.map((c) => c.name));
     const aliasOwner = new Map();

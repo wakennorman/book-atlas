@@ -13,11 +13,12 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { listBooks } from './lib/data-files.mjs';
 
 const argv = process.argv.slice(2);
 const write = argv.includes('--write');
 const files = argv.includes('--all')
-  ? fs.readdirSync(path.join(process.cwd(), 'data')).filter((f) => f.endsWith('.json') && f !== 'books.json').map((f) => path.join(process.cwd(), 'data', f))
+  ? listBooks().map((f) => path.join(process.cwd(), 'data', f))
   : argv.filter((a) => !a.startsWith('--'));
 
 if (!files.length) {
