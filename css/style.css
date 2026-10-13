@@ -731,8 +731,10 @@ body[data-fontsize="l"] .fold-btn { font-size: 14px; }
 .ai-actions { display: flex; gap: 8px; margin-top: 4px; }
 .ai-answer {
   margin-top: 10px; padding: 12px 14px; border-radius: var(--radius-s);
-  background: var(--panel-2); border: 1px dashed var(--line); font-size: 13.5px; line-height: 1.7; white-space: pre-wrap;
+  background: var(--panel-2); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.7; white-space: pre-wrap;
 }
+/* v0.211：虚框改实框 —— 「虚线」现在是 .ai-extra（补充/可能剧透）的专属语言，
+   回答框也画成虚线的话，两个都像警告，反而谁都看不出来。 */
 .ai-answer .ai-head { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px; }
 .ai-answer .ai-foot { margin-top: 6px; color: var(--muted); font-size: 12px; }
 .ai-answer .ai-err { color: #c0504d; }
@@ -767,6 +769,37 @@ body[data-fontsize="l"] .fold-btn { font-size: 14px; }
   background: var(--panel); color: var(--ink);
 }
 .ai-answer .ai-ask-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- AI 讲解入口（v0.211：让这个功能从"看不见"变成"看得见"）----------
+   原来它只是卡片最底部两颗 `ghost tiny` —— 跟「🎯 1 跳」「🖼 人物卡」长得一模一样，
+   埋在几十条关系后面 ⇒ 这么好的一个功能等于不存在（用户原话：「经常出现问题」之前，
+   他压根没注意到有这个东西）。
+   三件事一起做，缺一件都不够：
+     ① **入口带**：浅 accent 底色 + accent 描边，把眼睛带到那儿；
+     ② **主按钮用 .primary**：整张卡里唯一一个实心按钮 ⇒ 层级一眼最高；
+     ③ **一句 lead**（"只讲你读到的部分、不上传原著正文"）—— 消掉
+        "点了会不会泄露原文 / 会不会偷偷花钱"的顾虑，这是它不敢被点的另一半原因。
+   变量全部复用项目已有的（--accent / --accent-container / --ink …），**不新造** ——
+   新造的变量在暗色主题下必然对不上（v0.96 的教训）。 */
+.ai-entry {
+  margin: 14px 0 0; padding: 11px 12px 12px;
+  border: 1px solid var(--accent); border-radius: var(--radius-s);
+  background: var(--accent-container);
+}
+.ai-entry-lead { margin: 0 0 9px; font-size: 12px; line-height: 1.55; color: var(--ink); }
+.ai-entry-lead b { color: var(--accent-dark); font-weight: 700; }
+[data-theme="dark"] .ai-entry-lead b { color: var(--accent-light); }
+/* 主按钮**独占一行、撑满整条带**。
+ * ⚠ 第一版把它和「⚙️ AI 设置」并排放（`flex: 1 1 auto`）⇒ 实测按钮只占到 **72%**
+ *   （241/336 —— 副按钮把主按钮挤窄了），层级反而更乱。现在设置降级成按钮**下方**的一行
+ *   小字脚注，两者不抢。`white-space: normal`：窄屏下长标签换行，而不是被裁掉。 */
+.ai-btn {
+  width: 100%; justify-content: center; text-align: center; white-space: normal;
+  padding: 10px 14px; font-size: 13.5px; font-weight: 700; letter-spacing: .2px;
+}
+.ai-entry-foot { margin: 9px 0 0; text-align: center; font-size: 11.5px; color: var(--muted); }
+/* 设置是次要动作：文字链，不跟主按钮抢（它平时也不需要被点） */
+.ai-entry-settings { font-weight: 600; white-space: nowrap; }
 
 /* ---------- 无障碍：色盲友好配色 / 字号 ---------- */
 .display-panel { width: min(330px, 92vw); }

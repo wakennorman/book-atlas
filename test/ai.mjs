@@ -387,6 +387,49 @@ try {
   ok(rp2.extraCount === 0, '没有补充块（不该凭空造一个）');
   ok(rp2.text === '曹操就是曹操。', `内容一字不差（${JSON.stringify(rp2.text)}）`);
 
+  /* ── ⑫ v0.211：AI 讲解入口必须是「醒目的」 ──
+   * 为什么单列一节：入口原来只是人物卡最底部两颗 `ghost tiny`，样式跟「🎯 1 跳」「🖼 人物卡」
+   * 一模一样 ⇒ 用户原话是「经常出现问题：模型没有返回内容」，其实是**报了才知道有这功能**。
+   * ⇒ 「醒目」本身必须被断言，否则下一轮有人把 class 改回 `ghost tiny`，没有任何东西会红。
+   * 判据挑**能机械核**的四条：① 实心强调色 ② 字重 ≥ 700 ③ 几乎撑满入口带 ④ 入口带有底色。
+   * 颜色不写死 rgb，用探针元素读 `var(--accent)` 的解析值 ⇒ 换主题/换强调色都不用改测试。 */
+  console.log('\n▶ ⑫ AI 讲解入口是「醒目的」（实心强调色 + 加粗 + 撑满入口带）');
+  await js(`window.__ba.selectCharacter('cao-cao')`);
+  await wait(900);
+  const ui = await js(`(() => {
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = 'var(--accent)';
+    document.body.appendChild(probe);
+    const accentRgb = getComputedStyle(probe).backgroundColor;
+    probe.style.backgroundColor = 'var(--accent-container)';
+    const containerRgb = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    const wrap = document.querySelector('#panel .ai-entry');
+    const btn = document.querySelector('#panel [data-ai="char"]');
+    const lead = wrap ? wrap.querySelector('.ai-entry-lead') : null;
+    return {
+      accentRgb, containerRgb,
+      btnBg: btn ? getComputedStyle(btn).backgroundColor : '',
+      btnColor: btn ? getComputedStyle(btn).color : '',
+      btnWeight: btn ? getComputedStyle(btn).fontWeight : '',
+      btnWidth: btn ? btn.getBoundingClientRect().width : 0,
+      wrapWidth: wrap ? wrap.getBoundingClientRect().width : 0,
+      isPrimary: btn ? btn.classList.contains('primary') : false,
+      isGhostTiny: btn ? (btn.classList.contains('ghost') || btn.classList.contains('tiny')) : false,
+      lead: lead ? lead.textContent.trim() : '',
+    };
+  })()`);
+  console.log(`    主按钮：底色 ${ui.btnBg}（accent ${ui.accentRgb}） · 字 ${ui.btnColor} · 字重 ${ui.btnWeight}`);
+  console.log(`    入口带：宽 ${Math.round(ui.wrapWidth)} · 按钮宽 ${Math.round(ui.btnWidth)}`);
+  ok(ui.isPrimary && !ui.isGhostTiny, '主按钮用 .primary，**不是** ghost/tiny（否则跟别的灰钮没区别）');
+  ok(ui.btnBg === ui.accentRgb, `主按钮是实心强调色（${ui.btnBg}）—— 卡片里唯一一个实心按钮`);
+  ok(ui.btnColor === 'rgb(255, 255, 255)', `主按钮字是白（${ui.btnColor}）`);
+  ok(Number(ui.btnWeight) >= 700, `主按钮字重 ≥ 700（实际 ${ui.btnWeight}）`);
+  ok(ui.btnWidth > 0 && ui.btnWidth >= ui.wrapWidth - 30,
+    `主按钮几乎撑满入口带（${Math.round(ui.btnWidth)} / ${Math.round(ui.wrapWidth)}）`);
+  ok(/只讲你读到的部分/.test(ui.lead) && /不上传原著正文/.test(ui.lead),
+    '入口带写明「只讲你读到的部分 / 不上传原著正文」—— 解决"敢不敢点"的另一半');
+
   console.log(`\n${failed ? '✗' : '✓'} AI 继续追问：${passed} 通过，${failed} 失败`);
 } catch (e) { failed++; console.error('异常：' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 3).join('\n')); }
 finally {

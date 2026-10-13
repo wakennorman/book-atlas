@@ -5,6 +5,70 @@
 
 ---
 
+## v0.211 · AI 讲解入口从「看不见」到「一眼看见」—— 两颗灰钮变成一条入口带
+
+用户反馈：**「把『🤖 讲讲这个概念（不剧透） ⚙️ AI 设置』这个功能的 UI 做得醒目一些」**。
+
+### 一、为什么原来「看不见」
+
+它原来只是人物卡**最底部**的两颗 `ghost tiny`：
+
+```html
+<p style="margin-top:10px">
+  <button class="ghost tiny" data-ai="char">🤖 讲讲这个X（不剧透）</button>
+  <button class="ghost tiny" data-ai-settings="1">⚙️ AI 设置</button>
+</p>
+```
+
+三个不利叠在一起：① 样式跟「🎯 1 跳」「🖼 人物卡」**一模一样**（都是灰框小字），
+视觉上没有层级；② 位置在**最底部**，要滚过几十条关系才到；③ 旁边**没有任何说明**，
+不知道点了会发生什么（会不会上传原文、要不要钱）⇒ 不敢点。
+
+⇒ 反过来说：前几轮用户一直在报「模型没有返回内容」，其实**是报了才知道有这功能**。
+
+### 二、改法：入口带 + 唯一实心按钮 + 一句 lead
+
+```html
+<div class="ai-entry">
+  <p class="ai-entry-lead">AI 讲给这个${T().char}听 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+  <button class="primary ai-btn" data-ai="char">🤖 讲讲这个${T().char}（不剧透）</button>
+  <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
+</div>
+```
+
+- **入口带**（`.ai-entry`）：浅 accent 底色 + accent 描边，把眼睛带过去；
+- **主按钮用 `.primary`**：整张卡里**唯一一个实心按钮** ⇒ 层级一眼最高，且 `width:100%` 撑满整条带；
+- **一句 lead**：把「只讲你读到的部分、不上传原著正文」写在按钮上方 ——
+  这一句同时回答「会不会泄露原文」和「要不要钱」，是它敢被点的另一半原因；
+- **⚙️ AI 设置 降级成按钮下方的一行小字脚注**（`.linkbtn`）：它平时不需要被点，不该跟主按钮抢。
+  ⚠ 第一版把它和主按钮**并排**（`flex: 1 1 auto`）⇒ 实测主按钮只占到 **72%**（241/336），
+  层级反而更乱 —— 所以位置也从「旁边」挪到「下面」，两者不抢。
+
+顺带两处一致性修补：
+
+- **关系链面板**的「🤖 讲一遍」换成**同一套结构** —— 同一个功能，不该一个醒一个不醒；
+- **`.ai-answer` 虚线框改实线** —— 「虚线」自此是 `.ai-extra`（补充 / 可能含剧透）的专属语言，
+  回答框也画虚线的话两个都像警告，反而谁都看不出来。
+
+### 三、验证
+
+- `test/ai.mjs` **79 通过 / 0 失败**（v0.210 的 73 条之外新增 **6 条**）—— 它按 `[data-ai="char"]` /
+  `[data-ai-settings]` / `#ai-answer` 找元素、**不看样式**，所以重构 markup 不会打断它
+  （实测确认它对 `ghost tiny` 零依赖）；新增那 6 条钉的正是「醒目」本身，不是「元素还在」：
+  按钮真的是 `.primary` 且**不再是** `ghost tiny`、底色真的等于 accent 白、字重 ≥700、
+  宽度真的撑满入口带、lead 那句真的印出来了。
+- `npx eslint js/app.js --max-warnings 0` ✅
+- `node test/type-terms-guard.mjs` ✅（新 markup 里的 `${T().char}` 照走术语层，G8/G9 都不误报）
+- `node test/app-partitions-guard.mjs` ✅ 10/10 ⇒ 但它是**先红后绿**的：改完 `js/app.js` 后目录还写着
+  **6719** 行，而文件已经 **6715** 行 ⇒ **P4c + P5b 同时报红**。重跑 `add-app-partitions.mjs --force --write`
+  （输出 `6715 → 6715`、字节 +0.00% ⇒ 证明只动了那一行）后 10/10。
+  ⇒ 又一次证明 v0.209 给 P4c/P5b 补的那两判据**真的在咬人**：没有它们，这一处又会像前十几轮那样
+  悄悄烂着，而门禁一路绿。
+- `node --check js/app.js test/ai.mjs` ✅；`scripts/check-version.mjs` ✅ `bookatlas-v211 / package 0.211.0`
+- 全量门禁 `bash tools/gate-local.sh`：跑完回填（见工作日志）。
+
+---
+
 ## v0.210 · 「模型没有返回内容（可以再发一次重试）」—— 把四种原因分开说，并自动重试一次
 
 用户反馈：**「经常出现问题：'模型没有返回内容　（可以再发一次重试）'」**。

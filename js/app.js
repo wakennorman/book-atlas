@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6713 行、268 个顶层符号，68 个分区。
+ * 文件共 6715 行、268 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -4312,10 +4312,11 @@
       ${filteredCount ? `<p class="hint">🫥 ${filteredCount} 条${T().rel}被「${T().rel}过滤」挡住
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
       ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
-      <p style="margin-top:10px">
-        <button class="ghost tiny" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
-        <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
-      </p>
+      <div class="ai-entry">
+        <p class="ai-entry-lead">AI 讲给这个${T().char}听 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
+      </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
   }
@@ -4416,10 +4417,11 @@
       <div class="card-title">${T().rel}链：${esc(charName(a))} → ${esc(charName(b))}</div>
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
       ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
-      <p style="margin-top:10px">
-        <button class="ghost tiny" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
-        <button class="ghost tiny" type="button" data-ai-settings="1">⚙️ AI 设置</button>
-      </p>
+      <div class="ai-entry">
+        <p class="ai-entry-lead">AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <button class="primary ai-btn" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
+      </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
     // v84：两步走——先闪关系链面板，隔一拍再滚到事件轴（优先"两人都在场"的事件，否则退回链上每一跳）
