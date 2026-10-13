@@ -69,6 +69,12 @@ aria 尾巴 `ariaKbTail`、时间轴标题 `axisTitle`、边过滤说明 `edgeFi
 **⑦ 新测试 + 接线**：`test/help-terms.mjs`（**59 条断言**，两种书型各跑一遍，再切回叙事类
 验证快照不回退）；`.github/workflows/check.yml` 加一步；`ba-uin-` 补进
 `scripts/lib/profile-prefixes.mjs`（防 Temp 泄漏白名单漂移）。
+⚠ 顺带说明：**上一版 v0.213 的 CI 是红的**，红的正是这道 `profile-prefix-guard` ——
+`test/ui-notes-guard.mjs` 早就在用 `ba-uin-` 开临时目录，而白名单里没有这一条
+（本仓这条守卫的设定就是"漏一条 = 那个脚本的 profile 一次都不会被回收"）。
+本轮补 `ba-uin-` 时把它一起堵上了 ⇒ 本地 88/88 与 CI 都因此回到全绿。
+（`ba-uin-` 现在由 `ui-notes-guard` 与 `help-terms` 两个测试共用：功能上无碍
+—— 清扫只按前缀认目录，两个都会被回收；命名上确实该各起一个，记为小节债。）
 
 ### 三、验证
 
