@@ -114,10 +114,10 @@ jobs:
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
-                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/add-app-partitions.mjs \
+                   scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-ui-notes.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/lib/ui-notes.mjs scripts/add-app-partitions.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
+                   test/canvas-hint.mjs test/node-drag.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -393,6 +393,25 @@ jobs:
         # 其中一条**反向**：名字是真人名的**子串**（甲 ⊂ 甲人）不许报红。
         run: node test/missing-ok-guard.mjs
 
+      - name: 渲染字段不许带施工台账（内部措辞不进 UI）
+        # v0.213 新增。起因：用户在人物卡看到「用户 2026-10-04 报"搜不到"的人之一」——
+        # 施工备注渲染给了读者。原话「都说了不要把这种对用户无用的信息显示出来」。
+        # 全类排查命中 **38 处**（29 处 characters[].note + relations[].note +
+        # relations[].events[].text + 2 处 meta.style + 4 份 annotations note），
+        # 已由 scripts/fix-ui-notes-v213.mjs 剥成「只留读者信息」。
+        # 判据扫**浏览器直取的源文件**（books.json + 各 <slug>.json + annotations/<slug>.json，
+        # 从 books.json 发现，不维护第二份清单）；模式与豁免（annotations body 的行内 id
+        # 是链接锚点、relations[].basis 不渲染、机器键整键跳过）见 scripts/lib/ui-notes.mjs 头。
+        # 台账（*-ok.json）与生成物（.graph/.text.json）明确不扫，理由见 lib 头。
+        run: node scripts/check-ui-notes.mjs
+
+      - name: 「内部措辞不进 UI」检查自身的守卫（证明它真的会报红）
+        # v0.213 新增。一条「防泄漏」的门禁自己必须证明会 exit 1 —— 并且**不会乱报**：
+        # `solid＝支撑派生` 含 `id＝` 子串、annotations body 里的 `（e-1-1）` 行内引用
+        # 都是合法文案（后者是 annoBody() 的链接锚点，v0.141/v0.174 既有设计）。
+        # tmp 里造最小 data/ + BOOKATLAS_ROOT 逐场景断言（17 条：8 红 + 6 不红 + 3 发现机制）。
+        run: node test/ui-notes-guard.mjs
+
       - name: 跨章声明台账（A3 的 11 处已回原著核过）
         # v0.177 新增。`data/cross-chapter-ok.json` 是 `audit-annotations.mjs` 的 A3
         # （条目 events[] 里声明了「章号 ≠ 本条 ch」的事件）的**已核台账**。
@@ -588,6 +607,19 @@ jobs:
         #   ② 点关系线时"会继续导航重大事件轴"的那种，停留时间还是太快（它是第二步，
         #      比右栏晚 550ms，1.8s 根本来不及）⇒ 事件卡闪烁加长到 3.9s。
         run: node test/canvas-hint.mjs
+
+      - name: 拖动节点与图注（无头 Edge）
+        # v0.213 新增。用户反馈（原话）：
+        #   ① 「我点击'拖动节点'后，关系图下面的图注还是'…双击图的空白＝复位视图'，
+        #       但是这种情况下'双击图的空白＝复位视图'明显是不对的。」
+        # 图注原先写死在 HTML 里，开了拖动模式整段都是错的（按在节点上拖的是节点不是
+        # 画布；摆节点的人误双击空白还会把调好的视野清掉）⇒ 图注改成随开关切换，
+        # 且拖动态停用双击复位（复位视野改由「复位视图」按钮承担）。
+        # 本测试同时钉死两种模式的分工：拖动态拖节点＝1:1 跟手/画布不动/位置留着/
+        # 不误开面板/线实时跟着走；默认态按在节点上拖＝平移画布、节点不动。
+        # ⚠ 全走真实鼠标事件（Input.dispatchMouseEvent）：节点命中要靠 zrender 的
+        #    hit-test，合成事件（handler.dispatch）到不了 Draggable 的链路。
+        run: node test/node-drag.mjs
 
       - name: 布局可复现 + 视野记忆（无头 Edge）
         # v93 新增。「自由」视图改用固定种子 + 固定轮数的确定性力导向之后，

@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6715 行、268 个顶层符号，68 个分区。
+ * 文件共 6745 行、270 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -74,7 +74,7 @@
  * | 61. UI 绑定：地点筛选 | `bindPlaceFilterUI` | 1 |
  * | 62. UI 绑定：人数过滤 | `bindSizeFilterUI` | 1 |
  * | 63. UI 绑定：面板委托 / 折叠 / 显示 | `bindPanelDelegates` | 1 |
- * | 64. UI 绑定：关系过滤 | `bindEdgeFilterUI` | 1 |
+ * | 64. UI 绑定：关系过滤 | `bindEdgeFilterUI` | 3 |
  * | 65. UI 绑定：画布 / 复位 / 使用说明 | `bindViewControls` | 1 |
  * | 66. UI 绑定：章节 / 时间旅行 | `bindChapterTimeUI` | 1 |
  * | 67. UI 绑定：导出 / AI / 主题 | `bindExportAiUI` | 1 |
@@ -3570,6 +3570,10 @@
      * 解除锁定请走「重置」或搜索框旁的「清除」，这两处都写在锁定条上。 */
     state.chart.getZr().on('dblclick', (e) => {
       if (e.target) return;
+      /* v0.213：拖动模式下停用"双击空白＝复位"——用户原话"明显是不对的"。
+       * 正在挪节点的人，手一抖双击空白就把调好的视野清回默认值；而摆节点这个场景里
+       * 双击是高频误触。要复位视野请用工具条「复位视图」（拖动态图注里也这么指）。 */
+      if (state.nodeDrag) return;
       if (state.clickLock) fitLockView(); else resetRoam();
     });
     /* v91：按住时把光标从 grab 切成 grabbing（标准画布手感）。
@@ -3679,6 +3683,7 @@
     window.addEventListener('resize', guardedResize);
 
     setView(state.view, { restoreView: true });   // 打开一本书 / 切书：回到上次看的位置（v92）
+    syncGraphHint();   // v0.213：换书/重建后图注也要与当前「拖动节点」状态一致
   }
 
   /** 解绑上一次 initChart 挂的 ResizeObserver 与 resize 监听（v85：见 initChart 开头） */
@@ -5940,9 +5945,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       }
       case 'drag': {
         // 演示"拖出去 + 散线"：先把拖动开关打开（否则用户接着拖会发现拖不动）
-        state.nodeDrag = true;
-        const dragBtn = document.getElementById('drag-btn');
-        if (dragBtn) dragBtn.textContent = '拖动节点：开';
+        // v0.213：走 setNodeDrag —— 它同时管按钮文案和图注；直接写 state.nodeDrag 会漏后半截
+        setNodeDrag(true);
         if (!state.frozen) freezeNow();
         if (hubId) nudgeNode(hubId, 80, -52);
         break;
@@ -6332,6 +6336,32 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   }
 
   /* ---------------- 画布自救 / 复位 / 人物卡 / 使用说明 ---------------- */
+  /* v0.213：图下常驻提示跟着「拖动节点」开关走。
+   *
+   * 开着拖动时，原来那段文案（「在图上按住拖动＝平移画布…· 双击图的空白＝复位视图」）
+   * **每一句都是错的**：按在节点上拖的是节点不是画布；而正在摆节点的人误双击空白，
+   * 会把刚调好的视野一下复位掉（用户原话："这种情况下'双击图的空白＝复位视图'
+   * 明显是不对的"）。⇒ 拖动态换成对应的三件事，复位视野改指工具条「复位视图」。
+   *
+   * ⚠ 默认态的 HTML 是静态写死的（index.html 里那段）—— 没有 JS 时提示也得是对的，
+   * 所以两个状态分开维护：OFF 常量必须与静态 HTML **逐字一致**（test/node-drag.mjs 守着）。 */
+  const GRAPH_HINTS = {
+    off: '在<b>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b>双击图的空白</b>＝复位视图',
+    on: '在<b>节点上</b>按住拖动＝搬动节点 · 在<b>图的空白</b>按住＝平移画布（图外无效）· 滚轮＝缩放 · 复位视野点「复位视图」',
+  };
+  function syncGraphHint() {
+    const el = document.querySelector('.graph-pan-hint');
+    if (el) el.innerHTML = GRAPH_HINTS[state.nodeDrag ? 'on' : 'off'];
+  }
+  /** 「拖动节点」开关的唯一写者：按钮文案 + 图注 + 系列级 draggable（靠 setOption 生效）。
+   *  工具条点击与「怎么用」里的演示都走这里 —— 别处再抄一份状态写入（v0.208 同款病）。 */
+  function setNodeDrag(on) {
+    state.nodeDrag = !!on;
+    const btn = document.getElementById('drag-btn');
+    if (btn) btn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
+    syncGraphHint();
+  }
+
   /* ══ 区域 65/68：UI 绑定：画布 / 复位 / 使用说明 ══ */
 
   function bindViewControls() {
@@ -6359,9 +6389,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     });
     const dragBtn = $('#drag-btn');
     dragBtn.addEventListener('click', () => {
-      state.nodeDrag = !state.nodeDrag;
-      dragBtn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
+      setNodeDrag(!state.nodeDrag);
       resetRoam(false);   // v92：开/关拖动节点是设置切换，别把它顺手造成的复位当成"用户选了这个视野"
+                        // （系列级 draggable 要在 setOption 时才生效，所以这一步也省不掉）
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）

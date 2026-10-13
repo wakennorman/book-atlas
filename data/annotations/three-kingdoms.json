@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "slug": "three-kingdoms",
-  "note": "拆书条目的依据是本项目 data/three-kingdoms.json 里已逐条核对过的 events（每条都有 summary / impact / quote / evidence 字段），events 字段列出的是这条拆解引用了哪些事件 id —— 可以逐条点开核对。body 里的结构判断是整理者的推断，basis 字段已如实标注。当前覆盖第 1–14 回（p1 群雄并起）与第 15–33 回（p2 曹操崛起·官渡），素材见 docs/拆书素材-three-kingdoms*.md。",
+  "note": "拆书条目的依据是 events（每条都有 summary / impact / quote / evidence 字段）；items 里的 events 字段列出这条拆解引用了哪些事件 id，可以逐条点开核对。body 里的结构判断是整理者的推断，basis 字段已如实标注。当前覆盖第 1–14 回（p1 群雄并起）与第 15–33 回（p2 曹操崛起·官渡）。",
   "items": [
     {
       "ch": 1,

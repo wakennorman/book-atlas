@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "slug": "crime-and-punishment",
-  "note": "拆书条目的依据是本项目 data/crime-and-punishment.json 里已逐条核对过的 events（每条都有 summary / impact）。events 字段列出的是这条拆解引用了哪些事件 id —— 可以逐条点开核对。body 里的结构判断是整理者的推断，basis 字段已如实标注。本书的 events 一条 quote 都没有，所以全部标「整理者推断」。",
+  "note": "拆书条目的依据是 events（每条都有 summary / impact）；items 里的 events 字段列出这条拆解引用了哪些事件，可以逐条点开核对。body 里的结构判断是整理者的推断，basis 字段已如实标注。本书的 events 一条 quote 都没有，所以全部标「整理者推断」。",
   "items": [
     {
       "ch": 1,

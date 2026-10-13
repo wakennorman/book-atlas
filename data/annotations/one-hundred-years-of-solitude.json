@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "slug": "one-hundred-years-of-solitude",
-  "note": "拆书条目的依据是本项目 data/one-hundred-years-of-solitude.json 里已逐条核对过的 events。body 里的结构判断是整理者推断，basis 字段已如实标注：本书 31 条事件里只有 2 条带 quote（e01、e27），只有引用它们的两条标「原文依据」，其余全部标「整理者推断」。第 10、19 两章在 events 里没有素材，如实不写。",
+  "note": "拆书条目的依据是 events。body 里的结构判断是整理者推断，basis 字段已如实标注：本书 31 条事件里只有 2 条带 quote，只有引用它们的两条标「原文依据」，其余全部标「整理者推断」。第 10、19 两章在 events 里没有素材，如实不写。",
   "items": [
   {
     "ch": 1,

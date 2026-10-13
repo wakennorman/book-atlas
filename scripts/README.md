@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 64 个 `.mjs`（另加 `scripts/archive/` 59 个）。
+`scripts/` 现在有 66 个 `.mjs`（另加 `scripts/archive/` 60 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -52,11 +52,11 @@
 
 | 类别 | 个数 |
 |---|---|
-| 门禁 | 28 |
-| 库 | 9 |
+| 门禁 | 29 |
+| 库 | 10 |
 | 工具 | 27 |
 | 一次性补丁 | 0 |
-| **合计** | **64** |
+| **合计** | **66** |
 
 ## ⚠ 没进 CI、没被 import、文档里也没提的
 
@@ -86,7 +86,7 @@
 
 </details>
 
-## 门禁（28 个）
+## 门禁（29 个）
 
 每轮 CI 都跑；`CI 里的调用`一列**连参数一起抄**（参数丢了就是另一个命令，见 `tools/gate.mjs` 的文件头）。
 
@@ -114,6 +114,7 @@
 | `check-sw-precache.mjs` | `node scripts/check-sw-precache.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `check-transition-coverage.mjs` | `node scripts/check-transition-coverage.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `check-transition-ease.mjs` | `node scripts/check-transition-ease.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
+| `check-ui-notes.mjs` | `node scripts/check-ui-notes.mjs` | 「内部措辞不进 UI」门禁 —— v0.213 新增。 |
 | `check-version-bump.mjs` | `node scripts/check-version-bump.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `check-version.mjs` | `node scripts/check-version.mjs` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `make-anno-digest.mjs` | `node scripts/make-anno-digest.mjs --check` | 生成「拆书素材」文档：把库里已核对的数据重排成写拆解时能直接引用的形式。 |
@@ -121,7 +122,7 @@
 | `make-slim-packs.mjs` | `node scripts/make-slim-packs.mjs --check` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `validate.mjs` | `node scripts/validate.mjs --all` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 
-## 库（9 个）
+## 库（10 个）
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
@@ -134,6 +135,7 @@
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
 | `profile-prefixes.mjs` | import | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
 | `type-terms.mjs` | import · 文档 | 书型术语层（`js/app.js` 的 `TERMS`）的**判据本体** —— 纯函数、无顶层副作用。 |
+| `ui-notes.mjs` | import | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
 
 ## 工具（27 个）
 
@@ -177,7 +179,7 @@
 
 ## 已归档
 
-`scripts/archive/` 里有 59 个更早的一次性补丁（v0.11–v0.44 一带）。
+`scripts/archive/` 里有 60 个更早的一次性补丁（v0.11–v0.44 一带）。
 它们**同样不删**：早期那几轮的数据是靠它们改出来的，出问题时得能翻回去看当时怎么改的。
 
 * `scripts/archive/_fix-ledger-quotes-v182.mjs`
@@ -231,6 +233,7 @@
 * `scripts/archive/fix-sun-geshi.mjs`
 * `scripts/archive/fix-sun-regress.mjs`
 * `scripts/archive/fix-sunhe-note.mjs`
+* `scripts/archive/fix-ui-notes-v213.mjs`
 * `scripts/archive/fix-v195-broken-headers.mjs`
 * `scripts/archive/fix-wrong-chapters.mjs`
 * `scripts/archive/fix-wu-tail.mjs`
