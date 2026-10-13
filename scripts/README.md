@@ -133,7 +133,7 @@
 | `dup-names.mjs` | import | 「去括号后同名」的定义 —— `scripts/audit-search.mjs` ④ 与 |
 | `main-text.mjs` | import | 「只含**正文**」的切分 —— v0.184 新建。 |
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
-| `profile-prefixes.mjs` | import | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
+| `profile-prefixes.mjs` | import · 文档 | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
 | `type-terms.mjs` | import · 文档 | 书型术语层（`js/app.js` 的 `TERMS`）的**判据本体** —— 纯函数、无顶层副作用。 |
 | `ui-notes.mjs` | import | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
 
