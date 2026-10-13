@@ -117,7 +117,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-ui-notes.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/lib/ui-notes.mjs scripts/add-app-partitions.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/node-drag.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
+                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -620,6 +620,21 @@ jobs:
         # ⚠ 全走真实鼠标事件（Input.dispatchMouseEvent）：节点命中要靠 zrender 的
         #    hit-test，合成事件（handler.dispatch）到不了 Draggable 的链路。
         run: node test/node-drag.mjs
+
+      - name: 使用说明与书型适配（无头 Edge）
+        # v0.214 新增。用户反馈（原话）：
+        #   ① 「把'点节点看人物档案 · 点连线看关系与「定义关系的小事件」…'（欢迎面板那段）
+        #       也就是说明适配不同种类的书籍重新优化。」
+        #   ② 「在'怎么用'里也重新优化使用说明。」
+        # 背景：v0.206–v0.213 的理论类适配只在「怎么用」顶部加一句横幅，14 条图文本身
+        # 仍是叙事类口吻（「看这个人」「依据事件」「谁初次登场」）——在《刻意练习》上全错。
+        # 本测试两种书型各跑一遍，断言 DOM 里**真实出现**的文字：
+        #   · 欢迎面板五段 / 图键盘提示 / 「怎么用」14 条 全部按书型分化；
+        #   · 叙事类必须**逐字等于静态 HTML**（setTyped 快照机制，不许漂移）；
+        #   · 理论类不许残留「人物 / 事件 / 档案」，且不许出现「一个个概念」这类
+        #     量词式术语被当泛指名词用的病句（v0.214 施工中真出现过）；
+        #   · 说明里点名的控件（底部「两人关系」、轴标题）必须与界面上真实标签一致。
+        run: node test/help-terms.mjs
 
       - name: 布局可复现 + 视野记忆（无头 Edge）
         # v93 新增。「自由」视图改用固定种子 + 固定轮数的确定性力导向之后，

@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=213">
+  <link rel="stylesheet" href="css/style.css?v=214">
 </head>
 <body>
 
@@ -140,7 +140,7 @@
             <button class="ghost tiny" type="button" data-edge-preset="enemy">只看对立 · 伤害</button>
             <button class="ghost tiny" type="button" data-edge-preset="reset">全部重置</button>
           </div>
-          <p class="hint">勾选＝只显示勾选的类型；一个都不勾＝全部显示。两人关系（底部）也会跟着过滤。</p>
+          <p class="hint" data-term-html="edgeFilterNote">勾选＝只显示勾选的类型；一个都不勾＝全部显示。两人关系（底部）也会跟着过滤。</p>
         </div>
         <span id="count-hint" class="hint"></span>
         <span class="view-label shape-legend" title="形状区分：圆＝男，圆角方＝女（大小表示关系多少）"><i class="sh sh-m"></i>男 <i class="sh sh-f"></i>女</span>
@@ -176,7 +176,7 @@
     <!-- v90：画布被拖到视野外时的自救出口。无限画布没有边界，用户很容易把整张图拖出屏幕，
          而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
     <button id="offview-btn" class="offview-btn" type="button" hidden>🧭 画布拖到视野外了 · 点这里复位</button>
-    <p id="graph-kb-hint" class="sr-only">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
+    <p id="graph-kb-hint" class="sr-only" data-term="kbHint">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
     <!-- v91：常驻提示。"空白处拖动"读起来像"任何空白处"，而漫游只绑在图那块画布上，
          用户试了图的外面发现没反应，以为是自己操作错了。 -->
     <p class="hint graph-pan-hint">在<b>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b>双击图的空白</b>＝复位视图</p>
@@ -199,7 +199,7 @@
 
   <aside class="side" id="side-panel">
     <div id="panel" class="panel">
-      <p class="hint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 开「拖动节点」后可按住圆点把他挪开</p>
+      <p class="hint" data-term-html="panelHint">点节点看人物档案 · 点连线看关系与「定义关系的小事件」 · 开「拖动节点」后可按住圆点把他挪开</p>
     </div>
 
     <div class="panel chapter-panel" id="chapter-panel">
@@ -221,7 +221,7 @@
 
     <div class="panel timeline-panel">
       <div class="pane-head">
-        <h2>重大事件轴</h2>
+        <h2 data-term-html="axisTitle">重大事件轴</h2>
         <span class="hint" data-term="timelineHint">按阶段 · 点事件看详情</span>
       </div>
       <div id="timeline" class="timeline"></div>
@@ -258,8 +258,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>① 点一个圆点，看这个人</b>
-          <span>点节点＝人物档案（身份、结局、与谁有关）；点<b>连线</b>＝关系类型 + 「定义这段关系的小事件」。圆越大＝关系越多；圆＝男，圆角方＝女。</span>
+          <b data-term-html="help1Head">① 点一个圆点，看这个人</b>
+          <span data-term-html="help1Body">点节点＝人物档案（身份、结局、与谁有关）；点<b>连线</b>＝关系类型 + 「定义这段关系的小事件」。圆越大＝关系越多；圆＝男，圆角方＝女。</span>
           <button type="button" class="ghost tiny" data-help-act="open">试一下：打开关系最多的人</button>
         </div>
       </div>
@@ -273,8 +273,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>② 用「字 / 号 / 俗称 / 别的译本」也能搜到人</b>
-          <span>三国可以搜「孔明 / 云长 / 孟德」，百年孤独可以搜「乌苏拉 / 雷贝卡」，罪与罚可以搜「索尼娅」。搜到被折叠的人时会<b>自动展开那一层</b>并定位过去。</span>
+          <b data-term-html="help2Head">② 用「字 / 号 / 俗称 / 别的译本」也能搜到人</b>
+          <span data-term-html="help2Body">三国可以搜「孔明 / 云长 / 孟德」，百年孤独可以搜「乌苏拉 / 雷贝卡」，罪与罚可以搜「索尼娅」。搜到被折叠的人时会<b>自动展开那一层</b>并定位过去。</span>
           <button type="button" class="ghost tiny" data-help-act="search">试一下：替我搜一个人</button>
         </div>
       </div>
@@ -289,15 +289,17 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>③ 人太多看不清：三板斧 + 一键看清</b>
-          <span>① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。</span>
+          <b data-term-html="help3Head">③ 人太多看不清：三板斧 + 一键看清</b>
+          <span data-term-html="help3Body">① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。</span>
           <button type="button" class="ghost tiny" data-help-act="size">试一下：只留主要人物</button>
           <button type="button" class="ghost tiny" data-help-act="focus">试一下：聚焦一个人的圈子</button>
           <button type="button" class="ghost tiny" data-help-act="zoom">试一下：看清（1:1）</button>
         </div>
       </div>
 
-      <div class="help-item">
+      <!-- ⑧ 只对叙事类成立：理论类没有亲子边/推导链，「族谱补全」按钮整条藏掉
+           ⇒ 这条图文由 applyTypeTerms 的 setShown 对理论类隐藏（data-help-item="derived"） -->
+      <div class="help-item" data-help-item="derived">
         <div class="help-fig">
           <svg viewBox="0 0 160 90" aria-hidden="true">
             <circle class="hf-ghost" cx="40" cy="45" r="10" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>
@@ -314,8 +316,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>④ 拖动节点：把一个人拉出来，专门看他的线</b>
-          <span>点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（<b>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时他身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。</span>
+          <b data-term-html="help4Head">④ 拖动节点：把一个人拉出来，专门看与他有关的线</b>
+          <span data-term-html="help4Body">点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（<b>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时他身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。</span>
           <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来</button>
         </div>
       </div>
@@ -333,8 +335,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑤ 按地点看戏</b>
-          <span>左上「📍 全部地点」选一个地点：时间轴只留那里发生的事，图上只亮相关的人；事件卡上的 📍 也能点。地点不做节点（否则关系图会变成一团异构图）。</span>
+          <b data-term-html="help5Head">⑤ 按地点看戏</b>
+          <span data-term-html="help5Body">左上「📍 全部地点」选一个地点：时间轴只留那里发生的事，图上只亮相关的人；事件卡上的 📍 也能点。地点不做节点（否则关系图会变成一团异构图）。</span>
           <button type="button" class="ghost tiny" data-help-act="place">试一下：挑事件最多的地点</button>
         </div>
       </div>
@@ -352,8 +354,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑥ 怕剧透：开「剧透保护」</b>
-          <span>右上角 🔒 选你读到第几章：之后出场的人变灰 🔒、关系不画、事件藏起来。进度存在本机，随时可改。</span>
+          <b data-term-html="help6Head">⑥ 怕剧透：开「剧透保护」</b>
+          <span data-term-html="help6Body">右上角 🔒 选你读到第几章：之后出场的人变灰 🔒、关系不画、事件藏起来。进度存在本机，随时可改。</span>
           <button type="button" class="ghost tiny" data-help-act="spoiler">试一下：打开剧透设置</button>
         </div>
       </div>
@@ -372,8 +374,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑦ 「这两人什么关系？」——最短关系链</b>
-          <span>底部选两个人 → 本地 BFS 算出最短链，每一跳都给出关系类型和依据事件（不联网、不靠 AI）。</span>
+          <b data-term-html="help7Head">⑦ 「这两人什么关系？」——最短关系链</b>
+          <span data-term-html="help7Body">底部选两个人 → 本地 BFS 算出最短链，每一跳都给出关系类型和依据事件（不联网、不靠 AI）。</span>
           <button type="button" class="ghost tiny" data-help-act="path">试一下：拿关系最多的两人跑一遍</button>
         </div>
       </div>
@@ -389,8 +391,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑧ 虚线 + 「推导」徽章 = 族谱补全</b>
-          <span>祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。</span>
+          <b data-term-html="help8Head">⑧ 虚线 + 「推导」徽章 = 族谱补全</b>
+          <span data-term-html="help8Body">祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。</span>
           <button type="button" class="ghost tiny" data-help-act="derived">试一下：显示 / 隐藏推导线</button>
         </div>
       </div>
@@ -404,8 +406,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑨ 自己整理一本（本地编辑器）</b>
-          <span>右上「✏️ 编辑」：地点/人物/关系/事件增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。</span>
+          <b data-term-html="help9Head">⑨ 自己整理一本（本地编辑器）</b>
+          <span data-term-html="help9Body">右上「✏️ 编辑」：地点/人物/关系/事件增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。</span>
           <a class="ghost tiny" href="editor.html">打开编辑器</a>
         </div>
       </div>
@@ -419,8 +421,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑩ 读到哪儿了：第 N 章的世界</b>
-          <span>右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>
+          <b data-term-html="help10Head">⑩ 读到哪儿了：第 N 章的世界</b>
+          <span data-term-html="help10Body">右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>
           面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的关系（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。</span>
           <button type="button" class="ghost tiny" data-help-act="chapter">试一下：翻到第 1 章看看</button>
         </div>
@@ -453,8 +455,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑫ 只看亲缘线 / 只看对立线（关系过滤）</b>
-          <span>工具栏「关系：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
+          <b data-term-html="help12Head">⑫ 只看亲缘线 / 只看对立线（关系过滤）</b>
+          <span data-term-html="help12Body">工具栏「关系：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
           <button type="button" class="ghost tiny" data-help-act="edge">试一下：只看亲缘线</button>
         </div>
       </div>
@@ -470,8 +472,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑬ 人物志与人物卡</b>
-          <span>点任意人物：面板里除了档案与关系，还有<b>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
+          <b data-term-html="help13Head">⑬ 人物志与人物卡</b>
+          <span data-term-html="help13Body">点任意人物：面板里除了档案与关系，还有<b>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
           <button type="button" class="ghost tiny" data-help-act="charcard">试一下：打开关系最多的人</button>
         </div>
       </div>
@@ -487,14 +489,14 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑭ AI 讲解（不剧透）</b>
-          <span>跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
+          <b data-term-html="help14Head">⑭ AI 讲解（不剧透）</b>
+          <span data-term-html="help14Body">跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
           <button type="button" class="ghost tiny" data-help-act="ai">试一下：打开 AI 设置</button>
         </div>
       </div>
     </div>
 
-    <p class="hint" style="margin-top:12px">随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个人</b>也会把视野拉回他身上。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。</p>
+    <p class="hint" style="margin-top:12px" data-term-html="helpBottom">随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个人</b>也会把视野拉回他身上。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。</p>
   </div>
 </div>
 
@@ -575,6 +577,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=213"></script>
+<script src="js/app.js?v=214"></script>
 </body>
 </html>

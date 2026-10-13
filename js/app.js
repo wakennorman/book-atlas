@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6745 行、270 个顶层符号，68 个分区。
+ * 文件共 6879 行、271 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -22,7 +22,7 @@
  * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
  * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
  * | 11. 启动与数据加载 | `boot` | 2 |
- * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 10 |
+ * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 11 |
  * | 13. 下拉与搜索候选 | `comboSub` | 3 |
  * | 14. 节点大小、分类与排序 | `nodeDegree` | 6 |
  * | 15. 聚焦（1–2 跳） | `focusSet` | 1 |
@@ -458,6 +458,8 @@
       legendShapes: '圆＝男 / 圆角方＝女 · 大小＝关系条数 · 虚线＝推导或对立',
       shapeLegend: '● 圆＝男　▢ 圆角方＝女　大小＝关系条数',
       edgeFilterTitle: '按关系类型过滤：只看亲缘 / 只看对立 / 隐藏某类线条',
+      edgeFilterNote: '勾选＝只显示勾选的类型；一个都不勾＝全部显示。{pairRel}（底部）也会跟着过滤。',
+      axisTitle: '重大事件轴',
       mentionedTitle: '「仅被提及」的人物（没出场、没台词）默认折叠',
       minorTitle: '只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）',
       timeTitle: '把图谱拨回第 N 章：只画当时已经发生的关系（「同盟→反目」这类变化会跟着时间变）',
@@ -474,6 +476,65 @@
       spoilerIntro: '这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。',
       spoilerOffDesc: '直接看完整关系图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
+      /* ── 使用说明（欢迎面板 / 「怎么用」弹窗 / 键盘提示）· v0.214 ──
+       *   为什么整句进术语表：这些句子**换个名词并不通**——「点节点看档案」在理论类是
+       *   「点节点看释义」，「依据事件」是「依据案例」，「谁初次登场」是「哪些概念初次提出」
+       *   （v0.208 的教训：动词/量词绑在名词上，词级替换必拼歪 ⇒ 整句存整句）。
+       * ⚠ 两类占位符别混：
+       *   · `welcomeLead` 等**动态渲染**的句子用编号 `{0}`，由 `TW(key, …)` 填；
+       *   · `panelHint` / `kbHint` / `help*Head` / `help*Body` / `helpBottom` 挂在
+       *     **静态 HTML**（`data-term` / `data-term-html`）上，用**命名**占位符
+       *     （`{char}` `{rel}` `{event}` `{place}` `{pairRel}` `{charVerb}` `{charMany}` `{fate}`），
+       *     由 applyTypeTerms 的 `fillNamed` 填（那条路没有调用点传参，给不了编号占位符）。
+       *     ⇒ G2 的占位符一致性判据已扩到命名占位符；G10 另守"挂静态 HTML 的词条
+       *        不许带编号占位符"；G11 守"数词后不许接量词式术语"（见下）。
+       * ⚠⚠ **「一个___」里必须填 `{charMany}`，不能填 `{charN}`**（G11）：
+       *   `charN` 是**带量词**的计数单位（叙事类「人」、理论类「**个概念**」），
+       *   只能跟在数字后（`44 人` / `44 个概念`）；一旦写成「一个{charN}」，
+       *   理论类就印出「把一个**个概念**拉出来」「点任意一个**个概念**」——
+       *   而这句话**没有任何门禁会响**（占位符名字对得上、两侧对称、值都在），
+       *   只有真把界面切成《刻意练习》才看得见。⇒ 泛指名词一律用 `{charMany}`
+       *   （「人」/「概念」），它才是那个"不带量词"的词。
+       * ⚠ 叙事类的这些词条**默认不渲染**：静态 HTML 才是叙事类的真身（setTyped 的
+       *   快照机制，见 applyTypeTerms 上方注释）⇒ 词条值里的命名占位符对叙事类
+       *   只是"同形句子"的文档，真正填的是理论类那一侧。 */
+      welcomeLead: '点节点看{0}档案 · 点连线看{1}与「定义{1}的小{2}」',
+      welcomePan: '在<b>图上</b>按住空白处拖动＝平移画布（<b>要按在图的范围里</b>，工具条 / {0} / {1}轴 / 右栏上拖是无效的），滚轮＝缩放，<b>双击图的空白</b>＝复位视图；要拖单个节点请打开上方「拖动节点」。',
+      welcomeLost: '万一把画布拖到看不见了：图中间会浮出「画布拖到视野外了 · 点这里复位」，<b>点任意一个{0}</b>也会把视野拉回来。',
+      welcomeKb: '<b>键盘</b>：Tab 聚焦到图上后，<b>方向键</b>在{0}之间移动、<b>回车</b>看档案、<b>Esc</b> 取消选中（读屏会念出当前位置）。',
+      welcomePair: '底部「{0}」会算出最短关系链，并列出每一跳的依据{1}。',
+      panelHint: '点节点看{char}档案 · 点连线看{rel}与「定义{rel}的小{event}」 · 开「拖动节点」后可按住圆点把他挪开',
+      kbHint: '用 Tab 聚焦这张图后，方向键在{char}之间移动，回车打开这个{char}的档案，Esc 取消选中。',
+      ariaKbTail: '。Tab 聚焦后可用方向键在{0}间移动，回车查看档案。',
+      help1Head: '① 点一个圆点，看这个{char}',
+      help1Body: '点节点＝人物档案（身份、结局、与谁有关）；点<b>连线</b>＝关系类型 + 「定义这段关系的小事件」。圆越大＝关系越多；圆＝男，圆角方＝女。',
+      help2Head: '② 用「字 / 号 / 俗称 / 别的译本」也能搜到{char}',
+      help2Body: '三国可以搜「孔明 / 云长 / 孟德」，百年孤独可以搜「乌尔苏拉 / 雷贝卡」，罪与罚可以搜「索尼娅」。搜到被折叠的{char}时会<b>自动展开那一层</b>并定位过去。',
+      help3Head: '③ {char}太多看不清：三板斧 + 一键看清',
+      help3Body: '① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「{char}数」切<strong>主要 / 中等</strong>；③ 点{char} → 面板里「🎯 1 跳」只看这个{char}的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的{char}——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。',
+      help4Head: '④ 拖动节点：把一个{charMany}拉出来，专门看与他有关的线',
+      help4Body: '点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（<b>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时他身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。',
+      help5Head: '⑤ 按{place}看{event}',
+      help5Body: '左上「📍 全部{place}」选一个{place}：时间轴只留那里发生的{event}，图上只亮相关的{char}；{event}卡上的 📍 也能点。{place}不做节点（否则{rel}图会变成一团异构图）。',
+      help6Head: '⑥ 怕剧透：开「剧透保护」',
+      help6Body: '右上角 🔒 选你读到第几章：之后{charVerb}的{char}变灰 🔒、{rel}不画、{event}藏起来。进度存在本机，随时可改。',
+      help7Head: '⑦ 「这两个{char}什么关系？」——最短关系链',
+      help7Body: '底部选两个{char} → 本地 BFS 算出最短链，每一跳都给出{rel}类型和依据{event}（不联网、不靠 AI）。',
+      /* ⑧ 只对叙事类成立（虚线＝由亲子推出来的亲属；理论类没有亲子边，且「族谱补全」
+       *   按钮整条藏掉）⇒ 整条 help-item 在理论类隐藏，theory 侧词条留空串。 */
+      help8Head: '⑧ 虚线 + 「推导」徽章 = 族谱补全',
+      help8Body: '祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。',
+      help9Head: '⑨ 自己整理一本（本地编辑器）',
+      help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
+      help10Head: '⑩ 读到哪儿了：第 N 章的世界',
+      help10Body: '右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些{rel}、发生什么{event}、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
+      help12Head: '⑫ 只看亲缘线 / 只看对立线（关系过滤）',
+      help12Body: '工具栏「{rel}：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「{pairRel}」也会跟着过滤。',
+      help13Head: '⑬ {char}志与{char}卡',
+      help13Body: '点任意{char}：面板里除了档案与{rel}，还有<b>「一生（按章）」小节</b>——按章号排的{event}、{place}与原文引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（身份、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help14Head: '⑭ AI 讲解（不剧透）',
+      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}档案）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
     theory: {
       /* ── 词级 ── */
@@ -486,7 +547,7 @@
       nameLabel: '名称',
       charIcon: '◆', eventIcon: '⚡',
       placeThis: '这个领域', placeLocal: '本领域', placeAll: '显示全部领域',
-      keyRels: '关键关联', noRels: '（暂无可显示的关联）', pairRel: '两个概念的关系',
+      keyRels: '关键关联', noRels: '（暂无可显示的关联）', pairRel: '概念关系',
       /* ── 句级 ── */
       chHead: '本章 <b>{0}</b> 个概念 · 新增关联 <b>{1}</b> 条 · 案例 <b>{2}</b> 个 · 领域 <b>{3}</b> 个',
       chLocked: '你现在读到第 {0} 章——这一章的概念、关联与案例先锁起来，读完再来。',
@@ -509,6 +570,8 @@
       legendShapes: '',            // 概念没有性别、没有推导边 ⇒ 整条图例不画（空串 = 不输出）
       shapeLegend: '',
       edgeFilterTitle: '按关联类型过滤：只看对立 / 隐藏某类线条',
+      edgeFilterNote: '勾选＝只显示勾选的类型；一个都不勾＝全部显示。{pairRel}（底部）也会跟着过滤。',
+      axisTitle: '重大案例轴',
       mentionedTitle: '「仅被提及」的概念（没展开、没细节）默认折叠',
       minorTitle: '只跟一两个概念有关系的次要概念，默认折叠（搜索/点案例照样能找到）',
       timeTitle: '把图谱拨回第 N 章：只画当时已经发生的关联（「支撑→驳斥」这类变化会跟着时间变）',
@@ -524,6 +587,47 @@
       spoilerIntro: '选「我在读」后，你进度之后的概念、关联与案例都会被锁起来，避免提前看到后面的内容。',
       spoilerOffDesc: '直接看完整关联图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（概念定位、未解锁的关联与案例都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
+      /* ── 使用说明 · 理论类半边（键与 narrative 一一对应，占位符集合一致）──
+       *   与旧做法的区别：v0.206–v0.213 只在「怎么用」顶部加一句"本书是理论类"的横幅，
+       *   14 条图文本身仍是叙事类口吻（「看这个人」「依据事件」「谁初次登场」）。
+       *   现在整句按书型分化 —— 横幅保留作提要，条目正文各自说对。 */
+      welcomeLead: '点节点看{0}释义 · 点连线看{1}与「凭什么{2}」',
+      welcomePan: '在<b>图上</b>按住空白处拖动＝平移画布（<b>要按在图的范围里</b>，工具条 / {0} / {1}轴 / 右栏上拖是无效的），滚轮＝缩放，<b>双击图的空白</b>＝复位视图；要拖动单个节点请打开上方「拖动节点」。',
+      welcomeLost: '万一把画布拖到看不见了：图中间会浮出「画布拖到视野外了 · 点这里复位」，<b>点任意一个{0}</b>也会把视野拉回来。',
+      welcomeKb: '<b>键盘</b>：Tab 聚焦到图上后，<b>方向键</b>在{0}之间移动、<b>回车</b>看释义、<b>Esc</b> 取消选中（读屏会念出当前位置）。',
+      welcomePair: '底部「{0}」会算出最短关联链，并列出每一跳的支撑{1}。',
+      panelHint: '点节点看{char}释义 · 点连线看{rel}与「凭什么{event}」 · 开「拖动节点」后可按住圆点把它挪开',
+      kbHint: '用 Tab 聚焦这张图后，方向键在{char}之间移动，回车打开这个{char}的释义，Esc 取消选中。',
+      ariaKbTail: '。Tab 聚焦后可用方向键在{0}间移动，回车查看释义。',
+      help1Head: '① 点一个圆点，看这个{char}',
+      help1Body: '点节点＝概念释义（定义、全书定位、与什么相关）；点<b>连线</b>＝关联类型 + 「支撑这段关联的案例」。圆越大＝关联越多。',
+      help2Head: '② 用名字 / 译名 / 俗称也能搜到{char}',
+      help2Body: '刻意练习可以搜「心理表征 / 刻意练习 / 反馈 / 长时记忆」，搜英文原名（如 mental representation）也能找到。搜到被折叠的{char}时会<b>自动展开那一层</b>并定位过去。',
+      help3Head: '③ {char}太多看不清：三板斧 + 一键看清',
+      help3Body: '① 「次要概念」默认收起（只跟一两个概念有关的先不画）；② 右上「{char}数」切<strong>主要 / 中等</strong>；③ 点{char} → 面板里「🎯 1 跳」只看这个{char}的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关联最多的{char}——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。',
+      help4Head: '④ 拖动节点：把一个{charMany}拉出来，专门看与它有关联的线',
+      help4Body: '点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把它挪开（<b>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时它身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。',
+      help5Head: '⑤ 按{place}看{event}',
+      help5Body: '左上「📍 全部{place}」选一个{place}：时间轴只留那里发生的{event}，图上只亮相关的{char}；{event}卡上的 📍 也能点。{place}不做节点（否则{rel}图会变成一团异构图）。',
+      help6Head: '⑥ 怕剧透：开「剧透保护」',
+      help6Body: '右上角 🔒 选你读到第几章：之后{charVerb}的{char}变灰 🔒、{rel}不画、{event}藏起来。进度存在本机，随时可改。',
+      help7Head: '⑦ 「这两个{char}什么关系？」——最短关联链',
+      help7Body: '底部选两个{char} → 本地 BFS 算出最短链，每一跳都给出{rel}类型和依据{event}（不联网、不靠 AI）。',
+      /* 理论类没有亲子边、没有推导链，「族谱补全」按钮整条藏掉 ⇒ 这条 help-item
+       * 在理论类隐藏（applyTypeTerms 里 setShown），词条留空串双保险。 */
+      help8Head: '',
+      help8Body: '',
+      help9Head: '⑨ 自己整理一本（本地编辑器）',
+      help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
+      help10Head: '⑩ 读到哪儿了：第 N 章的世界',
+      help10Body: '右侧「📖 第 N 章」：这一章<b>哪些概念初次提出</b>、新增了哪些{rel}、发生什么{event}、在哪个领域；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（支撑→驳斥这类会随时间切换），<b>不会改你的真实进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
+      help12Head: '⑫ 只看某类关联线（关联过滤）',
+      help12Body: '工具栏「{rel}：全部」里可以勾类型，以及按线条（实线＝支撑 / 属于，虚线＝对立 / 误读，点线＝间接）。底部的「{pairRel}」也会跟着过滤。',
+      help13Head: '⑬ {char}志与{char}卡',
+      help13Body: '点任意{char}：面板里除了释义与{rel}，还有<b>「沿革（按章）」小节</b>——按章号排的{event}、{place}与书中引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（定义、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help14Head: '⑭ AI 讲解（不剧透）',
+      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}释义）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
   };
   const isTheoryBook = () => !!(state.book && state.book.meta && state.book.meta.type === '理论类');
@@ -1278,6 +1382,16 @@
     if (el) el.style.display = on ? '' : 'none';
   }
 
+  /** 命名占位符填充：`{char}` `{rel}` `{event}`… ⇒ 当前书型的词级术语。
+   *  只服务**挂在静态 HTML 上**的词条（`data-term` / `data-term-html`）——
+   *  那条路没有调用点传参，编号占位符 `{0}` 在那儿填不了（⇒ G10 守这一点）。
+   *  动态渲染的句子一律走 `TW(key, …)`（见 TERMS 上方"两类占位符"注释）。
+   *  认不出的名字原样留着 —— 拼错占位符时会在界面上露出 `{xxx}`，
+   *  比静默吞掉好排查（G2 也会因两侧集合不一致报红）。 */
+  function fillNamed(s, t) {
+    return String(s).replace(/\{(\w+)\}/g, (m, k) => (typeof t[k] === 'string' ? t[k] : m));
+  }
+
   /** ══ v0.206：把 index.html 里的**静态文案**换成当前书型的措辞 ══
    *
    * 为什么要有它：`index.html` 里的文案（搜索框占位符、「两人关系」、右栏提示…）
@@ -1310,13 +1424,18 @@
     const lg = document.getElementById('legend');
     if (lg) lg.setAttribute('aria-label', `按${t.faction}筛选`);
     const lbl = document.querySelector('.pathbar-label');
-    if (lbl) lbl.textContent = `${t.char}${t.rel}`;
-    const panel = document.querySelector('#panel > p.hint');
-    if (panel) panel.textContent = `点节点看${t.char}档案 · 点连线看${t.rel}与「定义${t.rel}的小${t.event}」 · 拖拽可移动节点`;
+    /* ⚠ v0.214：这里原来写 `${t.char}${t.rel}` ⇒ 界面标签变成「人物关系」/「概念关联」，
+     *   而**所有使用说明里都管它叫「两人关系」**（静态 HTML 兜底、欢迎面板、
+     *   「怎么用」⑦⑫⑭ 三处）⇒ 说明指着一个界面上不存在的名字，正是 v0.213 那条
+     *   「图注不能说谎」的同一类病。现在标签与说明**共用 `pairRel` 一条词条**。 */
+    if (lbl) lbl.textContent = t.pairRel;
+    /* 右栏默认提示与图键盘提示：**不再在这里手写** —— 两者都已挂上
+     * `data-term-html="panelHint"` / `data-term="kbHint"`，由下面那个循环统一填。
+     * 手写的那两句曾是"写者不唯一"的活例：v0.213 改了静态 HTML（「拖拽可移动节点」
+     * →「开『拖动节点』后可按住圆点把他挪开」），这一处没跟着改，于是每次 loadBook
+     * 都把**旧文案**盖回去（已经点了节点再切书才会看见，平时被欢迎面板遮着）。 */
     const g = document.getElementById('graph');
     if (g) g.setAttribute('aria-label', `${t.char}${t.rel}网络图（加载中）`);
-    const kb = document.getElementById('graph-kb-hint');
-    if (kb) kb.textContent = `用 Tab 聚焦这张图后，方向键在${t.char}之间移动，回车打开这个${t.char}的档案，Esc 取消选中。`;
     /* ── 工具栏：能 1:1 换词的换词，换不出人话的藏掉 ── */
     const th = isTheoryBook();
     setTyped($('#label-btn'), 'title', `显示全部名字会重叠，默认只显示主要${t.char}`);
@@ -1342,9 +1461,12 @@
     setTyped($('#mentioned-btn'), 'textContent', `提及${t.char}：隐藏`);
     setTyped($('#minor-btn'), 'textContent', `次要${t.char}：隐藏`);
     setTyped($('#edge-filter-btn'), 'textContent', `${t.rel}：全部`);
-    setTyped($('.timeline-panel .pane-head h2'), 'textContent', `重大${t.event}轴`);
-    setTyped($('#edge-filter-panel > p.hint'), 'textContent',
-      `勾选＝只显示勾选的类型；一个都不勾＝全部显示。${t.char}${t.rel}（底部）也会跟着过滤。`);
+    /* ⚠ v0.214：这里原来还有两行手写文案 —— 时间轴标题 `重大${t.event}轴` 与边过滤面板
+     *   底部那句说明。它们对应的元素已挂上 `data-term-html="axisTitle"` /
+     *   `data-term-html="edgeFilterNote"`，由下面那个循环统一填 ⇒ **两处都删掉**。
+     *   手写那份不只是冗余：它拼的是 `${t.char}${t.rel}（底部）`（＝「人物关系（底部）」），
+     *   而词条用 `pairRel`（「两人关系（底部）」）—— 与 v0.213 修掉的「图注不能说谎」
+     *   同一个病（说明点着一个界面上不存在的名字）。留着两处，改一处必漂。 */
     /* 形状图例（圆＝男 / 圆角方＝女）：概念没有性别 ⇒ 藏。
      * 族谱补全（`#derived-btn` ＋ 边过滤面板里那个勾选框 ＋「只看亲缘」预设）：概念之间没有亲子边，
      * 推导链恒为空 ⇒ 藏 —— 留着会是一个"点了没反应"的按钮，比没有更糟。 */
@@ -1358,30 +1480,38 @@
     const derivedBox = document.getElementById('edge-derived');
     const derivedGrp = derivedBox && derivedBox.closest ? derivedBox.closest('.ep-group') : null;
     if (derivedGrp) derivedGrp.style.display = th ? 'none' : '';
-    /* 帮助弹窗整体是照叙事类写的（「点一个圆点，看这个人」）—— 理论类时在顶部补一句说明，
-     * 而不是去改那 14 条图文：它们讲的操作本身仍然成立，只是对象从「人」变成了「概念」。 */
+    /* 帮助弹窗：14 条图文本身已按书型逐条分化（head/body 都是术语词条，见下方那两个循环），
+     * 所以这里只剩**顶部一句提要**（本书是理论类 ⇒ 节点是概念、连线是关联、轴上是实验与案例）。
+     * ⚠ v0.206–v0.213 只有这句横幅、14 条图文照叙事类念 —— "横幅说对了，正文全是错的"。 */
     if (isTheoryBook()) {
       const help = document.querySelector('#help-modal .hint');
       if (help && !help.dataset.typed) {
         help.dataset.typed = '1';
         help.insertAdjacentHTML('afterbegin',
-          `<b>本书是理论类</b>：图上的节点是书里的<b>${t.char}</b>，连线是${t.char}之间的<b>${t.rel}</b>，事件轴上是书中的<b>实验与${t.event}</b>。<br>`);
+          `<b>本书是理论类</b>：图上的节点是书里的<b>${t.char}</b>，连线是${t.char}之间的<b>${t.rel}</b>，${T().axisTitle}上是书中的<b>实验与${t.event}</b>。<br>`);
       }
     }
+    /* ⑧「虚线 + 推导徽标 = 族谱补全」只对叙事类成立：理论类没有亲子边、没有推导链，
+     *   「族谱补全」按钮整条藏掉 ⇒ 这条图文留着就是"点了没反应"的说明，比没有更糟。
+     *   词条（help8Head/help8Body）theory 侧也留空串，双保险。 */
+    setShown('.help-item[data-help-item="derived"]', !th);
     /* ⚠ v0.208：`index.html` 里那些**整句都要换**的静态文案（导出菜单说明、剧透引导、
      *   图例补充句…），用 `data-term="key"` / `data-term-html="key"` 标在 HTML 上。
      *   为什么不在上面逐个写 `document.querySelector('#xxx')`：那样每加一句文案就得回来改一处，
      *   **忘了改没有任何东西会报错**（本仓最常见的病，见 `test/missing-ok-lib-guard.mjs`）。
      *   标在 HTML 上 ⇒ 加了新文案只要标一下，术语层自动接管。
      *   `data-term-html` 用于元素里带 `<b>` 等标签的（换 textContent 会把标签吃掉）；
-     *   key 在术语表里查不到时**原样保留**（不会写坏），所以漏加 key 是"没换"而不是"换坏"。 */
+     *   key 在术语表里查不到时**原样保留**（不会写坏），所以漏加 key 是"没换"而不是"换坏"。
+     *   v0.214：理论类那一支先过 `fillNamed` 填命名占位符（`{char}`→「概念」）——
+     *   叙事类走 setTyped 快照写回静态 HTML 原样，与填不填无关。
+     *   ⚠ 走这条路的词条**不许带编号占位符**（`{0}` 没有调用点传参会原样印出）⇒ G10。 */
     document.querySelectorAll('[data-term]').forEach((el) => {
       const v = t[el.dataset.term];
-      if (typeof v === 'string') setTyped(el, 'textContent', v);
+      if (typeof v === 'string') setTyped(el, 'textContent', fillNamed(v, t));
     });
     document.querySelectorAll('[data-term-html]').forEach((el) => {
       const v = t[el.dataset.termHtml];
-      if (typeof v === 'string') setTyped(el, 'innerHTML', v);
+      if (typeof v === 'string') setTyped(el, 'innerHTML', fillNamed(v, t));
     });
   }
 
@@ -3738,7 +3868,7 @@
       + (n !== null ? `，时间旅行在第 ${n} 章` : '')
       + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
       + (cur ? `；当前选中 ${cur.name}（${t.rel} ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章${t.charVerb}）` : '')
-      + `。Tab 聚焦后可用方向键在${t.char}间移动，回车查看档案。`;
+      + TW('ariaKbTail', t.char);
   }
   function updateAria() {
     const el = document.getElementById('graph');
@@ -3982,14 +4112,18 @@
   /* ---------------- 面板 ---------------- */
   const panel = () => $('#panel');
 
+  /* 右栏欢迎面板（未选中任何节点时）。五段文案全部走术语词条 + `TW` 填编号占位符：
+   *  叙事类 ⇒ 与 v0.213 的逐字稿一致（test/node-drag.mjs 守着）；理论类 ⇒ 概念/关联/
+   *  案例/释义那套（v0.214）。⚠ 别在这里自己拼词 —— 拼了就绕过了术语层，
+   *  理论类会印出「人物」「事件」（v0.208 同款病）。 */
   function renderPanelWelcome() {
+    const t = T();
     panel().innerHTML = `
-      <p class="hint">点节点看${T().char}档案 · 点连线看${T().rel}与「定义${T().rel}的小${T().event}」<br>
-      <b>在图上</b>按住空白处拖动＝平移画布（<b>要按在图的范围里</b>，工具条 / 两人关系 / 事件轴 / 右栏上拖是无效的），
-      滚轮＝缩放，<b>双击图的空白＝复位视图</b>；要拖单个节点请打开上方「拖动节点」。<br>
-      万一把画布拖到看不见了：图中间会浮出「画布拖到视野外了 · 点这里复位」，<b>点任意一个人</b>也会把视野拉回来。<br>
-      <b>键盘</b>：Tab 聚焦到图上后，<b>方向键</b>在人物之间移动、<b>回车</b>看档案、<b>Esc</b> 取消选中（读屏会念出当前位置）。<br>
-      底部「两人关系」会算出最短关系链，并列出每一跳的依据事件。</p>`;
+      <p class="hint">${TW('welcomeLead', t.char, t.rel, t.event)}<br>
+      ${TW('welcomePan', t.pairRel, t.event)}<br>
+      ${TW('welcomeLost', t.charMany)}<br>
+      ${TW('welcomeKb', t.char)}<br>
+      ${TW('welcomePair', t.pairRel, t.event)}</p>`;
   }
 
   function charLink(id) { return `<button class="linkbtn" data-goto="${esc(id)}">${esc(charName(id))}</button>`; }

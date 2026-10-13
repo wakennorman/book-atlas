@@ -98,7 +98,13 @@ export function extractTerms(appSrc) {
   }
 }
 
-const phOf = (v) => [...String(v).matchAll(/\{(\d+)\}/g)].map((m) => m[1]).sort().join(',');
+/** 占位符签名：编号（`{0}`，动态渲染走 `TW(key,…)`）与命名（`{char}`，静态 HTML 走
+ *  `fillNamed`）**都算** —— 两类占位符混用是本仓真实踩过的坑（v0.214）：
+ *  给 narrative 加了带 `{char}` 的句级词条、theory 那侧忘了同名占位符 ⇒ 理论类界面上
+ *  原样印出 `{char}`，而旧判据只数 `{\d+}`，一条都不响。
+ *  ⚠ 按**集合**比（去重）：同一个占位符在一句里出现两次（`定义{1}的小{2}` 与
+ *  `定义{1}与「凭什么{2}」`）是正常写法，比的是"两边各自用了哪些名字"。 */
+const phOf = (v) => [...new Set([...String(v).matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort().join(',');
 /** 领属人称：`他的` / `她的`。这是**运行时**才定的那部分 —— 叙事类看 `c.gender`，
  *  理论类还要整个换成名词（「概念」）⇒ 它必须是 `{N}` 占位符，不能写死。 */
 const POSSESSIVE = /[他她]的/;
@@ -176,6 +182,42 @@ export function checkTypeTerms({ appSrc, htmlSrc }) {
     const side = narKeys.find((k) => nar[k] === value) ? 'narrative'
       : (theKeys.find((k) => the[k] === value) ? 'theory' : null);
     if (side) bad(`G8 第 ${line} 行：${side} 词条「${value}」的值被原样写死在这里（应该用 T()/TW() 取）`);
+  }
+
+  /* G10 挂在静态 HTML 上（data-term / data-term-html）的词条不许带**编号**占位符。
+   *
+   * 为什么 G3–G5 不够：那三条只扫 `T().key` / `TW('key',…)` 的**调用点**。而静态 HTML
+   * 那条路的"调用点"是 `data-term="key"` 属性，填值是 `fillNamed` —— 它只认命名占位符
+   * （`{char}`），编号 `{0}` 没有地方传参 ⇒ 会在界面上原样印出 `{0}`，且没有任何报错。
+   * （v0.214：welcomeLead 等动态句子用编号、help*Body 等静态句子用命名，两类分流。） */
+  for (const k of htmlTerms) {
+    if (!(k in nar) || !(k in the)) continue;               // 归属问题已由 G6 报
+    if (/\{\d\}/.test(nar[k])) bad(`G10 静态词条「${k}」带编号占位符（{N}）—— data-term 那条路由 fillNamed 填，没有调用点传参会原样印出`);
+    if (/\{\d\}/.test(the[k])) bad(`G10 静态词条「${k}」theory 侧带编号占位符`);
+  }
+
+  /* G11 量词式术语（`charN`/`relN`/`eventN`）前面**不许再加数词或量词**（v0.214）。
+   *
+   * 为什么单列一条：这三条词条的值**自带量词** —— 叙事类 `charN='人'`（`44 人`），
+   * 理论类 `charN='个概念'`（`44 个概念`）。它们只该跟在**数字**后面。
+   * 一旦写进句子当成泛指名词用（「一个{charN}」「点任意一个{charN}」），
+   * 叙事类恰好还通（「一个人」），**理论类立刻变成病句**：「把一个**个概念**拉出来」。
+   *
+   * ⚠ 这类错**当时没有任何门禁会响**：占位符名字两侧一致（G2 过）、值都在（G3/G7 过）、
+   *   不是编号占位符（G10 过）—— 只有真把界面切成《刻意练习》才看得见。
+   *   ⇒ 泛指名词一律用 `charMany`（「人」/「概念」）。
+   * 判据故意收窄：只认"数词/量词 + 紧贴量词式术语"，不碰「44 ${T().charN}」这种
+   *   **调用点**（那在 app.js 的模板里，数字是调用点给的，本来就对）。 */
+  const QUANT_THEN_COUNTING = /([一二两三四五六七八九十百千万几每这那哪]|个|位|名|条|段|只|处|些)[\s\u3000]*\{(charN|relN|eventN)\}/;
+  for (const [side, tbl] of [['narrative', nar], ['theory', the]]) {
+    for (const k of Object.keys(tbl)) {
+      const m = QUANT_THEN_COUNTING.exec(String(tbl[k]));
+      if (m) {
+        bad(`G11 ${side} 词条「${k}」：量词式术语 {${m[2]}} 前面又加了「${m[1]}」——`
+          + `它在理论类是「个概念」这类自带量词的计数单位，只能跟在数字后；`
+          + `泛指名词请改用 {charMany}（叙事类「人」/ 理论类「概念」）。`);
+      }
+    }
   }
 
   /* G9 运行时才定的人称不许写死（**双向**：表里 / 表外）。

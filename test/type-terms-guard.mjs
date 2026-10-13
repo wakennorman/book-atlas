@@ -28,6 +28,24 @@ console.log('· 词条数：narrative %d / theory %d', s.nar, s.the);
 console.log('· index.html 标注的 data-term：%d 个词条', s.htmlTerms);
 
 const problems = checkTypeTerms({ appSrc, htmlSrc });
+
+/* ── G11 的判别力自证（v0.214）────────────────────────────────────────────
+ * 「跑得通、有输出」≠「有用」：判据得能在一个**已知有病的输入**上响、在一个
+ * **已知正确的输入**上不响。G11 咬的是"量词式术语被数词/量词修饰"——
+ * `一个{charN}` 在叙事类恰好还通（「一个人」），理论类却印出「一个**个概念**」。
+ * 这类错当时占位符名字两侧一致（G2 过）、值都在（G3/G7 过）、不是编号占位符
+ * （G10 过）⇒ 必须单独证明它咬得住，否则它只是"又多了一条不会响的判据"。 */
+const synth = (lost) => `const TERMS = {
+  narrative: { charN: '人', charMany: '人', x: '点任意一个${lost}' },
+  theory:    { charN: '个概念', charMany: '概念', x: '点任意一个${lost}' },
+};`;
+const g11 = (src) => checkTypeTerms({ appSrc: src, htmlSrc: '' }).filter((p) => p.includes('G11'));
+const g11Bad = g11(synth('{charN}'));
+const g11Good = g11(synth('{charMany}'));
+if (!g11Bad.length) { console.error('❌ G11 没有判别力：`一个{charN}`（理论类会印出「一个个概念」）它一条都不响'); process.exit(1); }
+if (g11Good.length) { console.error('❌ G11 误报：`一个{charMany}` 是正确写法，它却响了'); process.exit(1); }
+console.log('· G11 判别力自证：病句响 %d 条 / 正确写法 0 条', g11Bad.length);
+
 if (problems.length) {
   console.log(`\n❌ 术语层守卫：${problems.length} 处问题`);
   for (const p of problems) console.log('  · ' + p);
