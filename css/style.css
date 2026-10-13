@@ -247,6 +247,20 @@ main {
 .pathbar .combo { max-width: 170px; min-width: 0; }
 .arrow { color: var(--muted); }
 
+/* ---------- v0.215：未支持书型的出口页 ----------
+   诗歌 / 散文 / 工具书这类书没有"关系 + 依据事件"可画（见 app.js 的 renderUnsupportedBook）。
+   这时把图、章节面板、时间轴全部撤掉，只留右栏一页说明 —— 否则用户看到的是一张空图谱。
+   ⚠ 右栏也要解除"一屏封顶内滚"：那种书没有别的内容，让它自然展开就行。 */
+body[data-unsupported="1"] .graph-pane,
+body[data-unsupported="1"] .chapter-panel,
+body[data-unsupported="1"] .timeline-panel { display: none; }
+body[data-unsupported="1"] main { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 901px) {
+  body[data-unsupported="1"] .side { max-height: none; overflow: visible; }
+}
+.unsupported-note h3 { margin: 0 0 10px; font-size: 15px; }
+.unsupported-note p { margin: 0 0 10px; }
+
 /* ---------- 侧栏 ---------- */
 .side { display: flex; flex-direction: column; gap: 16px; }
 /* 桌面双栏：右栏最多一屏高、内部滚动。

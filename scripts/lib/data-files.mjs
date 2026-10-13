@@ -130,3 +130,34 @@ export const THEORY_TYPE = '理论类';
 export function isTheoryBook(book) {
   return !!book && !!book.meta && book.meta.type === THEORY_TYPE;
 }
+
+/**
+ * v0.215：**已支持**的书型白名单（前端会真的给它画图谱）。
+ *
+ * 为什么要有这份表：本书库的形态是"节点 + 有依据事件的关系 + 阶段 + 事件"
+ * （`scripts/validate.mjs` 的 error 级要求 relations / events 非空）。
+ * 诗歌、散文、工具书、设定集这类**给不出这个东西** —— 硬灌数据只会得到一张空图谱 +
+ * 满屏使用说明，那正是本项目最恨的"骗人的目录"同族病（没有目录的人会 grep，
+ * 一个骗人的目录让人信它）。
+ *
+ * ⇒ 这类书不是"做坏了"，是**明确不支持**：`meta.type` 声明成一个白名单外的值
+ *   （建议 `作品集`），前端就走出口页说清"为什么不做、什么书适合"，
+ *   而 `test/books-registry.mjs` 拦住"把它注册进 books.json"这条路。
+ *
+ * ⚠ 加一种书型 = 加一行白名单 **+** 前端真的能画（`js/app.js` 的术语表与视图都要认它）。
+ *   只改白名单不改前端，得到的是一张用错词的表 —— 比空图谱更难发现。
+ */
+export const SUPPORTED_TYPES = ['叙事类', '理论类'];
+/** 诗歌 / 散文 / 工具书这类"没有可供图谱化的关系"的书，用这个值显式声明不支持。 */
+export const WORK_COLLECTION_TYPE = '作品集';
+
+/**
+ * 这本书是不是**声明了**一个还不支持的书型？
+ *
+ * ⚠ 只看**显式声明**：`meta.type` 缺失/为空时不算（那是老数据，按叙事类走，
+ *   由 validate 提示补声明）—— 猜出来的类型会在某本书上悄悄判错（同 `isTheoryBook` 的教训）。
+ */
+export function isUnsupportedBookType(book) {
+  const t = book && book.meta && book.meta.type;
+  return typeof t === 'string' && t !== '' && !SUPPORTED_TYPES.includes(t);
+}

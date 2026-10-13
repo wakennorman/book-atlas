@@ -71,9 +71,12 @@ const write = (name, obj) => {
  *   · c2 缺 title/desc/fate                      → 3 条「角色字段缺」
  *   · meta.schemaVersion 缺失                    → 1 条
  *   · 关系 c1→c2 没有「定义关系的小事件」        → 1 条「关系没有定义事件」
- *   = 5 warning / 0 error。改夹具 ⇒ 这里的三处计数会红，不会静默失真。 */
+ *   = 5 warning / 0 error。改夹具 ⇒ 这里的三处计数会红，不会静默失真。
+ * ⚠ v0.215：夹具补上 `type: '叙事类'` —— 四本真书全部显式声明了书型，而 v0.215 起
+ *   「meta.type 缺失」是一条新的 warn（不做成 err：编辑器新建的书不写这个字段）。
+ *   夹具**要代表性**：它代表的是"一本正常的书"，不是"一本忘了声明书型的书"。 */
 const fixture = write('fixture.json', {
-  meta: { slug: 'fixture', title: '夹具书' },
+  meta: { slug: 'fixture', title: '夹具书', type: '叙事类' },
   factions: [{ key: 'wei', name: '魏' }],
   phases: [{ id: 'p1', name: '第一阶段' }],
   places: [],

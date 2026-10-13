@@ -37,7 +37,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listBooks } from '../scripts/lib/data-files.mjs';
+import { listBooks, isUnsupportedBookType } from '../scripts/lib/data-files.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = path.join(ROOT, 'data');
@@ -61,6 +61,21 @@ for (const b of books) {
 /* ③ slug 与 file 不许各写各的 */
 for (const b of books) {
   ok(b.file === `data/${b.slug}.json`, `books.json「${b.slug}」的 file 与 slug 一致`);
+}
+
+/* ④ v0.215：注册进来的书必须是**已支持**的书型（`meta.type` ∈ SUPPORTED_TYPES）。
+ *    为什么：诗歌 / 散文 / 工具书这类书给不出"关系 + 定义关系的事件"，
+ *    前端对它们走的是一页"为什么不做"的说明（app.js 的 renderUnsupportedBook）。
+ *    那道出口是**兜底**；真正的闸在这里 —— 谁把这类书注册进 books.json，
+ *    全网用户就会看到一个"点开只有一句话"的条目，而那看起来像网站坏了。
+ *    ⚠ 判据读 `data/<slug>.json` 里的 meta.type（不是 books.json —— 那边没这个字段）。 */
+for (const b of books) {
+  let meta = null;
+  try { meta = JSON.parse(fs.readFileSync(path.join(ROOT, b.file), 'utf8')).meta || null; } catch { /* ① 已报 */ }
+  if (!meta) continue;
+  ok(!isUnsupportedBookType({ meta }),
+    `books.json「${b.slug}」的书型「${meta.type || '(缺 meta.type)'}」是已支持的`
+    + `${isUnsupportedBookType({ meta }) ? ' —— 诗歌/散文/工具书请改成「作品集」并**不要**注册进 books.json（前端只给它一页"不做"的说明）' : ''}`);
 }
 
 /* ② 双向：listBooks() 的 slug 集合必须与 books.json 的 slug 集合相等 */

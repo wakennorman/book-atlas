@@ -7,12 +7,12 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6879 行、271 个顶层符号，68 个分区。
+ * 文件共 7024 行、275 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 9 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 12 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
@@ -22,7 +22,7 @@
  * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
  * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
  * | 11. 启动与数据加载 | `boot` | 2 |
- * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 11 |
+ * | 12. 页眉 / 图例 / 页脚 | `renderHeader` | 12 |
  * | 13. 下拉与搜索候选 | `comboSub` | 3 |
  * | 14. 节点大小、分类与排序 | `nodeDegree` | 6 |
  * | 15. 聚焦（1–2 跳） | `focusSet` | 1 |
@@ -631,7 +631,44 @@
     },
   };
   const isTheoryBook = () => !!(state.book && state.book.meta && state.book.meta.type === '理论类');
-  const T = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
+  /* v0.215：**未支持**的书型（诗歌 / 散文 / 工具书…）。判据与 `scripts/lib/data-files.mjs`
+   *   的 SUPPORTED_TYPES 一一对应 —— 那边是门禁用的唯一来源（books.json / validate 读它），
+   *   这边是前端用的那一份。两份必须一起改，否则"门禁放行、前端画不出来"或反过来。
+   *   （铁律 7：同一个定义抄多份 ⇒ 各改各的 ⇒ 漂移了静默出错。） */
+  const SUPPORTED_TYPES = ['叙事类', '理论类'];
+  const isUnsupportedBook = () => {
+    const t = state.book && state.book.meta && state.book.meta.type;
+    return typeof t === 'string' && t !== '' && !SUPPORTED_TYPES.includes(t);
+  };
+  /** 本书的 `meta.vocab` 覆盖表（v0.215）。没有覆盖时返回**同一个**空对象（身份比较即可判空，
+   *  免得在 `T()` 的热路径里每次分配一个新 `{}`）。 */
+  const NO_VOCAB = {};
+  const vocabOf = () => (state.book && state.book.meta && state.book.meta.vocab) || NO_VOCAB;
+  /* ⚠ 为什么要缓存：`T()` 在图渲染的热路径里被反复调（buildOption / 标签计算）。
+   *   每调一次 `Object.assign({}, 表, 覆盖)` 就是一次近百键的复制。
+   *   ⇒ 没有覆盖的书（现有四本全部）**原样返回基表**，零成本、零行为差异；
+   *     有覆盖的书按书记一份缓存。 */
+  let __termsCache = null;
+  const baseTerms = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
+  /**
+   * 取术语表 = 当前书型的基表 ∪ `meta.vocab` 的逐词覆盖。
+   *
+   * 为什么用"覆盖词条"而不是"加第三种书型"：`applyTypeTerms` 里
+   * `isTheoryBook() ? theoryText : snap[field]` 那个快照机制是**二元**的，
+   * 加第三侧要把它改成 N 元查表、守卫从"两侧对称"扩到"N 侧对称"。
+   * 而传记/史实/戏剧/议论文这类书**只差几个词**（结局→历史定论、事件→论据…），
+   * 合并一次就够，仓库里 ~100 个 `T()` / `TW()` 调用点全部自动跟随。
+   *
+   * ⚠ 覆盖的 key 必须是**已存在**的词条（拼错 = 静默无效，正是本仓最常见的病）
+   *   ⇒ `test/type-terms-guard.mjs` 的 G12/G13 守这一条。
+   */
+  const T = () => {
+    const v = vocabOf();
+    if (v === NO_VOCAB) return baseTerms();
+    if (__termsCache && __termsCache.book === state.book) return __termsCache.terms;
+    __termsCache = { book: state.book, terms: Object.assign({}, baseTerms(), v) };
+    return __termsCache.terms;
+  };
   /** 取术语：值里带 `{N}` 就按参数填，否则原样返回（见 TERMS 上方那段"两种条目"）。 */
   const TW = (key, ...args) => String(T()[key]).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? ''));
   /** 「X的一生」里的那个人称：叙事类看 `c.gender`（她 / 他），理论类整个换成名词（「概念」）。
@@ -811,7 +848,23 @@
   /* ══ 区域 6/68：阵营 / 颜色 / 分组 ══ */
 
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const genText = (g) => (g === 0 ? '前史' : `第 ${g} 代`);
+  /* v0.215：层级标签可以按书自定义（`meta.genLabels`）。
+   *
+   * 为什么：科普/自然博物这类书的"代际"其实是**分类层级**（界门纲目科属），
+   * 印成"第 1 代"是错的；而 `meta.groupMode='generation'` + 这些标签
+   * 就能直接把现成的「分组·横/纵」视图变成一棵分类树 —— 前端零新代码。
+   *
+   * 口径：`genLabels[g]` 直接对应 `generation = g`（generation 从 0 起）；
+   * 取不到就退化成「第 g+1 级」。没写 genLabels 的书逐字走原来的「前史 / 第 N 代」。
+   * ⚠ 本函数是**唯一**出口（图注、下拉副标、人物卡 meta、导出都走它）⇒ 改一处全跟随。 */
+  const genText = (g) => {
+    const labels = state.book && state.book.meta && state.book.meta.genLabels;
+    if (Array.isArray(labels) && labels.length) {
+      if (typeof labels[g] === 'string' && labels[g]) return labels[g];
+      return `第 ${g + 1} 级`;
+    }
+    return g === 0 ? '前史' : `第 ${g} 代`;
+  };
   const charName = (id) => state.byId.get(id)?.name || id;
 
   /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
@@ -1128,6 +1181,11 @@
     perf.fetchParse = Math.round(((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0));
     state.book = book;
     applyTypeTerms();              // v0.206：按书型刷一遍静态文案（只改措辞，见该函数注释）
+    /* v0.215：声明了**未支持**书型（诗歌 / 散文 / 工具书…）的书 ⇒ 只给一页说明，
+     *   不建图、不画时间轴与章节面板。硬画会得到一张空图谱 + 满屏使用说明 ——
+     *   那比"明确说不做"更坏（用户会以为是自己没操作对）。判据见 renderUnsupportedBook。 */
+    if (isUnsupportedBook()) { renderUnsupportedBook(); return; }
+    delete document.body.dataset.unsupported;
     state.byId = new Map(book.characters.map((c) => [c.id, c]));
     state.adj = new Map(book.characters.map((c) => [c.id, []]));
     for (const r of book.relations) {
@@ -1242,6 +1300,54 @@
     updateSearchPlaceholder();
   }
 
+  /** v0.215：**未支持书型**的出口页（诗歌 / 散文 / 工具书 / 设定集…）。
+   *
+   *  为什么要有它而不是"硬画一张图"：本书库的形态是
+   *  「节点 + 有依据事件的关系 + 阶段 + 事件」（`scripts/validate.mjs` 的 error 级要求
+   *  relations / events 非空）。诗歌这类书给不出后两样 —— 硬灌数据只会得到
+   *  **一张空图谱 + 满屏使用说明**，而这正是本项目最恨的"骗人的目录"同族病：
+   *  没有说明的人会自己 grep，一个骗人的说明让人信它。
+   *  ⇒ 明确说不做，并把"什么样的书适合"一并写清楚。
+   *
+   *  ⚠ 判据与 `scripts/lib/data-files.mjs` 的 `SUPPORTED_TYPES` 一一对应（那边是门禁用的
+   *    唯一来源：`test/books-registry.mjs` 会拦住"把这类书注册进 books.json"）。
+   *    这条路只是兜底 —— 正常不该有书走到这里。
+   *  ⚠ 它放在 `renderHeader` **之后**不是为了顺序，是因为分区目录（`区域 12/68`）的
+   *    起始符号是 `renderHeader`：标记后面紧跟的必须还是它，否则 `test/app-partitions-guard.mjs`
+   *    的 P3 判据会红（这个守卫存在的意义就是"目录不许骗人"）。 */
+  function renderUnsupportedBook() {
+    const b = state.book;
+    b.characters = b.characters || [];
+    b.relations = b.relations || [];
+    b.events = b.events || [];
+    b.places = b.places || [];
+    b.phases = b.phases || [];
+    b.factions = b.factions || [];
+    document.body.dataset.unsupported = '1';
+    state.byId = new Map();
+    state.adj = new Map();
+    state.pos = new Map();
+    state.bands = new Map();
+    state.maxDeg = 1;
+    for (const id of ['focus-bar', 'lock-bar']) { const el = document.getElementById(id); if (el) el.hidden = true; }
+    for (const id of ['path-a', 'path-b', 'search-input']) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (id !== 'search-input') el.value = '';
+      delete el.dataset.id;
+    }
+    const ph0 = document.getElementById('path-hint');
+    if (ph0) ph0.textContent = '';
+    renderHeader();
+    panel().innerHTML = `
+      <div class="unsupported-note">
+        <h3>这本书暂时不做成图谱</h3>
+        <p>《${esc(b.meta.title || b.meta.slug || '')}》的书型是<b>${esc(b.meta.type || '')}</b>。书脉的做法是：把一本书拆成<b>节点</b>（${esc(T().char)}）、<b>它们之间的${esc(T().rel)}</b>，并且每一段${esc(T().rel)}都要有<b>定义它的那件${esc(T().event)}</b>——所以图画得出来，也查得出依据。</p>
+        <p>诗歌、散文、工具书、设定集这类书，没有"谁和谁发生过什么"可画；硬做只会得到一张空图。所以这里直接告诉你<b>不做</b>，而不是给你一张看不懂的空图。</p>
+        <p class="hint">适合做成图谱的是：<b>小说 / 剧本 / 纪实 / 传记 / 历史</b>（节点是人，边是关系），以及<b>理论 / 科普 / 议论文 / 教材</b>（节点是概念，边是支撑或对立，事件是案例与论据）。</p>
+      </div>`;
+  }
+
   /* ---------------- 构建版本水印（v0.94） ----------------
  *
  * 为什么加：用户报的"点开某人画布空白"里，有一部分**复现不了** ——
@@ -1277,7 +1383,15 @@
 
   /* ---------------- 页脚（三本书统一四行：一句话 / 结构 / 数据 / 来源） ---------------- */
   // 代际跨度文案：0 与负数并入「前史」，正代际压缩成「第 1–N 代」
+  /* v0.215：写了 `meta.genLabels` 的书（科普的分类层级）不拼「第 X–Y 代」——
+     那样会把「界 → 门 → 纲」印成「第 1–3 代」。直接列层级名，太长就首尾省略。 */
   function genSpanText(gens) {
+    const labels = state.book && state.book.meta && state.book.meta.genLabels;
+    if (Array.isArray(labels) && labels.length) {
+      const named = gens.map((g) => genText(g)).filter((x) => x && x !== '—');
+      if (named.length > 6) return `${named[0]} → … → ${named[named.length - 1]}`;
+      return named.join(' → ') || '—';
+    }
     const out = [];
     if (gens.some((g) => g <= 0)) out.push('前史');
     const pos = gens.filter((g) => g > 0);
@@ -1366,12 +1480,26 @@
    * ⚠ 为什么不在这里再抄一份叙事类文案：那就是"同一个定义抄第二份"（铁律 7）——
    *   HTML 改了、这里没改，切换书型时就会把**旧文案**写回去，而且没有任何东西会报错。 */
   const TYPE_TERM_SNAP = new Map();
-  /** 按书型写某个属性：叙事类 ⇒ 写回 `index.html` 的原样值；理论类 ⇒ 写 `theoryText`。 */
-  function setTyped(el, field, theoryText) {
+  /**
+   * 按书型写某个属性。
+   *   · 理论类 ⇒ 写 `theoryText`；
+   *   · 叙事类 ⇒ 写回 `index.html` 的原样值（快照）。
+   *   · `raw` 传**未填占位符**的词条原值时（v0.215）：先用合并后的词表、再用基线词表各填
+   *     一遍，两者不同 ⇒ 本书用 `meta.vocab` 改过口，这句静态文案的"原样"就已经不是本书的
+   *     说法 ⇒ 用合并后的那一份，**不写回快照**。
+   *     （否则人物卡写「历史定论」而「怎么用」还写「结局」—— v0.213「图注不能说谎」同族病。）
+   *   ⚠ 没有 `meta.vocab` 的书：两边填出来逐字相同 ⇒ 走原来的分支，行为零变化
+   *     （`test/node-drag.mjs` / `test/help-terms.mjs` 断言叙事类与静态 HTML 逐字相等，就靠这条）。
+   */
+  function setTyped(el, field, theoryText, raw) {
     if (!el) return;
     let snap = TYPE_TERM_SNAP.get(el);
     if (!snap) { snap = {}; TYPE_TERM_SNAP.set(el, snap); }
     if (!(field in snap)) snap[field] = el[field];   // 只存第一次 —— 那才是 HTML 原样
+    if (raw !== undefined) {
+      const now = fillNamed(raw, T());
+      if (now !== fillNamed(raw, baseTerms())) { el[field] = now; return; }
+    }
     el[field] = isTheoryBook() ? theoryText : snap[field];
   }
   /** 显示 / 隐藏一个控件（**两个方向都要写**，否则从理论类切回来它不会回来）。
@@ -1436,14 +1564,22 @@
      * 都把**旧文案**盖回去（已经点了节点再切书才会看见，平时被欢迎面板遮着）。 */
     const g = document.getElementById('graph');
     if (g) g.setAttribute('aria-label', `${t.char}${t.rel}网络图（加载中）`);
-    /* ── 工具栏：能 1:1 换词的换词，换不出人话的藏掉 ── */
+    /* ── 工具栏：能 1:1 换词的换词，换不出人话的藏掉 ──
+     * v0.215：这些字符串改成 `fillNamed` 的模板（原来是把 `t.xxx` 直接拼进去）。
+     *   为什么：拼进去的只在理论类那条路生效，叙事类永远写回静态 HTML 原样 ⇒
+     *   本书用 meta.vocab 改口时， tooltip 还是旧词（"说明不能说谎"）。
+     *   改成模板 + 把原值当 `raw` 传进 setTyped，两条路就都跟着走了。
+     *   ⚠ 模板必须与原来拼出来的句子**逐字相同** —— 现有四本书没有 vocab，
+     *     两侧填出来一致才走原分支（test/node-drag.mjs / test/help-terms.mjs 守着）。 */
     const th = isTheoryBook();
-    setTyped($('#label-btn'), 'title', `显示全部名字会重叠，默认只显示主要${t.char}`);
+    setTyped($('#label-btn'), 'title', fillNamed('显示全部名字会重叠，默认只显示主要{char}', t), '显示全部名字会重叠，默认只显示主要{char}');
     const size = $('#size-filter');
     if (size) {
-      setTyped(size, 'title', `${t.char}太多看不清时，只显示${t.rel}较多的${t.char}（放大后名字会越来越多）`);
-      const want = [`${t.char}数：全部`, `${t.char}数：中等（前 200）`, `${t.char}数：主要（前 60）`];
-      for (let i = 0; i < size.options.length && i < want.length; i++) setTyped(size.options[i], 'textContent', want[i]);
+      setTyped(size, 'title',
+        fillNamed('{char}太多看不清时，只显示{rel}较多的{char}（放大后名字会越来越多）', t),
+        '{char}太多看不清时，只显示{rel}较多的{char}（放大后名字会越来越多）');
+      const want = ['{char}数：全部', '{char}数：中等（前 200）', '{char}数：主要（前 60）'];
+      for (let i = 0; i < size.options.length && i < want.length; i++) setTyped(size.options[i], 'textContent', fillNamed(want[i], t), want[i]);
     }
     /* ⚠⚠ v0.208：这里原来设过「代际·横 / 代际·纵」，**是死代码**：
      *   `syncViewButtons()` 按 `state.groupMode`（有代际按代际、否则按阵营）写同一个按钮，
@@ -1451,16 +1587,16 @@
      *   而且**判据本来就不该是书型** —— 理论类里 `meta.groupMode = 'faction'`，
      *   按钮该说「分组·横」，说成「层次·横」是错的（它压根不按层次分组）。
      *   ⇒ 措辞归 `syncViewButtons` 一处管，这里删掉。 */
-    setTyped($('#mentioned-btn'), 'title', t.mentionedTitle);
-    setTyped($('#minor-btn'), 'title', t.minorTitle);
-    setTyped($('#edge-filter-btn'), 'title', t.edgeFilterTitle);
-    setTyped($('#time-btn'), 'title', t.timeTitle);
+    setTyped($('#mentioned-btn'), 'title', fillNamed(t.mentionedTitle, t), t.mentionedTitle);
+    setTyped($('#minor-btn'), 'title', fillNamed(t.minorTitle, t), t.minorTitle);
+    setTyped($('#edge-filter-btn'), 'title', fillNamed(t.edgeFilterTitle, t), t.edgeFilterTitle);
+    setTyped($('#time-btn'), 'title', fillNamed(t.timeTitle, t), t.timeTitle);
     /* 提及 / 次要 两个开关的**当前态**文案。`revealChar` / `syncMentionBtn` / `syncMinorBtn`
      * 三处也写同一个按钮 —— 它们统一用 `T().char`，所以这里写的是"隐藏态"的初值就够了
      * （v0.208 之前它们写死「人物」，点一下按钮就把术语层那一句改回去了）。 */
-    setTyped($('#mentioned-btn'), 'textContent', `提及${t.char}：隐藏`);
-    setTyped($('#minor-btn'), 'textContent', `次要${t.char}：隐藏`);
-    setTyped($('#edge-filter-btn'), 'textContent', `${t.rel}：全部`);
+    setTyped($('#mentioned-btn'), 'textContent', fillNamed('提及{char}：隐藏', t), '提及{char}：隐藏');
+    setTyped($('#minor-btn'), 'textContent', fillNamed('次要{char}：隐藏', t), '次要{char}：隐藏');
+    setTyped($('#edge-filter-btn'), 'textContent', fillNamed('{rel}：全部', t), '{rel}：全部');
     /* ⚠ v0.214：这里原来还有两行手写文案 —— 时间轴标题 `重大${t.event}轴` 与边过滤面板
      *   底部那句说明。它们对应的元素已挂上 `data-term-html="axisTitle"` /
      *   `data-term-html="edgeFilterNote"`，由下面那个循环统一填 ⇒ **两处都删掉**。
@@ -1507,11 +1643,11 @@
      *   ⚠ 走这条路的词条**不许带编号占位符**（`{0}` 没有调用点传参会原样印出）⇒ G10。 */
     document.querySelectorAll('[data-term]').forEach((el) => {
       const v = t[el.dataset.term];
-      if (typeof v === 'string') setTyped(el, 'textContent', fillNamed(v, t));
+      if (typeof v === 'string') setTyped(el, 'textContent', fillNamed(v, t), v);
     });
     document.querySelectorAll('[data-term-html]').forEach((el) => {
       const v = t[el.dataset.termHtml];
-      if (typeof v === 'string') setTyped(el, 'innerHTML', fillNamed(v, t));
+      if (typeof v === 'string') setTyped(el, 'innerHTML', fillNamed(v, t), v);
     });
   }
 
@@ -6811,6 +6947,15 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     labelCount: () => (state.chart ? state.chart.getOption().series[0].data.filter((d) => d.label && d.label.show).length : 0),
     goChapter: (n) => goChapter(n),
     chapterDigest: (n) => chapterDigest(n),
+    /* v0.215：术语合并规则的可测出口（`T()` = 书型基表 ∪ `meta.vocab`）。
+     *   为什么暴露它：这个词表既是文案的唯一来源、又没有任何单测能摸到 ——
+     *   合并写错（覆盖没生效 / 覆盖污染了别的书）在界面上只是几个词不像，
+     *   不会崩、也不会有旧判据响（G1–G11 全过）。供 test/vocab.mjs 直接断言。 */
+    resolveTerms: () => Object.assign({}, T()),
+    /** v0.215：层级标签（图注/下拉/人物卡共用同一出口）—— 同上，供 test/vocab.mjs 对拍。 */
+    genText: (g) => genText(g),
+    /** v0.215：这本书是不是走到了"未支持书型"的出口页（JS 侧判据）。 */
+    unsupported: () => isUnsupportedBook(),
     asOf: () => asOf(),
     setTimeTravel: (on, ch) => {
       state.timeTravel = !!on;

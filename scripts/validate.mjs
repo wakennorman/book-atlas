@@ -45,7 +45,7 @@ import { checkKin, KIN, KIN_KEYS } from './kin.mjs';
  * 收养写法），validate 会静默用旧规则判成环 —— 正是 v0.110 出过的那个事故。 */
 import { isParentChild } from './kin-terms.mjs';
 /* 书型判定（v0.206）—— 单一来源，见 lib/data-files.mjs 的注释。 */
-import { isTheoryBook } from './lib/data-files.mjs';
+import { isTheoryBook, isUnsupportedBookType, SUPPORTED_TYPES } from './lib/data-files.mjs';
 
 const STYLES = new Set(['solid', 'dashed', 'dotted']);
 let errors = 0, warns = 0;
@@ -126,6 +126,31 @@ function validate(file, opts = {}) {
 
   req(book.meta, 'slug', 'meta');
   req(book.meta, 'title', 'meta');
+  /* v0.215：书型应该**显式声明**；声明了而不在白名单里的则是"本书做不了"（error）。
+   * ⚠ 缺失只**提示**不报错：编辑器新建的书（`js/editor.js` 不写 meta.type）与所有
+   *   2026-09 之前的老数据都没有它，而缺省走叙事类是**长期行为**（isTheoryBook 一直
+   *   这么判）—— 把它变成 error 等于让"自己整理一本"这个已发布功能在校验这一步就红。
+   *   猜出来的类型会在某本书上悄悄判错（v0.206 的教训），所以这里提示补声明。
+   *   白名单外（如「作品集」＝诗歌/散文/工具书）：不是数据写错，是**这本书本书库做不了** ——
+   *     它给不出"关系 + 定义关系的事件"，硬灌只会得到一张空图谱。 */
+  if (!book.meta.type) {
+    warn('meta.type 缺失 —— 书型最好显式声明（叙事类 | 理论类）。缺省按叙事类走；'
+      + '诗歌/散文/工具书这类没有可供图谱化的关系，写「作品集」', 'meta.type 缺失');
+  } else if (isUnsupportedBookType(book)) {
+    err(`meta.type「${book.meta.type}」暂不支持 —— 本书库只做「${SUPPORTED_TYPES.join(' / ')}」`
+      + '（节点 + 有依据事件的关系 + 阶段 + 事件）。诗歌/散文/工具书/设定集给不出后两样，'
+      + '做了只会得到一张空图谱 ⇒ 请改用「作品集」，或先扩 scripts/lib/data-files.mjs 的'
+      + ' SUPPORTED_TYPES 并给前端补上对应的术语与视图。');
+    /* 就停在这里：下面的 characters/relations/events 检查对这种书**每一条都会红**
+       （没有关系可画正是它的定义），刷成一屏假线索只会把上面那条真正的决定埋掉。
+       ⚠ 收尾照抄正常路径的三件事（warning 汇总 / 跨书累计 / 明说停了）——
+         少任何一件都会变成"静默少检查一本书"（v0.129 那条病）。 */
+    flushWarnings(warnings, { detail: opts.detail ?? DETAIL });
+    errorsAll += errors;
+    warnsAll += warns;
+    console.log(`  ⛔ 书型「${book.meta.type}」不在已支持白名单里 —— 后续检查全部跳过（对这种书全是噪声）`);
+    return;
+  }
   /* ---------- v0.206：理论类书型 ----------
    * `meta.type` 早就存在（现有三本都是「叙事类」），前端也只在一处用过它（拆书素材）。
    * 理论类书籍的节点是**概念/术语**，不是人物 ⇒ 两项检查对它不成立：

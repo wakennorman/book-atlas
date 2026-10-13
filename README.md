@@ -250,7 +250,9 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 
 ```jsonc
 {
-  "meta":       { "slug": "", "title": "", "author": "", "chapters": 20, "schemaVersion": 2, "groupMode": "", "prophecy": "", "prophecySrc": "", "note": "", "license": "CC BY-SA 4.0", "sources": [] },
+  "meta":       { "slug": "", "title": "", "author": "", "type": "叙事类|理论类|作品集", "chapters": 20, "schemaVersion": 2, "groupMode": "",
+                  "vocab": { }, "genLabels": [ ],
+                  "prophecy": "", "prophecySrc": "", "note": "", "license": "CC BY-SA 4.0", "sources": [] },
   "factions":   [{ "key": "", "name": "", "color": "#hex" }],
   "characters": [{ "id": "pinyin-kebab", "name": "", "aliases": [], "altNames": [], "parents": [],
                    "generation": 1, "gender": "m|f",
@@ -265,6 +267,9 @@ node scripts/wholebook.mjs --text book.txt --title X --slug x --only 31-120 --jo
 ```
 
 要点：
+- **`meta.type` 决定这套数据怎么被讲**：叙事类（人物 / 关系 / 事件 / 结局）｜理论类（概念 / 关联 / 案例 / 全书定位）｜**作品集＝本书不做图谱**（诗歌 / 散文 / 工具书：给不出"关系 + 定义关系的事件"，硬做只会得到一张空图；这类书写 `作品集` 但**别登记进 `books.json`**——`test/books-registry.mjs` 会拦）
+- **`meta.vocab` 逐词改口**（同一个书型里有几个词不叫这个名时用，别去动术语表）：`{ "fate": "历史定论", "event": "战事" }`。只写**已存在的词条 key**（守卫 G12/G13 会咬）；详见 [`docs/新书处理规程.md`](docs/新书处理规程.md) §7.7
+- **`meta.genLabels` 按书写层级名**（科普/自然博物的分类树）：`["界","门","纲","目","科","属"]`，配合 `groupMode: "generation"`，「分组·横/纵」就是分类树视图
 - `data/books.json` 里每本书可以带 `links: [{ label, url }]` —— 图谱页书名旁会显示（已配：微信读书 / 豆瓣 / 维基百科）；没有链接的书不受影响
 - `style`：`solid`＝亲缘/同盟；`dashed`＝对立/伤害；`dotted`＝情人/过去/间接
 - **`fromCh` / `toCh`（可选）＝关系的时间区间**（`toCh` 独占：第 `toCh` 章起不再存在）：同一对人如果关系变了（同盟→反目、主从→仇敌），**拆成多条**并各给区间——「时间旅行」会按章只画当时那一段；同一条关系的多条依据事件不用拆（写同一条里即可）。`node scripts/archive/_patch-relation-periods.mjs` 可以按"关系名+线型"自动分段（干跑默认，`--write` 落盘）

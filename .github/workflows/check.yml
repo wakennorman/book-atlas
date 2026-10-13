@@ -117,7 +117,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-ui-notes.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/lib/ui-notes.mjs scripts/add-app-partitions.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
+                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/vocab.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -635,6 +635,24 @@ jobs:
         #     量词式术语被当泛指名词用的病句（v0.214 施工中真出现过）；
         #   · 说明里点名的控件（底部「两人关系」、轴标题）必须与界面上真实标签一致。
         run: node test/help-terms.mjs
+
+      - name: 按书覆盖词条 + 出口页（无头 Edge）
+        # v0.215 新增。回答的问题：「除了叙事类 / 理论类，诗歌、散文、议论文、科普这些
+        # 要不要再做一套模板？」——结论是不用：只差几个词的书（传记的「结局→历史定论」、
+        # 议论文的「事件→论据」、科普的层级「界/门/纲」）走 `meta.vocab` 逐词覆盖；
+        # 而诗歌 / 散文 / 工具书**没有可图谱化的关系** ⇒ 前端给一页"为什么不做"，不给空图。
+        #
+        # ⚠ 本测试**不往 data/ 里放演示书**：它起一个本地服务，在返回图包时给 meta
+        #   补上 vocab / genLabels / type，浏览器走的是和真书一样的加载路径
+        #   （fetch → loadBook → applyTypeTerms → 渲染）——仓库里一个字都不多。
+        # 断言的是**渲染结果**，不是配置项：
+        #   · 人物卡与「怎么用」⑬（**静态 HTML** 那条路）都换成覆盖后的词
+        #     ——只改前者就是 v0.213「图注不能说谎」同族；
+        #   · 没被覆盖的词保持基表、换本书就回基表（覆盖不许黏住、不许外溢）；
+        #   · genLabels 让图注/页脚印出层级名，越界退化成「第 N 级」；
+        #   · 「作品集」只给一页说明，图区与时间轴撤掉、没有建图；
+        #   · **切回支持的书型要恢复**（否则人被永久卡在空页里）。
+        run: node test/vocab.mjs
 
       - name: 布局可复现 + 视野记忆（无头 Edge）
         # v93 新增。「自由」视图改用固定种子 + 固定轮数的确定性力导向之后，

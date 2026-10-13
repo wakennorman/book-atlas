@@ -49,7 +49,7 @@ export const PROFILE_PREFIXES = [
   'ba-ai-', 'ba-anno-', 'ba-band-', 'ba-br-', 'ba-bv-', 'ba-cur-',
   'ba-det-', 'ba-ed-', 'ba-fill-', 'ba-fs-', 'ba-hist-', 'ba-lock-',
   'ba-parity-', 'ba-place-', 'ba-pv-', 'ba-race-', 'ba-rel-', 'ba-relax3-',
-  'ba-roam-', 'ba-scale-', 'ba-smoke-', 'ba-tip-', 'ba-tut-', 'ba-vm-',
+  'ba-roam-', 'ba-scale-', 'ba-smoke-', 'ba-tip-', 'ba-tut-', 'ba-vm-', 'ba-vocab-',
   /* ── 只开个空目录当"假仓库根/临时目录"的台账守卫：体积可忽略，
    *    但它们**同样**在 Temp 下开 `ba-*` ⇒ 一并收进白名单，免得下次又有人只补一半。 ── */
   'ba-actors-guard-', 'ba-anl-', 'ba-arc-', 'ba-cc-', 'ba-dupnames-', 'ba-firstch-',
@@ -59,7 +59,10 @@ export const PROFILE_PREFIXES = [
    *   它们都是**立了本文件之后**新开的 Temp 目录，白名单又漂了一次（v0.192 那个病复发）。
    *   为什么当时没红：CI 只 push 到 `main` 触发，而这个仓库日常在 `master` 上开发，
    *   本机又只跑单条命令 ⇒ 「守卫在、但从没被整门禁跑过」。
-   *   ⇒ 新增 Temp 目录的脚本，先跑一遍 `node test/profile-prefix-guard.mjs` 再提交。 */
+   *   ⇒ 新增 Temp 目录的脚本，先跑一遍 `node test/profile-prefix-guard.mjs` 再提交。
+   * ⚠ v0.215 又补一条（`ba-vocab-` = `test/vocab.mjs`）：这一回它**当场就红了** ——
+   *   那道守卫终于被写进了本机的全量门禁流程（`tools/gate.mjs` 逐条跑 check.yml）。
+   *   这条注释留着不是为了记账，是提醒：**新增测试后先跑门禁**，别等 push。 */
 ]
 
 /**

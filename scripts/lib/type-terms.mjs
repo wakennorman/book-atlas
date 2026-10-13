@@ -293,3 +293,71 @@ export function summarizeTypeTerms({ appSrc, htmlSrc }) {
     htmlTerms: new Set(htmlTerms).size,
   };
 }
+
+/* ══ v0.215：按书覆盖词条（`meta.vocab`）与层级标签（`meta.genLabels`）的守卫 ══
+ *
+ * 为什么单列一组判据：这两个字段让"同一书型、个别词改口"成为可能 ——
+ * 传记把「结局」说成「历史定论」、议论文把「事件」说成「论据」、科普把层级
+ * 印成「界 / 门 / 纲」而不是「第 1 代」。
+ *
+ * 而它们的失效方式**全都是静默的**（这正是本仓最恨的那一族）：
+ *   · key 拼错 ⇒ `Object.assign` 覆盖了个不存在的键 ⇒ 界面看着完全正常，只是那句话没改口；
+ *   · 覆盖值少了占位符 ⇒ `TW('lifeH', 她, '，3/6')` 传进去的人称与计数**整个消失**，
+ *     而占位符名字两侧一致的 G2 查的是"表自己跟自己"，压根不看数据里这一份；
+ *   · `genLabels` 写成空数组 / 非字符串 ⇒ 图注印出错东西或干脆不印。
+ * G12–G15 就是把这三类钉住。
+ */
+
+/** 占位符签名（编号 + 命名都算），与 G2 同一套口径。 */
+const phOfAny = (v) => [...new Set([...String(v).matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort().join(',');
+
+/**
+ * @param {{appSrc:string, books:object[]}} io `books` = data/*.json 解析后的对象数组
+ * @returns {string[]} 问题清单（空数组 = 通过）
+ */
+export function checkVocabOverrides({ appSrc, books }) {
+  const problems = [];
+  const got = extractTerms(appSrc);
+  if (!got.terms) return [got.error];
+  const nar = got.terms.narrative || {};
+  const the = got.terms.theory || {};
+  for (const book of books || []) {
+    const slug = (book && book.meta && book.meta.slug) || '(未知 slug)';
+    const meta = (book && book.meta) || {};
+    const v = meta.vocab || {};
+
+    for (const k of Object.keys(v)) {
+      const val = v[k];
+      if (typeof val !== 'string' || val === '') {
+        problems.push(`G12 《${slug}》的 meta.vocab「${k}」不是非空字符串 —— 覆盖成空串会让界面上直接少一个词，而且没有任何东西会报错`);
+        continue;
+      }
+      if (!(k in nar) || !(k in the)) {
+        problems.push(`G12 《${slug}》的 meta.vocab「${k}」不是术语表里的词条（两侧都不存在）`
+          + ' —— 覆盖一个不存在的 key 是**静默无效**的：Object.assign 照做，界面看着完全正常，只是那句话没改口');
+        continue;
+      }
+      if (phOfAny(val) !== phOfAny(nar[k])) {
+        problems.push(`G13 《${slug}》的 meta.vocab「${k}」的占位符与词条不一致：`
+          + `词条 {${phOfAny(nar[k])}} / 覆盖 {${phOfAny(val)}} —— `
+          + '少一个占位符，调用点 TW() 传进去的那半句就整个消失'
+          + '（例：「{0}的一生」被覆盖成「生平」后，人称「她」与计数「，3/6」都不见了）');
+      }
+    }
+
+    const gl = meta.genLabels;
+    if (gl !== undefined) {
+      if (!Array.isArray(gl) || !gl.length || gl.some((x) => typeof x !== 'string' || !x.trim())) {
+        problems.push(`G14 《${slug}》的 meta.genLabels 必须是非空字符串数组 —— 它会印在层级图注、`
+          + '下拉副标、人物卡 meta 与页脚四处，印错了整张分类树都读错');
+      } else if (meta.groupMode && meta.groupMode !== 'generation') {
+        /* 不是数据错，是"写了不生效"：图注/分组那一族只在按代际分组时出现。
+         * ⚠ 页脚那一处（genSpanText）不看 groupMode，所以不是全不生效 —— 措辞要说准。 */
+        problems.push(`G15 《${slug}》写了 meta.genLabels，但 meta.groupMode 是「${meta.groupMode}」——`
+          + '层级图注 / 下拉副标 / 人物卡只在按代际分组时才会用这些标签，写在按阵营分组的书上大半不生效'
+          + '（只有页脚的跨度文案会跟着变）。要么把 groupMode 改成 generation，要么删掉 genLabels');
+      }
+    }
+  }
+  return problems;
+}
