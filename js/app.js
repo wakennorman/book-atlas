@@ -7,12 +7,12 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6255 行、265 个顶层符号，68 个分区。
+ * 文件共 6655 行、267 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 7 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 9 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
@@ -86,6 +86,9 @@
  *   ⇒ 一个会骗人的目录比没有目录更糟。改用**符号名**定位：
  *   在编辑器里搜 `function <符号名>` 就是这一区的开头。
  */
+
+
+
 
 
 
@@ -443,8 +446,10 @@
        *   「概念」）⇒ 必须留 `{0}`，**不能写成固定值**。
        *   v0.208 一度写成 `'他的一生（按章）'` ⇒ 女性角色的 EPUB 小节标题变成「他的一生」，
        *   而当时**所有门禁全绿**（术语表两侧对称、引用都在、`data-term` 都在）。
-       *   现在由守卫 G9 咬这一类（`scripts/lib/type-terms.mjs`）。 */
-      epubLifeH: '{0}的一生（按章）',
+       *   现在由守卫 G9 咬这一类（`scripts/lib/type-terms.mjs`）。
+       * ⚠ `{1}` = 计数后缀：网页端人物卡传 `'，3/6'`（吃剧透保护时要看得见"显示了几条"），
+       *   EPUB 传空串 ⇒ 仍是「她的一生（按章）」。两处**共用这一条**，不再各写一份。 */
+      lifeH: '{0}的一生（按章{1}）',
       epubSpoilNote: '这份文件<b>跟随导出时的阅读进度</b>——之后的剧情没写进来。读到后面想更新，回网页版/小程序再导出一次即可。',
       aiNoSpoil: '不要提任何更后面的情节，也不要用"后来 / 最终 / 结局 / 最后 / 真相是"这类预示；',
       epubCharsH: '人物志（按出场章排序）',
@@ -495,7 +500,7 @@
       exportNote: '（导出时：剧透保护开到第 {0} 章，之后的概念与案例没有写进来）',
       epubGraphH: '关联总图',
       epubEventsH: '重大案例轴',
-      epubLifeH: '{0}沿革（按章）',      // `{0}` = 名词（传 `T().char` ⇒「概念沿革（按章）」）
+      lifeH: '{0}沿革（按章{1}）',       // `{0}` = 名词（传 `T().char` ⇒「概念沿革」）；`{1}` = 计数后缀
       epubSpoilNote: '这份文件<b>跟随导出时的阅读进度</b>——之后的内容没写进来。读到后面想更新，回网页版/小程序再导出一次即可。',
       aiNoSpoil: '不要提任何更后面的内容，也不要用"后来 / 最终 / 定位 / 最后 / 真相是"这类预示；',
       epubCharsH: '概念志（按首次提出章排序）',
@@ -525,6 +530,13 @@
   const T = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
   /** 取术语：值里带 `{N}` 就按参数填，否则原样返回（见 TERMS 上方那段"两种条目"）。 */
   const TW = (key, ...args) => String(T()[key]).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? ''));
+  /** 「X的一生」里的那个人称：叙事类看 `c.gender`（她 / 他），理论类整个换成名词（「概念」）。
+   *  ⚠ **只此一处** —— 网页端人物卡与 EPUB 小节标题共用它（同一个词条 `lifeH`）。
+   *    v0.208 的教训：网页端那处**没走术语层**，自己把"性别三元"直接拼进了模板字符串
+   *    ⇒ 理论类里点开一个概念，小节标题写着「他的一生（按章）」—— 概念既没有一生、也没有性别，
+   *    而且 `gender` 全缺 ⇒ 永远取到「他」。当时 G1–G9 一条都不响（表内部完全自洽、
+   *    `T()`/`TW()` 的引用也都合法）⇒ G9 因此补了"**表外**也不许自己拼人称"那一半。 */
+  const lifeWhoOf = (c) => (isTheoryBook() ? T().char : (c.gender === 'f' ? '她' : '他'));
 
   /* ══ 区域 3/68：文案包预取（首屏只下图包，文案空闲时再取） ══ */
 
@@ -4237,8 +4249,10 @@
     const rels = unlocked.filter(passEdgeFilter).sort((a, b) => (a.type > b.type ? 1 : -1));
     const lockedCount = allRels.length - unlocked.length;
     const filteredCount = unlocked.length - rels.length;
-    // 「X的一生」：按章排的事件（含地点与引文），吃剧透保护；标题按性别人称
-    const lifeName = `${c.gender === 'f' ? '她' : '他'}的一生`;
+    // 「X的一生」：按章排的事件（含地点与引文），吃剧透保护。
+    // ⚠ 标题走术语层 `lifeH`（人称由 `lifeWhoOf()` 在运行时定）：理论类说「他的一生」是
+    //   在讲一件不成立的事 —— 概念没有一生、也没有性别。v0.208 漏了这一处（只修了 EPUB）。
+    const lifeWho = lifeWhoOf(c);
     const lifeEvs = state.book.events.filter((e) => (e.chars || []).includes(c.id)).sort((a, b) => (a.ch || 0) - (b.ch || 0));
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
     const lifeItems = lifeShown.map((e) => `
@@ -4247,7 +4261,7 @@
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
         </li>`);
     const lifeHtml = lifeEvs.length ? `
-      <h3 style="margin-top:12px;font-size:14px">${lifeName}（按章，${lifeShown.length}/${lifeEvs.length}）</h3>
+      <h3 style="margin-top:12px;font-size:14px">${TW('lifeH', lifeWho, `，${lifeShown.length}/${lifeEvs.length}`)}</h3>
       ${foldSection({ key: `life:${c.id}`, n: 8, unit: '个', cls: 'life-list', items: lifeItems })}
       ${lifeEvs.length > lifeShown.length ? `<p class="hint">🔒 还有 ${lifeEvs.length - lifeShown.length} 个${T().event}在你读到的进度之后</p>` : ''}` : '';
     const relItems = rels.map((r) => {
@@ -5582,9 +5596,10 @@ ${body}
         .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${esc(e.summary)}</li>`)
         .join('');
       /* EPUB 人物小节标题里的那个人称：叙事类按性别（她/他），理论类用名词（概念）。
-       * ⚠ 这不是"两套渲染分支"—— 换的只有 `{0}` 这一个词（`TERMS.epubLifeH`）。
-       *   写成 `T().epubLifeH` 取固定值就会**丢掉性别**（v0.208 的真事故，见 G9）。 */
-      const lifeWho = isTheoryBook() ? T().char : (c.gender === 'f' ? '她' : '他');
+       * ⚠ 这不是"两套渲染分支"—— 换的只有 `{0}` 这一个词（`TERMS.lifeH`）。
+       *   写成 `T().lifeH` 取固定值就会**丢掉性别**（v0.208 的真事故，见 G9）。
+       *   人称由 `lifeWhoOf()` 统一给（网页端人物卡用的是同一个）。 */
+      const lifeWho = lifeWhoOf(c);
       return `<section class="char">
   <h2>${esc(c.name)}</h2>
   <p class="meta">${esc([factionTextOf(c), isTheoryBook() ? '' : (c.gender === 'f' ? '女' : '男'), c.title, `第 ${charCh(c)} 章${T().charVerb}`].filter(Boolean).join(' · '))}</p>
@@ -5592,7 +5607,7 @@ ${body}
   ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
   ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
   <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
-  ${life ? `<h3>${TW('epubLifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
+  ${life ? `<h3>${TW('lifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
   ${relHtml ? `<h3>${T().relsTitle}</h3><ul>${relHtml}</ul>` : ''}
 </section>`;
     }).join('\n');

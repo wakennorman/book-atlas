@@ -132,8 +132,11 @@ const PARTS = [
   { anchor: 'bindUI', title: 'UI 绑定总入口（v0.197 由 503 行拆成上面 8 个）' },
 ];
 
-/** 找出所有顶层符号的行号。 */
-function topLevelSymbols(lines) {
+/** 找出所有顶层符号的行号。
+ *  ⚠ v0.209 起**导出**给 `test/app-partitions-guard.mjs` —— 守卫要拿它去核目录里
+ *    自称的「M 个顶层符号」。**只此一份**：抄一份的话，改了这边忘了那边，
+ *    守卫就会拿旧口径去对新文件（同 `PARTS` 那条教训）。 */
+export function topLevelSymbols(lines) {
   const out = [];
   lines.forEach((l, i) => {
     const m = /^ {2}(?:async )?function (\w+)|^ {2}const (\w+) = (?:function|\()/.exec(l);
@@ -147,24 +150,38 @@ function topLevelSymbols(lines) {
  *   而第一版的顶层代码一 import 就开始读 app.js / 跑插入逻辑 ⇒ 守卫那边直接跑了整个脚本。
  *   ⇒ 包进 main() 并加下面的直接运行判断。
  */
-function main() {
-  const src = fs.readFileSync(APP, 'utf8');
+/** 纯函数：把 `src` 变成「分区目录已生成」的版本。**不做 I/O、不 `process.exit`。**
+ *  @param {string} src  `js/app.js` 的原文
+ *  @param {{force?:boolean}} [opt]  `force` = 无视「已打过分区」，重生成目录
+ *  @returns {{out:string, problems:string[], skipped?:boolean, stats?:object}}
+ *    `problems` 非空 ⇒ `out` 不可信（调用方必须当成失败）。
+ *
+ * ⚠ v0.209：从 `main()` 里抽出来。原因是「**重跑一次不该改动任何一行**」这件事
+ *   只有抽成纯函数才验得了 —— `test/app-partitions-guard.mjs` 在**进程内** import 它、
+ *   断言 `out === src`。本机起不了子进程，守卫没法"跑一遍脚本再看 `git diff`"。
+ *   抽出来的直接收益：脚本自己那句「落盘（幂等）」终于**有东西守**了 ——
+ *   实测它**并不幂等**（`--force --write` 每跑一次多塞空行），而当时没有任何门禁会红。
+ */
+export function partitionedSource(src, { force = false } = {}) {
+  const problems = [];
   let lines = src.split('\n');
 
-  /* 幂等：已打过分区就 skip，除非 --force。
-   * ⚠ v0.197 加 --force 的原因：拆分 bindUI 之后分区表变了（多了 8 个函数），
+  /* 幂等：已打过分区就 skip，除非 force。
+   * ⚠ v0.197 加 force 的原因：拆分 bindUI 之后分区表变了（多了 8 个函数），
    *   而旧目录已经打在文件里 ⇒ 「跳过」就意味着目录停在旧状态。
    *   原来的提示是「先 git checkout js/app.js」—— 可那会把**拆分一起回滚掉**
    *   （本轮真踩了：一次 git checkout 把刚做完的拆分抹了）。
-   *   ⇒ 提供 --force：只重生成目录，不动逻辑。 */
-  if (src.includes('══ 区域') && !FORCE) {
-    console.log('（已打过分区标记，跳过。要重新生成加 --force）');
-    process.exit(0);
-  }
-  if (src.includes('══ 区域') && FORCE) {
+   *   ⇒ 提供 force：只重生成目录，不动逻辑。 */
+  if (src.includes('══ 区域') && !force) return { out: src, problems, skipped: true };
+  if (src.includes('══ 区域') && force) {
     /* 去掉旧的顶部目录（到第一个块结束符）与所有分区标记行（含它们后面的空行）。 */
     const end = src.indexOf('*/');
-    const body = src.slice(end + 2);
+    /* ⚠ v0.209 修：`end + 2` 之后紧跟的那个换行是**旧目录最后一行自己的换行**，
+     *   而下面重建时会再写一行目录收尾 ⇒ 必须把这个换行吃掉，否则每重跑一次多一个空行
+     *   （另一个来源见下面 `lines = [...]` 那段 —— 两个加起来才是"每跑一次涨几行"）。
+     *   `\r?` 是给本机 CRLF 工作区留的 —— 本仓 `core.autocrlf=true`，
+     *   但生成出来的目录行是 LF ⇒ 那个换行可能是 `\n` 也可能是 `\r\n`。 */
+    const body = src.slice(end + 2).replace(/^\r?\n/, '');
     const outLines = [];
     const ls0 = body.split('\n');
     for (let i = 0; i < ls0.length; i++) {
@@ -174,7 +191,15 @@ function main() {
       }
       outLines.push(ls0[i]);
     }
-    lines = ['/* 书脉 BookAtlas · 前端逻辑', ' * 数据与渲染分离：每本书一个 JSON，见 data/ 目录。', ' */', '', ...outLines];
+    /* ⚠ v0.209 修：原来这里多写了一个 `''` —— 那是"每跑一次多几个空行"的另一个来源
+     *   （`body` 那一段和它前面的换行被数了两遍）。
+     *   ⚠ 写这段注释时又踩了本文件开头警告过的坑：注释里**不能**出现「星 + 斜杠」相邻的组合，
+     *     第一版就那么写了 ⇒ 注释提前闭合，`node --check` 把错报在十几行之后。
+     *   脚本的注释写着「落盘（幂等）」，而实测每跑一次行数就涨（本轮手工还原过
+     *   6655 → 6656 → 6657 → 6659 —— 增量不固定，因为两个来源是分两次修的），
+     *   **没有任何门禁会红**：P4c 只核目录里那个数，而那个数每次都会被重算 ⇒ 永远是对的。
+     *   ⇒ 现在由守卫的 P5 在进程内跑这个函数、断言 `out === src`（见本文件顶部的说明）。 */
+    lines = ['/* 书脉 BookAtlas · 前端逻辑', ' * 数据与渲染分离：每本书一个 JSON，见 data/ 目录。', ' */', ...outLines];
   }
 
   const syms = topLevelSymbols(lines);
@@ -192,17 +217,18 @@ function main() {
     resolved.push({ ...p, line: s.line, next: null });
   }
   if (missing.length) {
-    console.error('✗ 有 anchor 找不到或顺序不对：\n   ' + missing.join('\n   '));
-    console.error('  ⇒ app.js 的结构变了（函数改名/挪位），先核对再改这张表。');
-    process.exit(1);
+    problems.push('有 anchor 找不到或顺序不对：' + missing.join('、')
+      + ' ⇒ app.js 的结构变了（函数改名/挪位），先核对再改这张表。');
+    return { out: src, problems };
   }
   /* 填 next（每个区的结束行 = 下一个区的起始行 - 1）。 */
   for (let i = 0; i < resolved.length; i++) {
     resolved[i].next = i + 1 < resolved.length ? resolved[i + 1].line : lines.length;
   }
 
-  /* ── 顶部目录 ── */
-  const total = lines.length;
+  /* ── 顶部目录 ──
+   * ⚠ 那个「文件共 N 行」先写占位 0：此刻还没插标记，行数不是最终的 ——
+   *   真正的行数在 `lines.splice(0, 3, ...idx)` 之后回填，见那一段的注释。 */
   const idx = [
     '/* 书脉 BookAtlas · 前端逻辑',
     ' * 数据与渲染分离：每本书一个 JSON，见 data/ 目录。',
@@ -213,7 +239,7 @@ function main() {
     ' * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；',
     ' * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。',
     ' *',
-    ` * 文件共 ${total} 行、${syms.length} 个顶层符号，${resolved.length} 个分区。`,
+    ' * 文件共 0 行、0 个顶层符号，0 个分区。',   // ← 占位，插完标记后回填（见下方 splice 之后）
     ' *',
     ' * | 区域 | 起始符号 | 本区符号数 |',
     ' * |---|---|---|',
@@ -242,10 +268,26 @@ function main() {
   /* 顶部目录替换掉原来的 3 行文件头。 */
   lines.splice(0, 3, ...idx);
 
+  /* ⚠ v0.209 修：`idx` 是在**插标记之前**造的，那时 `total` 还是"没插标记"的行数
+   *   ⇒ 目录里那个「文件共 N 行」**永远偏小**，偏小的量正好是**本次插入的总行数** ——
+   *   68 个标记 × 2 行（标记 + 空行）= 136，加上目录比原来的 3 行文件头多出的 85 行，合计 **221**。
+   *   而在 HEAD 上它已经偏了 **385** 行（自称 6255 / 实际 6640；连「265 个顶层符号」
+   *   也是过期的，实际 266）—— 因为守卫 `test/app-partitions-guard.mjs` 的 P4b
+   *   只查"那句话在不在"、**不核数** ⇒ 十几轮都没人发现。
+   *   ⇒ 两处一起修：守卫补 P4c 真的核数，这里在**最终形状**上回填。
+   *   （按内容定位那一行，不写死下标 —— 写死的话改一次目录就要跟着改。） */
+  {
+    const hi = lines.findIndex((l) => /^ \* 文件共 \d+ 行、\d+ 个顶层符号，\d+ 个分区。$/.test(l));
+    if (hi < 0) {
+      problems.push('顶部目录里找不到「文件共 …」那一行，没法回填行数');
+      return { out: src, problems };
+    }
+    lines[hi] = ` * 文件共 ${lines.length} 行、${syms.length} 个顶层符号，${resolved.length} 个分区。`;
+  }
+
   const out = lines.join('\n');
 
   /* ⚠ 写前自检（v0.195 的教训：判据必须真的能挡住坏结果） */
-  const problems = [];
   /* ① 每个分区标记**自己就是**一条自闭合注释（`/* … *\/`），不依附任何块 ——
    *    ⚠ 第一版误判成"必须在某个块内"，于是 57 条标记全被报成"落在注释块外"。
    *    真正要验的是：① 标记行本身以注释形式开头且自闭合；② 标记之后仍有闭合符
@@ -265,11 +307,14 @@ function main() {
    *    剩下的必须与原文逐行相同。
    * ⚠ 第一版写的是「过滤掉所有空行」，那会把**原文里本来就有的空行**也滤掉，
    *   于是两边必然不等 —— 一个判据不准的自检会把每次改动都拒掉。 */
-  if (!FORCE) {
-    /* ⚠ `--force` 重生成时**不做**这条比对：此时「原文」里含**旧目录**，
+  if (!force) {
+    /* ⚠ `force` 重生成时**不做**这条比对：此时「原文」里含**旧目录**，
      *   而新目录会替换它 ⇒ 必然不等（实测第一处差在第 4 行）。
-     *   这条比对的本意是「**逻辑**没被动」，而 --force 只换目录不换逻辑
-     *   ⇒ 跳过是对的，但必须在 force 时显式跳过，否则它会永远红。 */
+     *   这条比对的本意是「**逻辑**没被动」，而 force 只换目录不换逻辑
+     *   ⇒ 跳过是对的，但必须在 force 时显式跳过，否则它会永远红。
+     * ⚠ v0.209：这里原来写的是**模块级** `FORCE`（argv）而不是函数参数 `force` ——
+     *   抽成纯函数后它就错了：不带 `--force` 跑（守卫就是这么调的）时会去比对
+     *   「slice(3) 之后的原文」，而文件头早就是生成的那 88 行 ⇒ 必报一条假红。 */
     const kept = [];
     let i = 0;
     let skippedDirs = 0;
@@ -301,23 +346,40 @@ function main() {
     if (n !== PARTS.length) problems.push(`分区标记数 ${n} ≠ 分区表 ${PARTS.length}`);
   }
 
+  if (problems.length) return { out: src, problems };
+  return {
+    out,
+    problems,
+    stats: { headerLines: idx.length, parts: resolved.length, from: src.split('\n').length, to: lines.length },
+  };
+}
+
+/** I/O 层：读文件、打印、落盘。**判据全在 `partitionedSource()` 里**（纯函数 ⇒ 守卫能直接调）。 */
+function main() {
+  const src = fs.readFileSync(APP, 'utf8');
+  const { out, problems, skipped, stats } = partitionedSource(src, { force: FORCE });
+
+  if (skipped) {
+    console.log('（已打过分区标记，跳过。要重新生成加 --force）');
+    return;
+  }
   if (problems.length) {
     console.error('✗ 自检失败：\n   ' + problems.join('\n   '));
     process.exit(1);
   }
-
   if (!WRITE) {
-    console.log(`（预览）将加：顶部目录 ${idx.length} 行 + ${resolved.length} 个分区标记。`);
-    console.log(`        ${total} 行 → ${lines.length} 行（+${lines.length - total}）`);
-    process.exit(0);
+    console.log(`（预览）将加：顶部目录 ${stats.headerLines} 行 + ${stats.parts} 个分区标记。`);
+    console.log(`        ${stats.from} 行 → ${stats.to} 行（+${stats.to - stats.from}）`);
+    return;
   }
-
+  if (out === src) {
+    console.log('✓ 分区目录已是最新 —— 重跑一次不会改动任何一行（幂等）');
+    return;
+  }
   fs.writeFileSync(APP, out, 'utf8');
-  console.log(`✓ 已给 js/app.js 加分区目录：${resolved.length} 个区，${total} → ${lines.length} 行`);
+  console.log(`✓ 已给 js/app.js 加分区目录：${stats.parts} 个区，${stats.from} → ${stats.to} 行`);
   console.log(`  字节 ${src.length} → ${out.length}（+${(((out.length - src.length) / src.length) * 100).toFixed(2)}%）`);
   console.log('  下一步：node scripts/make-scripts-index.mjs && npm run check 里的 eslint');
-
-
 }
 
 /* 直接运行才执行（`node scripts/add-app-partitions.mjs`）；被 import 时不跑。 */
