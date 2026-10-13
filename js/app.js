@@ -4313,7 +4313,7 @@
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
       ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">AI 讲给这个${T().char}听 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <p class="ai-entry-lead">让 AI 讲讲这个${T().char} —— <b>只讲你读到的部分</b>，不上传原著正文</p>
         <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
         <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
       </div>
@@ -4418,7 +4418,7 @@
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
       ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <p class="ai-entry-lead">让 AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
         <button class="primary ai-btn" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
         <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
       </div>
