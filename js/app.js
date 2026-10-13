@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 6655 行、267 个顶层符号，68 个分区。
+ * 文件共 6713 行、268 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -63,7 +63,7 @@
  * | 50. AI 讲解：配置 | `aiConfig` | 3 |
  * | 51. AI 讲解：剧透天花板与上下文 | `aiCeiling` | 3 |
  * | 52. AI 讲解：提示词与渲染 | `aiPrompt` | 4 |
- * | 53. AI 讲解：发问与追问 | `aiAsk` | 3 |
+ * | 53. AI 讲解：发问与追问 | `aiAsk` | 4 |
  * | 54. 导出：位图化 | `rasterizeSvg` | 2 |
  * | 55. 导出：阅读伴侣 EPUB | `epubPage` | 3 |
  * | 56. 导出：总入口 | `runExport` | 1 |
@@ -5231,6 +5231,10 @@
    * 所以只对**这两个已进入弃用流程的名字**做一次性迁移，别的一律不动。 */
   const AI_DEFAULT_MODEL = 'deepseek-flash';
   const AI_DEPRECATED_MODELS = { 'deepseek-chat': 'deepseek-flash', 'deepseek-reasoner': 'deepseek-reasoner' };
+  /* 单轮回答的 token 上限。
+   * ⚠ v0.210：思考型模型的 reasoning token **也吃这个额度** ⇒ 700 可能被"想"光、正文一个字没轮到
+   *   （症状就是「模型没有返回内容」）。所以空回复那一支会**把这个额度翻 4 倍再试一次**（见 aiRequestOnce）。 */
+  const AI_MAX_TOKENS = 700;
   /* ══ 区域 50/68：AI 讲解：配置 ══ */
 
   const aiConfig = () => {
@@ -5472,20 +5476,20 @@
       aiThread.err = null;
     }
     renderAiThread('busy');
+    let text = '';
+    let retried = false;
     try {
-      const res = await fetch(`${cfg.base}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
-        body: JSON.stringify({
-          model: cfg.model, temperature: 0.4, max_tokens: 700,
-          messages: [{ role: 'system', content: aiThread.system }, ...aiThread.turns],
-        }),
-      });
-      if (!res.ok) throw new Error(`接口返回 ${res.status}：${(await res.text()).slice(0, 140)}`);
-      const data = await res.json();
-      const text = (((data || {}).choices || [{}])[0].message || {}).content || '';
-      if (!String(text).trim()) throw new Error('模型没有返回内容');
-      aiThread.turns.push({ role: 'assistant', content: String(text) });
+      /* ⚠ v0.210：空正文分四类（原来一律说「模型没有返回内容　（可以再发一次重试）」）。
+       * 自动重试**只一次**，且只重试"重试有用"的那两类；预算不够的那类（思考型）把额度翻 4 倍再试。 */
+      let budget = AI_MAX_TOKENS;
+      for (let attempt = 0; ; attempt++) {
+        try { text = await aiRequestOnce(cfg, budget); break; } catch (e) {
+          if (attempt >= 1 || !e.retryable) throw e;
+          retried = true;
+          if (e.bumpTokens) budget = AI_MAX_TOKENS * 4;
+        }
+      }
+      aiThread.turns.push({ role: 'assistant', content: text });
       renderAiThread();
     } catch (e) {
       const msg = String((e && e.message) || e);
@@ -5494,9 +5498,63 @@
       if (lastU >= 0 && aiThread.turns.length - 1 === lastU) aiThread.turns.splice(lastU, 1);
       aiThread.err = /Failed to fetch|CORS|NetworkError/i.test(msg)
         ? `${msg}　（浏览器直连被拦：换一个允许跨域的端点，或用编辑器里的命令行方式）`
-        : `${msg}　（可以再发一次重试）`;
+        : (e && e.retryable === false)
+          ? `${msg}　（这类原因重试也没用，照上面的说法改设置）`
+          : `${msg}　（${retried ? '已自动重试过一次，再点一次也行' : '可以再发一次重试'}）`;
       renderAiThread();
     }
+  }
+
+  /** 发**一次**请求 → 正文。空正文时抛错，并标好"重试有没有用"（`retryable` / `bumpTokens`）。
+   *  ⚠ v0.210 新增。原来只有一句 `if (!String(text).trim()) throw new Error('模型没有返回内容')`，
+   *    把下面四种**完全不同**的原因混成了一句，用户只能盲目重试：
+   *    ① **思考型模型**：reasoning 的 token 也吃 `max_tokens` ⇒ 700 全被"想"掉、正文一个字没轮到
+   *       （`finish_reason='length'` 且 `reasoning_content` 非空）—— 重试要**加预算**才有用；
+   *    ② **上游偶发空回复**（`finish_reason='stop'` 而 content 空）—— 原样重试通常就好；
+   *    ③ **端点不是 OpenAI 形状**（压根拿不到 `choices[0].message`）—— 重试没用，要改 Base URL；
+   *    ④ 被上游内容过滤（`finish_reason='content_filter'`）—— 重试没用。
+   *    ⇒ 把 `finish_reason` / `reasoning_content` 读出来，逐类给一句**能照做**的话。 */
+  async function aiRequestOnce(cfg, maxTokens) {
+    const res = await fetch(`${cfg.base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.key}` },
+      body: JSON.stringify({
+        model: cfg.model, temperature: 0.4, max_tokens: maxTokens,
+        messages: [{ role: 'system', content: aiThread.system }, ...aiThread.turns],
+      }),
+    });
+    if (!res.ok) throw new Error(`接口返回 ${res.status}：${(await res.text()).slice(0, 140)}`);
+    const data = await res.json();
+    const choice = (((data || {}).choices || [])[0]) || null;
+    const m = (choice && choice.message) || {};
+    const body = String(m.content == null ? '' : m.content);
+    if (body.trim()) return body;
+    const finish = choice ? choice.finish_reason : undefined;
+    const think = String(m.reasoning_content || '');
+    const err = new Error('');
+    if (!choice) {
+      err.message = '模型没有返回正文：端点返回的 JSON 里没有 `choices[0].message`'
+        + ' —— 这不是 OpenAI 兼容的响应形状（检查 ⚙️ AI 设置里的 Base URL 要不要带 `/v1`，或换回官方端点）';
+      err.retryable = false;
+    } else if (finish === 'length' && think) {
+      err.message = '模型没有返回正文：它把整轮的 token 额度全用在「思考」上了（finish_reason=length）'
+        + ' —— 这是**思考型模型**，在 ⚙️ AI 设置里换成非思考的那个（默认 deepseek-flash）';
+      err.retryable = true; err.bumpTokens = true;
+    } else if (finish === 'length') {
+      err.message = '模型没有返回正文：token 额度用完了、正文一个字都没留下（finish_reason=length）';
+      err.retryable = true; err.bumpTokens = true;
+    } else if (think) {
+      err.message = '模型没有返回正文：它只回了「思考过程」（reasoning_content 有内容、content 是空的）'
+        + ' —— 换成非思考模型试试';
+      err.retryable = false;
+    } else if (finish === 'content_filter') {
+      err.message = '模型没有返回正文：这次回答被上游的内容过滤拦掉了（finish_reason=content_filter）';
+      err.retryable = false;
+    } else {
+      err.message = `模型没有返回正文：这次回了个空（finish_reason=${finish || '未给出'}）`;
+      err.retryable = true;
+    }
+    throw err;
   }
 
   /** 点「🤖 讲一遍」：总是从头开始一段新对话（旧的那段丢掉） */

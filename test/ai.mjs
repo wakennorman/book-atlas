@@ -93,14 +93,19 @@ const installFetch = (replies) => js(`(() => {
     const i = window.__calls.length;
     window.__calls.push({ url: String(url), body });
     const reply = window.__replies[i];
+    /* v0.210：reply 既可以是字符串（＝正文，finish_reason 记 'stop'），
+       也可以是一个对象 { content, finish_reason, reasoning_content } —— 用来造"空正文"那几类。 */
+    const mk = (r) => (typeof r === 'string'
+      ? { message: { content: r }, finish_reason: 'stop' }
+      : { message: { content: r.content == null ? '' : r.content, reasoning_content: r.reasoning_content }, finish_reason: r.finish_reason });
     return Promise.resolve(reply === null
       ? Promise.reject(new Error('Failed to fetch'))
-      : Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ choices: [{ message: { content: reply } }] }), text: () => Promise.resolve('') }));
+      : Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ choices: [mk(reply)] }), text: () => Promise.resolve('') }));
   };
   return true;
 })()`);
 
-const calls = () => js(`window.__calls.map((c) => ({ url: c.url, model: c.body.model, roles: c.body.messages.map((m) => m.role), texts: c.body.messages.map((m) => m.content) }))`);
+const calls = () => js(`window.__calls.map((c) => ({ url: c.url, model: c.body.model, max_tokens: c.body.max_tokens, roles: c.body.messages.map((m) => m.role), texts: c.body.messages.map((m) => m.content) }))`);
 const panelState = () => js(`(() => {
   const b = document.getElementById('ai-answer');
   if (!b) return { none: true };
@@ -241,6 +246,45 @@ try {
   p = await panelState();
   ok(p.hidden && p.answers.length === 0, 'AI 区域收起来了');
   ok((await calls()).length === 1, '清空不发请求（纯本地）');
+
+  console.log('\n▶ ⑦b v0.210：空正文按 finish_reason 分类 + 自动重试一次');
+  /* 这一节钉的是用户报的那个「模型没有返回内容（可以再发一次重试）」——
+   * 原来四种原因共用一句话，用户只能盲目重试。现在必须**说清是哪一种**，并且：
+   *   思考型模型（token 被"想"光）⇒ 加预算重试一次；content_filter ⇒ 不重试（重试没用）。 */
+  await installFetch([
+    { content: '', finish_reason: 'length', reasoning_content: '我在想……' },
+    { content: '第二次答上了。', finish_reason: 'stop' },
+  ]);
+  await js(`(() => { const b = [...document.querySelectorAll('#panel [data-ai="char"]')][0]; b.click(); })()`);
+  await wait(1400);
+  const c5 = await calls();
+  ok(c5.length === 2, `空正文 ⇒ 自动重试了一次（共 ${c5.length} 次请求）`);
+  ok(c5[1].max_tokens === c5[0].max_tokens * 4,
+    `重试时把 token 额度翻 4 倍（${c5[0].max_tokens} → ${c5[1].max_tokens}）`);
+  p = await panelState();
+  ok(!p.err && p.answers.length === 1 && /第二次答上了/.test(p.answers[0]),
+    `重试成功后正常渲染、不显示错误（answers=${JSON.stringify(p.answers)}）`);
+
+  /* 两次都空 ⇒ 报**具体原因**，并说明已经自动重试过（不是让用户自己再点一次） */
+  await installFetch([
+    { content: '', finish_reason: 'length', reasoning_content: '又想了一遍……' },
+    { content: '', finish_reason: 'length', reasoning_content: '再想一遍……' },
+  ]);
+  await js(`(() => { const b = [...document.querySelectorAll('#panel [data-ai="char"]')][0]; b.click(); })()`);
+  await wait(1600);
+  p = await panelState();
+  ok((await calls()).length === 2, '两次都空 ⇒ 只重试一次，不无限重试');
+  ok(/思考型模型/.test(p.err || ''), `说清了是思考型模型把额度用光了（${p.err}）`);
+  ok(/已自动重试过一次/.test(p.err || ''), '并告诉用户已经自动重试过');
+
+  /* content_filter：**不重试**（重试没用），并且明说 */
+  await installFetch([{ content: '', finish_reason: 'content_filter' }]);
+  await js(`(() => { const b = [...document.querySelectorAll('#panel [data-ai="char"]')][0]; b.click(); })()`);
+  await wait(1200);
+  p = await panelState();
+  ok((await calls()).length === 1, 'content_filter ⇒ 不自动重试（重试没用）');
+  ok(/内容过滤/.test(p.err || ''), `说清了是被内容过滤拦掉的（${p.err}）`);
+  ok(/重试也没用/.test(p.err || ''), '并说明这类原因重试没用');
 
   console.log('\n▶ ⑧ v0.96 方案 A：提示词要求分两段，且**补充段同样受剧透限制**');
   /* 这几条是本轮的核心安全属性。改提示词前先看这儿：
