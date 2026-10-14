@@ -117,7 +117,7 @@ jobs:
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-ui-notes.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/lib/ui-notes.mjs scripts/add-app-partitions.mjs \
                    test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/vocab.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs test/prose-bold-guard.mjs scripts/lib/profile-prefixes.mjs \
+                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/vocab.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs test/prose-bold-guard.mjs scripts/lib/profile-prefixes.mjs scripts/lib/s2t.mjs scripts/lib/s2t-overrides.mjs scripts/make-s2t-dict.mjs test/s2t-guard.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -420,6 +420,22 @@ jobs:
         # 小程序数据包在构建时去记号（WXML 是纯文本）；这条门禁逐字段扫 app.js 源码，
         # 挡住"下一个人又写 esc(c.desc)"（18 条断言）。
         run: node test/prose-bold-guard.mjs
+
+      - name: 简→繁转换表守卫（H1 漏字 / H2 死条目 / H3 歧义 / D1 幂等 / D2 单一收口）
+        # v0.219 新增。繁体版**不是翻译**，是查两张表的文本转换（不换词：網絡仍是網絡）。
+        # 表在 `data/s2t.json`（提交的人工资产：1,240 字 + 1,239 词组 + 2,284 同形字），
+        # 人工覆盖在 `scripts/lib/s2t-overrides.mjs`，重生成器是 `scripts/make-s2t-dict.mjs`
+        # （只在改词表时手工跑，CI 不跑、也不依赖 opencc-js）。
+        # 这条门禁守四件会静默出错的事：
+        #   H1 语料里每个汉字都要有交代（在 chars 转 / 在 same 属繁简同形 / 已是繁体）——
+        #      漏一个就是「繁中模式下某个生僻字悄悄还是简体」；
+        #   H2 派生规则不许出现语料用不到的死条目（人工词表例外，那是留给新书的）；
+        #   H3 每个多义字必须有人明确管过（规则 / PHRASE_BLIND / 人工词条）；
+        #   D1 **转换不幂等**（实测 17,468 条语料里 14 条会二次变形：「范晔」→「範曄」、
+        #      「并州」→「幷州」、「标致」→「標緻」）⇒ 散文出口只能有一个
+        #      （escBold / unbold 内部已含 conv），D2 盯着不许有人再包一层、
+        #      也不许"渲染完再扫一遍 DOM"。
+        run: node test/s2t-guard.mjs
 
       - name: 跨章声明台账（A3 的 11 处已回原著核过）
         # v0.177 新增。`data/cross-chapter-ok.json` 是 `audit-annotations.mjs` 的 A3

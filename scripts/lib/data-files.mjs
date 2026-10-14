@@ -57,6 +57,8 @@ export const DATA = path.join(ROOT, 'data');
  *   perf-baseline.json            首屏性能基线台账（v0.198 由 perf-budget --bless 写；
  *                                  v0.205.1 补：它不是书，但忘了进正则 ⇒ books-registry
  *                                  从 v0.198 起一直红，又被同轮的 CI startup_failure 掩盖）
+ *   s2t.json                      简→繁转换表（v0.219：繁体版不是翻译，是查表转换；
+ *                                  提交的人工资产，由 scripts/make-s2t-dict.mjs 产出）
  *
  * ⚠ **加 sidecar 必须来这一处**（v0.164 实测又踩了一次：新增
  *   `data/<slug>.surname-blind-ok.json` 后忘了加进下面的正则，
@@ -68,8 +70,11 @@ export const DATA = path.join(ROOT, 'data');
  *   它已经列在上面的清单里了却还没进正则 —— 所以下面那行也补上了。
  *   ⚠ v0.205.1 第五次：`perf-baseline.json` 是**性能基线**（`--bless` 产物，
  *   不是书），漏在这里 ⇒ 同上。
+ *   ⚠ v0.219 第六次：`data/s2t.json`（简→繁转换表）同样不是书，漏在这里 ⇒
+ *   `test/books-registry.mjs` 报「漏登：s2t」，而且**大多数按书扫的门禁都会把它跳过**
+ *   ——也就是它让一整类检查静默少扫一个文件，正是这份注释一直在拦的那件事。
  */
-export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$|^dup-names-ok\.json$|^perf-baseline\.json$/;
+export const SIDECAR = /\.(graph|text|missing-ok|relayout|altnames-sources|name-form-ok|surname-blind-ok)\.json$|^books\.json$|^kin-terms-exempt\.json$|^cross-chapter-ok\.json$|^first-ch-ok\.json$|^relation-actors-ok\.json$|^dup-names-ok\.json$|^perf-baseline\.json$|^s2t\.json$/;
 
 /**
  * data/ 下的书文件名（**只有文件名，不带 `data/` 前缀**），已按字典序排好。

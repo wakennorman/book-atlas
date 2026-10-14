@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=218">
+  <link rel="stylesheet" href="css/style.css?v=219">
 </head>
 <body>
 
@@ -28,34 +28,38 @@
   <div class="brand">
     <img class="logo" src="assets/logo-mark.svg" alt="书脉">
     <div class="brand-text">
-      <h1>书脉 <span>BookAtlas</span></h1>
-      <p id="book-meta" class="meta">加载中…</p>
+      <h1><span data-s2t>书脉</span> <span>BookAtlas</span></h1>
+      <p id="book-meta" class="meta" data-s2t>加载中…</p>
     </div>
   </div>
   <div class="tools">
     <label class="select-wrap">
-      <span class="sr-only">选择书目</span>
+      <span class="sr-only" data-s2t>选择书目</span>
       <select id="book-select" title="选择书目"></select>
     </label>
+    <button id="script-btn" class="icon-btn" type="button" title="切换正文用字：简体／繁体（只转换字形，不换词；随时切回简体看原文）">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>
+      <span data-s2t>简体</span>
+    </button>
     <button id="theme-btn" class="icon-btn" type="button" title="切换深浅色">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <span>夜间</span>
+      <span data-s2t>夜间</span>
     </button>
     <button id="spoiler-btn" class="icon-btn" type="button" title="按阅读进度锁定，防剧透">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <span>剧透保护：关</span>
+      <span data-s2t>剧透保护：关</span>
     </button>
     <button id="help-btn" class="icon-btn" type="button" title="使用说明（每条都能在图上试一下）">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>怎么用</span>
+      <span data-s2t>怎么用</span>
     </button>
     <button id="export-btn" class="icon-btn" type="button" title="导出：单文件 HTML / 分享图 / 打印版 / 数据">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span>导出</span>
+      <span data-s2t>导出</span>
     </button>
     <a class="icon-btn" href="editor.html" title="打开本地编辑器：自己新建/修改一本书">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      <span>编辑</span>
+      <span data-s2t>编辑</span>
     </a>
   </div>
 </header>
@@ -67,8 +71,8 @@
         <span class="combo" id="search-combo">
           <input id="search-input" type="search" placeholder="搜单个人物…" autocomplete="off">
         </span>
-        <button id="search-go" class="primary" type="button">查询</button>
-        <button id="search-clear" class="ghost" type="button">清除</button>
+        <button id="search-go" class="primary" type="button" data-s2t>查询</button>
+        <button id="search-clear" class="ghost" type="button" data-s2t>清除</button>
         <span class="combo" id="place-combo">
           <input id="place-filter" type="search" placeholder="按地点筛选…" autocomplete="off"
                  role="combobox" aria-label="按地点筛选事件与人物" aria-autocomplete="list">
@@ -76,49 +80,49 @@
       </div>
       <div class="legend-row">
         <div id="legend" class="legend" role="group" aria-label="按阵营筛选"></div>
-        <button id="label-btn" class="ghost" type="button" title="显示全部名字会重叠，默认只显示主要人物">标签：主要</button>
+        <button id="label-btn" class="ghost" type="button" title="显示全部名字会重叠，默认只显示主要人物" data-s2t>标签：主要</button>
         <select id="size-filter" title="人太多看不清时，只显示关系较多的人物（放大后名字会越来越多）">
-          <option value="all">人数：全部</option>
-          <option value="mid">人数：中等（前 200）</option>
-          <option value="main">人数：主要（前 60）</option>
+          <option value="all" data-s2t>人数：全部</option>
+          <option value="mid" data-s2t>人数：中等（前 200）</option>
+          <option value="main" data-s2t>人数：主要（前 60）</option>
         </select>
       </div>
       <div class="view-row" role="group" aria-label="布局方式">
-        <span class="view-label">布局</span>
-        <button class="seg active" type="button" data-view="force" title="力导向自由布局">自由</button>
-        <button class="seg" type="button" data-view="gen-h" title="按代际分列，从左到右">代际·横</button>
-        <button class="seg" type="button" data-view="gen-v" title="按代际分行，从上到下">代际·纵</button>
-        <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移">重置</button>
-        <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局">复位视图</button>
-        <button id="zoom-one-btn" class="ghost" type="button" title="跳到 1:1 缩放：节点回到原始大小，名字看得最清（大书推荐）">看清（1:1）</button>
-        <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）">拖动节点：关</button>
-        <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠">提及人物：隐藏</button>
-        <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）">次要人物：隐藏</button>
-        <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）">族谱补全：显示</button>
-        <button id="edge-filter-btn" class="ghost" type="button" title="按关系类型过滤：只看亲缘 / 只看对立 / 隐藏某类线条">关系：全部</button>
-        <button id="display-btn" class="ghost" type="button" title="显示设置：色盲友好配色 / 字号">♿ 显示</button>
+        <span class="view-label" data-s2t>布局</span>
+        <button class="seg active" type="button" data-view="force" title="力导向自由布局" data-s2t>自由</button>
+        <button class="seg" type="button" data-view="gen-h" title="按代际分列，从左到右" data-s2t>代际·横</button>
+        <button class="seg" type="button" data-view="gen-v" title="按代际分行，从上到下" data-s2t>代际·纵</button>
+        <button id="reset-btn" class="ghost" type="button" title="重新布局并重置缩放/平移" data-s2t>重置</button>
+        <button id="view-reset-btn" class="ghost" type="button" title="只复位缩放/平移，不动布局" data-s2t>复位视图</button>
+        <button id="zoom-one-btn" class="ghost" type="button" title="跳到 1:1 缩放：节点回到原始大小，名字看得最清（大书推荐）" data-s2t>看清（1:1）</button>
+        <button id="drag-btn" class="ghost" type="button" title="开启后可拖动单个节点（默认关，避免与画布平移打架）" data-s2t>拖动节点：关</button>
+        <button id="mentioned-btn" class="ghost" type="button" title="「仅被提及」的人物（没出场、没台词）默认折叠" data-s2t>提及人物：隐藏</button>
+        <button id="minor-btn" class="ghost" type="button" title="只跟一两个人有关系的次要人物，大书里默认折叠（搜索/点事件照样能找到）" data-s2t>次要人物：隐藏</button>
+        <button id="derived-btn" class="ghost" type="button" title="由亲子关系推导出来的祖孙/曾祖孙/叔侄等族谱连线（虚线、标注「推导」；原文没有直接互动的两个人）" data-s2t>族谱补全：显示</button>
+        <button id="edge-filter-btn" class="ghost" type="button" title="按关系类型过滤：只看亲缘 / 只看对立 / 隐藏某类线条" data-s2t>关系：全部</button>
+        <button id="display-btn" class="ghost" type="button" title="显示设置：色盲友好配色 / 字号" data-s2t>♿ 显示</button>
         <div id="display-panel" class="edge-panel display-panel" hidden>
           <div class="ep-group">
-            <b>配色</b>
+            <b data-s2t>配色</b>
             <div class="disp-row">
-              <button class="ghost tiny" type="button" data-palette="default">默认</button>
-              <button class="ghost tiny" type="button" data-palette="a11y">色盲友好</button>
+              <button class="ghost tiny" type="button" data-palette="default" data-s2t>默认</button>
+              <button class="ghost tiny" type="button" data-palette="a11y" data-s2t>色盲友好</button>
             </div>
             <p class="hint" data-term="paletteHint">色盲友好用 Okabe–Ito 八色（按阵营顺序分配）；图例里的阵营名始终是主要线索。</p>
           </div>
           <div class="ep-group">
-            <b>字号</b>
+            <b data-s2t>字号</b>
             <div class="disp-row">
-              <button class="ghost tiny" type="button" data-font="s">小</button>
-              <button class="ghost tiny" type="button" data-font="m">中</button>
-              <button class="ghost tiny" type="button" data-font="l">大</button>
+              <button class="ghost tiny" type="button" data-font="s" data-s2t>小</button>
+              <button class="ghost tiny" type="button" data-font="m" data-s2t>中</button>
+              <button class="ghost tiny" type="button" data-font="l" data-s2t>大</button>
             </div>
-            <p class="hint">影响图上的名字与右侧面板文字（设置按书存在本机）。</p>
+            <p class="hint" data-s2t>影响图上的名字与右侧面板文字（设置按书存在本机）。</p>
           </div>
         </div>
         <div id="edge-filter-panel" class="edge-panel" hidden>
           <div class="ep-group" id="edge-kin-group">
-            <b>亲缘</b>
+            <b data-s2t>亲缘</b>
             <label><input type="checkbox" data-edge-kin="blood">血缘</label>
             <label><input type="checkbox" data-edge-kin="marriage">婚姻 · 姻亲</label>
             <label><input type="checkbox" data-edge-kin="adopt">收养 · 抚养 · 继亲</label>
@@ -126,19 +130,19 @@
             <label><input type="checkbox" data-edge-kin="none">无亲缘标注（朋友 / 君臣 / 敌对…）</label>
           </div>
           <div class="ep-group">
-            <b>线条</b>
+            <b data-s2t>线条</b>
             <label><input type="checkbox" data-edge-style="solid"><span data-term="lineSolidLabel">实线 · 亲缘 / 同盟</span></label>
             <label><input type="checkbox" data-edge-style="dashed"><span data-term="lineDashedLabel">虚线 · 对立 / 伤害</span></label>
             <label><input type="checkbox" data-edge-style="dotted"><span data-term="lineDottedLabel">点线 · 情人 / 过去 / 间接</span></label>
           </div>
           <div class="ep-group">
-            <b>其它</b>
+            <b data-s2t>其它</b>
             <label><input type="checkbox" id="edge-derived">族谱补全（推导的祖孙 / 叔侄）</label>
           </div>
           <div class="ep-presets">
-            <button class="ghost tiny" type="button" data-edge-preset="kin">只看亲缘</button>
-            <button class="ghost tiny" type="button" data-edge-preset="enemy">只看对立 · 伤害</button>
-            <button class="ghost tiny" type="button" data-edge-preset="reset">全部重置</button>
+            <button class="ghost tiny" type="button" data-edge-preset="kin" data-s2t>只看亲缘</button>
+            <button class="ghost tiny" type="button" data-edge-preset="enemy" data-s2t>只看对立 · 伤害</button>
+            <button class="ghost tiny" type="button" data-edge-preset="reset" data-s2t>全部重置</button>
           </div>
           <p class="hint" data-term-html="edgeFilterNote">勾选＝只显示勾选的类型；一个都不勾＝全部显示。两人关系（底部）也会跟着过滤。</p>
         </div>
@@ -165,25 +169,25 @@
            · fullscreen-btn  进出全屏（Esc 同效） -->
       <div class="graph-float-tools">
         <button id="tools-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
-                aria-controls="pane-head-tools" title="展开工具条（搜索 / 视图 / 过滤）">⚙ 工具</button>
+                aria-controls="pane-head-tools" title="展开工具条（搜索 / 视图 / 过滤）" data-s2t>⚙ 工具</button>
         <button id="side-btn" class="graph-float-btn" type="button" hidden aria-expanded="false"
-                aria-controls="side-panel" title="展开右栏">▤ 右栏</button>
+                aria-controls="side-panel" title="展开右栏" data-s2t>▤ 右栏</button>
         <button id="fullscreen-btn" class="graph-float-btn" type="button"
-                aria-pressed="false" title="全屏展示（Esc 退出）">⛶ 全屏</button>
+                aria-pressed="false" title="全屏展示（Esc 退出）" data-s2t>⛶ 全屏</button>
       </div>
       <div id="graph" tabindex="0" role="img" aria-label="人物关系网络图（加载中）" aria-describedby="graph-kb-hint"></div>
     </div>
     <!-- v90：画布被拖到视野外时的自救出口。无限画布没有边界，用户很容易把整张图拖出屏幕，
          而图上又没有东西可点（「复位视图」在上面的工具条里，得先想到才找得到）。 -->
-    <button id="offview-btn" class="offview-btn" type="button" hidden>🧭 画布拖到视野外了 · 点这里复位</button>
+    <button id="offview-btn" class="offview-btn" type="button" hidden data-s2t>🧭 画布拖到视野外了 · 点这里复位</button>
     <p id="graph-kb-hint" class="sr-only" data-term="kbHint">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
     <!-- v91：常驻提示。"空白处拖动"读起来像"任何空白处"，而漫游只绑在图那块画布上，
          用户试了图的外面发现没反应，以为是自己操作错了。 -->
-    <p class="hint graph-pan-hint">在<b>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b>双击图的空白</b>＝复位视图</p>
+    <p class="hint graph-pan-hint">在<b data-s2t>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b data-s2t>双击图的空白</b>＝复位视图</p>
     <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
     <div class="pathbar">
-      <span class="pathbar-label">两人关系</span>
+      <span class="pathbar-label" data-s2t>两人关系</span>
       <span class="combo" id="path-a-combo">
         <input id="path-a" type="search" placeholder="人物 A" autocomplete="off" aria-label="人物 A（可输入名字，下拉可选）">
       </span>
@@ -191,8 +195,8 @@
       <span class="combo" id="path-b-combo">
         <input id="path-b" type="search" placeholder="人物 B" autocomplete="off" aria-label="人物 B（可输入名字，下拉可选）">
       </span>
-      <button id="path-go" class="primary" type="button">查询</button>
-      <button id="path-clear" class="ghost" type="button">清除</button>
+      <button id="path-go" class="primary" type="button" data-s2t>查询</button>
+      <button id="path-clear" class="ghost" type="button" data-s2t>清除</button>
       <span id="path-hint" class="hint"></span>
     </div>
   </section>
@@ -204,7 +208,7 @@
 
     <div class="panel chapter-panel" id="chapter-panel">
       <div class="pane-head ch-head">
-        <h2 id="ch-title">📖 第 1 章</h2>
+        <h2 id="ch-title" data-s2t>📖 第 1 章</h2>
         <div class="ch-nav">
           <button id="ch-prev" class="ghost tiny" type="button" title="上一章">◀</button>
           <select id="ch-select" aria-label="跳到某一章" title="跳到某一章"></select>
@@ -212,7 +216,7 @@
         </div>
       </div>
       <div class="ch-time">
-        <button id="time-btn" class="ghost tiny" type="button" title="把图谱拨回第 N 章：只画当时已经发生的关系（「同盟→反目」这类变化会跟着时间变）">🕰 时间旅行：关</button>
+        <button id="time-btn" class="ghost tiny" type="button" title="把图谱拨回第 N 章：只画当时已经发生的关系（「同盟→反目」这类变化会跟着时间变）" data-s2t>🕰 时间旅行：关</button>
         <input id="time-slider" type="range" min="1" max="20" value="1" step="1" hidden aria-label="时间滑块：拨到某一章">
         <span id="time-hint" class="hint"></span>
       </div>
@@ -231,18 +235,18 @@
 
 <footer class="footer">
   <span id="footer-note">
-    <span class="foot-row"><b>数据</b>本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。</span>
+    <span class="foot-row"><b data-s2t>数据</b>本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。</span>
   </span>
-  <span class="foot-row foot-build">构建版本 <b id="build-ver">…</b><span id="build-stale" hidden>（与服务器不一致，请硬刷新 Ctrl/Cmd+Shift+R）</span></span>
+  <span class="foot-row foot-build">构建版本 <b id="build-ver">…</b><span id="build-stale" hidden data-s2t>（与服务器不一致，请硬刷新 Ctrl/Cmd+Shift+R）</span></span>
 </footer>
 
 <div id="help-modal" class="modal-backdrop" hidden>
   <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div class="modal-head">
-      <h2 id="help-title">📖 怎么用 · 5 分钟上手</h2>
+      <h2 id="help-title" data-s2t>📖 怎么用 · 5 分钟上手</h2>
       <button type="button" class="modal-close" data-help-close="1" title="关闭">✕</button>
     </div>
-    <p class="hint">每条都可以点「试一下」，立刻在这一页的图上做给你看。</p>
+    <p class="hint" data-s2t>每条都可以点「试一下」，立刻在这一页的图上做给你看。</p>
 
     <div class="help-list">
       <div class="help-item">
@@ -259,8 +263,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help1Head">① 点一个圆点，看这个人</b>
-          <span data-term-html="help1Body">点节点＝人物档案（身份、结局、与谁有关）；点<b>连线</b>＝关系类型 + 「定义这段关系的小事件」。圆越大＝关系越多；圆＝男，圆角方＝女。</span>
-          <button type="button" class="ghost tiny" data-help-act="open">试一下：打开关系最多的人</button>
+          <span data-term-html="help1Body">点节点＝人物档案（身份、结局、与谁有关）；点<b data-s2t>连线</b>＝关系类型 + 「定义这段关系的小事件」。圆越大＝关系越多；圆＝男，圆角方＝女。</span>
+          <button type="button" class="ghost tiny" data-help-act="open" data-s2t>试一下：打开关系最多的人</button>
         </div>
       </div>
 
@@ -274,8 +278,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help2Head">② 用「字 / 号 / 俗称 / 别的译本」也能搜到人</b>
-          <span data-term-html="help2Body">三国可以搜「孔明 / 云长 / 孟德」，百年孤独可以搜「乌苏拉 / 雷贝卡」，罪与罚可以搜「索尼娅」。搜到被折叠的人时会<b>自动展开那一层</b>并定位过去。</span>
-          <button type="button" class="ghost tiny" data-help-act="search">试一下：替我搜一个人</button>
+          <span data-term-html="help2Body">三国可以搜「孔明 / 云长 / 孟德」，百年孤独可以搜「乌苏拉 / 雷贝卡」，罪与罚可以搜「索尼娅」。搜到被折叠的人时会<b data-s2t>自动展开那一层</b>并定位过去。</span>
+          <button type="button" class="ghost tiny" data-help-act="search" data-s2t>试一下：替我搜一个人</button>
         </div>
       </div>
 
@@ -290,10 +294,10 @@
         </div>
         <div class="help-text">
           <b data-term-html="help3Head">③ 人太多看不清：三板斧 + 一键看清</b>
-          <span data-term-html="help3Body">① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b>在图上</b>按住拖动平移、<b>在图的空白处</b>双击复位。</span>
-          <button type="button" class="ghost tiny" data-help-act="size">试一下：只留主要人物</button>
-          <button type="button" class="ghost tiny" data-help-act="focus">试一下：聚焦一个人的圈子</button>
-          <button type="button" class="ghost tiny" data-help-act="zoom">试一下：看清（1:1）</button>
+          <span data-term-html="help3Body">① 「次要人物」默认收起（只跟一两个人有关的先不画）；② 右上「人数」切<strong data-s2t>主要 / 中等</strong>；③ 点人物 → 面板里「🎯 1 跳」只看他的圈子（可扩到 2 跳）。<br>最后按 <b data-s2t>「看清（1:1）」</b>：跳到节点原始大小、对准关系最多的人——<b data-s2t>放得越大，露出的名字越多</b>（像地图分级）。滚轮缩放、<b data-s2t>在图上</b>按住拖动平移、<b data-s2t>在图的空白处</b>双击复位。</span>
+          <button type="button" class="ghost tiny" data-help-act="size" data-s2t>试一下：只留主要人物</button>
+          <button type="button" class="ghost tiny" data-help-act="focus" data-s2t>试一下：聚焦一个人的圈子</button>
+          <button type="button" class="ghost tiny" data-help-act="zoom" data-s2t>试一下：看清（1:1）</button>
         </div>
       </div>
 
@@ -317,8 +321,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help4Head">④ 拖动节点：把一个人拉出来，专门看与他有关的线</b>
-          <span data-term-html="help4Body">点「拖动节点：开」，然后<b>按住任意圆点拖动</b>，就能把他挪开（<b>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时他身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。</span>
-          <button type="button" class="ghost tiny" data-help-act="drag">试一下：拉一个人出来</button>
+          <span data-term-html="help4Body">点「拖动节点：开」，然后<b data-s2t>按住任意圆点拖动</b>，就能把他挪开（<b data-s2t>图的空白</b>上按住仍然是平移画布）。松手后位置会留着，线也跟着节点走——这时他身上的线看得清楚得多。想重排就点「重置」或切换视图；只想复位视野（缩放／平移）就点「复位视图」。</span>
+          <button type="button" class="ghost tiny" data-help-act="drag" data-s2t>试一下：拉一个人出来</button>
         </div>
       </div>
 
@@ -337,7 +341,7 @@
         <div class="help-text">
           <b data-term-html="help5Head">⑤ 按地点看戏</b>
           <span data-term-html="help5Body">左上「📍 全部地点」选一个地点：时间轴只留那里发生的事，图上只亮相关的人；事件卡上的 📍 也能点。地点不做节点（否则关系图会变成一团异构图）。</span>
-          <button type="button" class="ghost tiny" data-help-act="place">试一下：挑事件最多的地点</button>
+          <button type="button" class="ghost tiny" data-help-act="place" data-s2t>试一下：挑事件最多的地点</button>
         </div>
       </div>
 
@@ -356,7 +360,7 @@
         <div class="help-text">
           <b data-term-html="help6Head">⑥ 怕剧透：开「剧透保护」</b>
           <span data-term-html="help6Body">右上角 🔒 选你读到第几章：之后出场的人变灰 🔒、关系不画、事件藏起来。进度存在本机，随时可改。</span>
-          <button type="button" class="ghost tiny" data-help-act="spoiler">试一下：打开剧透设置</button>
+          <button type="button" class="ghost tiny" data-help-act="spoiler" data-s2t>试一下：打开剧透设置</button>
         </div>
       </div>
 
@@ -376,7 +380,7 @@
         <div class="help-text">
           <b data-term-html="help7Head">⑦ 「这两人什么关系？」——最短关系链</b>
           <span data-term-html="help7Body">底部选两个人 → 本地 BFS 算出最短链，每一跳都给出关系类型和依据事件（不联网、不靠 AI）。</span>
-          <button type="button" class="ghost tiny" data-help-act="path">试一下：拿关系最多的两人跑一遍</button>
+          <button type="button" class="ghost tiny" data-help-act="path" data-s2t>试一下：拿关系最多的两人跑一遍</button>
         </div>
       </div>
 
@@ -393,7 +397,7 @@
         <div class="help-text">
           <b data-term-html="help8Head">⑧ 虚线 + 「推导」徽章 = 族谱补全</b>
           <span data-term-html="help8Body">祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。</span>
-          <button type="button" class="ghost tiny" data-help-act="derived">试一下：显示 / 隐藏推导线</button>
+          <button type="button" class="ghost tiny" data-help-act="derived" data-s2t>试一下：显示 / 隐藏推导线</button>
         </div>
       </div>
 
@@ -407,8 +411,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help9Head">⑨ 自己整理一本（本地编辑器）</b>
-          <span data-term-html="help9Body">右上「✏️ 编辑」：地点/人物/关系/事件增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。</span>
-          <a class="ghost tiny" href="editor.html">打开编辑器</a>
+          <span data-term-html="help9Body">右上「✏️ 编辑」：地点/人物/关系/事件增删改、本地校验、内嵌实时预览；还能<b data-s2t>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。</span>
+          <a class="ghost tiny" href="editor.html" data-s2t>打开编辑器</a>
         </div>
       </div>
       <div class="help-item">
@@ -422,9 +426,9 @@
         </div>
         <div class="help-text">
           <b data-term-html="help10Head">⑩ 读到哪儿了：第 N 章的世界</b>
-          <span data-term-html="help10Body">右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>
-          面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的关系（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。</span>
-          <button type="button" class="ghost tiny" data-help-act="chapter">试一下：翻到第 1 章看看</button>
+          <span data-term-html="help10Body">右侧「📖 第 N 章」：这一章<b data-s2t>谁初次登场</b>、新增了哪些关系、发生什么事件、在哪儿发生；还会告诉你<b data-s2t>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>
+          面板里的「<b data-s2t>🕰 时间旅行</b>」＋滑块：把<b data-s2t>图谱</b>拨回第 N 章——只画当时已经发生的关系（同盟→反目这类会随时间切换），<b data-s2t>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。</span>
+          <button type="button" class="ghost tiny" data-help-act="chapter" data-s2t>试一下：翻到第 1 章看看</button>
         </div>
       </div>
 
@@ -438,9 +442,9 @@
           </svg>
         </div>
         <div class="help-text">
-          <b>⑪ 导出与分享</b>
-          <span>右上「⬇️ 导出」：① <b>单文件 HTML</b>——一本书连图带数据打包成一个文件，发给别人双击就能看；② <b>分享图 PNG</b>；③ <b>打印版 SVG</b>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span>
-          <button type="button" class="ghost tiny" data-help-act="export">试一下：打开导出面板</button>
+          <b data-s2t>⑪ 导出与分享</b>
+          <span>右上「⬇️ 导出」：① <b data-s2t>单文件 HTML</b>——一本书连图带数据打包成一个文件，发给别人双击就能看；② <b data-s2t>分享图 PNG</b>；③ <b data-s2t>打印版 SVG</b>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span>
+          <button type="button" class="ghost tiny" data-help-act="export" data-s2t>试一下：打开导出面板</button>
         </div>
       </div>
       <div class="help-item">
@@ -456,8 +460,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help12Head">⑫ 只看亲缘线 / 只看对立线（关系过滤）</b>
-          <span data-term-html="help12Body">工具栏「关系：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
-          <button type="button" class="ghost tiny" data-help-act="edge">试一下：只看亲缘线</button>
+          <span data-term-html="help12Body">工具栏「关系：全部」里可以勾类型：<b data-s2t>血缘</b>、<b data-s2t>婚姻·姻亲</b>、<b data-s2t>收养·抚养·继亲</b>、<b data-s2t>结义</b>、<b data-s2t>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b data-s2t>只看亲缘</b>（当家族树用）、<b data-s2t>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
+          <button type="button" class="ghost tiny" data-help-act="edge" data-s2t>试一下：只看亲缘线</button>
         </div>
       </div>
 
@@ -473,8 +477,8 @@
         </div>
         <div class="help-text">
           <b data-term-html="help13Head">⑬ 人物志与人物卡</b>
-          <span data-term-html="help13Body">点任意人物：面板里除了档案与关系，还有<b>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
-          <button type="button" class="ghost tiny" data-help-act="charcard">试一下：打开关系最多的人</button>
+          <span data-term-html="help13Body">点任意人物：面板里除了档案与关系，还有<b data-s2t>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b data-s2t>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
+          <button type="button" class="ghost tiny" data-help-act="charcard" data-s2t>试一下：打开关系最多的人</button>
         </div>
       </div>
       <div class="help-item">
@@ -490,32 +494,32 @@
         </div>
         <div class="help-text">
           <b data-term-html="help14Head">⑭ AI 讲解（不剧透）</b>
-          <span data-term-html="help14Body">跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
-          <button type="button" class="ghost tiny" data-help-act="ai">试一下：打开 AI 设置</button>
+          <span data-term-html="help14Body">跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b data-s2t>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
+          <button type="button" class="ghost tiny" data-help-act="ai" data-s2t>试一下：打开 AI 设置</button>
         </div>
       </div>
     </div>
 
-    <p class="hint" style="margin-top:12px" data-term-html="helpBottom">随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个人</b>也会把视野拉回他身上。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。</p>
+    <p class="hint" style="margin-top:12px" data-term-html="helpBottom">随时点「复位视图」或<b data-s2t>在图的空白处</b>双击回到全貌；<b data-s2t>点任意一个人</b>也会把视野拉回他身上。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。</p>
   </div>
 </div>
 
 <div id="ai-modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ai-title">
     <div class="modal-head">
-      <h2 id="ai-title">🤖 AI 讲解设置</h2>
+      <h2 id="ai-title" data-s2t>🤖 AI 讲解设置</h2>
       <button type="button" class="modal-close" data-ai-close="1" title="关闭">✕</button>
     </div>
-    <p class="hint" data-term-html="aiPanelHint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
+    <p class="hint" data-term-html="aiPanelHint">讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b data-s2t>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。</p>
     <div class="ai-form">
       <label>接口地址<input id="ai-base" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
       <label>模型<input id="ai-model" placeholder="deepseek-flash" autocomplete="off"></label>
       <label>API Key<input id="ai-key" type="password" placeholder="sk-…" autocomplete="off"></label>
     </div>
-    <p class="hint" id="ai-hint">DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。</p>
+    <p class="hint" id="ai-hint" data-s2t>DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。</p>
     <div class="ai-actions">
-      <button class="primary" type="button" id="ai-save">保存到本机</button>
-      <button class="ghost" type="button" data-ai-close="1">取消</button>
+      <button class="primary" type="button" id="ai-save" data-s2t>保存到本机</button>
+      <button class="ghost" type="button" data-ai-close="1" data-s2t>取消</button>
     </div>
   </div>
 </div>
@@ -523,30 +527,30 @@
 <div id="export-modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
     <div class="modal-head">
-      <h2 id="export-title">⬇️ 导出 / 分享</h2>
+      <h2 id="export-title" data-s2t>⬇️ 导出 / 分享</h2>
       <button type="button" class="modal-close" data-export-close="1" title="关闭">✕</button>
     </div>
     <p class="hint" data-term="exportHint">导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。</p>
     <div class="export-list">
       <button class="spoiler-opt" type="button" data-export="html">
-        <b>① 单文件 HTML —— 把这本书发给别人</b>
-        <span>整本书（图谱 + 数据）打包成一个 .html：双击就能看，不用服务器、不用联网、不依赖这个站点。</span>
+        <b data-s2t>① 单文件 HTML —— 把这本书发给别人</b>
+        <span data-s2t>整本书（图谱 + 数据）打包成一个 .html：双击就能看，不用服务器、不用联网、不依赖这个站点。</span>
       </button>
       <button class="spoiler-opt" type="button" data-export="png">
-        <b>② 分享图 PNG</b>
+        <b data-s2t>② 分享图 PNG</b>
         <span data-term="exportPngDesc">当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。</span>
       </button>
       <button class="spoiler-opt" type="button" data-export="svg">
-        <b>③ 打印版 SVG（A3）</b>
-        <span>矢量图，放进排版软件或直接用浏览器打印（可另存为 PDF）；墙上海报／塞进书里都清楚。</span>
+        <b data-s2t>③ 打印版 SVG（A3）</b>
+        <span data-s2t>矢量图，放进排版软件或直接用浏览器打印（可另存为 PDF）；墙上海报／塞进书里都清楚。</span>
       </button>
       <button class="spoiler-opt" type="button" data-export="json">
-        <b>④ 数据 JSON</b>
-        <span>这本书的原始数据：可以自己改，也可以拖进编辑器接着整理。</span>
+        <b data-s2t>④ 数据 JSON</b>
+        <span data-s2t>这本书的原始数据：可以自己改，也可以拖进编辑器接着整理。</span>
       </button>
       <button class="spoiler-opt" type="button" data-export="epub">
-        <b>⑤ 阅读伴侣 EPUB —— 传进微信读书</b>
-        <span data-term-html="exportEpubDesc">关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
+        <b data-s2t>⑤ 阅读伴侣 EPUB —— 传进微信读书</b>
+        <span data-term-html="exportEpubDesc">关系总图 + 人物志 + 事件轴做成一本小册子（<b data-s2t>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
       </button>
     </div>
     <p class="hint" id="export-hint"></p>
@@ -556,27 +560,27 @@
 <div id="spoiler-modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spoiler-title">
     <div class="modal-head">
-      <h2 id="spoiler-title">开始前，先选一条路线</h2>
+      <h2 id="spoiler-title" data-s2t>开始前，先选一条路线</h2>
       <button type="button" class="modal-close" id="spoiler-close" title="关闭（＝不开启剧透保护，全部解锁）">✕</button>
     </div>
     <p class="hint" data-term="spoilerIntro">这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。</p>
     <div class="spoiler-options">
       <button type="button" class="spoiler-opt" id="spoiler-off">
-        <b>① 我不介意剧透，全部解锁</b>
+        <b data-s2t>① 我不介意剧透，全部解锁</b>
         <span data-term="spoilerOffDesc">直接看完整关系图</span>
       </button>
       <div class="spoiler-opt" id="spoiler-on-box">
-        <b>② 我在读，按进度解锁</b>
+        <b data-s2t>② 我在读，按进度解锁</b>
         <span>我读到了：<select id="spoiler-ch"></select></span>
-        <button type="button" class="primary" id="spoiler-on">按这个进度解锁</button>
+        <button type="button" class="primary" id="spoiler-on" data-s2t>按这个进度解锁</button>
       </div>
     </div>
-    <p class="hint">点「✕」关闭＝不开启保护（全部解锁）；之后随时可以点右上角「剧透保护」修改。</p>
+    <p class="hint" data-s2t>点「✕」关闭＝不开启保护（全部解锁）；之后随时可以点右上角「剧透保护」修改。</p>
   </div>
 </div>
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=218"></script>
+<script src="js/app.js?v=219"></script>
 </body>
 </html>

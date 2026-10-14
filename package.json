@@ -1,6 +1,6 @@
 {
   "name": "book-atlas",
-  "version": "0.218.0",
+  "version": "0.219.0",
   "engines": {
     "node": ">=22"
   },
@@ -41,7 +41,10 @@
     "test:build": "node test/build.mjs",
     "preview": "node tools/preview.mjs",
     "test:full-tip": "node test/full-tip.mjs",
-    "gate": "node tools/gate.mjs"
+    "gate": "node tools/gate.mjs",
+    "make:s2t": "node scripts/make-s2t-dict.mjs",
+    "check:s2t": "node scripts/make-s2t-dict.mjs --check && node test/s2t-guard.mjs",
+    "test:s2t": "node test/s2t-guard.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
