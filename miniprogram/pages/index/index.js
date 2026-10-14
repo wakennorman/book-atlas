@@ -24,6 +24,14 @@ const KIN_OPTIONS = [
 const STYLE_OPTIONS = [
   { v: 'solid', t: '实线 · 亲缘/同盟' }, { v: 'dashed', t: '虚线 · 对立/伤害' }, { v: 'dotted', t: '点线 · 情人/过去/间接' },
 ];
+/* v0.218：数据里作者写的 `**强调**`（实测 `characters[].note` 60 个 / `events[].impact` 194 个 /
+ *   `events[].summary` 16 个 / `characters[].desc` 2 个，成对 0 落单）。
+ *   网页端走 `escBold()` 渲染成真粗体（v0.141 拆书正文的先例），**这里没有那条路** ——
+ *   WXML 的 `{{…}}` 是纯文本，`**` 会原样印给读者。
+ *   ⇒ 渲染时去记号：句子一字不动，只是不再显示星号。
+ *   ⚠ 归一放在**渲染层**而不是 `make-miniprogram-packs.mjs`：在构建时改数据会让
+ *   `check-packs-sync` 的「包＝数据」逐字段对拍报红，那条不变量更重要。 */
+const noBold = (s) => String(s == null ? '' : s).replace(/\*\*/g, '');
 // v89：edgeKey 改用 utils/graph.js 导出的那一份（原来这里有一份手抄，会和 graph.js 漂移）
 
 Page({
@@ -515,7 +523,7 @@ Page({
         locked,
         newChars: d.charsNew.map((c) => c.name),
         newRels: d.relsNew.slice(0, 10).map((r) => `${g.charName(r.from)} — ${r.type} — ${g.charName(r.to)}`),
-        events: d.events.map((e) => ({ ch: e.ch, name: e.name, summary: e.summary })),
+        events: d.events.map((e) => ({ ch: e.ch, name: e.name, summary: noBold(e.summary) })),
         places: d.places.map((id) => g.placeName(id)),
       },
     });
@@ -536,22 +544,22 @@ Page({
           other: g.charName(other), type: r.type,
           kin: r.kin ? (KIN_LABEL[r.kin] || '') : '',
           period: g.periodText(r),
-          ev: ev ? `${ev.text}${ev.chapter ? `（${ev.chapter}）` : ''}` : '',
+          ev: ev ? `${noBold(ev.text)}${ev.chapter ? `（${ev.chapter}）` : ''}` : '',
         };
       });
     const life = g.pack.events
       .filter((e) => (e.chars || []).indexOf(id) >= 0 && !g.eventLocked(e))
       .sort((a, b) => (a.ch || 0) - (b.ch || 0))
       .slice(0, 12)
-      .map((e) => ({ ch: e.ch, name: e.name, summary: e.summary }));
+      .map((e) => ({ ch: e.ch, name: e.name, summary: noBold(e.summary) }));
     const lockedRels = g.pack.relations.filter((r) => (r.from === id || r.to === id) && g.relLocked(r)).length;
     this.setData({
       panel: {
         kind: 'char', title: c.name,
         sub: [g.factionTextOf(c), c.gender === 'f' ? '♀ 女' : '♂ 男', c.title].filter(Boolean).join(' · '),
         aliases: (c.aliases || []).join('，'),
-        desc: c.desc || '',
-        fate: g.fateLocked(c) ? '🔒 在你读到的进度之后' : (c.fate || ''),
+        desc: noBold(c.desc),
+        fate: g.fateLocked(c) ? '🔒 在你读到的进度之后' : noBold(c.fate),
         relCount: (g.adj.get(id) || []).length,
         rels, life, lockedRels,
       },
@@ -560,7 +568,7 @@ Page({
   openRel(rel) {
     const g = this.g;
     const evs = g.visibleRelEvents(rel).map((e) => ({
-      text: e.text, chapter: e.chapter || '', place: e.place ? g.placeName(e.place) : '',
+      text: noBold(e.text), chapter: e.chapter || '', place: e.place ? g.placeName(e.place) : '',
     }));
     this.setData({
       panel: {

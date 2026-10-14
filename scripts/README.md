@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 66 个 `.mjs`（另加 `scripts/archive/` 60 个）。
+`scripts/` 现在有 67 个 `.mjs`（另加 `scripts/archive/` 60 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -53,10 +53,10 @@
 | 类别 | 个数 |
 |---|---|
 | 门禁 | 29 |
-| 库 | 10 |
+| 库 | 11 |
 | 工具 | 27 |
 | 一次性补丁 | 0 |
-| **合计** | **66** |
+| **合计** | **67** |
 
 ## ⚠ 没进 CI、没被 import、文档里也没提的
 
@@ -122,7 +122,7 @@
 | `make-slim-packs.mjs` | `node scripts/make-slim-packs.mjs --check` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `validate.mjs` | `node scripts/validate.mjs --all` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 
-## 库（10 个）
+## 库（11 个）
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
@@ -134,6 +134,7 @@
 | `main-text.mjs` | import | 「只含**正文**」的切分 —— v0.184 新建。 |
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
 | `profile-prefixes.mjs` | import · 文档 | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
+| `prose-bold.mjs` | import · 文档 | 「散文的 `**` 渲染不渲染」判据库 —— v0.218 新增。 |
 | `type-terms.mjs` | import · 文档 | 书型术语层（`js/app.js` 的 `TERMS`）的**判据本体** —— 纯函数、无顶层副作用。 |
 | `ui-notes.mjs` | import · 文档 | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
 

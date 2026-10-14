@@ -5,6 +5,79 @@
 
 ---
 
+## v0.218 · 让作者写的 `**强调**` 真渲染成粗体（136 段，从字面星号到粗体）
+
+v0.217 末尾留了一件"要你定"的事：`characters[].note` / `events[].impact` / `events[].summary` /
+`characters[].desc` 里还有 `**` 记号，而这些字段走 `esc()` 直出 ⇒ 读者看到的是**字面星号**。
+处置方式选了**渲染**（与 v0.141 拆书正文的先例一致），不删作者的强调。
+
+### 一、先把数字数对（v0.217 报的是错的）
+
+v0.217 里我写「103 处」—— 那是按**字符串条数**数的，**数错了**。
+按渲染面重新统计（`scripts/lib/prose-bold.mjs` 的 `tallyBoldByField`）：
+
+| 字段 | `**` 个数 | 粗体段 |
+| --- | --- | --- |
+| `events[].impact` | 194（罪与罚 188／百年孤独 4／peak 2） | 97 |
+| `characters[].note` | 60（百年孤独 30／三国 26／peak 4） | 30 |
+| `events[].summary` | 16（罪与罚） | 8 |
+| `characters[].desc` | 2（三国） | 1 |
+| **散文面合计** | **272** | **136（0 段落单）** |
+| `meta.style`（内部写作规范，不上界面） | 14 | 豁免 |
+
+0 段落单 ⇒ **数据一个字都不用改**，只改渲染。
+
+### 二、两个出口（`js/app.js` 的 `esc` 旁边）
+
+- `escBold()` —— 进 innerHTML 的散文：`esc()` 之后把成对的 `**` 换成 `<strong>`。
+  落到 **23 处**渲染点：搜索下拉简介、地点筛选面板、地点面板、人物卡（注/简介/结局）、
+  事件面板（简述/影响）、关系面板的**连线浮层**与依据事件文本、时间轴芯片可见文字、
+  「一生」小节、EPUB 四处。
+- `unbold()` —— 进**纯文本**的地方：canvas 分享图（简介/结局/依据事件）、tooltip、
+  `data-tip-full` 与 `title` 属性。那里没有"粗体"这个概念，**只去记号**、句子一字不动。7 处。
+
+⚠ 混用就会出现「HTML 里字面星号」或「纯文本里冒出标签」⇒ 守卫两条都查。
+
+### 三、小程序：WXML 是纯文本 ⇒ 渲染层去记号
+
+`miniprogram/pages/index/index.js` 加 `noBold()`，用在人物卡简介/结局、事件简述、关系面板依据
+（6 处）。
+**踩过一次并退回的做法**：先在 `make-miniprogram-packs.mjs` 构建时去记号 ⇒
+`check-packs-sync` 的「包＝数据」逐字段对拍立刻报红（desc/fate/summary/impact 全不一致）。
+⇒ 归一属于**渲染层**，不属于构建层；「包＝数据」这条不变量更重要。
+守卫 A5e 反向锁住这一点（包的 `**` 数量必须与源数据一致）。
+
+### 四、判据与门禁
+
+- 新增 `scripts/lib/prose-bold.mjs`（判据，纯函数、无副作用）：散文字段清单、
+  `findDirectEscUses` / `fieldsWithoutBold` / `findBoldInPlainText` / `tallyBoldByField` / `strayBoldFields`。
+  ⚠ 判据**必须**住在 `scripts/lib/`：守卫自己被 `test/guard-hygiene.mjs` 的 H2 守着
+  （守卫不许把判据抄在自己文件里）。
+- 新增 `test/prose-bold-guard.mjs`，**22 条断言**：A1 两个出口都在用 ／
+  A2 **散文字段不许再直接进 `esc()`** ／ A3 每个散文字段至少走一次 `escBold()` ／
+  A4 属性与 canvas 里不许有 `escBold`、且该用 `unbold` 的地方确实用了 ／
+  A5 小程序渲染层去记号 + 包未被改 ／ A6 真数据的 `**` 只落在会渲染的面或 `meta.style`，
+  外加 **6 组故障注入**（把一处改回 `esc`、在属性里塞 `escBold`、删掉某字段的 `escBold`、
+  造一个不在清单里的面、`meta.style` 豁免、认可的两种写法不误报）。
+- 已注册进 `.github/workflows/check.yml`（`node --check` 名单 + 运行步骤）。
+  `scripts/lib/profile-prefixes.mjs` **不用动**（本测试不开 Temp 目录）。
+
+### 五、顺带订正两处
+
+- `docs/新书处理规程.md` 新增 **§7.9（` **` 会渲染成粗体）** 与
+  **§7.10（`factions[]` 的数组顺序 ＝ 读者看到的顺序）**，并把 §7.7 末尾那条
+  「等真有一本《物种起源》再做（有向关系）」保留 v0.217 的更新；
+- v0.217 CHANGELOG 里那句「103 处」在本文开头已订正为 272 / 136。
+
+### 六、验证
+
+`tools/gate.mjs` 全量 89 步；`test/prose-bold-guard.mjs` 22/22；
+`test/guard-hygiene.mjs` 147/147；`miniprogram/test/smoke.mjs` exit 0；
+`check-packs-sync` / `check-version` / `app-partitions-guard`（改了 app.js 行数后按守卫提示
+重跑了 `add-app-partitions.mjs --force --write`）全绿。版本同步到 `bookatlas-v218`。
+
+---
+
 ## v0.217 · 页脚那行里冒出 `**史实综述**` 和 `faction` —— 把「读者散文」当成一类字段管起来
 
 用户在看《人类简史》页脚「结构」那一行时指出两处不该出现的东西：

@@ -176,6 +176,11 @@ for (const entry of catalog.books) {
     links: entry.links || [],
     meta: book.meta,
     factions: book.factions,
+    /* ⚠ v0.218：`characters` / `events` **原样**拷贝，不要在这里去 `**`。
+     *   小程序 WXML 是纯文本、`**` 会字面显示 —— 但那是**渲染层**的事，
+     *   由 `pages/index/index.js` 的 `noBold()` 负责（与网页端的 escBold/unbold 同一思路）。
+     *   曾经在构建时去记号，结果 `check-packs-sync` 的「包＝数据」逐字段对拍立刻报红
+     *   （desc/fate/summary/impact 全不一致）⇒ 这条不变量比"顺手在构建时改数据"重要。 */
     characters: book.characters,
     relations: book.relations,
     places: book.places || [],

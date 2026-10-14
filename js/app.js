@@ -7,12 +7,12 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7028 行、275 个顶层符号，68 个分区。
+ * 文件共 7046 行、277 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 12 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 14 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
@@ -217,6 +217,24 @@
 
   const edgeKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+  /* v0.218：作者写在散文里的 `**` 到底算不算粗体。
+   *
+   * 病根：`events[].impact` / `characters[].note` / `events[].summary` /
+   * `characters[].desc` 这四个字段里共 **272 个 `**`（＝136 段成对粗体，0 落单）**，
+   * 而它们全部走 `esc()` 直出 ⇒ 读者在人物卡、事件面板、时间轴上看到的是**字面星号**。
+   * 判据沿用 v0.141 已经在**拆书正文**上判过的那一次（annoBody）：「193/222 条的 body
+   * 写过粗体，而原来走 esc()，星号原样显示给读者」→ 那次选了**渲染**，不删作者的强调。
+   * ⇒ 这次同样：**有粗体就渲染**。
+   *
+   * ⚠ 两条出口，别混用（混用就会出现「HTML 里字面星号」或「纯文本里冒出标签」）：
+   *   · escBold() —— 进 innerHTML 的散文（人物卡 / 事件面板 / 关系依据 / 时间轴 / EPUB）。
+   *     esc 在前、替换在后：`esc()` 先转义，`**x**` 里不含可转义字符，顺序安全。
+   *   · unbold()  —— 进**纯文本**的地方（canvas 分享图、tooltip、title 属性）：
+   *     那些地方没有"粗体"这个概念，只去记号、句子一字不动。
+   * `test/prose-bold-guard.mjs` 守这条：散文字段不许再直接进 `esc()`。 */
+  const escBold = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  const unbold = (s) => String(s ?? '').replace(/\*\*/g, '');
 
   /* v0.97：连线扇形 —— 让"连到同一个点上的那些线"在**节点附近**岔开。
    *
@@ -1744,7 +1762,7 @@
             ? `<span class="combo-alt"${alt.length > shown.length
               ? ` data-tip-full="又译：${esc(alt.join('、'))}"` : ''}>（又译 ${esc(shown.join('、'))}${alt.length > shown.length ? '…' : ''}）</span>`
             : '';
-          return `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${altHtml}${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${esc(it.desc)}</p>` : ''}</div>`;
+          return `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${altHtml}${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${escBold(it.desc)}</p>` : ''}</div>`;
         }
         ).join('') + (all.length > filtered.length
           ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
@@ -2311,7 +2329,7 @@
             const [first, second] = orderPair(rel.from, rel.to);
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
-            const evs = vis.map((e) => `· ${esc(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
+            const evs = vis.map((e) => `· ${escBold(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
             return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
               (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</span>` : '');
           }
@@ -2321,8 +2339,8 @@
             return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个${T().char}在第 ${charCh(c)} 章才${T().charVerb}；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
           }
           return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
-            `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${esc(c.desc)}<br>` +
-            `<span style="color:${muted}">${T().fate}：${fateLocked(c) ? '🔒 在你读到的进度之后' : esc(c.fate)}</span>` +
+            `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${escBold(c.desc)}<br>` +
+            `<span style="color:${muted}">${T().fate}：${fateLocked(c) ? '🔒 在你读到的进度之后' : escBold(c.fate)}</span>` +
             (isMentioned(c) ? `<br><span style="color:${muted}">（仅被提及 · 未${T().charVerb}；第 ${charCh(c)} 章）</span>` : '');
         },
       },
@@ -4415,7 +4433,7 @@
     tip.id = 'place-tip';
     tip.innerHTML = `<div class="pt-name">📍 ${esc(p.name)}</div>
       <div class="pt-meta">${esc(p.type || T().place)}${p.firstCh != null ? ` · 首次出现：第 ${p.firstCh} 章` : ''}${p.aliases && p.aliases.length ? ` · 又称 ${esc(p.aliases.join('、'))}` : ''}</div>
-      ${p.desc ? `<div class="pt-desc">${esc(p.desc)}</div>` : '<div class="pt-desc" style="color:var(--muted)">（暂无介绍）</div>'}`;
+      ${p.desc ? `<div class="pt-desc">${escBold(p.desc)}</div>` : '<div class="pt-desc" style="color:var(--muted)">（暂无介绍）</div>'}`;
     tip.hidden = false;
     if (placeTipOwner && placeTipOwner !== target) placeTipOwner.removeAttribute('aria-describedby');
     placeTipOwner = target;
@@ -4475,11 +4493,11 @@
     panel().innerHTML = `
       <div class="card-title">📍 ${esc(p.name)}</div>
       <div class="card-sub">${esc(p.type || T().place)} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
-      <p class="card-desc">${esc(p.desc || '')}</p>
+      <p class="card-desc">${escBold(p.desc || '')}</p>
       <h3 style="margin-top:12px;font-size:14px">${T().placeEventsH}（${evs.length}）</h3>
       ${evs.length ? foldSection({ key: `place:${id}`, n: 10, unit: '条', cls: 'rel-list', items: evs.map((e) => `<li class="rel">
         <div class="rel-head">${esc(e.name)} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
-        <div class="rel-event">· ${esc(e.summary)}</div>
+        <div class="rel-event">· ${escBold(e.summary)}</div>
       </li>`) }) : '<ul class="rel-list"><li class="hint">暂无（或都在你读到的进度之后）</li></ul>'}
       <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">${T().placeAll}</button></p>`;
     bindGoto(panel());
@@ -4536,7 +4554,7 @@
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
     const lifeItems = lifeShown.map((e) => `
         <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(e.name)}</button>
-          <div class="rel-event">· ${esc(e.summary)}${e.place ? ` ${placeRef(e.place, { filter: true })}` : ''}</div>
+          <div class="rel-event">· ${escBold(e.summary)}${e.place ? ` ${placeRef(e.place, { filter: true })}` : ''}</div>
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
         </li>`);
     const lifeHtml = lifeEvs.length ? `
@@ -4548,7 +4566,7 @@
       const vis = visibleRelEvents(r);
       const hidden = (r.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
           <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条${T().rel}">定位这条线</button>
@@ -4560,7 +4578,7 @@
     panel().innerHTML = `
       <div class="card-title">${esc(c.name)}</div>
       <div class="card-sub">${genPrefix(c)}${esc(c.title)}</div>
-      ${c.note ? `<div class="note">⚠️ ${esc(c.note)}</div>` : ''}
+      ${c.note ? `<div class="note">⚠️ ${escBold(c.note)}</div>` : ''}
       <div class="badges">
         ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
         ${isTheoryBook() ? '' : `<span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>`}
@@ -4569,9 +4587,9 @@
         ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
         <span class="badge">${T().rel} ${allRels.length} 条</span>
       </div>
-      <p class="card-desc">${esc(c.desc)}</p>
+      <p class="card-desc">${escBold(c.desc)}</p>
       ${factionHist.length > 1 ? `<p class="card-sub">${T().faction}变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
-      <p class="card-fate"><b>${T().fate}：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : esc(c.fate)}</p>
+      <p class="card-fate"><b>${T().fate}：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : escBold(c.fate)}</p>
       <p class="hint" style="margin-top:8px">${T().charMany}太多看不清？只看这个${T().char}的${T().rel}网：
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
@@ -4603,7 +4621,7 @@
   function renderRelationPanel(r) {
     const [first, second] = orderPair(r.from, r.to);
     const evItems = (r.events || []).map((e) =>
-      `<div class="rel-event">· ${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`);
+      `<div class="rel-event">· ${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`);
     panel().innerHTML = `
       <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
       <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
@@ -4621,8 +4639,8 @@
     panel().innerHTML = `
       <div class="card-title">${esc(ev.name)}</div>
       <p class="card-sub">阶段：${esc((state.book.phases.find((p) => p.id === ev.phase) || {}).name || '')}</p>
-      <p class="card-desc">${esc(ev.summary)}</p>
-      <p class="card-fate"><b>影响：</b>${esc(ev.impact)}</p>
+      <p class="card-desc">${escBold(ev.summary)}</p>
+      <p class="card-fate"><b>影响：</b>${escBold(ev.impact)}</p>
       ${ev.quote ? `<div class="quote">「${esc(ev.quote)}」</div>` : ''}
       <p style="margin-top:10px">${ev.place ? `${placeRef(ev.place, { filter: true, cls: 'ghost tiny', suffix: ' ' })}` : ''}
       <b>涉及：</b>${chain}</p>`;
@@ -4686,7 +4704,7 @@
       const vis = visibleRelEvents(s.rel);
       const hidden = (s.rel.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${esc(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
         ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
@@ -4730,7 +4748,7 @@
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
                <span class="ev-name">${esc(e.name)}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
-               <span class="ev-sum" data-tip-full="${esc(e.summary)}">${esc(e.summary)}</span>
+               <span class="ev-sum" data-tip-full="${esc(unbold(e.summary))}">${escBold(e.summary)}</span>
              </button>`).join('')}
       </div>`;
     }).join('');
@@ -4856,7 +4874,7 @@
         const e = state.book.events.find((x) => x.id === id);
         if (!e) return id; // 数据里没有就保持纯文本，不要造出一个点不动的按钮
         const label = eventShortName(e.name) || id;
-        const tip = `第 ${e.ch ?? '?'} 章《${e.name}》：${e.summary || ''}`;
+        const tip = `第 ${e.ch ?? '?'} 章《${e.name}》：${unbold(e.summary || '')}`;
         return `<button class="anno-inline-ref" type="button" data-event="${esc(id)}"`
           + ` title="${esc(tip)}">${esc(label)}</button>`;
       });
@@ -4883,7 +4901,7 @@
     if (!evs.length && !chs.length) return '';
     const evHtml = evs.map((id) => {
       const e = state.book.events.find((x) => x.id === id);
-      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc([t.event, e.summary || e.name].join(' · '))}">${t.eventIcon} ${esc(e.name)}</button>` : '';
+      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc(unbold([t.event, e.summary || e.name].join(' · ')))}">${t.eventIcon} ${esc(e.name)}</button>` : '';
     }).join('');
     const chHtml = chs.map((id) => {
       const c = state.byId.get(id);
@@ -5458,11 +5476,11 @@
     ctx.fillText(badges, L, y + 30);
     y += 66;
     ctx.fillStyle = ink; ctx.font = font(21);
-    for (const ln of wrapText(ctx, c.desc, R - L, 3)) { ctx.fillText(ln, L, y); y += 32; }
+    for (const ln of wrapText(ctx, unbold(c.desc), R - L, 3)) { ctx.fillText(ln, L, y); y += 32; }
     y += 4;
     ctx.fillStyle = muted; ctx.font = font(19, 700); ctx.fillText(T().fate, L, y);
     ctx.font = font(19);
-    const fateText = fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : (c.fate || '—');
+    const fateText = fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : (unbold(c.fate) || '—');
     for (const ln of wrapText(ctx, fateText, R - L - 60, 2)) { ctx.fillText(ln, L + 56, y); y += 28; }
     y += 12;
     ctx.strokeStyle = line; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(R, y); ctx.stroke();
@@ -5483,7 +5501,7 @@
       // 第二行：一条依据事件（小字、单行省略）
       const ev = (visibleRelEvents(r)[0] || {});
       ctx.font = font(17);
-      const evText = ev.text ? wrapText(ctx, `· ${ev.text}${ev.chapter ? `（${ev.chapter}）` : ''}`, R - L - 16, 1)[0] || '' : '';
+      const evText = ev.text ? wrapText(ctx, `· ${unbold(ev.text)}${ev.chapter ? `（${ev.chapter}）` : ''}`, R - L - 16, 1)[0] || '' : '';
       if (evText) { ctx.fillStyle = muted; ctx.fillText(evText, L + 16, y + 24); }
       y += 56;
     }
@@ -5932,7 +5950,7 @@ ${body}
       const life = b.events
         .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
         .sort((x, y) => (x.ch || 0) - (y.ch || 0))
-        .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${esc(e.summary)}</li>`)
+        .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${escBold(e.summary)}</li>`)
         .join('');
       /* EPUB 人物小节标题里的那个人称：叙事类按性别（她/他），理论类用名词（概念）。
        * ⚠ 这不是"两套渲染分支"—— 换的只有 `{0}` 这一个词（`TERMS.lifeH`）。
@@ -5944,8 +5962,8 @@ ${body}
   <p class="meta">${esc([factionTextOf(c), isTheoryBook() ? '' : (c.gender === 'f' ? '女' : '男'), c.title, `第 ${charCh(c)} 章${T().charVerb}`].filter(Boolean).join(' · '))}</p>
   ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
   ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
-  ${c.desc ? `<p>${esc(c.desc)}</p>` : ''}
-  <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : esc(c.fate || '—')}</p>
+  ${c.desc ? `<p>${escBold(c.desc)}</p>` : ''}
+  <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : escBold(c.fate || '—')}</p>
   ${life ? `<h3>${TW('lifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
   ${relHtml ? `<h3>${T().relsTitle}</h3><ul>${relHtml}</ul>` : ''}
 </section>`;
@@ -5958,8 +5976,8 @@ ${body}
       if (!evs.length) return '';
       return `<h2>${esc(p.name)}</h2>` + evs.map((e) => `<section class="ev">
   <h3>第 ${e.ch ?? '?'} 章 · ${esc(e.name)}</h3>
-  <p>${esc(e.summary)}</p>
-  ${e.impact ? `<p class="meta">影响：${esc(e.impact)}</p>` : ''}
+  <p>${escBold(e.summary)}</p>
+  ${e.impact ? `<p class="meta">影响：${escBold(e.impact)}</p>` : ''}
   ${e.place ? `<p class="meta">${T().place}：${placeRef(e.place)}</p>` : ''}
   <p class="meta">涉及：${esc((e.chars || []).map(charName).join('、'))}</p>
   ${e.quote ? `<blockquote>「${esc(e.quote)}」</blockquote>` : ''}
