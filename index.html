@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=219">
+  <link rel="stylesheet" href="css/style.css?v=220">
 </head>
 <body>
 
@@ -123,11 +123,11 @@
         <div id="edge-filter-panel" class="edge-panel" hidden>
           <div class="ep-group" id="edge-kin-group">
             <b data-s2t>亲缘</b>
-            <label><input type="checkbox" data-edge-kin="blood">血缘</label>
-            <label><input type="checkbox" data-edge-kin="marriage">婚姻 · 姻亲</label>
-            <label><input type="checkbox" data-edge-kin="adopt">收养 · 抚养 · 继亲</label>
-            <label><input type="checkbox" data-edge-kin="sworn">结义</label>
-            <label><input type="checkbox" data-edge-kin="none">无亲缘标注（朋友 / 君臣 / 敌对…）</label>
+            <label><input type="checkbox" data-edge-kin="blood"><span data-s2t>血缘</span></label>
+            <label><input type="checkbox" data-edge-kin="marriage"><span data-s2t>婚姻 · 姻亲</span></label>
+            <label><input type="checkbox" data-edge-kin="adopt"><span data-s2t>收养 · 抚养 · 继亲</span></label>
+            <label><input type="checkbox" data-edge-kin="sworn"><span data-s2t>结义</span></label>
+            <label><input type="checkbox" data-edge-kin="none"><span data-s2t>无亲缘标注（朋友 / 君臣 / 敌对…）</span></label>
           </div>
           <div class="ep-group">
             <b data-s2t>线条</b>
@@ -137,7 +137,7 @@
           </div>
           <div class="ep-group">
             <b data-s2t>其它</b>
-            <label><input type="checkbox" id="edge-derived">族谱补全（推导的祖孙 / 叔侄）</label>
+            <label><input type="checkbox" id="edge-derived"><span data-s2t>族谱补全（推导的祖孙 / 叔侄）</span></label>
           </div>
           <div class="ep-presets">
             <button class="ghost tiny" type="button" data-edge-preset="kin" data-s2t>只看亲缘</button>
@@ -183,7 +183,7 @@
     <p id="graph-kb-hint" class="sr-only" data-term="kbHint">用 Tab 聚焦这张图后，方向键在人物之间移动，回车打开这个人的档案，Esc 取消选中。</p>
     <!-- v91：常驻提示。"空白处拖动"读起来像"任何空白处"，而漫游只绑在图那块画布上，
          用户试了图的外面发现没反应，以为是自己操作错了。 -->
-    <p class="hint graph-pan-hint">在<b data-s2t>图上</b>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · <b data-s2t>双击图的空白</b>＝复位视图</p>
+    <p class="hint graph-pan-hint"><span data-s2t>在</span><b data-s2t>图上</b><span data-s2t>按住拖动＝平移画布（要按在图的范围里，图外无效）· 滚轮＝缩放 · </span><b data-s2t>双击图的空白</b><span data-s2t>＝复位视图</span></p>
     <div id="sr-live" class="sr-only" aria-live="polite" role="status"></div>
 
     <div class="pathbar">
@@ -237,7 +237,7 @@
   <span id="footer-note">
     <span class="foot-row"><b data-s2t>数据</b>本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。</span>
   </span>
-  <span class="foot-row foot-build">构建版本 <b id="build-ver">…</b><span id="build-stale" hidden data-s2t>（与服务器不一致，请硬刷新 Ctrl/Cmd+Shift+R）</span></span>
+  <span class="foot-row foot-build"><span data-s2t>构建版本</span> <b id="build-ver">…</b><span id="build-stale" hidden data-s2t>（与服务器不一致，请硬刷新 Ctrl/Cmd+Shift+R）</span></span>
 </footer>
 
 <div id="help-modal" class="modal-backdrop" hidden>
@@ -391,7 +391,7 @@
             <circle cx="40" cy="62" r="8" fill="#4a7fc4"/>
             <circle cx="120" cy="62" r="8" fill="#4c9f70"/>
             <path class="hf-dashline" d="M80 35 L44 55 M80 35 L116 55" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 5"/>
-            <text x="80" y="86" font-size="10" text-anchor="middle" fill="var(--muted)">虚线 = 推导的亲属</text>
+            <text x="80" y="86" font-size="10" text-anchor="middle" fill="var(--muted)" data-s2t>虚线 = 推导的亲属</text>
           </svg>
         </div>
         <div class="help-text">
@@ -443,7 +443,7 @@
         </div>
         <div class="help-text">
           <b data-s2t>⑪ 导出与分享</b>
-          <span>右上「⬇️ 导出」：① <b data-s2t>单文件 HTML</b>——一本书连图带数据打包成一个文件，发给别人双击就能看；② <b data-s2t>分享图 PNG</b>；③ <b data-s2t>打印版 SVG</b>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span>
+          <span><span data-s2t>右上「⬇️ 导出」：① </span><b data-s2t>单文件 HTML</b><span data-s2t>——一本书连图带数据打包成一个文件，发给别人双击就能看；② </span><b data-s2t>分享图 PNG</b><span data-s2t>；③ </span><b data-s2t>打印版 SVG</b><span data-s2t>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span></span>
           <button type="button" class="ghost tiny" data-help-act="export" data-s2t>试一下：打开导出面板</button>
         </div>
       </div>
@@ -571,7 +571,7 @@
       </button>
       <div class="spoiler-opt" id="spoiler-on-box">
         <b data-s2t>② 我在读，按进度解锁</b>
-        <span>我读到了：<select id="spoiler-ch"></select></span>
+        <span><span data-s2t>我读到了：</span><select id="spoiler-ch"></select></span>
         <button type="button" class="primary" id="spoiler-on" data-s2t>按这个进度解锁</button>
       </div>
     </div>
@@ -581,6 +581,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=219"></script>
+<script src="js/app.js?v=220"></script>
 </body>
 </html>

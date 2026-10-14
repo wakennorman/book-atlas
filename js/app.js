@@ -7,12 +7,12 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7204 行、280 个顶层符号，68 个分区。
+ * 文件共 7297 行、281 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 17 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 18 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
@@ -257,9 +257,16 @@
   const s2tCache = new Map();                     // 同一个句子会被转多次（列表里重复），记一下
   const HAN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
 
-  /** 简→繁。繁体没开、或表还没取到 ⇒ 原样返回（宁可先显示简体，也不要半吊子）。 */
+  /** 简→繁。繁体没开、或表还没取到 ⇒ 原样返回（宁可先显示简体，也不要半吊子）。
+   *
+   * ⚠⚠ v0.220 当场逮到的错：这里原来写的是 `if (!state.script || !S2T) return s;`
+   *   —— `state.script` 的初值就是 `'han'`（**truthy**！）而繁体也是 `'hant'`，
+   *   于是这个判断在**两种模式下都成立**，只要转换表取过一次（S2T 有值）就照样转。
+   *   症状：用户「简→繁→简」点回简体，界面**仍是繁体**，而且再也回不去了 ——
+   *   首屏看不出来（那时 S2T 还没取到，conv 恰好是空操作，掩盖了这个错）。
+   *   ⇒ 必须比**值**：`!== 'hant'` 就是没开繁体。 */
   function conv(s) {
-    if (!state.script || !S2T) return s;
+    if (state.script !== 'hant' || !S2T) return s;
     const t = String(s ?? '');
     if (!HAN.test(t)) return t;
     const hit = s2tCache.get(t);
@@ -280,6 +287,22 @@
     if (s2tCache.size > 4000) s2tCache.clear();    // 换书/换语言都换一批，别让它无脑涨
     s2tCache.set(t, out);
     return out;
+  }
+
+  /** 「模板 + 已转换词条」⇒ 转换后的整句。
+   *
+   *  ## 顺序是重点：**先 conv 模板，再填词条** —— 不能反过来。
+   *
+   *  `T()` 给的词条、conv 过的数据（阵营名、代际标签）**已经是繁体**；而模板里的
+   *  连接词（差异 / 都属同一 / 按…排列）还是简体。两种合起来只有一种合法人：
+   *  占位符是 ASCII，`conv` 转不动它们 ⇒ 先转模板（占位符原样保留），
+   *  再把已转换的值填回去。
+   *
+   *  ⚠ 反过来写（先填再 conv）会把词条再转一遍 —— conv 不幂等，
+   *    「范晔」会变「範曄」→「範曄範」那一类。页脚「结构」行就踩过这个坑。
+   */
+  function convFill(tpl, vals) {
+    return conv(String(tpl)).replace(/\{(\w+)\}/g, (m, k) => (typeof vals[k] === 'string' ? vals[k] : m));
   }
 
   /** 拉转换表（只在第一次切到繁体时）。失败就退回简体，绝不半吊子。 */
@@ -886,11 +909,11 @@
       return out;
     }).join('');
     return `<section class="fold${v.open ? ' is-open' : ''}" data-fold-key="${esc(key)}" data-n="${n}" data-unit="${esc(unit)}">
-      <div class="fold-head"${v.open ? '' : ' hidden'}><button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="collapse" aria-expanded="${v.open}" aria-controls="${bid}">⌃ 收起</button></div>
+      <div class="fold-head"${v.open ? '' : ' hidden'}><button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="collapse" aria-expanded="${v.open}" aria-controls="${bid}">${esc(conv('⌃ 收起'))}</button></div>
       <${wrap} class="${cls} fold-body${v.full ? '' : ' is-cut'}" id="${bid}">${body}</${wrap}>
       <div class="fold-foot">
         <button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="${v.act}" aria-expanded="${v.open}" aria-controls="${bid}">${v.text}</button>
-        <button class="fold-btn fold-alt" type="button" data-fold="${esc(key)}" data-fold-act="all" aria-expanded="${v.open}" aria-controls="${bid}"${total > FOLD_ONESTEP && !v.full ? '' : ' hidden'}>全部展开</button>
+        <button class="fold-btn fold-alt" type="button" data-fold="${esc(key)}" data-fold-act="all" aria-expanded="${v.open}" aria-controls="${bid}"${total > FOLD_ONESTEP && !v.full ? '' : ' hidden'}>${esc(conv('全部展开'))}</button>
       </div>
     </section>`;
   }
@@ -934,7 +957,9 @@
 
   const kinBadge = (rel) => {
     const k = rel && rel.kin;
-    return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${KIN_LABEL[k]}：${KIN_HINT[k] || ''}">${KIN_LABEL[k]}</span>` : '';
+    /* v0.219：徽章文字与 tooltip 都从 `KIN_LABEL` 取，转换放在这个出口。
+     * ⚠ 注意 `esc(k)` 那处是 class 名（`k-f`/`k-m`），**不能**转 —— 只有可见文字转。 */
+    return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${esc(conv(KIN_LABEL[k]))}：${esc(conv(KIN_HINT[k] || ''))}">${esc(conv(KIN_LABEL[k]))}</span>` : '';
   };
   // 性别徽章：♂/♀（U+2642/U+2640）不在中文字体里，手机端字体回退的字形又大又靠下，
   // 药丸框里永远对不齐 → 改用内联 SVG（与平台字体无关，各端像素一致、可居中）
@@ -956,13 +981,17 @@
    * ⚠ 本函数是**唯一**出口（图注、下拉副标、人物卡 meta、导出都走它）⇒ 改一处全跟随。 */
   const genText = (g) => {
     const labels = state.book && state.book.meta && state.book.meta.genLabels;
+    /* v0.219：本函数是「层级标签」的**唯一**出口（图注、下拉副标、人物卡 meta、
+     * 时间轴、导出都走它）⇒ 繁体转换放这里，一处盖住全部。
+     * ⚠ 同 `charName`：调用点都用 `esc(...)` 接，**不**再套 conv —— 转换不幂等。 */
     if (Array.isArray(labels) && labels.length) {
-      if (typeof labels[g] === 'string' && labels[g]) return labels[g];
-      return `第 ${g + 1} 级`;
+      if (typeof labels[g] === 'string' && labels[g]) return conv(labels[g]);
+      return conv(`第 ${g + 1} 级`);
     }
-    return g === 0 ? '前史' : `第 ${g} 代`;
+    return conv(g === 0 ? '前史' : `第 ${g} 代`);
   };
-  const charName = (id) => state.byId.get(id)?.name || id;
+  /** 人名/节点名的**唯一**出口（tooltip、关系两端、链接…）。v0.219 同上：出口处转一次。 */
+  const charName = (id) => conv(state.byId.get(id)?.name || id);
 
   /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
   /** 按 key 取阵营名。v0.219：`factions[].name` 是**数据**（不走 escBold/unbold），
@@ -1054,7 +1083,7 @@
        *   （`setTyped($('#edge-filter-btn'), …)`），而**本函数在它之后才跑**
        *   ⇒ 理论类上写好的「关联：全部」被这里改回「关系：全部」，
        *   界面看着正常，只是"术语层那一句白写了"。⇒ 措辞归这一处（唯一的写者）。 */
-      btn.textContent = n ? `${T().rel}：筛选 ${n} 项` : `${T().rel}：全部`;
+      btn.textContent = n ? `${T().rel}：${conv(`筛选 ${n} 项`)}` : `${T().rel}：${conv('全部')}`;
       btn.classList.toggle('active', n > 0);
     }
     document.querySelectorAll('[data-edge-kin]').forEach((el) => { el.checked = state.edgeKins.has(el.dataset.edgeKin); });
@@ -1151,7 +1180,7 @@
     const cands = [state.progress, asOf()].filter((x) => typeof x === 'number');
     const limit = cands.length ? Math.min(...cands) : null;
     if (to !== null && limit !== null && to - 1 > limit) to = null;
-    return to !== null ? `第 ${from}–${to - 1} 章` : `第 ${from} 章起`;
+    return to !== null ? conv(`第 ${from}–${to - 1} 章`) : conv(`第 ${from} 章起`);
   };
 
   const visibleRelEvents = (r) => (r.events || []).filter((ev) =>
@@ -1227,7 +1256,7 @@
     }
 
     const sel = $('#book-select');
-    sel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(b.title)}</option>`).join('');
+    sel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(conv(b.title))}</option>`).join('');
     sel.addEventListener('change', () => loadBook(sel.value));
 
     const wanted = params.get('book');
@@ -1389,9 +1418,13 @@
     const b = state.book, m = b.meta || {};
     const catalog = state.books.find((x) => x.slug === m.slug) || {};
     const links = (catalog.links || []).map((l) =>
-      `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('');
+      `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(conv(l.label))} ↗</a>`).join('');
+    /* v0.219：书名与作者是 `meta` 里的**数据**，整句在出口转一次。
+     * ⚠ `T().charN / relN / eventN` 已经是转换过的词条，**不能**再套 conv（不幂等）——
+     *   所以只把数据部分拼进 `conv()`，词条部分留在外面。 */
     $('#book-meta').innerHTML =
-      esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} ${T().charN} / ${b.relations.length} ${T().relN} / ${b.events.length} ${T().eventN}`) +
+      esc(conv(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} `)) + esc(T().charN)
+      + esc(conv(' / ')) + esc(`${b.relations.length} ${T().relN}`) + esc(conv(' / ')) + esc(`${b.events.length} ${T().eventN}`) +
       (links ? ` <span class="meta-links">${links}</span>` : '');
     document.title = conv(`《${m.title || '书脉'}》· 书脉 BookAtlas`);
     renderFooter();
@@ -1491,44 +1524,57 @@
       return named.join(' → ') || '—';
     }
     const out = [];
-    if (gens.some((g) => g <= 0)) out.push('前史');
+    /* v0.219：这三个字面量自己转。`genText()` 的返回值已经是繁体（它内部转了），
+     *  所以调用方只能把本函数的整体当"已转换"用，不要再套 conv。 */
+    if (gens.some((g) => g <= 0)) out.push(conv('前史'));
     const pos = gens.filter((g) => g > 0);
     if (pos.length === 1) out.push(genText(pos[0]));
-    else if (pos.length > 1) out.push(`第 ${pos[0]}–${pos[pos.length - 1]} 代`);
+    else if (pos.length > 1) out.push(conv(`第 ${pos[0]}–${pos[pos.length - 1]} 代`));
     return out.join('、') || '—';
   }
   function renderFooter() {
     renderBuildStamp();
     const b = state.book, m = b.meta || {};
+    /* v0.219：页脚是**读者直读的散文**，四行里每一句都是数据或字面量，一样都不走
+     *  escBold/unbold ⇒ 繁体态下整块简体（v0.217 刚把它从"字段名"里救出来，
+     *  结果它在繁体这条路上又漏了一次）。
+     *
+     *  ⚠ 这一行混着三种来源：① `T()` 词条（已转换）② 数据（`conv()` 过）
+     *  ③ 简体字面量。用 `convFill` 一句话搞定 —— 它先转模板再填词条，顺序不能反。 */
+    const t = T();
     const rows = [];
     // ① 一句话：最能概括这本书的一句 + 出处
-    if (m.prophecy) rows.push(['一句话', `「${esc(m.prophecy)}」${m.prophecySrc ? `（${esc(m.prophecySrc)}）` : ''}`]);
+    if (m.prophecy) rows.push([conv('一句话'), `「${esc(conv(m.prophecy))}」${m.prophecySrc ? `（${esc(conv(m.prophecySrc))}）` : ''}`]);
     // ② 结构：当前分组视图怎么排 + 剧透/章节尺度 + 该书专属说明
     const gens = [...new Set(b.characters.map((c) => Number(c.generation)))].sort((a, z) => a - z);
-    const facs = (b.factions || []).map((f) => conv(f.name));
+    const facs = (b.factions || []).map((f) => conv(f.name)).join('／');   // 已转换
+    const V = { ...t, facs, span: genSpanText(gens) };                   // 已转换
     const parts = [];
     if (state.groupMode === 'generation') {
-      parts.push(`「分组视图」按代际排列（${genSpanText(gens)}）`);
+      parts.push(convFill('「分组视图」按代际排列（{span}）', V));
     } else if (gens.length <= 1) {
       /* ⚠ v0.217：这里原来直接写 `generation 一律为 1` —— 页脚是读者直读的散文，
        *   而 generation 是**字段名**（读者不认识；同类的 faction/meta.vocab 已在
        *   scripts/check-ui-notes.mjs 的「读者散文」判据里报红）。改走术语层：
        *   理论类的书这里印的是「层次号都是 1」。 */
-      parts.push(`本书没有${T().gen}差异：所有${T().char}都属同一${T().gen}（${T().gen}号都是 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
+      parts.push(convFill('本书没有{gen}差异：所有{char}都属同一{gen}（{gen}号都是 1），「分组视图」按{faction}（{facs}）排列', V));
     } else {
-      parts.push(`「分组视图」按${T().faction}（${facs.join('／')}）排列，数据另标${T().gen}（${genSpanText(gens)}）`);
+      parts.push(convFill('「分组视图」按{faction}（{facs}）排列，数据另标{gen}（{span}）', V));
     }
-    if (m.chapters) parts.push(`剧透保护按章节顺序解锁（全书 ${m.chapters} 章）`);
-    if (m.note) parts.push(esc(m.note));
-    rows.push(['结构', parts.join('；').replace(/[。；;]?$/, '') + '。']);
+    if (m.chapters) parts.push(convFill('剧透保护按章节顺序解锁（全书 {n} 章）', { n: String(m.chapters) }));
+    /* ⚠ `meta.note` 是**读者读的散文**（这本书的收录口径说明）⇒ 按纪律走散文出口 `unbold()`
+     *   （它内部含 `conv()`），不直接调 `conv()` —— 会被 `test/s2t-guard.mjs` 的 D2 拦，
+     *   而那条守的正是"散文字段不许绕过 escBold/unbold 直接转"（二次转换）。 */
+    if (m.note) parts.push(esc(unbold(m.note)));
+    rows.push([conv('结构'), esc(parts.join('；').replace(/[。；;]?$/, '')) + conv('。')]);
     // ③ 数据：固定免责声明
-    rows.push(['数据', '本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。']);
+    rows.push([conv('数据'), esc(conv('本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。'))]);
     // ④ 来源：出处 · 授权 · 更新时间
     const src = (m.sources || []).map((s) => (s.url
-      ? `<a class="foot-link" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`
-      : esc(s.name))).join(' · ');
-    const bits = [src, m.license && esc(m.license), m.updated && `更新 ${esc(m.updated)}`].filter(Boolean);
-    if (bits.length) rows.push(['来源', bits.join(' · ')]);
+      ? `<a class="foot-link" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(conv(s.name))}</a>`
+      : esc(conv(s.name)))).join(' · ');
+    const bits = [src, m.license && esc(conv(m.license)), m.updated && convFill('更新 {d}', { d: m.updated })].filter(Boolean);
+    if (bits.length) rows.push([conv('来源'), bits.join(' · ')]);
     const el = $('#footer-note');
     if (el) el.innerHTML = rows.map(([k, v]) => `<span class="foot-row"><b>${k}</b>${v}</span>`).join('');
   }
@@ -1851,14 +1897,14 @@
           const shown = alt.slice(0, 2);
           const altHtml = alt.length
             ? `<span class="combo-alt"${alt.length > shown.length
-              ? ` data-tip-full="又译：${esc(alt.join('、'))}"` : ''}>（又译 ${esc(shown.join('、'))}${alt.length > shown.length ? '…' : ''}）</span>`
+              ? ` data-tip-full="${esc(conv(`又译：${alt.join('、')}`))}"` : ''}>（${esc(conv(`又译 ${shown.join('、')}${alt.length > shown.length ? '…' : ''}`))}）</span>`
             : '';
           return `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${altHtml}${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${escBold(it.desc)}</p>` : ''}</div>`;
         }
         ).join('') + (all.length > filtered.length
           ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
       } else {
-        list.innerHTML = `<div class="combo-item combo-empty" role="presentation">没找到「${esc(input.value.trim())}」${opts.kind === 'search' ? '；回车按文字搜' : ''}</div>`;
+        list.innerHTML = `<div class="combo-item combo-empty" role="presentation">${esc(conv(`没找到「${input.value.trim()}」`))}${opts.kind === 'search' ? esc(conv('；回车按文字搜')) : ''}</div>`;
       }
       list.hidden = false;
       input.setAttribute('aria-expanded', 'true');
@@ -2209,7 +2255,7 @@
       let sz = fxSym((mentioned ? 12 : symbolSize(c.id)) * (hl ? 1.15 : 1));
       if (hl && smallHl) sz = Math.max(sz, 11);        // 高亮节点屏幕直径下限 11px（密集图里也能一眼找到）
       return {
-        id: c.id, name: locked ? '🔒' : c.name, value: c.title,
+        id: c.id, name: locked ? '🔒' : conv(c.name), value: conv(c.title),
         category: categoryOf(c),
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
         symbolSize: sz,
@@ -2421,8 +2467,8 @@
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
             const evs = vis.map((e) => `· ${escBold(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(conv(e.chapter))}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
-              (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</span>` : '');
+            return `<b>${esc(charName(first))} — ${esc(conv(rel.type))} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
+              (hidden ? `<br><span style="color:${muted}">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</span>` : '');
           }
           const c = state.byId.get(p.data.id);
           if (!c) return '';
@@ -3012,8 +3058,8 @@
     const fac = T().faction;
     const bh = document.querySelector('.seg[data-view="gen-h"]');
     const bv = document.querySelector('.seg[data-view="gen-v"]');
-    if (bh) { bh.textContent = isGen ? '代际·横' : '分组·横'; bh.title = isGen ? '按代际分列，从左到右' : `按${fac}分组分列，从左到右`; }
-    if (bv) { bv.textContent = isGen ? '代际·纵' : '分组·纵'; bv.title = isGen ? '按代际分行，从上到下' : `按${fac}分组分行，从上到下`; }
+    if (bh) { bh.textContent = conv(isGen ? '代际·横' : '分组·横'); bh.title = conv(isGen ? '按代际分列，从左到右' : `按${fac}分组分列，从左到右`); }
+    if (bv) { bv.textContent = conv(isGen ? '代际·纵' : '分组·纵'); bv.title = conv(isGen ? '按代际分行，从上到下' : `按${fac}分组分行，从上到下`); }
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
@@ -3564,7 +3610,7 @@
     const c = state.byId.get(state.focus.id) || { name: state.focus.id };
     const n = (focusSet() || new Set()).size;
     bar.hidden = false;
-    bar.innerHTML = `🎯 聚焦「${esc(conv(c.name))}」· ${state.focus.depth} 跳以内 · ${n} ${T().charN}
+    bar.innerHTML = `🎯 聚焦「${esc(conv(c.name))}」${esc(conv(`· ${state.focus.depth} 跳以内 · `))}${n} ${T().charN}
       <button class="ghost tiny" type="button" data-focus-nav="dec">− 跳</button>
       <button class="ghost tiny" type="button" data-focus-nav="inc">＋ 跳</button>
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
@@ -3846,7 +3892,7 @@
            <button class="ghost tiny" type="button" data-lock-depth="inc" ${lock.depth >= LOCK_DEPTH_MAX ? 'disabled' : ''} aria-label="扩大显示范围">＋跳</button>
          </span>`
       : '';
-    bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的${T().charMany}和线 ${depthCtl}
+    bar.innerHTML = `🔒 「${esc(lock.label)}」${esc(conv(`· 只看相关的${T().charMany}和线 `))}${depthCtl}
       <span class="lock-hint">「重置」或右栏${T().char}名后点「清除」可解除</span>`;
     stackBars();
   }
@@ -4108,15 +4154,25 @@
     setTimeout(() => { el.textContent = msg; }, 40);   // 先清空，重复内容也会被念
   }
   function graphAriaLabel() {
+    /* v0.219：整句是「`T()` 词条 + 数据 + 简体连接词」三样混排，读屏用户听到的
+     *  就是这句 —— 它一样都不走 escBold/unbold。改成一张模板 + `convFill`：
+     *  连接词由 convFill 转，词条与数据（`conv`/`T()` 给的）**已经是繁体**，
+     *  作为占位值填回去。反过来（先填后转）会把词条转两次。 */
     const t = T();
-    if (!state.book) return `${t.char}${t.rel}网络图（加载中）`;
+    const V = { ...t };
+    if (!state.book) return convFill('{char}{rel}网络图（加载中）', V);
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const cur = state.kbCursor ? state.byId.get(state.kbCursor) : null;
     const n = asOf();
-    return `《${titleOf()}》${t.char}${t.rel}图：显示 ${shown} / ${state.book.characters.length} ${t.charN}`
-      + (n !== null ? `，时间旅行在第 ${n} 章` : '')
-      + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
-      + (cur ? `；当前选中 ${cur.name}（${t.rel} ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章${t.charVerb}）` : '')
+    const shown2 = String(shown);
+    const all2 = String(state.book.characters.length);
+    const tpl = `《${'{title}'}》${'{char}'}${'{rel}'}图：显示${'{shown}'} / ${'{all}'} ${'{charN}'}`;
+    return convFill(tpl, { ...V, title: titleOf(), shown: shown2, all: all2 })
+      + (n !== null ? convFill('，时间旅行在第 {n} 章', { n: String(n) }) : '')
+      + (state.progress !== null ? convFill('，剧透保护读到第 {p} 章', { p: String(state.progress) }) : '')
+      + (cur ? convFill('；当前选中 {name}（{rel} {n} 条，第 {ch} 章{verb}）', {
+        ...V, name: conv(cur.name), n: String((state.adj.get(cur.id) || []).length), ch: String(charCh(cur)),
+      }) : '')
       + TW('ariaKbTail', t.char);
   }
   function updateAria() {
@@ -4551,7 +4607,7 @@
   function placeRef(id, { filter = false, cls = '', suffix = '' } = {}) {
     if (!id) return '';
     const p = placeOf(id);
-    const name = esc(p ? p.name : id);
+    const name = esc(conv(p ? p.name : id));
     const inner = `${filter ? '' : '📍'}${name}${suffix}`;
     return filter
       ? `<button type="button" class="${cls || 'linkbtn'}" data-place-filter="${esc(id)}" data-place-id="${esc(id)}">${inner}</button>`
@@ -4662,10 +4718,10 @@
       const evs = vis.map((e) =>
         `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
-          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条${T().rel}">定位这条线</button>
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(conv(r.type))} —</span>${kinBadge(r)}${isDerived(r) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
+          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="${esc(conv(`在图上只高亮这一条${T().rel}`))}">${esc(conv('定位这条线'))}</button>
         </div>
-        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</div>` : ''}
       </li>`;
     });
 
@@ -4674,17 +4730,17 @@
       <div class="card-sub">${genPrefix(c)}${esc(conv(c.title))}</div>
       ${c.note ? `<div class="note">⚠️ ${escBold(c.note)}</div>` : ''}
       <div class="badges">
-        ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
+        ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(conv(faction.name))}</span>` : ''}
         ${isTheoryBook() ? '' : `<span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>`}
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
-        ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
-        ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
-        <span class="badge">${T().rel} ${allRels.length} 条</span>
+        ${(c.aliases || []).map((a) => `<span class="badge">${esc(conv('别名：'))}${esc(conv(a))}</span>`).join('')}
+        ${(c.altNames || []).map((a) => `<span class="badge">${esc(conv('又译：'))}${esc(conv(a))}</span>`).join('')}
+        <span class="badge">${esc(T().rel)} ${esc(conv(`${allRels.length} 条`))}</span>
       </div>
       <p class="card-desc">${escBold(c.desc)}</p>
       ${factionHist.length > 1 ? `<p class="card-sub">${T().faction}变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
       <p class="card-fate"><b>${T().fate}：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : escBold(c.fate)}</p>
-      <p class="hint" style="margin-top:8px">${T().charMany}太多看不清？只看这个${T().char}的${T().rel}网：
+      <p class="hint" style="margin-top:8px">${esc(conv(`${T().charMany}太多看不清？只看这个${T().char}的`))}${esc(T().rel)}${esc(conv('网：'))}
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
         <button class="ghost tiny" type="button" data-char-card="${esc(c.id)}" title="导出这个${T().char}的 PNG 卡片：身份、${T().fate}、${T().keyRels}与依据${T().event}">🖼 ${T().char}卡</button>
@@ -4704,9 +4760,9 @@
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
       ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">让 AI 讲讲这个${T().char} —— <b>只讲你读到的部分</b>，不上传原著正文</p>
-        <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
-        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
+        <p class="ai-entry-lead">${esc(conv(`让 AI 讲讲这个${T().char} —— `))}<b>${esc(conv('只讲你读到的部分'))}</b>${esc(conv('，不上传原著正文'))}</p>
+        <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">${esc(conv(`🤖 讲讲这个${T().char}（不剧透）`))}</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">${esc(conv('⚙️ AI 设置'))}</button>${esc(conv(' · 填 API Key、选模型'))}</p>
       </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
@@ -4717,8 +4773,8 @@
     const evItems = (r.events || []).map((e) =>
       `<div class="rel-event">· ${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`);
     panel().innerHTML = `
-      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
-      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
+      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(conv(r.type))} —</span>${kinBadge(r)}${isDerived(r) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''} ${charLink(second)}</div>
+      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${esc(conv(KIN_LABEL[r.kin]))}：${esc(conv(KIN_HINT[r.kin] || ''))}）` : ''}</p>
       ${periodText(r) ? `<p class="card-sub">${T().rel}时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
       ${evItems.length ? foldSection({ key: `relev:${first}|${second}`, n: 10, unit: '条', cls: 'rel-events', wrap: 'div', bare: true, items: evItems }) : '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着${T().rel}链继续走。</p>`;
@@ -4784,9 +4840,9 @@
   function runPath() {
     const a = pathCharId($('#path-a')), b = pathCharId($('#path-b'));
     const hint = $('#path-hint');
-    if (!a || !b) { hint.textContent = '请选择两个人'; return; }
+    if (!a || !b) { hint.textContent = conv('请选择两个人'); return; }
     const steps = bfs(a, b);
-    if (!steps) { hint.textContent = '在图里找不到通路'; return; }
+    if (!steps) { hint.textContent = conv('在图里找不到通路'); return; }
     hint.textContent = conv(`最短 ${steps.length} 跳`);
     const nodes = new Set([a, ...steps.map((s) => s.to)]);
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
@@ -4801,7 +4857,7 @@
         `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
-        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</div>` : ''}
       </li>`;
     });
     panel().innerHTML = `
@@ -4809,9 +4865,9 @@
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
       ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">让 AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
-        <button class="primary ai-btn" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
-        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
+        <p class="ai-entry-lead">${esc(conv(`让 AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— `))}<b>${esc(conv('只讲你读到的部分'))}</b>${esc(conv('，不上传原著正文'))}</p>
+        <button class="primary ai-btn" type="button" data-ai="chain">${esc(conv('🤖 讲一遍（不剧透）'))}</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">${esc(conv('⚙️ AI 设置'))}</button>${esc(conv(' · 填 API Key、选模型'))}</p>
       </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
@@ -4836,9 +4892,9 @@
       return `<div class="phase">
         <div class="phase-title">${esc(conv(p.name))}</div>
         ${evs.map((e) => eventLocked(e)
-          ? `<button type="button" class="event-chip locked" disabled title="剧透保护：第 ${e.ch} 章的${T().event}">
-               <span class="ev-name">🔒 第 ${e.ch} 章的事件</span>
-               <span class="ev-sum">剧透保护中 · 读到再解锁</span>
+          ? `<button type="button" class="event-chip locked" disabled title="${esc(conv(`剧透保护：第 ${e.ch} 章的${T().event}`))}">
+               <span class="ev-name">${esc(conv(`🔒 第 ${e.ch} 章的事件`))}</span>
+               <span class="ev-sum">${esc(conv('剧透保护中 · 读到再解锁'))}</span>
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
                <span class="ev-name">${esc(conv(e.name))}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
@@ -4879,16 +4935,20 @@
     if (!annotationsReady()) return '';
     const g = Array.isArray(state.anno.global) ? state.anno.global : [];
     const mode = state.annoMode === 'global' ? 'global' : 'chapter';
+    /* v0.219：这一整个面板的字面量与条目标题都要转。
+     * ⚠ **不能**对返回的 HTML 整段 `conv()` —— `annoBody()` / `annoBasis()` 的输出
+     *   已经转过一次，而 conv **不幂等**，整段再转就等于转两次。
+     *   ⇒ 逐个出口转：字面量包 `conv()`，数据字段用 `esc(conv(x))`。 */
     const tabs = `
-      <div class="anno-tabs" role="tablist" aria-label="拆书视角">
-        <button type="button" role="tab" class="anno-tab${mode === 'chapter' ? ' active' : ''}" aria-selected="${mode === 'chapter'}" data-anno-mode="chapter">本章拆解</button>
-        <button type="button" role="tab" class="anno-tab${mode === 'global' ? ' active' : ''}" aria-selected="${mode === 'global'}" data-anno-mode="global">全书拆解${g.length ? `（${g.length}）` : ''}</button>
+      <div class="anno-tabs" role="tablist" aria-label="${esc(conv('拆书视角'))}">
+        <button type="button" role="tab" class="anno-tab${mode === 'chapter' ? ' active' : ''}" aria-selected="${mode === 'chapter'}" data-anno-mode="chapter">${esc(conv('本章拆解'))}</button>
+        <button type="button" role="tab" class="anno-tab${mode === 'global' ? ' active' : ''}" aria-selected="${mode === 'global'}" data-anno-mode="global">${esc(conv('全书拆解'))}${g.length ? `（${g.length}）` : ''}</button>
       </div>`;
 
     if (mode === 'global') {
-      if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">这本书还没写全书层面的拆解。</p></div>`;
+      if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">${esc(conv('这本书还没写全书层面的拆解。'))}</p></div>`;
       return `<div class="ch-sec anno-sec">${tabs}
-        ${g.map((x) => `<div class="anno-item"><h4>${esc(x.title)}</h4><p>${annoBody(x.body)}</p>${annoBasis(x)}</div>`).join('')}
+        ${g.map((x) => `<div class="anno-item"><h4>${esc(conv(x.title))}</h4><p>${annoBody(x.body)}</p>${annoBasis(x)}</div>`).join('')}
       </div>`;
     }
 
@@ -4898,19 +4958,19 @@
     if (lockedCh(n)) {
       const cov0 = annoCoverage(total);
       return `<div class="ch-sec anno-sec">${tabs}
-        <p class="hint">已拆 ${cov0.written} / ${cov0.total} 章${cov0.written < cov0.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>
-        <p class="hint">这一章还没解锁，拆书内容同样先锁起来。</p></div>`;
+        <p class="hint">${esc(conv(`已拆 ${cov0.written} / ${cov0.total} 章${cov0.written < cov0.total ? '（其余章节还没写，不是「无需拆解」）' : ''}`))}</p>
+        <p class="hint">${esc(conv('这一章还没解锁，拆书内容同样先锁起来。'))}</p></div>`;
     }
     const cov = annoCoverage(total);
-    const head = `<p class="hint">已拆 ${cov.written} / ${cov.total} 章${cov.written < cov.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>`;
+    const head = `<p class="hint">${esc(conv(`已拆 ${cov.written} / ${cov.total} 章${cov.written < cov.total ? '（其余章节还没写，不是「无需拆解」）' : ''}`))}</p>`;
     const items = annoOfChapter(n);
     if (!items.length) {
       return `<div class="ch-sec anno-sec">${tabs}${head}
-        <p class="hint">第 ${n} 章的拆解还没写。全书已有 ${state.anno.items.length} 条。</p></div>`;
+        <p class="hint">${esc(conv(`第 ${n} 章的拆解还没写。全书已有 ${state.anno.items.length} 条。`))}</p></div>`;
     }
     return `<div class="ch-sec anno-sec">${tabs}${head}
       ${items.map((it) => `<div class="anno-item">
-        <h4>${esc(it.title)}</h4>
+        <h4>${esc(conv(it.title))}</h4>
         <p>${annoBody(it.body)}</p>
         ${annoRefs(it)}
         ${annoBasis(it)}
@@ -4955,8 +5015,9 @@
    *        但它在句子里是**名词短语**，多数位置比 id 更好读 ——
    *        「e-40-1 和 e-40-3 的同构」变成「曹操杀孔融全家 和 蔡夫人废长立幼 的同构」。
    *     id 本身仍然留在 `data-event` 上 —— 点击、核对、测试口径都没变。 */
+  /* v0.219：拆解正文是**数据散文**，原来只 `esc()` 不走 escBold —— 繁体态下整段简体。 */
   function annoBody(text) {
-    return esc(String(text == null ? '' : text))
+    return esc(conv(String(text == null ? '' : text)))
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       /* ⚠⚠⚠ 不能写死 id 形态。
        *   三国是 `e-1-3`、罪与罚是 `e1`、百年孤独是 `e01` —— 三种形态都真实存在。
@@ -4967,7 +5028,7 @@
       .replace(/e-?\d[\w-]*/g, (id) => {
         const e = state.book.events.find((x) => x.id === id);
         if (!e) return id; // 数据里没有就保持纯文本，不要造出一个点不动的按钮
-        const label = eventShortName(e.name) || id;
+        const label = conv(eventShortName(e.name) || id);
         const tip = `第 ${e.ch ?? '?'} 章《${conv(e.name)}》：${unbold(e.summary || '')}`;
         return `<button class="anno-inline-ref" type="button" data-event="${esc(id)}"`
           + ` title="${esc(tip)}">${esc(label)}</button>`;
@@ -4979,7 +5040,7 @@
     const b = String(it.basis || '');
     const inferred = /推断|整理/.test(b);
     const rest = b.replace(/^(整理者推断|原文依据)/, '').replace(/^[（(]/, '').replace(/[)）]$/, '').trim();
-    return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${inferred ? '整理者推断' : '原文依据'}</span>${esc(rest)}</p>`;
+    return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${esc(conv(inferred ? '整理者推断' : '原文依据'))}</span>${esc(conv(rest))}</p>`;
   }
 
   /** 引用的${事件} / ${人物}：可点回去逐条核对 —— 「不编造」在界面上的出口
@@ -5142,19 +5203,19 @@
       const d = chapterDigest(n);
       const nd = chapterDigest(n + 1);
       const parts = [];
-      if (nd.charsNew.length) parts.push(`${nd.charsNew.length} 个新${T().char}`);
-      if (nd.relsNew.length) parts.push(`${nd.relsNew.length} 条新${T().rel}`);
+      if (nd.charsNew.length) parts.push(esc(convFill('{n} 个新{char}', { n: String(nd.charsNew.length), char: esc(T().char) })));
+      if (nd.relsNew.length) parts.push(esc(convFill('{n} 条新{rel}', { n: String(nd.relsNew.length), rel: esc(T().rel) })));
       if (nd.events.length) parts.push(`${nd.events.length} ${T().eventN}`);
       const teaser = n < total
-        ? `<span><b>下一章</b>（第 ${n + 1} 章）：${parts.length ? '将解锁 ' + parts.join(' · ') : '没有新的整理内容'}</span>`
-        : '<span><b>已是最后一章</b></span>';
+        ? `<span>${esc(convFill('下一章（第 {n} 章）：{body}', { n: String(n + 1), body: parts.length ? esc(convFill('将解锁 {x}', { x: parts.join(' · ') })) : esc(conv('没有新的整理内容')) }))}</span>`
+        : `<span><b>${esc(conv('已是最后一章'))}</b></span>`;
       const mark = state.progress === n
-        ? `<span class="hint">✓ 剧透保护：正读到第 ${n} 章</span>`
-        : `<button class="primary tiny" type="button" data-ch-mark="${n}">${state.progress === null ? '🔒 从这一章开始防剧透' : `✓ 我读到第 ${n} 章了`}</button>`;
+        ? `<span class="hint">${esc(convFill('✓ 剧透保护：正读到第 {n} 章', { n: String(n) }))}</span>`
+        : `<button class="primary tiny" type="button" data-ch-mark="${n}">${esc(state.progress === null ? conv('🔒 从这一章开始防剧透') : convFill('✓ 我读到第 {n} 章了', { n: String(n) }))}</button>`;
       body.innerHTML = `
         <p class="card-sub">${TW('chHead', d.charsHere.length, d.relsNew.length, d.events.length, d.places.length)}</p>
         ${d.charsNew.length ? `<div class="ch-sec"><h4>${T().secNewChar}</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(conv(c.name))}</button>`) })}</div>` : ''}
-        ${d.relsNew.length ? `<div class="ch-sec"><h4>${T().secNewRels}（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>${T().secNewRels}（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(conv(r.type))} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
         ${d.events.length ? `<div class="ch-sec"><h4>${T().secEvents}（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(conv(e.name))}</button></li>`).join('')}</ul></div>` : ''}
         ${d.places.length ? `<div class="ch-sec"><h4>${T().secPlaces}</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
         ${renderAnnotations(n, total)}
@@ -5564,8 +5625,8 @@
     ctx.fillStyle = muted; ctx.font = font(19);
     /* v0.208：性别徽章对理论类**整条不画** —— 概念没有性别，`c.gender` 全缺 ⇒
      *   原来的 `c.gender === 'f' ? '♀ 女' : '♂ 男'` 会把每个概念都标成男性。 */
-    const badges = [f.name || '其他', isTheoryBook() ? '' : (c.gender === 'f' ? '♀ 女' : '♂ 男'),
-      state.groupMode === 'generation' ? genText(c.generation) : '', c.title || '',
+    const badges = [conv(f.name || '其他'), isTheoryBook() ? '' : (c.gender === 'f' ? '♀ 女' : '♂ 男'),
+      state.groupMode === 'generation' ? genText(c.generation) : '', conv(c.title || ''),
       `${T().rel} ${(state.adj.get(c.id) || []).length} 条`].filter(Boolean).join(' · ');
     ctx.fillText(badges, L, y + 30);
     y += 66;
@@ -5591,7 +5652,7 @@
       ctx.fillText(otherName, L, y);
       const w = ctx.measureText(otherName).width;
       ctx.fillStyle = muted; ctx.font = font(19);
-      ctx.fillText(`— ${r.type} —`, L + w + 8, y);
+      ctx.fillText(`— ${conv(r.type)} —`, L + w + 8, y);
       // 第二行：一条依据事件（小字、单行省略）
       const ev = (visibleRelEvents(r)[0] || {});
       ctx.font = font(17);
@@ -5688,7 +5749,7 @@
     return steps.map((s, i) => {
       const evs = visibleRelEvents(s.rel).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
       const period = periodText(s.rel) ? `（${T().rel}时段：${periodText(s.rel)}）` : '';
-      return `${i + 1}. ${charName(s.from)} — ${s.rel.type} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
+      return `${i + 1}. ${charName(s.from)} — ${conv(s.rel.type)} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
     }).join('\n');
   }
 
@@ -5696,7 +5757,7 @@
   function aiCharContext(c) {
     const t = T();
     const head = [
-      `${t.nameLabel}：${conv(c.name)}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}${(c.altNames || []).length ? `（又译：${c.altNames.join('，')}）` : ''}`,
+      `${t.nameLabel}：${conv(c.name)}${(c.aliases || []).length ? conv(`（别名：${c.aliases.join('，')}）`) : ''}${(c.altNames || []).length ? conv(`（又译：${c.altNames.join('，')}）`) : ''}`,
       c.title ? `身份：${c.title}` : '',
       state.groupMode === 'generation' ? `${t.gen}：${genText(c.generation)}` : `${t.faction}：${factionTextOf(c)}`,
       `首次${t.charVerb}：第 ${charCh(c)} 章`,
@@ -5709,7 +5770,7 @@
       .map((r) => {
         const other = r.from === c.id ? r.to : r.from;
         const evs = visibleRelEvents(r).map((e) => e.text).slice(0, 2).join('；');
-        return `- ${charName(other)}：${r.type}${periodText(r) ? `（${periodText(r)}）` : ''}${evs ? `　依据：${evs}` : ''}`;
+        return `- ${charName(other)}：${conv(r.type)}${periodText(r) ? `（${periodText(r)}）` : ''}${evs ? `　依据：${evs}` : ''}`;
       }).join('\n');
     const evs = state.book.events
       .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
@@ -5842,7 +5903,7 @@
     }).join('');
     const busy = status === 'busy';
     box.hidden = false;
-    box.innerHTML = `<div class="ai-head">🤖 AI 讲解</div>${turns}
+    box.innerHTML = `<div class="ai-head">${esc(conv('🤖 AI 讲解'))}</div>${turns}
       ${busy ? '<div class="ai-head">🤖 正在生成…</div>' : ''}
       ${aiThread.err ? `<div class="ai-err">${esc(aiThread.err)}</div>` : ''}
       <form class="ai-ask" data-ai-ask>
@@ -6015,7 +6076,7 @@ ${body}
     if (!window.fflate || !window.fflate.zipSync) throw new Error('缺少打包库 vendor/fflate.min.js');
     const f = window.fflate;
     const b = state.book, m = b.meta || {};
-    const title = `《${titleOf()}》阅读伴侣`;
+    const title = convFill(`《{t}》阅读伴侣`, { t: titleOf() });
     const date = new Date();
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const progNote = state.progress === null
@@ -6039,7 +6100,7 @@ ${body}
         const other = r.from === c.id ? r.to : r.from;
         const evs = visibleRelEvents(r).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
         const period = periodText(r) ? `〔${periodText(r)}〕` : '';
-        return `<li><b>${esc(charName(other))}</b> — ${esc(r.type)}${period}${evs ? `　依据：${evs}` : ''}</li>`;
+        return `<li><b>${esc(charName(other))}</b> — ${esc(conv(r.type))}${period}${evs ? `　依据：${evs}` : ''}</li>`;
       }).join('');
       const life = b.events
         .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
@@ -6054,8 +6115,8 @@ ${body}
       return `<section class="char">
   <h2>${esc(conv(c.name))}</h2>
   <p class="meta">${esc([factionTextOf(c), isTheoryBook() ? '' : (c.gender === 'f' ? '女' : '男'), c.title, `第 ${charCh(c)} 章${T().charVerb}`].filter(Boolean).join(' · '))}</p>
-  ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
-  ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
+  ${(c.aliases || []).length ? `<p class="meta">${esc(conv('别名：'))}${esc(conv(c.aliases.join('，')))}</p>` : ''}
+  ${(c.altNames || []).length ? `<p class="meta">${esc(conv('又译：'))}${esc(conv(c.altNames.join('，')))}</p>` : ''}
   ${c.desc ? `<p>${escBold(c.desc)}</p>` : ''}
   <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : escBold(c.fate || '—')}</p>
   ${life ? `<h3>${TW('lifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
@@ -6379,9 +6440,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch { /* 忽略 */ } }
     if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch { /* 忽略 */ } }
     const minorBtn2 = document.getElementById('minor-btn');
-    if (minorBtn2) minorBtn2.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`;
+    if (minorBtn2) minorBtn2.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`);
     const mentionBtn2 = document.getElementById('mentioned-btn');
-    if (mentionBtn2) mentionBtn2.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`;
+    if (mentionBtn2) mentionBtn2.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`);
     updateCountHint();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
@@ -6598,7 +6659,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.addEventListener('click', handlePanelClick);
 
     const mentionBtn = document.getElementById('mentioned-btn');
-    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`; };
+    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`); };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
       state.showMentioned = !state.showMentioned;
       try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch { /* 忽略 */ }
@@ -6610,7 +6671,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
 
     // 次要人物折叠（大书默认收起）
     const minorBtn = document.getElementById('minor-btn');
-    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`; };
+    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`); };
     if (minorBtn) minorBtn.addEventListener('click', () => {
       state.showMinor = !state.showMinor;
       try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch { /* 忽略 */ }
@@ -6736,7 +6797,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   };
   function syncGraphHint() {
     const el = document.querySelector('.graph-pan-hint');
-    if (el) el.innerHTML = GRAPH_HINTS[state.nodeDrag ? 'on' : 'off'];
+    /* ⚠ 静态 HTML 里已逐段标了 `data-s2t`，本函数是唯一写者 ⇒ 整段 conv 一次。 */
+    if (el) el.innerHTML = conv(GRAPH_HINTS[state.nodeDrag ? 'on' : 'off']);
   }
   /** 「拖动节点」开关的唯一写者：按钮文案 + 图注 + 系列级 draggable（靠 setOption 生效）。
    *  工具条点击与「怎么用」里的演示都走这里 —— 别处再抄一份状态写入（v0.208 同款病）。 */
@@ -7029,6 +7091,37 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         if (el.closest('#script-btn')) return;
         el.textContent = conv(el.textContent);
       });
+      /* 书目下拉同理：它在 `loadBooks()` 里渲染，而那时转换表**还没取到**
+       *（`loadS2T()` 是异步的）⇒ 首屏切 `?t=hant` 时下拉里还是简体书名。 */
+      const bsel = $('#book-select');
+      if (bsel && state.books.length) {
+        const cur = bsel.value;
+        bsel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(conv(b.title))}</option>`).join('');
+        bsel.value = cur;
+      }
+      /* 还有两处「在转换表取到**之前**就渲染完了」的：主题按钮的文案（bindUI 里
+       * `setTheme` 首跑）与页眉页脚（`renderHeader` → `renderFooter`，它们各自的字面量
+       * 是当场 conv 的，所以切换用字后必须重画一次）。同理 `applyTypeTerms` 覆盖不到
+       * 它们——那函数只管 index.html 里的静态文案。 */
+      const themeBtn2 = $('#theme-btn');
+      if (themeBtn2) themeBtn2.textContent = conv(document.documentElement.dataset.theme === 'dark' ? '☀️ 日间' : '🌙 夜间');
+      if (state.book) renderHeader();
+      /* ⚠ 还有一批「在写入那一刻自己 conv」的同步函数（工具条开关、图注、边筛选…）。
+       *   它们首屏跑的时候转换表还没取到 ⇒ 首屏就是简体；光改写入点不够，
+       *   切了用字也得**重跑一遍**它们。（这就是为什么这一段要列名单，而不是"重刷 DOM"——
+       *   重刷 DOM 会把已经是繁体的再转一遍，conv 不幂等。） */
+      syncEdgeFilterUI();
+      syncGraphHint();
+      renderBuildStamp();
+      /* ⚠ `syncMinorBtn` / `syncMentionBtn` 两个写者声明在 `bindViewControls` 内部，
+       *   这里够不着（v0.208 同款：`no-undef` 当场报红）。照 `revealChar` 的写法内联。 */
+      const minorBtn3 = document.getElementById('minor-btn');
+      if (minorBtn3) minorBtn3.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`);
+      const mentionBtn3 = document.getElementById('mentioned-btn');
+      if (mentionBtn3) mentionBtn3.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`);
+      if (typeof syncDerivedBtn === 'function') syncDerivedBtn();
+      if (typeof syncViewButtons === 'function') syncViewButtons();
+      if (typeof syncSpoilerButton === 'function') syncSpoilerButton();
       const s = state.lastSel;
       if (s?.kind === 'c') selectCharacter(s.id, false);
       else if (s?.kind === 'e') selectEvent(s.id);

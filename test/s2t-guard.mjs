@@ -109,6 +109,13 @@ ok(!/escBold\(conv\(/.test(app), 'escBold 内不再套 conv()（会与内层的�
 ok(!/unbold\(conv\(/.test(app), 'unbold 内不再套 conv()');
 ok(/const escBold = \(s\) => esc\(conv\(s\)\)/.test(app), 'escBold 走的是 esc(conv(s))');
 ok(/const unbold = \(s\) => conv\(/.test(app), 'unbold 内部含 conv()');
+/* ⚠ v0.220 当场逮到的错：`conv()` 原来写 `if (!state.script || !S2T) return s;`，
+ *   而 `state.script` 的初值就是 `'han'`（truthy）⇒ 两种模式下都成立，只要表取过一次
+ *   就照样转。症状：用户「简→繁→简」点回简体，界面**仍是繁体**，再也回不去。
+ *   首屏看不出来（那时 S2T 还没取到，conv 恰好是空操作，把它掩盖了）。
+ *   ⇒ 开关必须比**值**。这里钉死，免得"顺手简化"又改回 truthy 判断。 */
+ok(/function conv\(s\) \{\s*\n\s*if \(state\.script !== 'hant' \|\| !S2T\) return s;/.test(app),
+  "conv() 的开关判断比的是值 'hant'（不是 truthy —— 'han' 也 truthy）");
 /* 散文字段**只许**经 escBold / unbold（它们内部已含 conv），直接调 conv() 就是第二次转换。
  * ⚠ 判据只覆盖**散文字段**（`PROSE_FIELDS`：`desc`/`fate`/`note`/`summary`/`impact`/`text`…）——
  *   `c.name` / `e.name` / `c.title` / `e.chapter` 这些走的是 `esc()`，**不经过** escBold，
