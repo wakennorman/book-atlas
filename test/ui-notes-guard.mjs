@@ -19,6 +19,11 @@
  *     ③ `relations[].basis`、`events[].id`、`chars`、anno 的 events 字符串数组
  *        —— 机器键容器，不渲染；
  *     ④ annotations `title` 里的 id —— **要红**（title 走 esc()，不链接化）。
+ *   v0.217 新增第二层（只扫「读者散文」那几个路径）：
+ *     ⑤ `meta.note` 里的 `**史实综述**` ⇒ 红（esc() 直出，读者看到字面星号）；
+ *     ⑥ `meta.note` 里的 `faction` / `meta.vocab` ⇒ 红（作者的字段名）；
+ *     ⑦ 而 `meta.style` / `meta.license` / `meta.sources` / `meta.titleEn` /
+ *        `characters[].aliases`（Homo sapiens）里的英文 ⇒ **不红**。
  *
  * 用法：node test/ui-notes-guard.mjs
  * ⚠ BOOKATLAS_ROOT 必须在 import 之前设好（模块级常量）。
@@ -75,6 +80,9 @@ const RED = [
   ['note 里带带日期的用户报告', (b) => { b.characters[0].note = '用户 2026-10-04 报"搜不到"的人之一'; }, 'characters[0].note'],
   ['note 里带 TODO 待办', (b) => { b.characters[0].note = '待填'; }, 'characters[0].note'],
   ['meta.note（页脚渲染）泄漏', (b) => { b.meta.note = 'v0.206 新增'; }, 'meta.note'],
+  ['meta.note 里的 markdown 记号', (b) => { b.meta.note = '本书是**史实综述**：节点是人物。'; }, 'meta.note'],
+  ['meta.note 里的字段名（英文）', (b) => { b.meta.note = '按书的四部分分 faction；meta.vocab 改「结局」。'; }, 'meta.note'],
+  ['meta.prophecy 里的 markdown 记号', (b) => { b.meta.prophecy = '**放弃**一切错误方法'; }, 'meta.prophecy'],
   ['relations events text 带 id= 引用', (b) => { b.relations[0].events[0].text = '与「王颀」（id=wang-qi）同名'; }, 'relations[0].events[0].text'],
   ['desc 里带旧字段引用', (b) => { b.characters[0].desc = '原 desc 写错了'; }, 'characters[0].desc'],
 ];
@@ -97,6 +105,16 @@ const FP = [
   ['solid＝ 含 id＝ 子串', (b) => { b.meta.style = 'style 表性质（solid＝支撑派生，dashed＝对立驳斥）'; }],
   ['relations[].basis 是审计痕迹（不渲染）', (b) => { b.relations[0].basis = 'e-1-1 summary：「甲乙相会」'; }],
   ['events[].id / chars 是机器键', (b) => { b.events[0].id = 'e-9-9'; }],
+  /* v0.217：英文只禁在「读者散文」路径上，以下四处**本来就该有英文** */
+  ['meta.style 是内部写作规范', (b) => { b.meta.style = '① characters[] 装概念；style：solid＝支撑，dashed＝对立'; }],
+  ['meta.license 的授权号', (b) => { b.meta.license = '原著版权归权利人所有；本数据 CC BY-SA 4.0'; }],
+  ['meta.sources 的英文原题', (b) => { b.meta.sources = [{ name: '英文原题：On the Origin of Species（1859）' }]; }],
+  ['meta.titleEn / aliases 的拉丁名', (b) => {
+    b.meta.titleEn = 'Sapiens: A Brief History of Humankind';
+    b.characters[0].aliases = ['Homo sapiens'];
+  }],
+  /* 单字母记号是中文通用写法（三国那本书的 meta.note 真这么写），不是读者看不懂的词 */
+  ['meta.note 里的单字母记号（第 N 章）', (b) => { b.meta.note = '剧透尺度＝顺序回目（120 回＝界面「第 N 章」）'; }],
 ];
 for (const [label, mutate] of FP) {
   const b = cleanBook(); const a = cleanAnno(); mutate(b, a);

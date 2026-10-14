@@ -9,7 +9,7 @@
     "chapters": 21,
     "prophecy": "我们究竟是历史的主角，还是历史的产物？",
     "prophecySrc": "全书主题",
-    "note": "章节号顺排：第 1~20 章＝书的第 1~20 章；后记＝第 21 章。本书是**史实综述**：图上节点是历史人物、人类物种、族群与政权组织；faction 按书的四部分分（认知革命／农业革命／融合统一／科学革命）。本书是史实，没有\"防剧透\"一说 ⇒ meta.vocab 把「结局」改成「历史定论」，剧透引导也换成史实的说法。",
+    "note": "章节号顺排：第 1~20 章＝书的第 1~20 章；后记＝第 21 章。本书是史实综述：图上节点是历史人物、人类物种、族群与政权组织；书里记的是史实，没有防剧透一说，所以人物栏不说「结局」，改说「历史定论」。",
     "license": "原著版权归权利人所有；本数据 CC BY-SA 4.0",
     "updated": "2026-10-14",
     "style": "叙事类书型：① characters[] 装**历史人物 / 人类物种 / 族群 / 政权组织**，desc 写「他是谁」，fate 写「他在书里的历史定论」；② relations[] 装人物与势力之间的关系，type 用短标签（≤9 字，不出现代词）；③ events[] 装史实事件，chars 挂在场的人；④ places[] 是地点，仍只作筛选维度。",
@@ -31,14 +31,14 @@
   },
   "factions": [
     {
-      "key": "science",
-      "name": "科学革命",
-      "color": "#c99a3f"
-    },
-    {
       "key": "cognitive",
       "name": "认知革命",
       "color": "#4a7ec7"
+    },
+    {
+      "key": "agrarian",
+      "name": "农业革命",
+      "color": "#4c9f70"
     },
     {
       "key": "unify",
@@ -46,9 +46,9 @@
       "color": "#c0504d"
     },
     {
-      "key": "agrarian",
-      "name": "农业革命",
-      "color": "#4c9f70"
+      "key": "science",
+      "name": "科学革命",
+      "color": "#c99a3f"
     }
   ],
   "characters": [
@@ -62,7 +62,7 @@
         "变成神的这种动物"
       ],
       "firstCh": 1,
-      "faction": "science",
+      "faction": "cognitive",
       "gender": "m",
       "tier": "main",
       "title": "从东非角落走向全球的人类物种",
@@ -355,7 +355,7 @@
         "高贵的国王"
       ],
       "firstCh": 6,
-      "faction": "unify",
+      "faction": "agrarian",
       "gender": "m",
       "tier": "main",
       "title": "巴比伦国王与法典之名",
@@ -423,7 +423,7 @@
       "name": "亚历山大大帝",
       "aliases": [],
       "firstCh": 6,
-      "faction": "unify",
+      "faction": "agrarian",
       "gender": "m",
       "tier": "secondary",
       "title": "被犬儒者挡住阳光的征服者",
@@ -438,7 +438,7 @@
         "Sargon the Great"
       ],
       "firstCh": 6,
-      "faction": "unify",
+      "faction": "agrarian",
       "gender": "m",
       "tier": "secondary",
       "title": "最早有确切数据的帝国开创者",
@@ -451,7 +451,7 @@
       "name": "秦始皇",
       "aliases": [],
       "firstCh": 6,
-      "faction": "unify",
+      "faction": "agrarian",
       "gender": "m",
       "tier": "secondary",
       "title": "完成史上第一次中国统一大业",
@@ -641,7 +641,7 @@
         "Hernan Cortes"
       ],
       "firstCh": 9,
-      "faction": "science",
+      "faction": "unify",
       "gender": "m",
       "tier": "main",
       "title": "为黄金入侵墨西哥的征服者",
@@ -924,7 +924,7 @@
         "佛教徒"
       ],
       "firstCh": 12,
-      "faction": "science",
+      "faction": "unify",
       "gender": "m",
       "tier": "main",
       "title": "自然法则宗教的代表",

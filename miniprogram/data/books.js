@@ -33,7 +33,7 @@ module.exports = {
       "title": "物种起源",
       "author": "查尔斯·达尔文",
       "file": "./species-origin.js",
-      "kb": 226
+      "kb": 225
     },
     {
       "slug": "sapiens",

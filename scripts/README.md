@@ -135,7 +135,7 @@
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
 | `profile-prefixes.mjs` | import · 文档 | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
 | `type-terms.mjs` | import · 文档 | 书型术语层（`js/app.js` 的 `TERMS`）的**判据本体** —— 纯函数、无顶层副作用。 |
-| `ui-notes.mjs` | import | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
+| `ui-notes.mjs` | import · 文档 | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
 
 ## 工具（27 个）
 

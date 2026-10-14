@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7024 行、275 个顶层符号，68 个分区。
+ * 文件共 7028 行、275 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -1412,7 +1412,11 @@
     if (state.groupMode === 'generation') {
       parts.push(`「分组视图」按代际排列（${genSpanText(gens)}）`);
     } else if (gens.length <= 1) {
-      parts.push(`本书没有代际差异：所有${T().char}同属一代（generation 一律为 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
+      /* ⚠ v0.217：这里原来直接写 `generation 一律为 1` —— 页脚是读者直读的散文，
+       *   而 generation 是**字段名**（读者不认识；同类的 faction/meta.vocab 已在
+       *   scripts/check-ui-notes.mjs 的「读者散文」判据里报红）。改走术语层：
+       *   理论类的书这里印的是「层次号都是 1」。 */
+      parts.push(`本书没有${T().gen}差异：所有${T().char}都属同一${T().gen}（${T().gen}号都是 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
     } else {
       parts.push(`「分组视图」按${T().faction}（${facs.join('／')}）排列，数据另标${T().gen}（${genSpanText(gens)}）`);
     }
