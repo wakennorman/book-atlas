@@ -67,7 +67,7 @@ console.log('— 加载与渲染 —');
 inst.onLoad();
 inst.onReady();
 ok(inst.g && inst.g.pack.slug === 'one-hundred-years-of-solitude', '默认加载《百年孤独》');
-ok(inst.data.bookTitles.length === 4, '书目有 4 本');
+ok(inst.data.bookTitles.length === 6, '书目有 6 本');
 ok(calls.fillText > 0 && calls.arc > 0, `渲染真的画了（文本 ${calls.fillText} 次 / 圆 ${calls.arc} 次）`);
 ok(/人 · \d+ 段关系/.test(inst.data.status), '状态行格式正确：' + inst.data.status);
 ok(inst.view.scale > 0.01 && inst.view.scale < 3, 'fitView 缩放合理：' + inst.view.scale.toFixed(3));

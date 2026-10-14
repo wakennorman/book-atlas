@@ -27,6 +27,20 @@ module.exports = {
       "author": "安德斯·艾利克森、罗伯特·普尔",
       "file": "./peak.js",
       "kb": 64
+    },
+    {
+      "slug": "species-origin",
+      "title": "物种起源",
+      "author": "查尔斯·达尔文",
+      "file": "./species-origin.js",
+      "kb": 226
+    },
+    {
+      "slug": "sapiens",
+      "title": "人类简史：从动物到上帝",
+      "author": "尤瓦尔·赫拉利",
+      "file": "./sapiens.js",
+      "kb": 227
     }
   ]
 };

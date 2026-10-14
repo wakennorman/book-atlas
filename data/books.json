@@ -11,9 +11,18 @@
       "graphFile": "data/one-hundred-years-of-solitude.graph.json",
       "textFile": "data/one-hundred-years-of-solitude.text.json",
       "links": [
-        { "label": "微信读书", "url": "https://weread.qq.com/web/bookDetail/05432e30811e7f701g016a4b" },
-        { "label": "豆瓣", "url": "https://book.douban.com/subject/6082808/" },
-        { "label": "维基百科", "url": "https://zh.wikipedia.org/wiki/百年孤独" }
+        {
+          "label": "微信读书",
+          "url": "https://weread.qq.com/web/bookDetail/05432e30811e7f701g016a4b"
+        },
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/6082808/"
+        },
+        {
+          "label": "维基百科",
+          "url": "https://zh.wikipedia.org/wiki/百年孤独"
+        }
       ]
     },
     {
@@ -24,9 +33,18 @@
       "graphFile": "data/crime-and-punishment.graph.json",
       "textFile": "data/crime-and-punishment.text.json",
       "links": [
-        { "label": "微信读书", "url": "https://weread.qq.com/web/bookDetail/c5232670813ab8e46g011d19" },
-        { "label": "豆瓣", "url": "https://book.douban.com/subject/35406615/" },
-        { "label": "维基百科", "url": "https://zh.wikipedia.org/wiki/罪与罚" }
+        {
+          "label": "微信读书",
+          "url": "https://weread.qq.com/web/bookDetail/c5232670813ab8e46g011d19"
+        },
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/35406615/"
+        },
+        {
+          "label": "维基百科",
+          "url": "https://zh.wikipedia.org/wiki/罪与罚"
+        }
       ]
     },
     {
@@ -37,9 +55,18 @@
       "graphFile": "data/three-kingdoms.graph.json",
       "textFile": "data/three-kingdoms.text.json",
       "links": [
-        { "label": "微信读书", "url": "https://weread.qq.com/web/search/books?keyword=三国演义" },
-        { "label": "豆瓣", "url": "https://book.douban.com/subject/1019568/" },
-        { "label": "维基百科", "url": "https://zh.wikipedia.org/wiki/三国演义" }
+        {
+          "label": "微信读书",
+          "url": "https://weread.qq.com/web/search/books?keyword=三国演义"
+        },
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/1019568/"
+        },
+        {
+          "label": "维基百科",
+          "url": "https://zh.wikipedia.org/wiki/三国演义"
+        }
       ]
     },
     {
@@ -50,8 +77,50 @@
       "graphFile": "data/peak.graph.json",
       "textFile": "data/peak.text.json",
       "links": [
-        { "label": "微信读书", "url": "https://weread.qq.com/web/search/books?keyword=刻意练习" },
-        { "label": "豆瓣", "url": "https://book.douban.com/subject/26895993/" }
+        {
+          "label": "微信读书",
+          "url": "https://weread.qq.com/web/search/books?keyword=刻意练习"
+        },
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/26895993/"
+        }
+      ]
+    },
+    {
+      "slug": "species-origin",
+      "title": "物种起源",
+      "author": "查尔斯·达尔文",
+      "file": "data/species-origin.json",
+      "graphFile": "data/species-origin.graph.json",
+      "textFile": "data/species-origin.text.json",
+      "links": [
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/1057076/"
+        },
+        {
+          "label": "维基百科",
+          "url": "https://zh.wikipedia.org/wiki/物种起源"
+        }
+      ]
+    },
+    {
+      "slug": "sapiens",
+      "title": "人类简史：从动物到上帝",
+      "author": "尤瓦尔·赫拉利",
+      "file": "data/sapiens.json",
+      "graphFile": "data/sapiens.graph.json",
+      "textFile": "data/sapiens.text.json",
+      "links": [
+        {
+          "label": "豆瓣",
+          "url": "https://book.douban.com/subject/26576874/"
+        },
+        {
+          "label": "维基百科",
+          "url": "https://zh.wikipedia.org/wiki/人类简史"
+        }
       ]
     }
   ]
