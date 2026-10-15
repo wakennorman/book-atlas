@@ -49,7 +49,7 @@ export const PROFILE_PREFIXES = [
   'ba-ai-', 'ba-anno-', 'ba-band-', 'ba-br-', 'ba-bv-', 'ba-cur-',
   'ba-det-', 'ba-ed-', 'ba-fill-', 'ba-fs-', 'ba-hist-', 'ba-lock-',
   'ba-parity-', 'ba-place-', 'ba-pv-', 'ba-race-', 'ba-rel-', 'ba-relax3-',
-  'ba-roam-', 'ba-scale-', 'ba-smoke-', 'ba-tip-', 'ba-tut-', 'ba-vm-', 'ba-vocab-',
+  'ba-roam-', 'ba-scale-', 'ba-smoke-', 'ba-thm-', 'ba-tip-', 'ba-tut-', 'ba-vm-', 'ba-vocab-',
   /* ── 只开个空目录当"假仓库根/临时目录"的台账守卫：体积可忽略，
    *    但它们**同样**在 Temp 下开 `ba-*` ⇒ 一并收进白名单，免得下次又有人只补一半。 ── */
   'ba-actors-guard-', 'ba-anl-', 'ba-arc-', 'ba-cc-', 'ba-dupnames-', 'ba-firstch-',

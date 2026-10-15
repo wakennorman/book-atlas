@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7324 行、284 个顶层符号，68 个分区。
+ * 文件共 7330 行、284 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -7063,7 +7063,13 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const themeBtn = $('#theme-btn');
     const setTheme = (dark) => {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      themeBtn.textContent = conv(dark ? '☀️ 日间' : '🌙 夜间');
+      /* v0.223：这里原来写的是 `dark ? '☀️ 日间' : '🌙 夜间'` —— **动作口径**：
+         已经进入白天了，按钮上却写着「夜间」（它想表达的是"点我会去夜间"）。
+         整条工具条只有它一个这样：拖动节点、次要人物、族谱补全、剧透保护
+         写的全是**当前态**（开/关、隐藏/显示）⇒ 统一改成当前态：
+         白天显示「☀️ 日间」、夜间显示「🌙 夜间」。
+         （用户报的就是这条：「明明是白天模式，按钮却显示夜间」。） */
+      themeBtn.textContent = conv(dark ? '🌙 夜间' : '☀️ 日间');
       localStorage.setItem('ba-theme', dark ? 'dark' : 'light');
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     };
@@ -7129,7 +7135,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
        * 是当场 conv 的，所以切换用字后必须重画一次）。同理 `applyTypeTerms` 覆盖不到
        * 它们——那函数只管 index.html 里的静态文案。 */
       const themeBtn2 = $('#theme-btn');
-      if (themeBtn2) themeBtn2.textContent = conv(document.documentElement.dataset.theme === 'dark' ? '☀️ 日间' : '🌙 夜间');
+      if (themeBtn2) themeBtn2.textContent = conv(document.documentElement.dataset.theme === 'dark' ? '🌙 夜间' : '☀️ 日间');
       if (state.book) renderHeader();
       /* ⚠ 还有一批「在写入那一刻自己 conv」的同步函数（工具条开关、图注、边筛选…）。
        *   它们首屏跑的时候转换表还没取到 ⇒ 首屏就是简体；光改写入点不够，
