@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7297 行、281 个顶层符号，68 个分区。
+ * 文件共 7326 行、284 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -16,8 +16,8 @@
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
- * | 6. 阵营 / 颜色 / 分组 | `cssVar` | 9 |
- * | 7. 显示设置（色盲配色、字号） | `syncDisplayUI` | 13 |
+ * | 6. 阵营 / 颜色 / 分组 | `cssVar` | 11 |
+ * | 7. 显示设置（色盲配色、字号） | `syncDisplayUI` | 14 |
  * | 8. 关系过滤（亲缘 / 实虚线） | `passEdgeFilter` | 5 |
  * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
  * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
@@ -132,7 +132,8 @@
   /** 最宽的一条图注有多宽（横视图判重叠时用；gen-v 只判行高，用不到） */
   function bandWidestText() {
     let w = BAND_FONT;
-    for (const t of state.bandLabels.values()) w = Math.max(w, bandTextWidth(t));
+    /* v0.220：bandLabels 存的是**原文** ⇒ 这里按当前用字转一次再量宽（繁体略宽）。 */
+    for (const t of state.bandLabels.values()) w = Math.max(w, bandTextWidth(conv(t)));
     return w;
   }
 
@@ -990,6 +991,17 @@
     }
     return conv(g === 0 ? '前史' : `第 ${g} 代`);
   };
+  /** v0.220：`genText` 的**未转换**版。`bandLabels`（分组图注缓存）要用它 ——
+   *  那个 Map 是切布局/切书/首屏时随手填的**缓存**，填进去的是原文，真正要显示时再 `conv`；
+   *  否则缓存里塞的是繁体，切回简体就再也显示不出原文（且缓存与用字不同步会二次转换）。 */
+  const genTextRaw = (g) => {
+    const labels = state.book && state.book.meta && state.book.meta.genLabels;
+    if (Array.isArray(labels) && labels.length) {
+      if (typeof labels[g] === 'string' && labels[g]) return labels[g];
+      return `第 ${g + 1} 级`;
+    }
+    return g === 0 ? '前史' : `第 ${g} 代`;
+  };
   /** 人名/节点名的**唯一**出口（tooltip、关系两端、链接…）。v0.219 同上：出口处转一次。 */
   const charName = (id) => conv(state.byId.get(id)?.name || id);
 
@@ -997,6 +1009,8 @@
   /** 按 key 取阵营名。v0.219：`factions[].name` 是**数据**（不走 escBold/unbold），
    *  而阵营名会出现在图例、节点分组、tooltip、页脚好几处 ⇒ 转换放在这里这个**收口**。 */
   const factionNameByKey = (key) => conv((state.book?.factions.find((f) => f.key === key) || {}).name || '其他');
+  /** v0.220：同上，未转换版（给 `bandLabels` 缓存用）。 */
+  const factionNameRawByKey = (key) => (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
   /** ⚠ v85：这里的口径必须和 groupKeyOf 一致，都走 effectiveFactionKey。
    *  原来 groupLabelOf 用的是「原始 c.faction」，而分组键/节点颜色用的是「按进度的当前归属」，
    *  两者在有 factionHistory 的角色上会不一致 —— 实测三国读到第 5 回时，
@@ -1050,6 +1064,9 @@
   const factionTextOf = (c) => factionNameOf(c);
   const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
+  /** v0.220：`groupLabelOf` 的**未转换**版，只给 `bandLabels` 缓存用。
+   *  （缓存里存原文、显示时再转；缓存里存繁体会让切回简体时显示不出原文。） */
+  const groupLabelRawOf = (c) => (state.groupMode === 'generation' ? genTextRaw(c.generation) : factionNameRawByKey(effectiveFactionKey(c)));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
   const isMentioned = (c) => c && c.tier === 'mentioned';
   const isMinor = (c) => c && c.tier === 'minor';
@@ -2378,7 +2395,11 @@
         if (!bandVisible.has(g)) continue;
         data.push({
           id: `__gen_${g}`,
-          name: state.bandLabels.get(g) || String(g),
+          /* v0.220：bandLabels 里存的是**原文**（见 groupLabelRawOf 的注释）
+             *   ⇒ 在这里按当前用字转一次。原来直接拿缓存里的值，
+             *   于是「首屏时缓存填的是简体」在切了繁体后**永远是简体**——
+             *   实测线上三国：图例与 categories 都转对了，就这 6 条分组图注不动。 */
+          name: conv(state.bandLabels.get(g) || String(g)),
           symbol: 'circle',
           symbolSize: 3,
           x: bandX(band),
@@ -3036,7 +3057,7 @@
       const cy = isH ? 0 : mainAt;
       state.bands.set(g, mainAt);          // band 就是主轴坐标：gen-h 是 x、gen-v 是 y
       const sample = byGen.get(g)[0];
-      state.bandLabels.set(g, sample ? groupLabelOf(sample) : String(g));
+      state.bandLabels.set(g, sample ? groupLabelRawOf(sample) : String(g));
       const list = byGen.get(g);
       /* 块内网格。人数少的组用更少的列，并**在自己的中心上居中**
        * （原来 gen-v 是把所有人铺满整条 crossLen，窄视口下包围盒被拉成极扁的一条）。 */
@@ -3591,16 +3612,20 @@
     const total = state.book.characters.length;
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const t = T();
-    let text = shown >= total ? `${total} ${t.charN}` : `显示 ${shown} / ${total} ${t.charN}`;
+    /* v0.220：`text` 里混着已转换的 `t.*` 词条与简体字面量（「显示」）⇒ 用 convFill，
+     *   先转模板再填词条。原先把整串丢给 `conv()` 会把 `t.charN` 再转一遍（不幂等）。 */
+    let text = shown >= total
+      ? convFill('{total} {charN}', { total: String(total), charN: esc(t.charN) })
+      : convFill('显示 {shown} / {total} {charN}', { shown: String(shown), total: String(total), charN: esc(t.charN) });
     // 关系数也报一下：过滤/剧透/折叠挡住多少条，一眼能看出来
     const rels = state.book.relations;
     const shownRels = rels.filter((r) =>
       state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r) && relVisible(r) && passEdgeFilter(r) && relVisibleAt(r)
       && !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to))
       && passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to)).length;
-    if (shownRels < rels.length) text += ` · ${t.rel} ${shownRels} / ${rels.length}`;
+    if (shownRels < rels.length) text += `${t.rel} ${shownRels} / ${rels.length}`;
     const n = asOf();
-    el.textContent = conv((n !== null ? `🕰 第 ${n} 章 · ` : '') + text);
+    el.textContent = (n !== null ? convFill('🕰 第 {n} 章 · ', { n: String(n) }) : '') + text;
     updateAria();
   }
   function renderFocusBar() {
@@ -7113,6 +7138,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       syncEdgeFilterUI();
       syncGraphHint();
       renderBuildStamp();
+      /* 图例 / 搜索框占位符 / 计数提示同理 —— 它们在 loadBook 里渲染，都在转换表取到之前 */
+      renderLegend();
+      updateSearchPlaceholder();
+      updateCountHint();
       /* ⚠ `syncMinorBtn` / `syncMentionBtn` 两个写者声明在 `bindViewControls` 内部，
        *   这里够不着（v0.208 同款：`no-undef` 当场报红）。照 `revealChar` 的写法内联。 */
       const minorBtn3 = document.getElementById('minor-btn');
