@@ -7,7 +7,7 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7326 行、284 个顶层符号，68 个分区。
+ * 文件共 7324 行、284 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
@@ -575,9 +575,6 @@
       lineSolidLabel: '实线 · 亲缘 / 同盟',
       lineDashedLabel: '虚线 · 对立 / 伤害',
       lineDottedLabel: '点线 · 情人 / 过去 / 间接',
-      exportHint: '导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。',
-      exportPngDesc: '当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。',
-      exportEpubDesc: '关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
       spoilerIntro: '这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。',
       spoilerOffDesc: '直接看完整关系图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
@@ -633,12 +630,12 @@
       help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
       help10Head: '⑩ 读到哪儿了：第 N 章的世界',
       help10Body: '右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些{rel}、发生什么{event}、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
-      help12Head: '⑫ 只看亲缘线 / 只看对立线（关系过滤）',
-      help12Body: '工具栏「{rel}：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「{pairRel}」也会跟着过滤。',
-      help13Head: '⑬ {char}志与{char}卡',
-      help13Body: '点任意{char}：面板里除了档案与{rel}，还有<b>「一生（按章）」小节</b>——按章号排的{event}、{place}与原文引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（身份、{fate}、关键{rel}与依据{event}），适合发想法。',
-      help14Head: '⑭ AI 讲解（不剧透）',
-      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}档案）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      help11Head: '⑪ 只看亲缘线 / 只看对立线（关系过滤）',
+      help11Body: '工具栏「{rel}：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「{pairRel}」也会跟着过滤。',
+      help12Head: '⑫ {char}志与{char}卡',
+      help12Body: '点任意{char}：面板里除了档案与{rel}，还有<b>「一生（按章）」小节</b>——按章号排的{event}、{place}与原文引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（身份、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help13Head: '⑬ AI 讲解（不剧透）',
+      help13Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}档案）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
       helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
     theory: {
@@ -686,9 +683,6 @@
       lineSolidLabel: '实线 · 支撑 / 属于',
       lineDashedLabel: '虚线 · 对立 / 误读',
       lineDottedLabel: '点线 · 间接',
-      exportHint: '导出的内容跟随你当前的筛选：剧透进度、概念数、次要概念、领域、聚焦都会生效。',
-      exportPngDesc: '当前视图的关联图 + 书名、概念统计与图例；适合发到想法、圈子或朋友圈。',
-      exportEpubDesc: '关联总图 + 概念志 + 案例轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
       spoilerIntro: '选「我在读」后，你进度之后的概念、关联与案例都会被锁起来，避免提前看到后面的内容。',
       spoilerOffDesc: '直接看完整关联图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（概念定位、未解锁的关联与案例都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
@@ -726,12 +720,12 @@
       help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
       help10Head: '⑩ 读到哪儿了：第 N 章的世界',
       help10Body: '右侧「📖 第 N 章」：这一章<b>哪些概念初次提出</b>、新增了哪些{rel}、发生什么{event}、在哪个领域；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（支撑→驳斥这类会随时间切换），<b>不会改你的真实进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
-      help12Head: '⑫ 只看某类关联线（关联过滤）',
-      help12Body: '工具栏「{rel}：全部」里可以勾类型，以及按线条（实线＝支撑 / 属于，虚线＝对立 / 误读，点线＝间接）。底部的「{pairRel}」也会跟着过滤。',
-      help13Head: '⑬ {char}志与{char}卡',
-      help13Body: '点任意{char}：面板里除了释义与{rel}，还有<b>「沿革（按章）」小节</b>——按章号排的{event}、{place}与书中引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（定义、{fate}、关键{rel}与依据{event}），适合发想法。',
-      help14Head: '⑭ AI 讲解（不剧透）',
-      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}释义）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      help11Head: '⑪ 只看某类关联线（关联过滤）',
+      help11Body: '工具栏「{rel}：全部」里可以勾类型，以及按线条（实线＝支撑 / 属于，虚线＝对立 / 误读，点线＝间接）。底部的「{pairRel}」也会跟着过滤。',
+      help12Head: '⑫ {char}志与{char}卡',
+      help12Body: '点任意{char}：面板里除了释义与{rel}，还有<b>「沿革（按章）」小节</b>——按章号排的{event}、{place}与书中引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（定义、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help13Head: '⑬ AI 讲解（不剧透）',
+      help13Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}释义）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
       helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
   };
@@ -1727,7 +1721,7 @@
     const lbl = document.querySelector('.pathbar-label');
     /* ⚠ v0.214：这里原来写 `${t.char}${t.rel}` ⇒ 界面标签变成「人物关系」/「概念关联」，
      *   而**所有使用说明里都管它叫「两人关系」**（静态 HTML 兜底、欢迎面板、
-     *   「怎么用」⑦⑫⑭ 三处）⇒ 说明指着一个界面上不存在的名字，正是 v0.213 那条
+     *   「怎么用」⑦⑪⑬ 三处）⇒ 说明指着一个界面上不存在的名字，正是 v0.213 那条
      *   「图注不能说谎」的同一类病。现在标签与说明**共用 `pairRel` 一条词条**。 */
     if (lbl) lbl.textContent = t.pairRel;
     /* 右栏默认提示与图键盘提示：**不再在这里手写** —— 两者都已挂上
@@ -6436,11 +6430,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       case 'chapter':
         goChapter(1);
         break;
-      case 'export': {
-        const m = document.getElementById('export-modal');
-        if (m) { m.hidden = false; const h = document.getElementById('export-hint'); if (h) h.textContent = ''; }
-        break;
-      }
+      /* v0.222：`case 'export'` 已删（入口跟着按钮/怎么用⑪一起摘掉了，
+       *   生成器仍留着 —— 见 bindExportAiUI 顶部那段明账）。 */
       case 'edge': {
         state.edgeKins = new Set(['blood', 'marriage', 'adopt', 'sworn']);
         state.edgeStyles = new Set();
@@ -6828,10 +6819,25 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   /** 「拖动节点」开关的唯一写者：按钮文案 + 图注 + 系列级 draggable（靠 setOption 生效）。
    *  工具条点击与「怎么用」里的演示都走这里 —— 别处再抄一份状态写入（v0.208 同款病）。 */
   function setNodeDrag(on) {
+    const changed = state.nodeDrag !== !!on;
     state.nodeDrag = !!on;
     const btn = document.getElementById('drag-btn');
     if (btn) btn.textContent = conv(state.nodeDrag ? '拖动节点：开' : '拖动节点：关');
     syncGraphHint();
+    /* v92：系列级 `draggable` 只有 setOption 时才生效，所以切换后必须重建一次。
+     *
+     * ⚠⚠ v0.221：这里原来调 `resetRoam(false)` —— 它会**连视野一起复位**
+     *   （zoom→1、center→[0,0]，见 resetRoam 末尾那两行）。而 v92 的本意只是
+     *   "别把这次复位记进『上次视野』"（save=false）。
+     *
+     *   后果：查完「两人关系」时 `lockFromHighlight()` 末尾调了 `fitLockView()`，
+     *   视野是**贴着锁定集合**的；这时点一下「拖动节点」，视野被拽回原点，
+     *   锁定节点落在视口外 ⇒ 画布看着**整个空白**（自由视图实测：2 个节点只剩 1 个在屏内）。
+     *   用户报的就是这条：「拖动节点关闭 → 查两人关系 → 打开拖动节点 → 关系画布空白」。
+     *
+     *   ⇒ 换一个画布设置不等于要复位视野。改成 keepView 重建：draggable 照样生效，
+     *     视野原样不动；也顺手保住了正在看的那个锁定集合。 */
+    if (changed && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
   /* ══ 区域 65/68：UI 绑定：画布 / 复位 / 使用说明 ══ */
@@ -6861,9 +6867,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     });
     const dragBtn = $('#drag-btn');
     dragBtn.addEventListener('click', () => {
+      /* v0.222：重建放在 setNodeDrag 里（keepView，不复位视野）。
+       *   原来这里是 `setNodeDrag(...); resetRoam(false);` —— 见 setNodeDrag 里的那段注释。 */
       setNodeDrag(!state.nodeDrag);
-      resetRoam(false);   // v92：开/关拖动节点是设置切换，别把它顺手造成的复位当成"用户选了这个视野"
-                        // （系列级 draggable 要在 setOption 时才生效，所以这一步也省不掉）
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）
@@ -6976,7 +6982,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     }
     document.addEventListener('keydown', (ev) => {
       if (ev.target && /^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) return;
-      const modalOpen = ['#export-modal', '#spoiler-modal', '#help-modal', '#ai-modal'].some((s) => {
+      const modalOpen = ['#spoiler-modal', '#help-modal', '#ai-modal'].some((s) => {
         const el = document.querySelector(s); return el && !el.hidden;
       });
       if (modalOpen) return;
@@ -7012,25 +7018,19 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   /* ══ 区域 67/68：UI 绑定：导出 / AI / 主题 ══ */
 
   function bindExportAiUI() {
-    // 导出 / 分享
-    // v85：导出与 AI 的逻辑本来就内联在本文件里，原先 js/export.js / js/ai.js 是同一套逻辑的第二份手抄
-    // （且那份把 buildCompanionEpub() 的返回对象当字节数组塞进 Blob，EPUB 直接坏掉），已删除。
-    // 这里直接调本文件的实现，少一次网络往返，也少一份会漂移的副本。
-    const exportModal = document.getElementById('export-modal');
-    const closeExport = () => { if (exportModal) exportModal.hidden = true; };
-    if (exportModal) {
-      document.addEventListener('click', (ev) => {
-        if (ev.target.closest('#export-btn')) {
-          exportModal.hidden = false;
-          const h = document.getElementById('export-hint'); if (h) h.textContent = '';
-          return;
-        }
-        if (ev.target.closest('[data-export-close]') || ev.target === exportModal) { closeExport(); return; }
-        const opt = ev.target.closest('[data-export]');
-        if (opt && !opt.disabled) runExport(opt.dataset.export);
-      });
-      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
-    }
+    /* v0.222：**导出入口已从界面摘掉**（用户：「暂时不用」）。
+     *
+     * 摘掉的：工具条 `#export-btn`、`#export-modal` 及五个选项、怎么用 ⑪、`runHelpAct('export')`。
+     * **保留的**：这一文件里全部导出/分享**生成器**（`runExport` / `exportSelection` /
+     * `exportPositions` / `buildSharePng` / `buildGraphSvg` / `buildCharacterPng` /
+     * `buildCompanionEpub` / `ensureTextForExport` …）一个都没动，连 `data-term` 词条
+     * （`exportHint` / `exportPngDesc` / `exportEpubDesc`）也原样留着。
+     * ⇒ 想恢复：把 index.html 里那段（git 历史 v0.221 有原样）粘回来即可，逻辑无需改动。
+     *
+     * ⚠ 为什么不连生成器一起删：① 那是完整一摊（含 EPUB 排版、SVG 栅格化、单文件 HTML），
+     *   删了再想捡回来代价大；② `test/races.mjs` 用 `runExport('json')` 做竞态探针、
+     *   `test/browser.mjs` 用 `exportSelection().links.length` 判锁定，删了它们得连断言一起改。
+     */
 
     // AI 讲解（不剧透）+ 继续追问（v93）
     document.addEventListener('submit', (ev) => {
@@ -7189,10 +7189,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   }
 
   /* ---------------- 启动 ---------------- */
-  if (window.__BA_STANDALONE) {
-    const eb = document.getElementById('export-btn');
-    if (eb) eb.hidden = true;      // 单文件版：再导出会依赖 index.html / 资源，直接藏掉
-  }
+  /* v0.222：原来这里有一段「单文件版把 #export-btn 藏掉」—— 按钮已经不在 HTML 里了，
+   *   这段跟着删（`__BA_STANDALONE` 这个全局变量还在用：单文件导出的启动钩子）。 */
   bindUI();
   bindFullscreenUI();   // v0.131：全屏 / 右栏折叠（要在 boot 之前挂好，
                         //   因为进全屏时会立刻 resize+量高度，早一刻少一帧闪动）

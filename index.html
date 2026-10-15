@@ -20,7 +20,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta name="theme-color" content="#1d2a53">
-  <link rel="stylesheet" href="css/style.css?v=221">
+  <link rel="stylesheet" href="css/style.css?v=222">
 </head>
 <body>
 
@@ -52,10 +52,6 @@
     <button id="help-btn" class="icon-btn" type="button" title="使用说明（每条都能在图上试一下）">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span data-s2t>怎么用</span>
-    </button>
-    <button id="export-btn" class="icon-btn" type="button" title="导出：单文件 HTML / 分享图 / 打印版 / 数据">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-s2t>导出</span>
     </button>
     <a class="icon-btn" href="editor.html" title="打开本地编辑器：自己新建/修改一本书">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -431,22 +427,6 @@
           <button type="button" class="ghost tiny" data-help-act="chapter" data-s2t>试一下：翻到第 1 章看看</button>
         </div>
       </div>
-
-      <div class="help-item">
-        <div class="help-fig">
-          <svg viewBox="0 0 160 90" aria-hidden="true">
-            <rect x="24" y="18" width="52" height="38" rx="6" fill="var(--panel-2)" stroke="var(--line)"/>
-            <path d="M82 30h34M82 44h34" stroke="var(--muted)" stroke-width="3" stroke-linecap="round"/>
-            <path d="M116 22l16 8-16 8z" fill="#4c9f70"/>
-            <rect x="24" y="62" width="112" height="10" rx="5" fill="var(--soft)"/>
-          </svg>
-        </div>
-        <div class="help-text">
-          <b data-s2t>⑪ 导出与分享</b>
-          <span><span data-s2t>右上「⬇️ 导出」：① </span><b data-s2t>单文件 HTML</b><span data-s2t>——一本书连图带数据打包成一个文件，发给别人双击就能看；② </span><b data-s2t>分享图 PNG</b><span data-s2t>；③ </span><b data-s2t>打印版 SVG</b><span data-s2t>（矢量，可打印成海报或转 PDF）；④ 数据 JSON。导出的内容跟随你当前的筛选与剧透进度。</span></span>
-          <button type="button" class="ghost tiny" data-help-act="export" data-s2t>试一下：打开导出面板</button>
-        </div>
-      </div>
       <div class="help-item">
         <div class="help-fig">
           <svg viewBox="0 0 160 90" aria-hidden="true">
@@ -459,8 +439,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b data-term-html="help12Head">⑫ 只看亲缘线 / 只看对立线（关系过滤）</b>
-          <span data-term-html="help12Body">工具栏「关系：全部」里可以勾类型：<b data-s2t>血缘</b>、<b data-s2t>婚姻·姻亲</b>、<b data-s2t>收养·抚养·继亲</b>、<b data-s2t>结义</b>、<b data-s2t>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b data-s2t>只看亲缘</b>（当家族树用）、<b data-s2t>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
+          <b data-term-html="help11Head">⑪ 只看亲缘线 / 只看对立线（关系过滤）</b>
+          <span data-term-html="help11Body">工具栏「关系：全部」里可以勾类型：<b data-s2t>血缘</b>、<b data-s2t>婚姻·姻亲</b>、<b data-s2t>收养·抚养·继亲</b>、<b data-s2t>结义</b>、<b data-s2t>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b data-s2t>只看亲缘</b>（当家族树用）、<b data-s2t>只看对立·伤害</b>、全部重置；底部的「两人关系」也会跟着过滤。</span>
           <button type="button" class="ghost tiny" data-help-act="edge" data-s2t>试一下：只看亲缘线</button>
         </div>
       </div>
@@ -476,8 +456,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b data-term-html="help13Head">⑬ 人物志与人物卡</b>
-          <span data-term-html="help13Body">点任意人物：面板里除了档案与关系，还有<b data-s2t>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b data-s2t>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
+          <b data-term-html="help12Head">⑫ 人物志与人物卡</b>
+          <span data-term-html="help12Body">点任意人物：面板里除了档案与关系，还有<b data-s2t>「他/她的一生（按章）」</b>——按章号排的事件、地点与原文引文；点「<b data-s2t>🖼 人物卡</b>」可把这个人导成一张 PNG（身份、结局、关键关系与依据事件），适合发想法。</span>
           <button type="button" class="ghost tiny" data-help-act="charcard" data-s2t>试一下：打开关系最多的人</button>
         </div>
       </div>
@@ -493,8 +473,8 @@
           </svg>
         </div>
         <div class="help-text">
-          <b data-term-html="help14Head">⑭ AI 讲解（不剧透）</b>
-          <span data-term-html="help14Body">跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b data-s2t>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
+          <b data-term-html="help13Head">⑬ AI 讲解（不剧透）</b>
+          <span data-term-html="help13Body">跑完「两人关系」或点开某个人后，面板里会有「🤖 讲一遍（不剧透）」：它<b data-s2t>只把你已经读到的资料</b>（关系链、依据事件、人物档案）交给模型，结局与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。</span>
           <button type="button" class="ghost tiny" data-help-act="ai" data-s2t>试一下：打开 AI 设置</button>
         </div>
       </div>
@@ -524,38 +504,11 @@
   </div>
 </div>
 
-<div id="export-modal" class="modal-backdrop" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
-    <div class="modal-head">
-      <h2 id="export-title" data-s2t>⬇️ 导出 / 分享</h2>
-      <button type="button" class="modal-close" data-export-close="1" title="关闭">✕</button>
-    </div>
-    <p class="hint" data-term="exportHint">导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。</p>
-    <div class="export-list">
-      <button class="spoiler-opt" type="button" data-export="html">
-        <b data-s2t>① 单文件 HTML —— 把这本书发给别人</b>
-        <span data-s2t>整本书（图谱 + 数据）打包成一个 .html：双击就能看，不用服务器、不用联网、不依赖这个站点。</span>
-      </button>
-      <button class="spoiler-opt" type="button" data-export="png">
-        <b data-s2t>② 分享图 PNG</b>
-        <span data-term="exportPngDesc">当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。</span>
-      </button>
-      <button class="spoiler-opt" type="button" data-export="svg">
-        <b data-s2t>③ 打印版 SVG（A3）</b>
-        <span data-s2t>矢量图，放进排版软件或直接用浏览器打印（可另存为 PDF）；墙上海报／塞进书里都清楚。</span>
-      </button>
-      <button class="spoiler-opt" type="button" data-export="json">
-        <b data-s2t>④ 数据 JSON</b>
-        <span data-s2t>这本书的原始数据：可以自己改，也可以拖进编辑器接着整理。</span>
-      </button>
-      <button class="spoiler-opt" type="button" data-export="epub">
-        <b data-s2t>⑤ 阅读伴侣 EPUB —— 传进微信读书</b>
-        <span data-term-html="exportEpubDesc">关系总图 + 人物志 + 事件轴做成一本小册子（<b data-s2t>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。</span>
-      </button>
-    </div>
-    <p class="hint" id="export-hint"></p>
-  </div>
-</div>
+<!-- v0.222：导出入口已摘（工具条按钮 / 弹窗 / 怎么用⑪ 都删了），生成器仍留在 js/app.js。
+     这个隐藏的提示条**必须留着**：runExport() 把「文案还没加载出来，现在导出会缺…」
+     这类**安全提示**写在它里面，而 test/races.mjs E 用例盯的就是这条 ——
+     「文案没到位时不能导出残缺数据，且要把原因说出来」。删了它，那条守卫就哑了。 -->
+<p id="export-hint" class="hint" hidden></p>
 
 <div id="spoiler-modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spoiler-title">
@@ -581,6 +534,6 @@
 
 <script src="vendor/echarts.min.js"></script>
 <script src="vendor/fflate.min.js"></script>
-<script src="js/app.js?v=221"></script>
+<script src="js/app.js?v=222"></script>
 </body>
 </html>

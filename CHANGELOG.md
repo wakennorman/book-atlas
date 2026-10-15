@@ -5,7 +5,68 @@
 
 ---
 
-## v0.221 · 繁体第三遍：`bandLabels` 缓存 + 第一次真的「来回切」验证
+## v0.222 · 去掉「导出」入口 + 修「查完两人关系再开拖动节点 ⇒ 画布空白」
+
+两件事：按用户要求把导出功能**从界面上摘掉（暂时不用）**，以及修一个当场复现的画布空白 bug。
+
+### 一、修：查完「两人关系」→ 打开「拖动节点」⇒ 关系画布变空白
+
+复现路径（拖动节点默认关闭）：`查两人关系` → 点「拖动节点」→ 画布**整个空**。
+（自由视图实测：2 个节点只剩 1 个在视口内；代际·横/纵 同类。）
+
+**病因**：`setNodeDrag()` 里那句 `resetRoam(false)`。它的本意只是「别把这次复位记进『上次视野』」
+（v92 的 `save=false`），但它**连视野一起复位了** —— `resetRoam` 末尾两行把 `zoom` 摁回 1、
+`center` 摁回 `[0,0]`。而 `lockFromHighlight()` 末尾调过 `fitLockView()`，**视野是贴着锁定集合的**；
+这一复位把锁定节点甩到视口外 ⇒ 看着就是空白。
+
+**修法一行**：换成 `setOption(buildOption({ keepView: true }))`。
+
+- 系列级 `draggable` 照样生效（只有 `setOption` 才认它，这正是 v92 要 setOption 的原因）；
+- 视野原样不动，正在看的锁定集合也保住了；
+- 元凶说法**换个画布设置 ≠ 要复位视野**。已实测三种布局（自由/代际·横/代际·纵）
+  查询后 vs 开拖动后 `zoom`/`center` 完全一致、节点全在屏内、`draggable: true`；
+  非锁定态下切开关也不再把你调好的视野拽走。
+
+### 二、摘掉「导出 / 分享」入口（暂时不用）
+
+工具条按钮、`#export-modal` 及五个选项（单文件 HTML / 分享图 PNG / 打印版 SVG / 数据 JSON / 阅读伴侣 EPUB）、
+「怎么用」⑪ 导出与分享、`runHelpAct('export')`、以及单文件版里那段「藏掉 #export-btn」的兜底。
+
+**为什么只摘入口、不删代码**（约 700 行）：
+
+- 那一摊是完整的（含 EPUB 排版、SVG 栅格化、单文件 HTML、人物卡分享图），删了再想捡回来代价大；
+- `test/races.mjs` 拿 `runExport('json')` 当竞态探针、`test/browser.mjs` 拿
+  `exportSelection().links.length` 判锁，删了要连断言一起改；
+- 三个 `data-term` 词条（`exportHint` / `exportPngDesc` / `exportEpubDesc`）与两份书型对称会被
+  `type-terms-guard` 管着，动它们要连带检查 G12/G13。
+
+⇒ **生成器一个都没删**，`__ba.runExport` / `__ba.exportSelection` 照旧可调（测试还在用）。
+想恢复：把 index.html 里那段粘回来即可（v0.221 有原样），逻辑无需改动。`bindExportAiUI()` 顶部留了明账。
+
+**连带整理**：
+- ⑪ 删掉后，「怎么用」剩 13 条，编号 ①…⑬ 连续；原来的⑫⑬⑭（关系过滤 / 人物志 / AI 讲解）
+  连同 `help12*→help11*`、`help13*→help12*`、`help14*→help13*` 的 TERMS 键与 `data-term-html` 挂点
+  **一起前移**，保证「可见编号 / 术语键 / 挂点」三者仍对齐。静态 HTML 里 `help\d+Body` 挂点 13 个
+  （守卫要求 ≥10，仍有余量）。
+- 三个只服务导出弹窗的 `data-term` 词条（`exportHint` / `exportPngDesc` / `exportEpubDesc`）
+  **两份书型对称删除**（92/92 条，G12/G13 的对齐性不受影响）—— `type-terms-guard` 的 G7 会查
+  "定义了却没人引用"的死词条，入口一摘它们就死了。
+- `#export-hint` 这个提示条**留着但隐藏**：`runExport()` 把「文案还没加载出来，现在导出会缺…」
+  这类**安全提示**写在它里面，`test/races.mjs` 的 E 用例盯的就是这条（"文案没到位时不能导出残缺数据，
+  且要把原因说出来"）。删了它，那条守卫就哑了。
+- **`data/s2t.json` 跟着重生成了一遍**：语料是从 `js/app.js` / `index.html` / `js/editor.js` 收的
+  （`scripts/lib/s2t.mjs` 的 `UI_SOURCES`），删掉导出弹窗就等于改语料 ——
+  词组表里的 `"里都": "裡都"` 是「塞进书里**都**清楚」里带出来的，那条一删它就成了死条目（H2 报红）。
+  按规程 `npm i --no-save opencc-js@1.0.5 && node scripts/make-s2t-dict.mjs` 重生成：
+  全表只少了这一条（`--check` 与 21 条守卫全过）。生成器顺带吐的 `s2t-audit.txt` 用完**命令行删掉**
+  （不进回收站），别留在仓库根目录。
+
+### 三、明账
+
+- ⬜ **导出的代码还在文件里、但没有入口**：`runExport` / `exportSelection` / `exportPositions` /
+  `buildSharePng` / `buildGraphSvg` / `buildCharacterPng` / `buildCompanionEpub` /
+  `ensureTextForExport` / `rasterizeSvg` 全部保留，等哪天要用直接接回入口。
+- ⬜ 人物卡「分享到想法」那张 PNG 仍是老路径（不在本轮范围内）。
 
 v0.220 在**本地**测的是「`?t=hant` 进去之后不回切」。真去线上按按钮切，又漏一批；
 而且漏的全是同一个新病因：**「同一个数被两个模式共用」**。
