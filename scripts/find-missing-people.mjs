@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIN_FREQ = Number((process.argv.find((a) => a.startsWith('--min=')) || '').slice(6) || 3);
 const book = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'three-kingdoms.json'), 'utf8'));
-const src = fs.readFileSync('C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt', 'utf8');
+const src = fs.readFileSync('<你的临时目录>/opencode/ba-books/三国演义.txt', 'utf8');
 const flat = (x) => String(x || '').replace(/[\s·・･　]/g, '');
 const f = flat(src);
 const toRaw = (i) => {

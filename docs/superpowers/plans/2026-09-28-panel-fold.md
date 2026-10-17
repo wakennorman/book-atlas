@@ -16,7 +16,7 @@
 **发布约定（项目惯例，覆盖技能默认的 git commit）:** 本仓库**不做本地 commit**（本地 HEAD 与远端分叉，发布一律走 `tools\push-via-api.ps1`）；只有 Task 7 才发布。`_publish-*.ps1` 被 `.gitignore` 排除、不会上传。
 
 **环境:**
-- node 不在 PATH：`$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"`
+- node 不在 PATH：`$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"`
 - 本地预览：`python -m http.server 8765`（workdir = 仓库根；协调者已在本轮开始时启动）
 - 浏览器：`tools.browser.tabs.open({ url: 'http://127.0.0.1:8765/?book=three-kingdoms' })` 之后所有工具都要带该 `tabID`。**URL 必须带 `?book=three-kingdoms`**：不带参数 `boot()` 取 `books[0]`＝百年孤独，`selectCharacter('cao-cao')` 会拿到空
 - ⚠️ 执行期事实（2026-09-28 实测）：**子代理会话的 browser 工具返回 `browser.disconnected`** → 各 Task 的浏览器断言步骤由**协调者**执行，子代理只做代码改动 + shell 门禁；断言结果回填后交给评审者作为证据
@@ -37,7 +37,7 @@
 
 Run（PowerShell）:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 Select-String -Path "D:\Claude Code+DeepSeekV4\book-atlas\js\app.js" -Pattern "foldSection|foldVM|applyFolds|FOLD_BATCH|data-fold" -CaseSensitive:$false
 ```
 Expected: **无输出**（0 处匹配）。若有匹配，把本计划里所有 `foldVM / foldSection / applyFolds / FOLD_BATCH / FOLD_ONESTEP / data-fold / data-fold-key / fold-body / fold-head / fold-foot / fold-btn / fold-alt / fold-more` 统一改名后再继续。
@@ -234,7 +234,7 @@ newString:
 
 Run:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 & $node --check "D:\Claude Code+DeepSeekV4\book-atlas\js\app.js"
 ```
 Expected: 无输出、退出码 0。
@@ -366,7 +366,7 @@ newString:
 
 Run:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 & $node --check "D:\Claude Code+DeepSeekV4\book-atlas\js\app.js"
 ```
 Expected: 无输出、退出码 0。
@@ -487,7 +487,7 @@ newString:
 
 Run:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 & $node --check "D:\Claude Code+DeepSeekV4\book-atlas\js\app.js"
 ```
 Expected: 无输出、退出码 0。
@@ -634,7 +634,7 @@ newString:
 
 Run:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 & $node --check "D:\Claude Code+DeepSeekV4\book-atlas\js\app.js"
 ```
 Expected: 无输出、退出码 0。
@@ -808,7 +808,7 @@ Expected: **0 处** —— **没有任何版本标题**再挂「未发布」，�
 
 Run:
 ```powershell
-$node = "C:\Users\chw\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+$node = "<你的用户目录>/.cache/codex-runtimes/.../node.exe"
 $root = "D:\Claude Code+DeepSeekV4\book-atlas"
 foreach ($f in @("js/app.js","js/editor.js","miniprogram/utils/graph.js","miniprogram/utils/render.js","miniprogram/utils/card.js","miniprogram/pages/index/index.js","miniprogram/app.js")) {
   & $node --check "$root\$f"; if ($LASTEXITCODE -ne 0) { throw "FAIL $f" }

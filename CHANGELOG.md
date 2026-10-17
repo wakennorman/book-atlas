@@ -2894,7 +2894,7 @@ P5＋P5b 两张表的语义与互斥 / P6 各只有一份定义 / P7 消费方�
 | `ba-*` 测试 profile | 224 | 14.56 GB | 后台删除中（先算体积再删，慢；结束时 C 盘约剩 24 GB） |
 | `msedge_*` ＋ `scoped_dir*` | 1428 | 5.79 GB | ✅ 已回收 |
 | 顶层 `*.tmp`（**不是我们的**） | 855 | 6.91 GB | ⚠ **未动** —— 要不要清、按什么判据清（如 >7 天），等用户发话 |
-| `C:\Users\chw\.workbuddy-ai\`、`opencode\ba-books\` | — | — | 绝不碰（原著 txt 与项目数据） |
+| `<你的用户目录>/.workbuddy-ai/`、`opencode\ba-books\` | — | — | 绝不碰（原著 txt 与项目数据） |
 
 ### 六、v0.192 勘误
 
@@ -5339,7 +5339,7 @@ p1 17 条 · p2 17 条 · p3 3 条 · p4 8 条 · p5 12 条 · p6 17 条 · p7 3
 
 ### 第三个 bug：`node` 路径在跑的过程中被删
 
-`C:\Users\chw\.workbuddy\binaries\node\versions\22.22.2-3\node.exe`
+`<你的用户目录>/.workbuddy/binaries/node/versions/22.22.2-3/node.exe`
 在会话中途变成 `22.22.2-3.deleting.22444.…`，同目录出现新的 `22.22.2-6`。
 所有后续命令改用新路径。**注意：这不是脚本 bug，是环境漂移**，
 但它会伪装成「脚本突然跑不动了」。

@@ -42,9 +42,9 @@ const WRITE = argv.includes('--write');
 const ONLY = (argv.find((a) => a.startsWith('--only=')) || '').slice(7);
 
 const SOURCES = {
-  'three-kingdoms': 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt',
-  'one-hundred-years-of-solitude': 'C:/Users/chw/AppData/Local/Temp/opencode/epub.txt',
-  'crime-and-punishment': 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/罪与罚.txt',
+  'three-kingdoms': '<你的临时目录>/opencode/ba-books/三国演义.txt',
+  'one-hundred-years-of-solitude': '<你的临时目录>/opencode/epub.txt',
+  'crime-and-punishment': '<你的临时目录>/opencode/ba-books/罪与罚.txt',
 };
 
 const flat = (s) => String(s || '').replace(/[\s·・･　]/g, '');

@@ -55,7 +55,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
 const FILE = path.join(ROOT, 'data', 'three-kingdoms.json');
-const SRC = 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt';
+const SRC = '<你的临时目录>/opencode/ba-books/三国演义.txt';
 
 const src = fs.readFileSync(SRC, 'utf8');
 const flat = (x) => String(x || '').replace(/[\s·・･　]/g, '');

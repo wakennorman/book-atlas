@@ -25,9 +25,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
 const SOURCES = {
-  'three-kingdoms': 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt',
-  'one-hundred-years-of-solitude': 'C:/Users/chw/AppData/Local/Temp/opencode/epub.txt',
-  'crime-and-punishment': 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/罪与罚.txt',
+  'three-kingdoms': '<你的临时目录>/opencode/ba-books/三国演义.txt',
+  'one-hundred-years-of-solitude': '<你的临时目录>/opencode/epub.txt',
+  'crime-and-punishment': '<你的临时目录>/opencode/ba-books/罪与罚.txt',
 };
 const flat = (s) => String(s || '').replace(/[\s·・･]/g, '');
 

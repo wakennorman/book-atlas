@@ -39,7 +39,7 @@ import { buildTree, computeKin } from './kin-terms.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILE = path.join(ROOT, 'data', 'one-hundred-years-of-solitude.json');
-const EPUB_PARTS = 'C:/Users/chw/AppData/Local/Temp/opencode/epub-parts.json';
+const EPUB_PARTS = '<你的临时目录>/opencode/epub-parts.json';
 const WRITE = process.argv.includes('--write');
 
 const book = JSON.parse(fs.readFileSync(FILE, 'utf8'));

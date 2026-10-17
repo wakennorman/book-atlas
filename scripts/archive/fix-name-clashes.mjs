@@ -146,7 +146,7 @@ const EDGES = [
   ['韩玄', '主将部将', '杨龄', '管军校尉杨龄、韩玄部将，奉命引军一千出城迎战关羽，为关羽所斩。', '乃管军校尉杨龄'],
 ];
 
-const SRC = 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt';
+const SRC = '<你的临时目录>/opencode/ba-books/三国演义.txt';
 const flat = (x) => String(x || '').replace(/[\s·・･　]/g, '');
 const f = flat(fs.readFileSync(SRC, 'utf8'));
 

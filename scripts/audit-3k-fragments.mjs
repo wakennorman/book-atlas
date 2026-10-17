@@ -115,7 +115,7 @@ if (argv.includes('--selftest')) {
 
 /* ───────────────────────── 实跑 ───────────────────────── */
 const txtPath = process.argv.find((a) => !a.startsWith('--') && a.endsWith('.txt'))
-  || 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/sanguo.txt';
+  || '<你的临时目录>/opencode/ba-books/sanguo.txt';
 if (!fs.existsSync(txtPath)) {
   console.error(`✗ 找不到原著：${txtPath}`);
   console.error('  用法：node scripts/audit-3k-fragments.mjs <三国原文.txt>');

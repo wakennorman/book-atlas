@@ -86,7 +86,7 @@ const RAWBOOK = fs.readFileSync(SRC, 'utf8').replace(/\s+/g, '');
 const hasQuote = (q) => RAWBOOK.includes(String(q).replace(/\s+/g, ''));
 
 /* ── 章号：用 epub 分卷定位（与 fix-100y-v099.mjs 同一套口径）── */
-const EPUB_PARTS = 'C:/Users/chw/AppData/Local/Temp/opencode/epub-parts.json';
+const EPUB_PARTS = '<你的临时目录>/opencode/epub-parts.json';
 let chapterOf = () => null;
 if (fs.existsSync(EPUB_PARTS)) {
   const parts = JSON.parse(fs.readFileSync(EPUB_PARTS, 'utf8'));

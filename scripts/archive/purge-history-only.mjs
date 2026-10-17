@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILE = path.join(ROOT, 'data', 'three-kingdoms.json');
-const NOVEL = 'C:/Users/chw/AppData/Local/Temp/opencode/ba-books/三国演义.txt';
+const NOVEL = '<你的临时目录>/opencode/ba-books/三国演义.txt';
 const WRITE = process.argv.includes('--write');
 
 const CANDIDATES = ['荀绲', '陶商', '陶应', '戴陵', '公孙晃'];
