@@ -22,7 +22,7 @@ const BAK = path.join(os.tmpdir(), 'ba-v93-patch');
 const p = (rel) => path.join(ROOT, rel);
 
 /* ---------- 备份 / 还原 ---------- */
-const FILES = ['js/app.js', 'js/editor.js', 'index.html', 'css/style.css'];
+const FILES = ['js/app.js', 'index.html', 'css/style.css'];
 function stash(label) {
   fs.mkdirSync(BAK, { recursive: true });
   fs.writeFileSync(path.join(BAK, 'label'), label);
@@ -134,7 +134,6 @@ const PATCHES = [
     test: 'test/ai.mjs',
     edits: [
       ['index.html', 'placeholder="deepseek-flash"', 'placeholder="deepseek-chat"'],
-      ['js/editor.js', "'deepseek-flash'", "'deepseek-chat'"],
       ['js/app.js', "const AI_DEFAULT_MODEL = 'deepseek-flash';", "const AI_DEFAULT_MODEL = 'deepseek-chat';"],
       ['js/app.js', / {6}<form class="ai-ask" data-ai-ask>[\s\S]*?<\/form>\r?\n/, ''],
       ['js/app.js', / {4}const turns = aiThread\.turns\.map[\s\S]*?\}\)\.join\(''\);/,

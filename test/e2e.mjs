@@ -104,11 +104,6 @@ async function run() {
   const echarts = await get('/vendor/echarts.min.js');
   assert(echarts.status === 200 && echarts.body.length > 100000, `echarts.min.js 加载（${echarts.body.length} 字节）`);
 
-  section('编辑器页面');
-  const editor = await get('/editor.html');
-  assert(editor.status === 200, `editor.html 返回 200（${editor.status}）`);
-  assert(editor.body.includes('js/editor.js'), '编辑器引用 js/editor.js');
-
   section('PWA 资源');
   const manifest = await get('/manifest.webmanifest');
   assert(manifest.status === 200, `manifest.webmanifest 返回 200（${manifest.status}）`);

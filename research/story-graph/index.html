@@ -220,10 +220,6 @@ body{font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;bac
 .stat-top-item .rank.r2{background:#a0a0b0}
 .stat-top-item .rank.r3{background:#cd7f32}
 
-/* Edit mode */
-#edit-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:15px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
-#edit-toggle:hover{color:var(--text);border-color:var(--border)}
-#edit-toggle.active{color:var(--accent);border-color:var(--accent);background:rgba(240,192,64,.1)}
 #theme-toggle{background:none;border:1px solid transparent;color:var(--text-dim);cursor:pointer;font-size:15px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 #theme-toggle:hover{color:var(--text);border-color:var(--border)}
 
@@ -282,7 +278,6 @@ body{font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;bac
   <button id="theme-toggle" title="切换主题">🌓</button>
   <button id="settings-toggle" title="设置">⚙️</button>
   <button id="stats-toggle" title="数据统计">📊</button>
-  <button id="edit-toggle" title="编辑模式：拖拽调整节点位置">✏️</button>
   <div id="legend"></div>
   <button id="share-btn" title="分享图谱">📤</button>
   <button id="export-btn" title="导出图谱为图片">📷</button>
@@ -301,11 +296,6 @@ body{font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;bac
 </div>
 
 <div id="graph-container"></div>
-<div id="edit-toolbar">
-  <button id="add-rel-btn" title="添加关系连线">➕ 添加关系</button>
-  <button id="save-layout-btn" title="保存当前节点布局">💾 保存布局</button>
-</div>
-<div id="add-rel-indicator" class="hidden">请点击<b>起点</b>角色</div>
 
 <div id="info-panel">
   <button id="info-close">✕</button>
@@ -410,7 +400,6 @@ const I18N = {
   'header.history':{'zh-CN':'搜索历史','en':'Search History','ja':'検索履歴'},
   'header.theme':{'zh-CN':'切换主题','en':'Toggle Theme','ja':'テーマ切替'},
   'header.stats':{'zh-CN':'数据统计','en':'Statistics','ja':'データ統計'},
-  'header.edit':{'zh-CN':'编辑模式：拖拽调整节点位置','en':'Edit Mode: drag nodes','ja':'編集：ノードを移動'},
   'header.share':{'zh-CN':'分享图谱','en':'Share Graph','ja':'共有'},
   'header.export':{'zh-CN':'导出图谱为图片','en':'Export as Image','ja':'画像出力'},
   'header.generate':{'zh-CN':'输入任意小说名，AI 自动生成人物关系图谱','en':'Enter novel name, AI auto-generates graph','ja':'小説名を入力、AIが自動生成'},
@@ -421,17 +410,6 @@ const I18N = {
   'history.empty':{'zh-CN':'暂无搜索记录','en':'No search history','ja':'検索履歴なし'},
   'history.clear':{'zh-CN':'清空历史','en':'Clear History','ja':'履歴を消去'},
   'history.delete':{'zh-CN':'删除','en':'Delete','ja':'削除'},
-  'edit.addRel':{'zh-CN':'➕ 添加关系','en':'➕ Add Relation','ja':'➕ 関係追加'},
-  'edit.cancelRel':{'zh-CN':'❌ 取消连线','en':'❌ Cancel','ja':'❌ 取消'},
-  'edit.saveLayout':{'zh-CN':'💾 保存布局','en':'💾 Save Layout','ja':'💾 配置保存'},
-  'edit.saved':{'zh-CN':'✅ 已保存','en':'✅ Saved','ja':'✅ 保存済'},
-  'edit.selectSource':{'zh-CN':'请点击<b>起点</b>角色','en':'Click <b>source</b> character','ja':'<b>始点</b>をクリック'},
-  'edit.selectTarget':{'zh-CN':'请点击<b>终点</b>角色','en':'Click <b>target</b> character','ja':'<b>終点</b>をクリック'},
-  'edit.relPrompt':{'zh-CN':'请输入关系类型（如：义父女、结拜、君臣…）','en':'Enter relation type (e.g. family, ally...)','ja':'関係を入力（例：義父娘、兄弟…）'},
-  'edit.edgePrompt':{'zh-CN':'关系：{0}\n\n输入新关系名 → 修改 | 输入"删除" → 删除此关系 | 取消 → 不变','en':'Relation: {0}\n\nNew name → edit | "del" → delete | Cancel → keep','ja':'関係：{0}\n\n新名称→変更 | "削除"→削除 | 取消→維持'},
-  'edit.delKeyword':{'zh-CN':'删除','en':'del','ja':'削除'},
-  'edit.addTab':{'zh-CN':'添加新小说','en':'Add Novel','ja':'小説追加'},
-  'edit.filterReset':{'zh-CN':'✕ 显示全部','en':'✕ Show All','ja':'✕ 全て表示'},
   'info.relations':{'zh-CN':'人物关系 ({0}条)','en':'Relations ({0})','ja':'関係 ({0}件)'},
   'info.title':{'zh-CN':'人物关系','en':'Relations','ja':'人物関係'},
   'path.title':{'zh-CN':'🔗 关系路径','en':'🔗 Relation Path','ja':'🔗 関係パス'},
@@ -672,16 +650,6 @@ themeToggle.addEventListener('click', function() {
 // Restore theme on load
 const savedTheme = localStorage.getItem('theme');
 if (savedTheme === 'light') setTheme('light');
-
-// Edit mode DOM
-const editToggle = document.getElementById('edit-toggle');
-const editToolbar = document.getElementById('edit-toolbar');
-const addRelBtn = document.getElementById('add-rel-btn');
-const saveLayoutBtn = document.getElementById('save-layout-btn');
-const addRelIndicator = document.getElementById('add-rel-indicator');
-let editMode = false;
-let addEdgeMode = false;
-let addEdgeSource = null;
 
 // ===================== NETWORK =====================
 const nodes = new vis.DataSet();
@@ -954,47 +922,6 @@ network.on('click', function(params) {
       }
     }
     return; // In add-edge mode, ignore other clicks
-  }
-
-  // Edit mode: edge editing
-  if (editMode) {
-    if (params.edges && params.edges.length === 1) {
-      const edgeId = params.edges[0];
-      const edge = edges.get(edgeId);
-      if (edge) {
-        const action = prompt(t('edit.edgePrompt', edge.label || '无标签'), edge.label || '');
-        if (action === null) return;
-        if (action.trim() === t('edit.delKeyword')) {
-          edges.remove(edgeId);
-          // Remove from currentData
-          if (currentData) {
-            const idx = currentData.relations.findIndex(r =>
-              (r.from === edge.from && r.to === edge.to) || (r.from === edge.to && r.to === edge.from)
-            );
-            if (idx !== -1) currentData.relations.splice(idx, 1);
-            // Remove from adjacency
-            const ek = edgeKey(edge.from, edge.to);
-            delete edgeByPair[ek];
-            if (adj[edge.from]) adj[edge.from] = adj[edge.from].filter(id => id !== edge.to);
-            if (adj[edge.to]) adj[edge.to] = adj[edge.to].filter(id => id !== edge.from);
-          }
-          deleteCustomEdge(edge.from, edge.to);
-          showError(t('toast.edgeDeleted'));
-        } else if (action.trim()) {
-          edges.update({ id: edgeId, label: action.trim() });
-          // Update in currentData
-          if (currentData) {
-            const idx = currentData.relations.findIndex(r =>
-              (r.from === edge.from && r.to === edge.to) || (r.from === edge.to && r.to === edge.from)
-            );
-            if (idx !== -1) currentData.relations[idx].type = action.trim();
-          }
-          // Save as custom override
-          saveCustomEdge(edge.from, edge.to, action.trim(), edge.dashes ? (edge.dashes[0] === 3 ? 'dotted' : 'dashed') : 'solid');
-        }
-      }
-      return;
-    }
   }
 
   // Normal mode: node click → show info
@@ -2198,40 +2125,6 @@ shareBtn.addEventListener('click', function() {
   });
 });
 
-// ===================== EDIT MODE =====================
-function toggleEditMode() {
-  editMode = !editMode;
-  editToggle.classList.toggle('active', editMode);
-  document.getElementById('graph-container').classList.toggle('edit-mode', editMode);
-  editToolbar.classList.toggle('show', editMode);
-
-  if (editMode) {
-    network.setOptions({ physics: { enabled: false } });
-    network.setOptions({ interaction: { dragNodes: true } });
-  } else {
-    exitAddEdgeMode();
-    network.setOptions({ physics: { enabled: true } });
-    network.stabilize(100);
-  }
-}
-
-function saveLayout() {
-  if (!currentData) return;
-  const positions = network.getPositions();
-  const layoutKey = 'layout_' + (currentData.novelName || 'unknown');
-  // Only save positions for known character IDs
-  const validPositions = {};
-  currentData.characters.forEach(c => {
-    if (positions[c.id]) validPositions[c.id] = positions[c.id];
-  });
-  try {
-    localStorage.setItem(layoutKey, JSON.stringify(validPositions));
-  } catch (_) {}
-  // Flash feedback
-  saveLayoutBtn.textContent = '✅ 已保存';
-  setTimeout(() => { saveLayoutBtn.textContent = '💾 保存布局'; }, 1500);
-}
-
 function loadSavedLayout() {
   if (!currentData) return;
   const layoutKey = 'layout_' + (currentData.novelName || 'unknown');
@@ -2255,89 +2148,6 @@ function loadSavedLayout() {
     }
   } catch (_) {}
 }
-
-editToggle.addEventListener('click', toggleEditMode);
-
-addRelBtn.addEventListener('click', function() {
-  if (addEdgeMode) {
-    exitAddEdgeMode();
-  } else {
-    enterAddEdgeMode();
-  }
-});
-
-function enterAddEdgeMode() {
-  addEdgeMode = true;
-  addEdgeSource = null;
-  addRelBtn.classList.add('active');
-  addRelBtn.textContent = '❌ 取消连线';
-  addRelIndicator.classList.remove('hidden');
-  addRelIndicator.innerHTML = t('edit.selectSource');
-  network.setOptions({ interaction: { dragNodes: false } });
-}
-
-function exitAddEdgeMode() {
-  addEdgeMode = false;
-  addEdgeSource = null;
-  addRelBtn.classList.remove('active');
-  addRelBtn.textContent = '➕ 添加关系';
-  addRelIndicator.classList.add('hidden');
-  network.setOptions({ interaction: { dragNodes: true } });
-}
-
-function getCustomEdgesKey() {
-  return 'custom_edges_' + (currentData ? currentData.novelName || 'unknown' : 'unknown');
-}
-
-function saveCustomEdge(from, to, type, style) {
-  const key = getCustomEdgesKey();
-  let edges = [];
-  try { edges = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
-  edges.push({ from, to, type, style: style || 'solid', _custom: true });
-  localStorage.setItem(key, JSON.stringify(edges));
-}
-
-function deleteCustomEdge(from, to) {
-  const key = getCustomEdgesKey();
-  try {
-    let edges = JSON.parse(localStorage.getItem(key) || '[]');
-    edges = edges.filter(e => !(e.from === from && e.to === to) && !(e.from === to && e.to === from));
-    localStorage.setItem(key, JSON.stringify(edges));
-  } catch {}
-}
-
-function loadCustomEdges() {
-  const key = getCustomEdgesKey();
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : [];
-  } catch { return []; }
-}
-
-function addEdgeToGraph(from, to, type, style) {
-  const newEdge = {
-    from, to, label: type,
-    dashes: style === 'dashed' ? [8, 4] : (style === 'dotted' ? [3, 3] : false),
-    color: { color: style === 'dashed' ? '#555' : '#888', hover: '#f0c040' },
-    font: { color: '#666', size: 10, strokeWidth: 2, strokeColor: '#0f1119' },
-    width: style === 'solid' ? 1.5 : 1,
-    smooth: { type: 'continuous' },
-    arrows: { to: { enabled: style === 'dashed', scaleFactor: 0.5 } },
-  };
-  edges.add(newEdge);
-  // Also add to currentData.relations so search works
-  if (currentData) {
-    currentData.relations.push({ from, to, type, style: style || 'solid', _custom: true });
-    // Update adjacency and edgeByPair
-    if (!adj[from]) adj[from] = [];
-    if (!adj[to]) adj[to] = [];
-    adj[from].push(to);
-    adj[to].push(from);
-    edgeByPair[edgeKey(from, to)] = { from, to, type, style: style || 'solid', _custom: true };
-  }
-}
-
-saveLayoutBtn.addEventListener('click', saveLayout);
 
 // ===================== USER SYSTEM =====================
 let userProfile = null;

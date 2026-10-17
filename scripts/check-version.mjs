@@ -15,8 +15,6 @@
  * 它检查「同一个版本号在所有该出现的地方都出现了，且都相同」：
  *   · sw.js            `CACHE = 'bookatlas-vNN'`
  *   · index.html       所有 `?v=NN`（css/style.css、js/app.js …）
- *   · editor.html      所有 `?v=NN`
- *   · js/editor.js     `PDF_WORKER = 'vendor/pdf.worker.min.js?v=NN'`
  *   · package.json     `"version": "x.y.z"` —— 小版本号须等于 NN
  *
  * 用法：node scripts/check-version.mjs
@@ -38,7 +36,7 @@ if (!cacheM) problems.push('sw.js 里找不到 bookatlas-vNN');
 const swVer = cacheM ? cacheM[1] : null;
 
 // 2) 其余文件里的所有 ?v=NN 必须都等于 swVer
-const TARGETS = ['index.html', 'editor.html', 'js/editor.js'];
+const TARGETS = ['index.html'];
 for (const file of TARGETS) {
   const text = read(file);
   const found = [...text.matchAll(/\?v=(\d+)/g)].map((m) => m[1]);

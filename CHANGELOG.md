@@ -5,6 +5,17 @@
 
 ---
 
+## v0.224 · 回滚繁体版、移除编辑器、换自定义域名、README 重写
+
+- **回滚繁体版（v0.219–v0.223）**：移除 `data/s2t.json`、`scripts/lib/s2t.mjs` / `s2t-overrides.mjs`、`scripts/make-s2t-dict.mjs`、`test/s2t-guard.mjs`、`scripts/lib/s2t-overrides.mjs` 等繁体代码及门禁步骤；`sw.js` SHELL 不再预缓存 s2t 转换表。繁体不再作为内建能力。
+- **移除本地编辑器**：`editor.html` / `js/editor.js` / `css/editor.css` / `test/editor.mjs` 整体下线，首页不再暴露「✏️ 编辑」入口，加新书走命令行（`scripts/wholebook.mjs` + `validate` / `audit-search` / `derive-kin` / `prune` …）。删 `vendor/pdf.min.js` / `pdf.worker.min.js`（仅编辑器用，网页版从不引用）。
+- **换自定义域名**：`CNAME` = `bookatlas.existence.ac.cn`；`index.html` `og:url` / `og:image` 已指向新域；`og:description` 改为列六本书。
+- **README 全面重写**：已收录表扩至六本书（新增《刻意练习》《物种起源》《人类简史》，数字按 `data/*.json` 重算）；脚本 / 测试 / 门禁清单改为指向 `scripts/README.md`、`package.json`、`.github/workflows/check.yml`，不再手抄会漂移的清单；删去编辑器相关段落，「PDF 上传」FAQ 改为“先转 epub/txt 再用 wholebook”。
+- **拣回两个修复**：v0.222「查完两人关系后开拖动节点导致画布空白」（`setNodeDrag()` 用 `setOption(buildOption({keepView:true}))`）；v0.223「主题按钮写当前态」（`index.html` 静态兜底改「日间」）。
+- **顺手清理**：4 处「编辑器」UI 文案（help14 / aiPanelHint / ai-hint / 导出弹窗）；`package.json` 移除已删文件指向的 `test:editor`；`editor-flow.svg`（编辑器流程图，无人引用）移除；入库 `CNAME`、`THIRD-PARTY-NOTICES.md`、`docs/心路历程-主文.md`、`docs/心路历程-短文案版.md`。
+
+版本同步到 `bookatlas-v224`。
+
 ---
 
 ## v0.223 · 主题按钮改成「当前态」口径 —— 白天不再显示「夜间」

@@ -20,7 +20,7 @@
  * ⚠ v0.199 补第三条（data 之外的整个 SHELL）：SHELL 里每个条目都必须是**页面真的会请求的
  * 那个精确 URL**。原先只查 `./data/`，vendor/ css/ js/ assets/ 全无人过问，于是：
  *   · vendor/pdf.min.js + pdf.worker.min.js 预缓存了 402 KB（gzip）却**一次都没被命中** ——
- *     SHELL 写的是不带 query 的 './vendor/pdf.min.js'，editor.html 请求的是
+ *     SHELL 写的是不带 query 的 './vendor/pdf.min.js'，编辑器页面请求的是
  *     './vendor/pdf.min.js?v=197'，Cache Storage 按完整 URL 建 key ⇒ 两条不同的记录。
  *   · assets/icon-512.png、assets/favicon-32x32.png 无人引用（纯白占）。
  * **"key 对不上"比"没人引用"更隐蔽**：它看起来像一条正常的预缓存条目，读起来也合理，
@@ -112,7 +112,7 @@ function collectRequested() {
       out.add('./' + m[1]);
     }
   };
-  for (const f of ['index.html', 'editor.html', 'js/app.js', 'js/editor.js']) scan(f);
+  for (const f of ['index.html', 'js/app.js']) scan(f);
   // manifest.webmanifest 也会让浏览器去取图标（assets/icon-512.png 只被它引用）——
   // 漏掉它会把「PWA 安装图标」判成白占。
   scan('manifest.webmanifest');
@@ -140,7 +140,7 @@ export function shellOrphanProblems(shellList, requestedSet) {
       );
     } else {
       out.push(
-        `sw.js 的 SHELL 里 ${url} 没有任何页面引用它（index/editor 的 src/href、js 里的动态引用都没有）。` +
+        `sw.js 的 SHELL 里 ${url} 没有任何页面引用它（index 的 src/href、js 里的动态引用都没有）。` +
         `删掉它，或在页面里真的用它。`
       );
     }
@@ -165,7 +165,7 @@ if (problems.length) {
 if (process.env.SW_PRECACHE_SELFTEST === '1') {
   const S = new Set([
     './index.html', './vendor/echarts.min.js', './vendor/fflate.min.js',
-    './js/app.js?v=197', './editor.html', './data/books.json',
+    './js/app.js?v=197', './data/books.json',
     './data/three-kingdoms.graph.json',
   ]);
   const cases = [

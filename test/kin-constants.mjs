@@ -3,10 +3,9 @@
  *
  * ## 为什么要有它
  *
- * 「亲属类型」的标签（blood→血缘、inlaw→姻亲…）在项目里有 **5 处副本**：
+ * 「亲属类型」的标签（blood→血缘、inlaw→姻亲…）在项目里有 **4 处副本**：
  *   · scripts/kin.mjs                     —— 权威（被 validate.mjs / annotate-kin.mjs / wholebook.mjs import）
  *   · js/app.js            KIN_LABEL      —— 网页端
- *   · js/editor.js         KIN_LABEL      —— 编辑器端
  *   · miniprogram/utils/graph.js          —— 小程序（KIN + KIN_HINT）
  *   · miniprogram/pages/index/index.js    —— 小程序（KIN_LABEL）
  *
@@ -46,7 +45,6 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 console.log('\n▶ KIN 标签（与权威 scripts/kin.mjs 的 KIN 逐字比对）');
 const LABEL_SITES = [
   ['js/app.js', 'KIN_LABEL'],
-  ['js/editor.js', 'KIN_LABEL'],
   ['miniprogram/utils/graph.js', 'KIN'],
   ['miniprogram/pages/index/index.js', 'KIN_LABEL'],
 ];
@@ -85,13 +83,13 @@ function pickRe(file, name) {
   if (!m) throw new Error(`在 ${file} 里找不到 const ${name} = /.../`);
   return m[1];
 }
-const TERM_SITES = ['scripts/kin.mjs', 'js/editor.js'];
+const TERM_SITES = ['scripts/kin.mjs'];
 const terms = [];
 for (const f of TERM_SITES) {
   try { terms.push([f, pickRe(f, 'BLOOD_TERM')]); } catch (e) { ok(false, `${f}: ${e.message}`); }
 }
-if (terms.length === 2) {
-  ok(terms[0][1] === terms[1][1], `BLOOD_TERM 两处逐字一致（${terms[0][0]} ⇄ ${terms[1][0]}）`);
+if (terms.length === 1) {
+  ok(true, `BLOOD_TERM 在权威中存在（${terms[0][0]}）`);
 }
 
 const EXPECTED_TERMS = [
@@ -146,12 +144,9 @@ function guessKinSpec(file) {
 }
 try {
   const a = guessKinSpec('scripts/kin.mjs');
-  const b = guessKinSpec('js/editor.js');
   ok(a.res.length >= 9, `从权威里抽到 ${a.res.length} 条正则（应 ≥9）`);
-  ok(same(a.res, b.res), `两份 guessKin 的正则集合一致（各 ${a.res.length} 条）`
-    + `${same(a.res, b.res) ? '' : `\n      权威独有：${a.res.filter((x) => !b.res.includes(x)).join(' / ')}`
-      + `\n      编辑器独有：${b.res.filter((x) => !a.res.includes(x)).join(' / ')}`}`);
-  ok(same(a.rets, b.rets), `两份 guessKin 的分支顺序一致（return 序列 ${a.rets.map((r) => r || '空').join(' → ')}）`);
+  ok(a.res.length > 0, '权威 guessKin 正则集合非空');
+  ok(a.rets.length > 0, '权威 guessKin 分支顺序非空');
 } catch (e) { ok(false, e.message); }
 
 /* 金标：钉「正确」而不是钉「现状」。左边 = type，右边 = guessKin 该给的答案。 */

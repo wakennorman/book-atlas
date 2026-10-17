@@ -102,8 +102,8 @@ const openHelp = () => js(`(() => {
     body1: (modal ? modal.querySelector('[data-term-html="help1Body"]') : null) ? modal.querySelector('[data-term-html="help1Body"]').textContent : '',
     head3: (modal ? modal.querySelector('[data-term-html="help3Head"]') : null) ? modal.querySelector('[data-term-html="help3Head"]').textContent : '',
     head4: (modal ? modal.querySelector('[data-term-html="help4Head"]') : null) ? modal.querySelector('[data-term-html="help4Head"]').textContent : '',
-    body11: (modal ? modal.querySelector('[data-term-html="help11Body"]') : null) ? modal.querySelector('[data-term-html="help11Body"]').textContent : '',
     body12: (modal ? modal.querySelector('[data-term-html="help12Body"]') : null) ? modal.querySelector('[data-term-html="help12Body"]').textContent : '',
+    body13: (modal ? modal.querySelector('[data-term-html="help13Body"]') : null) ? modal.querySelector('[data-term-html="help13Body"]').textContent : '',
     body2: (modal ? modal.querySelector('[data-term-html="help2Body"]') : null) ? modal.querySelector('[data-term-html="help2Body"]').textContent : '',
     body10: (modal ? modal.querySelector('[data-term-html="help10Body"]') : null) ? modal.querySelector('[data-term-html="help10Body"]').textContent : '',
     bottom: (modal ? modal.querySelector('[data-term-html="helpBottom"]') : null) ? modal.querySelector('[data-term-html="helpBottom"]').textContent : '',
@@ -140,7 +140,7 @@ try {
     const d = new DOMParser().parseFromString(h, 'text/html');
     const g = (sel) => { const el = d.querySelector(sel); return el ? el.textContent : ''; };
     return { kb: g('#graph-kb-hint'), head3: g('[data-term-html="help3Head"]'),
-             body12: g('[data-term-html="help12Body"]'), bottom: g('[data-term-html="helpBottom"]') };
+             body13: g('[data-term-html="help13Body"]'), bottom: g('[data-term-html="helpBottom"]') };
   })`);
   ok(nar.kb === staticText.kb, '叙事类键盘提示＝静态 HTML 原样（快照写回，无漂移）');
   ok(/方向键在人物之间移动/.test(nar.kb) && /回车打开这个人/.test(nar.kb), '图键盘提示（sr-only）是叙事类措辞');
@@ -154,8 +154,8 @@ try {
   ok(nh.head3 === staticText.head3 && /人太多看不清/.test(nh.head3), '怎么用 ③ 标题＝静态 HTML 原样（人太多看不清）');
   ok(nh.head4 === '④ 拖动节点：把一个人拉出来，专门看与他有关的线', '怎么用 ④ 标题：把一个人拉出来（叙事类逐字）');
   ok(!/他的线|她的线/.test(nh.head4), '怎么用 ④ 标题没有领属人称');
-  ok(/血缘/.test(nh.body11), '怎么用 ⑪：亲缘过滤族（叙事类才有）');
-  ok(nh.body12 === staticText.body12 && /他\/她的一生（按章）/.test(nh.body12), '怎么用 ⑫＝静态 HTML 原样（他/她的一生，不写死性别）');
+  ok(/血缘/.test(nh.body12), '怎么用 ⑫：亲缘过滤族（叙事类才有）');
+  ok(nh.body13 === staticText.body13 && /他\/她的一生（按章）/.test(nh.body13), '怎么用 ⑬＝静态 HTML 原样（他/她的一生，不写死性别）');
   ok(!nh.derivedHidden, '怎么用 ⑧（推导线）在叙事类可见');
   ok(nh.body10.includes('谁初次登场'), '怎么用 ⑩：谁初次登场（叙事类）');
   ok(nh.bottom.includes('点任意一个人'), '弹窗底注：点任意一个人（叙事类）');
@@ -189,8 +189,8 @@ try {
   ok(/刻意练习可以搜「心理表征/.test(th.body2), '怎么用 ②：理论类搜索示例（换成了本书概念）');
   ok(th.head3 === '③ 概念太多看不清：三板斧 + 一键看清', '怎么用 ③ 标题：概念太多看不清');
   ok(th.head4 === '④ 拖动节点：把一个概念拉出来，专门看与它有关联的线', '怎么用 ④ 标题：把一个概念拉出来（不是「一个个概念」）');
-  ok(/关联：全部/.test(th.body11) && !/血缘/.test(th.body11), '怎么用 ⑪：换成关联口径，不再提血缘');
-  ok(/「沿革（按章）」小节/.test(th.body12), '怎么用 ⑫：「沿革（按章）」');
+  ok(/关联：全部/.test(th.body12) && !/血缘/.test(th.body12), '怎么用 ⑫：换成关联口径，不再提血缘');
+  ok(/「沿革（按章）」小节/.test(th.body13), '怎么用 ⑬：「沿革（按章）」');
   ok(th.derivedHidden, '怎么用 ⑧（推导线）在理论类整条隐藏');
   ok(th.body10.includes('哪些概念初次提出'), '怎么用 ⑩：哪些概念初次提出');
   ok(th.bottom.includes('点任意一个概念'), '弹窗底注：点任意一个概念');
@@ -201,7 +201,7 @@ try {
   ok(!/个个/.test(theoryAll), '理论类全文没有「个个」这类叠量词病句');
   ok(!/一个个?概念/.test(theoryAll.replace(/一个概念/g, '')), '理论类没有「一个个概念」');
   ok(/(把|任意)一个概念/.test(theoryAll), '理论类确实用了「一个概念」这一正确形态');
-  ok(!/人物/.test(th.body1 + th.body2 + th.body3 + th.body10 + th.body12 + th.body12), '抽查的六条正文没有残留「人物」');
+  ok(!/人物/.test(th.body1 + th.body2 + th.body3 + th.body10 + th.body12 + th.body13), '抽查的六条正文没有残留「人物」');
 
   /* ═══ ③ 切回叙事类：setTyped 快照必须把原样写回去 ═══ */
   console.log('\n▶ ③ 切回叙事类：快照不回退');

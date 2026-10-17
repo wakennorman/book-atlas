@@ -5,7 +5,7 @@
 
 ## 为什么要有它
 
-`scripts/` 现在有 70 个 `.mjs`（另加 `scripts/archive/` 60 个）。
+`scripts/` 现在有 67 个 `.mjs`（另加 `scripts/archive/` 60 个）。
 它们**不是一类东西**，混在一起看会做出两个**相反**的误判：
 
 * **把一次性补丁当成死代码删掉**。可它们是**证据链**的一部分：
@@ -53,18 +53,18 @@
 | 类别 | 个数 |
 |---|---|
 | 门禁 | 29 |
-| 库 | 13 |
-| 工具 | 28 |
+| 库 | 11 |
+| 工具 | 27 |
 | 一次性补丁 | 0 |
-| **合计** | **70** |
+| **合计** | **67** |
 
 ## ⚠ 没进 CI、没被 import、文档里也没提的
 
-共 **9** 个。分两类看，性质完全不同：
+共 **10** 个。分两类看，性质完全不同：
 
 * **0 个是一次性补丁**（名字带补丁前缀）—— 这是**正常的**：
   它们本来就只跑一次，跑完留档当证据，**不需要**被任何东西引用。
-* **8 个不是补丁命名** —— 这几个才值得看一眼：
+* **9 个不是补丁命名** —— 这几个才值得看一眼：
   名字像是"常驻工具"，却既不在门禁、也没被 import、文档里也没提。
   要么它是"还没归档的一次性补丁"，要么它是**真的没人用**。两种情况都值得看一眼，**但别直接删**。
 
@@ -74,6 +74,7 @@
 | `audit-annotations.mjs` | 工具 | 拆书内容体检 —— v0.141；v0.143 扩到全部书 |
 | `audit-kin-direction.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `find-missing-people.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
+| `make-tutorial-gifs.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `name2id.mjs` | 工具 | 人名 → id 解析器。拆书条目里 chars 一律写中文名，由本脚本转成 id。 |
 | `split-bindui.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `verify-quotes.mjs` | 工具 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
@@ -122,7 +123,7 @@
 | `make-slim-packs.mjs` | `node scripts/make-slim-packs.mjs --check` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `validate.mjs` | `node scripts/validate.mjs --all` | 【长期】发布门禁每轮都跑 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 
-## 库（13 个）
+## 库（11 个）
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
@@ -135,12 +136,10 @@
 | `missing-ok.mjs` | import | 「噪声忽略名单」（`data/<slug>.missing-ok.json`）的**读取** —— v0.183 新建。 |
 | `profile-prefixes.mjs` | import · 文档 | Temp 下「本仓库自己开的临时目录」前缀表 —— **唯一来源**（v0.192）。 |
 | `prose-bold.mjs` | import · 文档 | 「散文的 `**` 渲染不渲染」判据库 —— v0.218 新增。 |
-| `s2t-overrides.mjs` | import · 文档 | 简→繁转换的**人工覆盖表** —— v0.219 新增。 |
-| `s2t.mjs` | import | 「简体 → 繁体」判据库 —— v0.219 新增。 |
 | `type-terms.mjs` | import · 文档 | 书型术语层（`js/app.js` 的 `TERMS`）的**判据本体** —— 纯函数、无顶层副作用。 |
 | `ui-notes.mjs` | import · 文档 | 「内部措辞不进 UI」判据库 —— v0.213 新增。 |
 
-## 工具（28 个）
+## 工具（27 个）
 
 | 脚本 | 引用 | 一句话 |
 |---|---|---|
@@ -159,11 +158,10 @@
 | `extract-epub.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `find-missing-people.mjs` | — | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `kin-terms.mjs` | 提及 · import · 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
-| `kin.mjs` | 提及 · import · 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
+| `kin.mjs` | 提及 · import | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `link-mentions.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `make-miniprogram-packs.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
-| `make-s2t-dict.mjs` | 提及 · 文档 | 生成 `data/s2t.json` —— 简→繁转换表（字表 + 歧义词组表）。 |
-| `make-tutorial-gifs.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
+| `make-tutorial-gifs.mjs` | — | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |
 | `merge-duplicate-relations.mjs` | 文档 | 长期：可反复跑的关系去重工具 —— 不是一次性补丁。 |
 | `name2id.mjs` | — | 人名 → id 解析器。拆书条目里 chars 一律写中文名，由本脚本转成 id。 |
 | `prune.mjs` | 文档 | 【长期】工具：需要时手动跑，跑完不改仓库状态 （v0.195 由 tag-script-lifetime.mjs 依据「门禁/import/文档」三类证据判定） |

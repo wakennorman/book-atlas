@@ -110,14 +110,14 @@ jobs:
           "
       - name: JS 语法检查
         run: |
-          for f in js/app.js js/editor.js \
+          for f in js/app.js \
                    miniprogram/utils/graph.js miniprogram/utils/render.js miniprogram/utils/card.js \
                    miniprogram/pages/index/index.js miniprogram/app.js \
                    shared/graph-core.js scripts/bump-version.mjs scripts/check-version.mjs \
                    scripts/check-version-bump.mjs scripts/make-slim-packs.mjs scripts/check-sw-precache.mjs scripts/check-event-chars.mjs scripts/check-name-form-ledger.mjs scripts/check-altnames-ledger.mjs scripts/check-kin-terms-exempt.mjs scripts/check-missing-ok.mjs scripts/check-ui-notes.mjs scripts/check-surname-coverage.mjs scripts/check-transition-ease.mjs scripts/check-transition-coverage.mjs scripts/check-cross-chapter-ledger.mjs scripts/lib/anno-cross-chapter.mjs scripts/check-first-ch-ledger.mjs scripts/audit-first-ch.mjs scripts/lib/book-sources.mjs scripts/check-relation-actors-ledger.mjs scripts/audit-relation-actors.mjs scripts/lib/dup-names.mjs scripts/check-ledger-quotes.mjs scripts/lib/missing-ok.mjs scripts/lib/type-terms.mjs scripts/lib/ui-notes.mjs scripts/add-app-partitions.mjs \
-                   test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs test/editor.mjs \
+                   test/smoke.mjs test/core.mjs test/e2e.mjs test/browser.mjs test/parity.mjs \
                    test/races.mjs test/relax.mjs test/relations.mjs test/lock.mjs test/render-scale.mjs test/roam.mjs \
-                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/vocab.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs test/prose-bold-guard.mjs scripts/lib/profile-prefixes.mjs scripts/lib/s2t.mjs scripts/lib/s2t-overrides.mjs scripts/make-s2t-dict.mjs test/s2t-guard.mjs \
+                   test/canvas-hint.mjs test/node-drag.mjs test/help-terms.mjs test/vocab.mjs test/version-bump-guard.mjs test/kin-constants.mjs test/kin-check.mjs test/parent-child.mjs test/gate-claims.mjs test/books-registry.mjs test/name-form-ledger-guard.mjs test/altnames-ledger-guard.mjs test/kin-terms-exempt-guard.mjs test/missing-ok-guard.mjs test/ui-notes-guard.mjs test/surname-coverage-guard.mjs test/cross-chapter-ledger-guard.mjs test/first-ch-ledger-guard.mjs test/relation-actors-ledger-guard.mjs test/guard-hygiene.mjs test/dup-names-ledger-guard.mjs test/ledger-quotes-guard.mjs test/missing-ok-lib-guard.mjs test/main-text-guard.mjs test/profile-prefix-guard.mjs test/validate-summary-guard.mjs test/type-terms-guard.mjs test/prose-bold-guard.mjs scripts/lib/profile-prefixes.mjs \
                    test/browser-locator.mjs test/ai.mjs test/annotations.mjs test/band-labels.mjs test/build.mjs test/full-tip.mjs test/fullscreen.mjs test/gen-fill.mjs test/layout-stable.mjs test/place.mjs test/place-visible.mjs \
                    miniprogram/test/smoke.mjs sw.js eslint.config.js; do
             node --check "$f"
@@ -143,7 +143,7 @@ jobs:
 
       - name: 版本号一致性
         # v85：以前 v0.69–v0.71 连着三轮改前端却漏 bump CACHE（CHANGELOG 有记录），
-        # 没有任何检查能发现。这里比对 sw.js / index.html / editor.html / js/editor.js / package.json。
+        # 没有任何检查能发现。这里比对 sw.js / index.html / package.json。
         run: node scripts/check-version.mjs
 
       - name: 改了前端资源必须 bump 版本号
@@ -152,7 +152,7 @@ jobs:
         # 实测踩过：js/ 从 v0.131 到 v0.142 **至少 9 轮**改过前端，CACHE 却一直是 bookatlas-v99
         # ⇒ 老访客一直跑 v99 的代码。这正是 v85 出过、check-version.mjs 当初要防的那件事，换了个入口复发。
         # 判据（只用 git，不靠猜）：base = 最后一次改动 CACHE 的提交；
-        # 若 base..HEAD 之间 index.html/editor.html/js//css//shared/ 变过 ⇒ 就是忘了 bump ⇒ exit 1。
+        # 若 base..HEAD 之间 index.html/js//css//shared/ 变过 ⇒ 就是忘了 bump ⇒ exit 1。
         # 拿不到 git 历史（浅克隆等）⇒ 打印「跳过」exit 0（门禁里一条会误报的检查终会被 || true 吞掉）。
         run: node scripts/check-version-bump.mjs
 
@@ -421,22 +421,6 @@ jobs:
         # 挡住"下一个人又写 esc(c.desc)"（18 条断言）。
         run: node test/prose-bold-guard.mjs
 
-      - name: 简→繁转换表守卫（H1 漏字 / H2 死条目 / H3 歧义 / D1 幂等 / D2 单一收口）
-        # v0.219 新增。繁体版**不是翻译**，是查两张表的文本转换（不换词：網絡仍是網絡）。
-        # 表在 `data/s2t.json`（提交的人工资产：1,240 字 + 1,239 词组 + 2,284 同形字），
-        # 人工覆盖在 `scripts/lib/s2t-overrides.mjs`，重生成器是 `scripts/make-s2t-dict.mjs`
-        # （只在改词表时手工跑，CI 不跑、也不依赖 opencc-js）。
-        # 这条门禁守四件会静默出错的事：
-        #   H1 语料里每个汉字都要有交代（在 chars 转 / 在 same 属繁简同形 / 已是繁体）——
-        #      漏一个就是「繁中模式下某个生僻字悄悄还是简体」；
-        #   H2 派生规则不许出现语料用不到的死条目（人工词表例外，那是留给新书的）；
-        #   H3 每个多义字必须有人明确管过（规则 / PHRASE_BLIND / 人工词条）；
-        #   D1 **转换不幂等**（实测 17,468 条语料里 14 条会二次变形：「范晔」→「範曄」、
-        #      「并州」→「幷州」、「标致」→「標緻」）⇒ 散文出口只能有一个
-        #      （escBold / unbold 内部已含 conv），D2 盯着不许有人再包一层、
-        #      也不许"渲染完再扫一遍 DOM"。
-        run: node test/s2t-guard.mjs
-
       - name: 跨章声明台账（A3 的 11 处已回原著核过）
         # v0.177 新增。`data/cross-chapter-ok.json` 是 `audit-annotations.mjs` 的 A3
         # （条目 events[] 里声明了「章号 ≠ 本条 ch」的事件）的**已核台账**。
@@ -534,12 +518,6 @@ jobs:
         # 右栏/时间轴的按钮从逐元素 listener 改成 document 级委托后，必须真在浏览器里点一遍。
         # 脚本找不到 Edge/Chrome 时会自行跳过（不阻塞其它检查）。
         run: node test/browser.mjs
-
-      - name: 编辑器逻辑测试（无头 Edge）
-        # v85 新增。js/editor.js 有 1700 行，此前零覆盖；里面 parseLooseJson（修模型返回的
-        # 截断 JSON，整本生成的成败全靠它）、hanToNum/splitChapters（切章节）这些纯逻辑
-        # 坏了的表现是"某一章老是失败"，不是任何明显报错，只能靠断言守住。
-        run: node test/editor.mjs
 
       - name: 三份实现对拍（app.js / graph-core / 小程序）
         # v85 新增。同一套过滤逻辑在三处手抄，已经漂移过一次：分组口径只改了 app.js，
@@ -662,11 +640,11 @@ jobs:
         run: node test/help-terms.mjs
 
       - name: 主题按钮口径：写当前态，不写动作态（无头 Edge）
-        # v0.223 新增。用户报「明明是白天模式，按钮却显示夜间」。
-        #   病根：`setTheme()` 原来写 `dark ? '☀️ 日间' : '🌙 夜间'` —— **动作口径**
-        #   （想表达"点我会去夜间"）。而整条工具条只有它一个这样：拖动节点（开/关）、
-        #   次要人物（隐藏/显示）、族谱补全（隐藏/显示）、剧透保护（开/关）写的全是**当前态**。
-        #   ⇒ 统一改成当前态：白天「☀️ 日间」、夜间「🌙 夜间」；index.html 的静态兜底同样改。
+        # v0.223 新增。用户报「明明是白天模式，按钮却显示夜间」
+        #   病根：`setTheme()` 原来 `dark ? '☀ 日间' : '🌙 夜间'` — **动作口径**
+        #   （想表达"点我会去夜间"）。而整条工具条只有它一个这样：拖动节点（开/关）
+        #   次要人物（隐 / 显示）、族谱补全（隐藏 / 显示）、剧透保护（开 / 关）写的全是 **当前态**
+        #   统一改成当前态：白天「☀ 日间」、夜间「🌙 夜间」；index.html 的静态兜底同样改
         run: node test/theme-btn.mjs
 
       - name: 按书覆盖词条 + 出口页（无头 Edge）
@@ -771,7 +749,7 @@ jobs:
 
       - name: 亲属类型标签跨端一致性（KIN / KIN_HINT 的 5 处副本）
         # v0.149 新增。亲属类型标签（blood→血缘、inlaw→姻亲…）在项目里有 5 处副本：
-        # scripts/kin.mjs 是权威；网页 js/app.js、编辑器 js/editor.js、小程序
+        # scripts/kin.mjs 是权威；网页 js/app.js、小程序
         # miniprogram/utils/graph.js 与 miniprogram/pages/index/index.js 各抄一份 ——
         # 因为浏览器 / 小程序模块 import 不了 scripts/，项目对同类问题的既定策略是「手抄 + 对拍」。
         # 目前 5 处一致，但此前**没有任何测试守着**：某端单独改一个标签，
@@ -790,12 +768,9 @@ jobs:
         # v0.153 新增。「哪条关系算亲子边」这个定义在项目里抄了 **8 份以上**，已漂出 3 种行为：
         #   · 权威    scripts/kin-terms.mjs 的 isParentChild（含「养父子」）
         #   · 漏「养」 scripts/fix-gongsun.mjs / fix-wu-tail.mjs（一次性补丁，显式豁免）
-        #   · 只认血缘 js/editor.js 的「亲子成环」检测 ⇒ 全部收养亲子边对编辑器不可见
-        #              （三国 7 条、百年孤独 2 条）
         # 这不是新问题：scripts/lib/data-files.mjs 把它列为「同一个定义抄多份」的第 ① 例（v0.110），
         # 当时改了那三个审计脚本却**没加判据**，于是又漂了一次。
-        # 判据：源码级（编辑器那份与权威逐字相同）+ 结构级（不许出现第 3 份 / 「缺养」变体）
-        #       + 金标（钉「正确」而非「现状」）。浏览器侧的两条在 test/editor.mjs 里。
+        # 判据：结构级（不许出现第 3 份 / 「缺养」变体）+ 金标（钉「正确」而非「现状」）。
         run: node test/parent-child.mjs
 
       - name: 亲属称谓对质（手写 type 必须与族谱算出来的一致）

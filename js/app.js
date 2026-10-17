@@ -7,17 +7,17 @@
  * 所以「找代码在哪」只能靠下面这张表。加新代码时请把函数落进已有的区；
  * 确实要开新区，在 `scripts/add-app-partitions.mjs` 的 `PARTS` 里加一行再重跑。
  *
- * 文件共 7330 行、284 个顶层符号，68 个分区。
+ * 文件共 7046 行、277 个顶层符号，68 个分区。
  *
  * | 区域 | 起始符号 | 本区符号数 |
  * |---|---|---|
  * | 1. 图注量算与分组图注 | `bandTextWidth` | 2 |
- * | 2. 边的基础工具与扇形布局 | `edgeKey` | 18 |
+ * | 2. 边的基础工具与扇形布局 | `edgeKey` | 14 |
  * | 3. 文案包预取（首屏只下图包，文案空闲时再取） | `prefetchText` | 2 |
  * | 4. 折叠（次要人物默认收起） | `foldVM` | 3 |
  * | 5. 称谓徽章 | `kinBadge` | 1 |
- * | 6. 阵营 / 颜色 / 分组 | `cssVar` | 11 |
- * | 7. 显示设置（色盲配色、字号） | `syncDisplayUI` | 14 |
+ * | 6. 阵营 / 颜色 / 分组 | `cssVar` | 9 |
+ * | 7. 显示设置（色盲配色、字号） | `syncDisplayUI` | 13 |
  * | 8. 关系过滤（亲缘 / 实虚线） | `passEdgeFilter` | 5 |
  * | 9. 可见性与地点筛选 | `isCharHidden` | 6 |
  * | 10. 剧透：登场章 / 时间旅行判定 | `charCh` | 22 |
@@ -132,8 +132,7 @@
   /** 最宽的一条图注有多宽（横视图判重叠时用；gen-v 只判行高，用不到） */
   function bandWidestText() {
     let w = BAND_FONT;
-    /* v0.220：bandLabels 存的是**原文** ⇒ 这里按当前用字转一次再量宽（繁体略宽）。 */
-    for (const t of state.bandLabels.values()) w = Math.max(w, bandTextWidth(conv(t)));
+    for (const t of state.bandLabels.values()) w = Math.max(w, bandTextWidth(t));
     return w;
   }
 
@@ -209,7 +208,6 @@
     anno: null,           // v0.134：拆书标注 { schema, slug, items[], global[] }
     annoStatus: null,     // v0.134：同上；'idle'|'done'|'absent'（没写拆书）|'failed'，**按书记**
     annoMode: 'chapter',  // v0.134：拆书面板模式 —— 'chapter' 本章 / 'global' 全书
-    script: 'han',        // v0.219：正文用字 —— 'han' 简体 / 'hant' 繁体（转换，不换词）
     relIndexOf: null,      // v88：关系对象 → relations 下标，给图上每条线做身份标识（见 findRel）
     relIdxBook: null,      // v88：relIndexOf 是按哪本书建的缓存（换书要重建）
   };
@@ -235,93 +233,8 @@
    *   · unbold()  —— 进**纯文本**的地方（canvas 分享图、tooltip、title 属性）：
    *     那些地方没有"粗体"这个概念，只去记号、句子一字不动。
    * `test/prose-bold-guard.mjs` 守这条：散文字段不许再直接进 `esc()`。 */
-  const escBold = (s) => esc(conv(s)).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  const unbold = (s) => conv(String(s ?? '').replace(/\*\*/g, ''));
-
-  /* v0.219：繁体版 —— 简→繁**文本转换**（不是翻译，不换词：網絡仍是網絡）。
-   *
-   * ## 为什么只在这一处、而且要挂在 escBold / unbold 上
-   *
-   * ① **挂这两个函数就够**：v0.218 实测，全部读者可见散文（人物卡 / 事件面板 / 关系依据 /
-   *    时间轴 / 组合框 / EPUB / canvas 分享图 / tooltip / title 属性）都从这两个函数出去。
-   *    零散字面量（「影响：」「第 N 章」「暂无介绍」）不在此列，靠 `T()` 那一路。
-   *
-   * ② **必须只过一次，不能再拿 DOM 走一遍**：`后`/`里`/`系`/`复` 这些字**既是简体的键、
-   *    又是合法的繁体字** —— 「皇后」转成「皇後」，再来一遍就成「皇後後」。
-   *    ⇒ 转换**不幂等**，全局只允许一个收口；任何"渲染完再扫一遍 DOM"的方案都会二次转换。
-   *
-   * ③ 表从哪来：`scripts/make-s2t-dict.mjs` 生成 `data/s2t.json`（提交的人工资产，
-   *    1,240 字 + 1,468 词组 + 2,283 同形字），人工覆盖在 `scripts/lib/s2t-overrides.mjs`。
-   *    **懒加载**：只有用户切到繁体才 fetch。`test/s2t-guard.mjs` 守 H1/H2/H3。
-   */
-  let S2T = null;                                  // 转换表；null = 还没取
-  const s2tCache = new Map();                     // 同一个句子会被转多次（列表里重复），记一下
-  const HAN = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
-
-  /** 简→繁。繁体没开、或表还没取到 ⇒ 原样返回（宁可先显示简体，也不要半吊子）。
-   *
-   * ⚠⚠ v0.220 当场逮到的错：这里原来写的是 `if (!state.script || !S2T) return s;`
-   *   —— `state.script` 的初值就是 `'han'`（**truthy**！）而繁体也是 `'hant'`，
-   *   于是这个判断在**两种模式下都成立**，只要转换表取过一次（S2T 有值）就照样转。
-   *   症状：用户「简→繁→简」点回简体，界面**仍是繁体**，而且再也回不去了 ——
-   *   首屏看不出来（那时 S2T 还没取到，conv 恰好是空操作，掩盖了这个错）。
-   *   ⇒ 必须比**值**：`!== 'hant'` 就是没开繁体。 */
-  function conv(s) {
-    if (state.script !== 'hant' || !S2T) return s;
-    const t = String(s ?? '');
-    if (!HAN.test(t)) return t;
-    const hit = s2tCache.get(t);
-    if (hit !== undefined) return hit;
-    const chars = S2T.chars || {}, phrases = S2T.phrases || {};
-    const maxLen = S2T._maxLen || 2;
-    let out = '', i = 0;
-    while (i < t.length) {
-      const ch = t[i];
-      if (!HAN.test(ch)) { out += ch; i++; continue; }
-      let hitLen = 0;
-      for (let n = Math.min(maxLen, t.length - i); n >= 2; n--) {
-        const k = t.substr(i, n);
-        if (Object.prototype.hasOwnProperty.call(phrases, k)) { out += phrases[k]; i += n; hitLen = n; break; }
-      }
-      if (!hitLen) { out += chars[ch] || ch; i++; }
-    }
-    if (s2tCache.size > 4000) s2tCache.clear();    // 换书/换语言都换一批，别让它无脑涨
-    s2tCache.set(t, out);
-    return out;
-  }
-
-  /** 「模板 + 已转换词条」⇒ 转换后的整句。
-   *
-   *  ## 顺序是重点：**先 conv 模板，再填词条** —— 不能反过来。
-   *
-   *  `T()` 给的词条、conv 过的数据（阵营名、代际标签）**已经是繁体**；而模板里的
-   *  连接词（差异 / 都属同一 / 按…排列）还是简体。两种合起来只有一种合法人：
-   *  占位符是 ASCII，`conv` 转不动它们 ⇒ 先转模板（占位符原样保留），
-   *  再把已转换的值填回去。
-   *
-   *  ⚠ 反过来写（先填再 conv）会把词条再转一遍 —— conv 不幂等，
-   *    「范晔」会变「範曄」→「範曄範」那一类。页脚「结构」行就踩过这个坑。
-   */
-  function convFill(tpl, vals) {
-    return conv(String(tpl)).replace(/\{(\w+)\}/g, (m, k) => (typeof vals[k] === 'string' ? vals[k] : m));
-  }
-
-  /** 拉转换表（只在第一次切到繁体时）。失败就退回简体，绝不半吊子。 */
-  async function loadS2T() {
-    if (S2T) return true;
-    try {
-      const r = await fetch('data/s2t.json', { cache: 'no-cache' });
-      if (!r.ok) throw new Error(String(r.status));
-      const d = await r.json();
-      const lens = Object.keys(d.phrases || {}).map((k) => k.length);
-      d._maxLen = lens.length ? Math.max(...lens) : 2;
-      S2T = d;
-      return true;
-    } catch (e) {
-      console.warn(`繁体转换表没拿到（${(e && e.message) || e}）—— 继续显示简体。`);
-      return false;
-    }
-  }
+  const escBold = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  const unbold = (s) => String(s ?? '').replace(/\*\*/g, '');
 
   /* v0.97：连线扇形 —— 让"连到同一个点上的那些线"在**节点附近**岔开。
    *
@@ -575,6 +488,9 @@
       lineSolidLabel: '实线 · 亲缘 / 同盟',
       lineDashedLabel: '虚线 · 对立 / 伤害',
       lineDottedLabel: '点线 · 情人 / 过去 / 间接',
+      exportHint: '导出的内容跟随你当前的筛选：剧透进度、人数、次要人物、地点、聚焦都会生效。',
+      exportPngDesc: '当前视图的关系图 + 书名、人数统计与图例；适合发到想法、圈子或朋友圈。',
+      exportEpubDesc: '关系总图 + 人物志 + 事件轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
       spoilerIntro: '这本书有情节。选「我在读」后，你进度之后的人物、关系与事件都会被锁起来，避免剧透。',
       spoilerOffDesc: '直接看完整关系图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（人物结局、未解锁的关系与事件都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
@@ -626,16 +542,16 @@
        *   按钮整条藏掉）⇒ 整条 help-item 在理论类隐藏，theory 侧词条留空串。 */
       help8Head: '⑧ 虚线 + 「推导」徽章 = 族谱补全',
       help8Body: '祖孙、叔侄这类关系，原文里常常没有对手戏。虚线表示「由亲子关系推出来的」（面板里会写清推导链，比如由「老何塞→巨人」「巨人→阿尔卡蒂奥」推出）。不想要就点「族谱补全：隐藏」。',
-      help9Head: '⑨ 自己整理一本（本地编辑器）',
-      help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
+      help9Head: '',
+      help9Body: '',
       help10Head: '⑩ 读到哪儿了：第 N 章的世界',
       help10Body: '右侧「📖 第 N 章」：这一章<b>谁初次登场</b>、新增了哪些{rel}、发生什么{event}、在哪儿发生；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（同盟→反目这类会随时间切换），<b>不会改你的真实阅读进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
-      help11Head: '⑪ 只看亲缘线 / 只看对立线（关系过滤）',
-      help11Body: '工具栏「{rel}：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「{pairRel}」也会跟着过滤。',
-      help12Head: '⑫ {char}志与{char}卡',
-      help12Body: '点任意{char}：面板里除了档案与{rel}，还有<b>「一生（按章）」小节</b>——按章号排的{event}、{place}与原文引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（身份、{fate}、关键{rel}与依据{event}），适合发想法。',
-      help13Head: '⑬ AI 讲解（不剧透）',
-      help13Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}档案）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      help12Head: '⑫ 只看亲缘线 / 只看对立线（关系过滤）',
+      help12Body: '工具栏「{rel}：全部」里可以勾类型：<b>血缘</b>、<b>婚姻·姻亲</b>、<b>收养·抚养·继亲</b>、<b>结义</b>、<b>无亲缘标注</b>，以及按线条（实线/虚线/点线）。配三个快捷键：<b>只看亲缘</b>（当家族树用）、<b>只看对立·伤害</b>、全部重置；底部的「{pairRel}」也会跟着过滤。',
+      help13Head: '⑬ {char}志与{char}卡',
+      help13Body: '点任意{char}：面板里除了档案与{rel}，还有<b>「一生（按章）」小节</b>——按章号排的{event}、{place}与原文引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（身份、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help14Head: '⑭ AI 讲解（不剧透）',
+      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}档案）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
       helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
     theory: {
@@ -683,6 +599,9 @@
       lineSolidLabel: '实线 · 支撑 / 属于',
       lineDashedLabel: '虚线 · 对立 / 误读',
       lineDottedLabel: '点线 · 间接',
+      exportHint: '导出的内容跟随你当前的筛选：剧透进度、概念数、次要概念、领域、聚焦都会生效。',
+      exportPngDesc: '当前视图的关联图 + 书名、概念统计与图例；适合发到想法、圈子或朋友圈。',
+      exportEpubDesc: '关联总图 + 概念志 + 案例轴做成一本小册子（<b>不含原著正文</b>，跟随你当前的剧透进度）；用微信读书「传书到手机」或文件传输助手导入，就能与原著并排读。',
       spoilerIntro: '选「我在读」后，你进度之后的概念、关联与案例都会被锁起来，避免提前看到后面的内容。',
       spoilerOffDesc: '直接看完整关联图',
       aiPanelHint: '讲解**只使用你已经读到的部分**：资料先在本地按进度过滤（概念定位、未解锁的关联与案例都不会发出去），提示词里也钉死了"只讲第 N 章之前"。<b>不会上传原著正文</b>；Key 只存在你这台机器（与编辑器共用同一份配置）。',
@@ -716,16 +635,16 @@
        * 在理论类隐藏（applyTypeTerms 里 setShown），词条留空串双保险。 */
       help8Head: '',
       help8Body: '',
-      help9Head: '⑨ 自己整理一本（本地编辑器）',
-      help9Body: '右上「✏️ 编辑」：{place}/{char}/{rel}/{event}增删改、本地校验、内嵌实时预览；还能<b>上传整本书</b>（txt / md / html / epub / pdf）自动分章、逐章出 AI 草稿再合并去重。数据只存在你这台机器。',
+      help9Head: '',
+      help9Body: '',
       help10Head: '⑩ 读到哪儿了：第 N 章的世界',
       help10Body: '右侧「📖 第 N 章」：这一章<b>哪些概念初次提出</b>、新增了哪些{rel}、发生什么{event}、在哪个领域；还会告诉你<b>下一章将解锁什么</b>。翻到哪一章，就用「✓ 我读到这一章了」把进度推上去。<br>面板里的「<b>🕰 时间旅行</b>」＋滑块：把<b>图谱</b>拨回第 N 章——只画当时已经发生的{rel}（支撑→驳斥这类会随时间切换），<b>不会改你的真实进度</b>；开着剧透保护时最多拨到"读到的那一章"。',
-      help11Head: '⑪ 只看某类关联线（关联过滤）',
-      help11Body: '工具栏「{rel}：全部」里可以勾类型，以及按线条（实线＝支撑 / 属于，虚线＝对立 / 误读，点线＝间接）。底部的「{pairRel}」也会跟着过滤。',
-      help12Head: '⑫ {char}志与{char}卡',
-      help12Body: '点任意{char}：面板里除了释义与{rel}，还有<b>「沿革（按章）」小节</b>——按章号排的{event}、{place}与书中引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（定义、{fate}、关键{rel}与依据{event}），适合发想法。',
-      help13Head: '⑬ AI 讲解（不剧透）',
-      help13Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}释义）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
+      help12Head: '⑫ 只看某类关联线（关联过滤）',
+      help12Body: '工具栏「{rel}：全部」里可以勾类型，以及按线条（实线＝支撑 / 属于，虚线＝对立 / 误读，点线＝间接）。底部的「{pairRel}」也会跟着过滤。',
+      help13Head: '⑬ {char}志与{char}卡',
+      help13Body: '点任意{char}：面板里除了释义与{rel}，还有<b>「沿革（按章）」小节</b>——按章号排的{event}、{place}与书中引文；点「<b>🖼 {char}卡</b>」可把这个{char}导成一张 PNG（定义、{fate}、关键{rel}与依据{event}），适合发想法。',
+      help14Head: '⑭ AI 讲解（不剧透）',
+      help14Body: '跑完「{pairRel}」或点开某个{char}后，面板里会有「🤖 讲一遍（不剧透）」：它<b>只把你已经读到的资料</b>（{rel}链、依据{event}、{char}释义）交给模型，{fate}与未解锁内容一律不发，提示词也钉死"只讲第 N 章之前"。没配过 Key 会先弹设置（与编辑器共用，只存本机）。',
       helpBottom: '随时点「复位视图」或<b>在图的空白处</b>双击回到全貌；<b>点任意一个{charMany}</b>也会把视野拉回来。万一画布被拖到看不见了，图中间会浮出「画布拖到视野外了 · 点这里复位」。想再打开这份说明，点右上角「📖 怎么用」。',
     },
   };
@@ -748,8 +667,6 @@
    *   ⇒ 没有覆盖的书（现有四本全部）**原样返回基表**，零成本、零行为差异；
    *     有覆盖的书按书记一份缓存。 */
   let __termsCache = null;
-  /** v0.219：`rawTerms()` 的缓存（未转换那一份）。 */
-  let __rawCache = null;
   const baseTerms = () => (isTheoryBook() ? TERMS.theory : TERMS.narrative);
   /**
    * 取术语表 = 当前书型的基表 ∪ `meta.vocab` 的逐词覆盖。
@@ -764,26 +681,12 @@
    *   ⇒ `test/type-terms-guard.mjs` 的 G12/G13 守这一条。
    */
   const T = () => {
-    const mode = state.script;
-    const t = rawTerms();
-    if (mode === 'han') return t;
-    // 缓存键里必须带 mode：切了简繁而复用上一份缓存，界面就会一半繁一半简
-    if (__termsCache && __termsCache.book === state.book && __termsCache.mode === mode) return __termsCache.terms;
-    __termsCache = { book: state.book, mode, terms: Object.fromEntries(Object.entries(t).map(([k, x]) => [k, conv(x)])) };
-    return __termsCache.terms;
-  };
-  /**
-   * **未转换**的术语表。`T()` 给模板字符串用（已转换），这个给 `setTyped()` 用 ——
-   * 因为 `setTyped()` 自己会转一次；两边都拿到"已转"的词就会转两遍，而
-   * **简繁转换不是幂等的**（「皇后」→「皇後」，再来一次就成了「皇後後」）。
-   */
-  function rawTerms() {
     const v = vocabOf();
     if (v === NO_VOCAB) return baseTerms();
-    if (__rawCache && __rawCache.book === state.book) return __rawCache.terms;
-    __rawCache = { book: state.book, terms: Object.assign({}, baseTerms(), v) };
-    return __rawCache.terms;
-  }
+    if (__termsCache && __termsCache.book === state.book) return __termsCache.terms;
+    __termsCache = { book: state.book, terms: Object.assign({}, baseTerms(), v) };
+    return __termsCache.terms;
+  };
   /** 取术语：值里带 `{N}` 就按参数填，否则原样返回（见 TERMS 上方那段"两种条目"）。 */
   const TW = (key, ...args) => String(T()[key]).replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? ''));
   /** 「X的一生」里的那个人称：叙事类看 `c.gender`（她 / 他），理论类整个换成名词（「概念」）。
@@ -884,7 +787,7 @@
     const step = Math.min(FOLD_BATCH, total - shown);   // 最后一批常不足 20，文案必须说真话
     let text = `再显示 ${step} ${unit}（${shown} / ${total}）`;
     if (full) { act = 'collapse'; text = '⌃ 收起'; }
-    else if (total <= FOLD_ONESTEP) { act = 'all'; text = conv(`⌄ 展开全部 ${total} ${unit}`); }
+    else if (total <= FOLD_ONESTEP) { act = 'all'; text = `⌄ 展开全部 ${total} ${unit}`; }
     return { shown, open, full, act, text };
   }
 
@@ -904,11 +807,11 @@
       return out;
     }).join('');
     return `<section class="fold${v.open ? ' is-open' : ''}" data-fold-key="${esc(key)}" data-n="${n}" data-unit="${esc(unit)}">
-      <div class="fold-head"${v.open ? '' : ' hidden'}><button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="collapse" aria-expanded="${v.open}" aria-controls="${bid}">${esc(conv('⌃ 收起'))}</button></div>
+      <div class="fold-head"${v.open ? '' : ' hidden'}><button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="collapse" aria-expanded="${v.open}" aria-controls="${bid}">⌃ 收起</button></div>
       <${wrap} class="${cls} fold-body${v.full ? '' : ' is-cut'}" id="${bid}">${body}</${wrap}>
       <div class="fold-foot">
         <button class="fold-btn" type="button" data-fold="${esc(key)}" data-fold-act="${v.act}" aria-expanded="${v.open}" aria-controls="${bid}">${v.text}</button>
-        <button class="fold-btn fold-alt" type="button" data-fold="${esc(key)}" data-fold-act="all" aria-expanded="${v.open}" aria-controls="${bid}"${total > FOLD_ONESTEP && !v.full ? '' : ' hidden'}>${esc(conv('全部展开'))}</button>
+        <button class="fold-btn fold-alt" type="button" data-fold="${esc(key)}" data-fold-act="all" aria-expanded="${v.open}" aria-controls="${bid}"${total > FOLD_ONESTEP && !v.full ? '' : ' hidden'}>全部展开</button>
       </div>
     </section>`;
   }
@@ -952,9 +855,7 @@
 
   const kinBadge = (rel) => {
     const k = rel && rel.kin;
-    /* v0.219：徽章文字与 tooltip 都从 `KIN_LABEL` 取，转换放在这个出口。
-     * ⚠ 注意 `esc(k)` 那处是 class 名（`k-f`/`k-m`），**不能**转 —— 只有可见文字转。 */
-    return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${esc(conv(KIN_LABEL[k]))}：${esc(conv(KIN_HINT[k] || ''))}">${esc(conv(KIN_LABEL[k]))}</span>` : '';
+    return k && KIN_LABEL[k] ? ` <span class="kin-badge k-${esc(k)}" title="${KIN_LABEL[k]}：${KIN_HINT[k] || ''}">${KIN_LABEL[k]}</span>` : '';
   };
   // 性别徽章：♂/♀（U+2642/U+2640）不在中文字体里，手机端字体回退的字形又大又靠下，
   // 药丸框里永远对不齐 → 改用内联 SVG（与平台字体无关，各端像素一致、可居中）
@@ -976,35 +877,17 @@
    * ⚠ 本函数是**唯一**出口（图注、下拉副标、人物卡 meta、导出都走它）⇒ 改一处全跟随。 */
   const genText = (g) => {
     const labels = state.book && state.book.meta && state.book.meta.genLabels;
-    /* v0.219：本函数是「层级标签」的**唯一**出口（图注、下拉副标、人物卡 meta、
-     * 时间轴、导出都走它）⇒ 繁体转换放这里，一处盖住全部。
-     * ⚠ 同 `charName`：调用点都用 `esc(...)` 接，**不**再套 conv —— 转换不幂等。 */
-    if (Array.isArray(labels) && labels.length) {
-      if (typeof labels[g] === 'string' && labels[g]) return conv(labels[g]);
-      return conv(`第 ${g + 1} 级`);
-    }
-    return conv(g === 0 ? '前史' : `第 ${g} 代`);
-  };
-  /** v0.220：`genText` 的**未转换**版。`bandLabels`（分组图注缓存）要用它 ——
-   *  那个 Map 是切布局/切书/首屏时随手填的**缓存**，填进去的是原文，真正要显示时再 `conv`；
-   *  否则缓存里塞的是繁体，切回简体就再也显示不出原文（且缓存与用字不同步会二次转换）。 */
-  const genTextRaw = (g) => {
-    const labels = state.book && state.book.meta && state.book.meta.genLabels;
     if (Array.isArray(labels) && labels.length) {
       if (typeof labels[g] === 'string' && labels[g]) return labels[g];
       return `第 ${g + 1} 级`;
     }
     return g === 0 ? '前史' : `第 ${g} 代`;
   };
-  /** 人名/节点名的**唯一**出口（tooltip、关系两端、链接…）。v0.219 同上：出口处转一次。 */
-  const charName = (id) => conv(state.byId.get(id)?.name || id);
+  const charName = (id) => state.byId.get(id)?.name || id;
 
   /* ---------------- 分组（有代际按代，无代际按阵营） ---------------- */
-  /** 按 key 取阵营名。v0.219：`factions[].name` 是**数据**（不走 escBold/unbold），
-   *  而阵营名会出现在图例、节点分组、tooltip、页脚好几处 ⇒ 转换放在这里这个**收口**。 */
-  const factionNameByKey = (key) => conv((state.book?.factions.find((f) => f.key === key) || {}).name || '其他');
-  /** v0.220：同上，未转换版（给 `bandLabels` 缓存用）。 */
-  const factionNameRawByKey = (key) => (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
+  /** 按 key 取阵营名 */
+  const factionNameByKey = (key) => (state.book?.factions.find((f) => f.key === key) || {}).name || '其他';
   /** ⚠ v85：这里的口径必须和 groupKeyOf 一致，都走 effectiveFactionKey。
    *  原来 groupLabelOf 用的是「原始 c.faction」，而分组键/节点颜色用的是「按进度的当前归属」，
    *  两者在有 factionHistory 的角色上会不一致 —— 实测三国读到第 5 回时，
@@ -1058,9 +941,6 @@
   const factionTextOf = (c) => factionNameOf(c);
   const groupKeyOf = (c) => (state.groupMode === 'generation' ? `g${c.generation}` : `f${effectiveFactionKey(c) || 'other'}`);
   const groupLabelOf = (c) => (state.groupMode === 'generation' ? genText(c.generation) : factionNameOf(c));
-  /** v0.220：`groupLabelOf` 的**未转换**版，只给 `bandLabels` 缓存用。
-   *  （缓存里存原文、显示时再转；缓存里存繁体会让切回简体时显示不出原文。） */
-  const groupLabelRawOf = (c) => (state.groupMode === 'generation' ? genTextRaw(c.generation) : factionNameRawByKey(effectiveFactionKey(c)));
   const genPrefix = (c) => (state.groupMode === 'generation' ? esc(genText(c.generation)) + ' · ' : '');
   const isMentioned = (c) => c && c.tier === 'mentioned';
   const isMinor = (c) => c && c.tier === 'minor';
@@ -1094,7 +974,7 @@
        *   （`setTyped($('#edge-filter-btn'), …)`），而**本函数在它之后才跑**
        *   ⇒ 理论类上写好的「关联：全部」被这里改回「关系：全部」，
        *   界面看着正常，只是"术语层那一句白写了"。⇒ 措辞归这一处（唯一的写者）。 */
-      btn.textContent = n ? `${T().rel}：${conv(`筛选 ${n} 项`)}` : `${T().rel}：${conv('全部')}`;
+      btn.textContent = n ? `${T().rel}：筛选 ${n} 项` : `${T().rel}：全部`;
       btn.classList.toggle('active', n > 0);
     }
     document.querySelectorAll('[data-edge-kin]').forEach((el) => { el.checked = state.edgeKins.has(el.dataset.edgeKin); });
@@ -1191,7 +1071,7 @@
     const cands = [state.progress, asOf()].filter((x) => typeof x === 'number');
     const limit = cands.length ? Math.min(...cands) : null;
     if (to !== null && limit !== null && to - 1 > limit) to = null;
-    return to !== null ? conv(`第 ${from}–${to - 1} 章`) : conv(`第 ${from} 章起`);
+    return to !== null ? `第 ${from}–${to - 1} 章` : `第 ${from} 章起`;
   };
 
   const visibleRelEvents = (r) => (r.events || []).filter((ev) =>
@@ -1235,12 +1115,12 @@
       } catch (e) {
         console.error('Boot failed:', e);
         const metaEl = $('#book-meta');
-        if (metaEl) metaEl.textContent = conv('数据加载失败：请用本地服务器打开（见 README）');
+        if (metaEl) metaEl.textContent = '数据加载失败：请用本地服务器打开（见 README）';
         return;
       }
       if (!state.books.length) { 
         const metaEl = $('#book-meta');
-        if (metaEl) metaEl.textContent = conv('还没有书目数据');
+        if (metaEl) metaEl.textContent = '还没有书目数据';
         return; 
       }
     }
@@ -1267,7 +1147,7 @@
     }
 
     const sel = $('#book-select');
-    sel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(conv(b.title))}</option>`).join('');
+    sel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(b.title)}</option>`).join('');
     sel.addEventListener('change', () => loadBook(sel.value));
 
     const wanted = params.get('book');
@@ -1429,15 +1309,11 @@
     const b = state.book, m = b.meta || {};
     const catalog = state.books.find((x) => x.slug === m.slug) || {};
     const links = (catalog.links || []).map((l) =>
-      `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(conv(l.label))} ↗</a>`).join('');
-    /* v0.219：书名与作者是 `meta` 里的**数据**，整句在出口转一次。
-     * ⚠ `T().charN / relN / eventN` 已经是转换过的词条，**不能**再套 conv（不幂等）——
-     *   所以只把数据部分拼进 `conv()`，词条部分留在外面。 */
+      `<a class="meta-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('');
     $('#book-meta').innerHTML =
-      esc(conv(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} `)) + esc(T().charN)
-      + esc(conv(' / ')) + esc(`${b.relations.length} ${T().relN}`) + esc(conv(' / ')) + esc(`${b.events.length} ${T().eventN}`) +
+      esc(`《${m.title || m.slug || '未命名'}》${m.author ? ' · ' + m.author : ''} · ${b.characters.length} ${T().charN} / ${b.relations.length} ${T().relN} / ${b.events.length} ${T().eventN}`) +
       (links ? ` <span class="meta-links">${links}</span>` : '');
-    document.title = conv(`《${m.title || '书脉'}》· 书脉 BookAtlas`);
+    document.title = `《${m.title || '书脉'}》· 书脉 BookAtlas`;
     renderFooter();
     updateSearchPlaceholder();
   }
@@ -1510,7 +1386,7 @@
 
   function renderBuildStamp() {
     const el = document.getElementById('build-ver');
-    if (el) el.textContent = conv(BUILD_V ? 'v0.' + BUILD_V : '未知');
+    if (el) el.textContent = BUILD_V ? 'v0.' + BUILD_V : '未知';
     const stale = document.getElementById('build-stale');
     if (!stale) return;
     stale.hidden = true;
@@ -1535,57 +1411,44 @@
       return named.join(' → ') || '—';
     }
     const out = [];
-    /* v0.219：这三个字面量自己转。`genText()` 的返回值已经是繁体（它内部转了），
-     *  所以调用方只能把本函数的整体当"已转换"用，不要再套 conv。 */
-    if (gens.some((g) => g <= 0)) out.push(conv('前史'));
+    if (gens.some((g) => g <= 0)) out.push('前史');
     const pos = gens.filter((g) => g > 0);
     if (pos.length === 1) out.push(genText(pos[0]));
-    else if (pos.length > 1) out.push(conv(`第 ${pos[0]}–${pos[pos.length - 1]} 代`));
+    else if (pos.length > 1) out.push(`第 ${pos[0]}–${pos[pos.length - 1]} 代`);
     return out.join('、') || '—';
   }
   function renderFooter() {
     renderBuildStamp();
     const b = state.book, m = b.meta || {};
-    /* v0.219：页脚是**读者直读的散文**，四行里每一句都是数据或字面量，一样都不走
-     *  escBold/unbold ⇒ 繁体态下整块简体（v0.217 刚把它从"字段名"里救出来，
-     *  结果它在繁体这条路上又漏了一次）。
-     *
-     *  ⚠ 这一行混着三种来源：① `T()` 词条（已转换）② 数据（`conv()` 过）
-     *  ③ 简体字面量。用 `convFill` 一句话搞定 —— 它先转模板再填词条，顺序不能反。 */
-    const t = T();
     const rows = [];
     // ① 一句话：最能概括这本书的一句 + 出处
-    if (m.prophecy) rows.push([conv('一句话'), `「${esc(conv(m.prophecy))}」${m.prophecySrc ? `（${esc(conv(m.prophecySrc))}）` : ''}`]);
+    if (m.prophecy) rows.push(['一句话', `「${esc(m.prophecy)}」${m.prophecySrc ? `（${esc(m.prophecySrc)}）` : ''}`]);
     // ② 结构：当前分组视图怎么排 + 剧透/章节尺度 + 该书专属说明
     const gens = [...new Set(b.characters.map((c) => Number(c.generation)))].sort((a, z) => a - z);
-    const facs = (b.factions || []).map((f) => conv(f.name)).join('／');   // 已转换
-    const V = { ...t, facs, span: genSpanText(gens) };                   // 已转换
+    const facs = (b.factions || []).map((f) => f.name);
     const parts = [];
     if (state.groupMode === 'generation') {
-      parts.push(convFill('「分组视图」按代际排列（{span}）', V));
+      parts.push(`「分组视图」按代际排列（${genSpanText(gens)}）`);
     } else if (gens.length <= 1) {
       /* ⚠ v0.217：这里原来直接写 `generation 一律为 1` —— 页脚是读者直读的散文，
        *   而 generation 是**字段名**（读者不认识；同类的 faction/meta.vocab 已在
        *   scripts/check-ui-notes.mjs 的「读者散文」判据里报红）。改走术语层：
        *   理论类的书这里印的是「层次号都是 1」。 */
-      parts.push(convFill('本书没有{gen}差异：所有{char}都属同一{gen}（{gen}号都是 1），「分组视图」按{faction}（{facs}）排列', V));
+      parts.push(`本书没有${T().gen}差异：所有${T().char}都属同一${T().gen}（${T().gen}号都是 1），「分组视图」按${T().faction}（${facs.join('／')}）排列`);
     } else {
-      parts.push(convFill('「分组视图」按{faction}（{facs}）排列，数据另标{gen}（{span}）', V));
+      parts.push(`「分组视图」按${T().faction}（${facs.join('／')}）排列，数据另标${T().gen}（${genSpanText(gens)}）`);
     }
-    if (m.chapters) parts.push(convFill('剧透保护按章节顺序解锁（全书 {n} 章）', { n: String(m.chapters) }));
-    /* ⚠ `meta.note` 是**读者读的散文**（这本书的收录口径说明）⇒ 按纪律走散文出口 `unbold()`
-     *   （它内部含 `conv()`），不直接调 `conv()` —— 会被 `test/s2t-guard.mjs` 的 D2 拦，
-     *   而那条守的正是"散文字段不许绕过 escBold/unbold 直接转"（二次转换）。 */
-    if (m.note) parts.push(esc(unbold(m.note)));
-    rows.push([conv('结构'), esc(parts.join('；').replace(/[。；;]?$/, '')) + conv('。')]);
+    if (m.chapters) parts.push(`剧透保护按章节顺序解锁（全书 ${m.chapters} 章）`);
+    if (m.note) parts.push(esc(m.note));
+    rows.push(['结构', parts.join('；').replace(/[。；;]?$/, '') + '。']);
     // ③ 数据：固定免责声明
-    rows.push([conv('数据'), esc(conv('本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。'))]);
+    rows.push(['数据', '本数据是阅读辅助整理，不是原著全文；仅供阅读辅助用途，请支持正版原著。']);
     // ④ 来源：出处 · 授权 · 更新时间
     const src = (m.sources || []).map((s) => (s.url
-      ? `<a class="foot-link" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(conv(s.name))}</a>`
-      : esc(conv(s.name)))).join(' · ');
-    const bits = [src, m.license && esc(conv(m.license)), m.updated && convFill('更新 {d}', { d: m.updated })].filter(Boolean);
-    if (bits.length) rows.push([conv('来源'), bits.join(' · ')]);
+      ? `<a class="foot-link" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`
+      : esc(s.name))).join(' · ');
+    const bits = [src, m.license && esc(m.license), m.updated && `更新 ${esc(m.updated)}`].filter(Boolean);
+    if (bits.length) rows.push(['来源', bits.join(' · ')]);
     const el = $('#footer-note');
     if (el) el.innerHTML = rows.map(([k, v]) => `<span class="foot-row"><b>${k}</b>${v}</span>`).join('');
   }
@@ -1610,10 +1473,7 @@
   function renderLegend() {
     const el = $('#legend');
     el.innerHTML = state.book.factions.map((f) =>
-      /* v0.219：`f.name` 是**数据**（`data/<slug>.json`），不走 escBold/unbold，
-       而阵营名要出现在图例、节点分组、tooltip、页脚好几处 ⇒ 转换放在各自出口，
-       且**只转一次**（`conv` 不幂等，见 test/s2t-guard.mjs 的 D1）。 */
-      `<button type="button" class="legend-item" data-faction="${esc(f.key)}"><span class="dot" style="background:${esc(factionColorByKey(f.key))}"></span>${esc(conv(f.name))}</button>`
+      `<button type="button" class="legend-item" data-faction="${esc(f.key)}"><span class="dot" style="background:${esc(factionColorByKey(f.key))}"></span>${esc(f.name)}</button>`
     ).join('');
     refreshHighlightCaches();          // v85：图例重渲染 ⇒ 缓存的 NodeList 失效
     el.querySelectorAll('.legend-item').forEach((btn) => {
@@ -1627,7 +1487,7 @@
         setHighlight(nodes, edges, null, null);
         /* v93：点阵营也是导航进画布，一样建锁。grow=false —— 阵营成员本身已经是一整片，
          * 再扩一跳基本等于整张图（曹魏 250 人的一跳邻域几乎覆盖全书），跳数控件也就没意义了。 */
-        const fname = conv((state.book.factions.find((f) => f.key === key) || {}).name || key);
+        const fname = (state.book.factions.find((f) => f.key === key) || {}).name || key;
         lockFromHighlight(fname, 'faction', [...nodes], false);
       });
     });
@@ -1658,16 +1518,11 @@
     let snap = TYPE_TERM_SNAP.get(el);
     if (!snap) { snap = {}; TYPE_TERM_SNAP.set(el, snap); }
     if (!(field in snap)) snap[field] = el[field];   // 只存第一次 —— 那才是 HTML 原样
-    /* v0.219：这里写的每个值（工具栏按钮的 title/文字、`data-term` 的整句…）都是
-       **读者可见文案**，繁体态下统一过一遍 `conv()`。
-       ⚠ 因此调用方必须传**未转换**的词条（`rawTerms()` 而不是 `T()`）——
-         简繁转换不幂等，两边都转一遍，「皇后」会变成「皇後後」。
-       比较也用 rawTerms()，否则「本书的 vocab 到底改没改措辞」这个判断会被转换结果污染。 */
     if (raw !== undefined) {
-      const now = fillNamed(raw, rawTerms());
-      if (now !== fillNamed(raw, baseTerms())) { el[field] = conv(now); return; }
+      const now = fillNamed(raw, T());
+      if (now !== fillNamed(raw, baseTerms())) { el[field] = now; return; }
     }
-    el[field] = conv(isTheoryBook() ? theoryText : snap[field]);
+    el[field] = isTheoryBook() ? theoryText : snap[field];
   }
   /** 显示 / 隐藏一个控件（**两个方向都要写**，否则从理论类切回来它不会回来）。
    *  ⚠ 用 `style.display` 而不是 `hidden` 属性：`.ghost` / `.shape-legend` 在 CSS 里
@@ -1721,7 +1576,7 @@
     const lbl = document.querySelector('.pathbar-label');
     /* ⚠ v0.214：这里原来写 `${t.char}${t.rel}` ⇒ 界面标签变成「人物关系」/「概念关联」，
      *   而**所有使用说明里都管它叫「两人关系」**（静态 HTML 兜底、欢迎面板、
-     *   「怎么用」⑦⑪⑬ 三处）⇒ 说明指着一个界面上不存在的名字，正是 v0.213 那条
+     *   「怎么用」⑦⑫⑭ 三处）⇒ 说明指着一个界面上不存在的名字，正是 v0.213 那条
      *   「图注不能说谎」的同一类病。现在标签与说明**共用 `pairRel` 一条词条**。 */
     if (lbl) lbl.textContent = t.pairRel;
     /* 右栏默认提示与图键盘提示：**不再在这里手写** —— 两者都已挂上
@@ -1808,16 +1663,13 @@
      *   v0.214：理论类那一支先过 `fillNamed` 填命名占位符（`{char}`→「概念」）——
      *   叙事类走 setTyped 快照写回静态 HTML 原样，与填不填无关。
      *   ⚠ 走这条路的词条**不许带编号占位符**（`{0}` 没有调用点传参会原样印出）⇒ G10。 */
-    /* v0.219：这里必须取**未转换**的 `rawT`，因为 `setTyped()` 自己会转一遍（见其注释）。
-       取 `t`（已转换）会转两次，「皇后」就成「皇後後」。 */
-    const rawT = rawTerms();
     document.querySelectorAll('[data-term]').forEach((el) => {
-      const v = rawT[el.dataset.term];
-      if (typeof v === 'string') setTyped(el, 'textContent', fillNamed(v, rawT), v);
+      const v = t[el.dataset.term];
+      if (typeof v === 'string') setTyped(el, 'textContent', fillNamed(v, t), v);
     });
     document.querySelectorAll('[data-term-html]').forEach((el) => {
-      const v = rawT[el.dataset.termHtml];
-      if (typeof v === 'string') setTyped(el, 'innerHTML', fillNamed(v, rawT), v);
+      const v = t[el.dataset.termHtml];
+      if (typeof v === 'string') setTyped(el, 'innerHTML', fillNamed(v, t), v);
     });
   }
 
@@ -1908,14 +1760,14 @@
           const shown = alt.slice(0, 2);
           const altHtml = alt.length
             ? `<span class="combo-alt"${alt.length > shown.length
-              ? ` data-tip-full="${esc(conv(`又译：${alt.join('、')}`))}"` : ''}>（${esc(conv(`又译 ${shown.join('、')}${alt.length > shown.length ? '…' : ''}`))}）</span>`
+              ? ` data-tip-full="又译：${esc(alt.join('、'))}"` : ''}>（又译 ${esc(shown.join('、'))}${alt.length > shown.length ? '…' : ''}）</span>`
             : '';
           return `<div class="combo-item${i === active ? ' on' : ''}" role="option" id="${listId}-i${i}" data-i="${i}" aria-selected="${i === active}"><b>${esc(it.name)}</b>${altHtml}${it.sub ? `<span class="combo-sub">${esc(it.sub)}</span>` : ''}${it.desc ? `<p class="combo-desc">${escBold(it.desc)}</p>` : ''}</div>`;
         }
         ).join('') + (all.length > filtered.length
           ? `<div class="combo-item combo-empty" role="presentation">还有 ${all.length - filtered.length} 个，继续输入缩小范围</div>` : '');
       } else {
-        list.innerHTML = `<div class="combo-item combo-empty" role="presentation">${esc(conv(`没找到「${input.value.trim()}」`))}${opts.kind === 'search' ? esc(conv('；回车按文字搜')) : ''}</div>`;
+        list.innerHTML = `<div class="combo-item combo-empty" role="presentation">没找到「${esc(input.value.trim())}」${opts.kind === 'search' ? '；回车按文字搜' : ''}</div>`;
       }
       list.hidden = false;
       input.setAttribute('aria-expanded', 'true');
@@ -2266,7 +2118,7 @@
       let sz = fxSym((mentioned ? 12 : symbolSize(c.id)) * (hl ? 1.15 : 1));
       if (hl && smallHl) sz = Math.max(sz, 11);        // 高亮节点屏幕直径下限 11px（密集图里也能一眼找到）
       return {
-        id: c.id, name: locked ? '🔒' : conv(c.name), value: conv(c.title),
+        id: c.id, name: locked ? '🔒' : c.name, value: c.title,
         category: categoryOf(c),
         symbol: c.gender === 'f' ? 'roundRect' : 'circle',
         symbolSize: sz,
@@ -2389,11 +2241,7 @@
         if (!bandVisible.has(g)) continue;
         data.push({
           id: `__gen_${g}`,
-          /* v0.220：bandLabels 里存的是**原文**（见 groupLabelRawOf 的注释）
-             *   ⇒ 在这里按当前用字转一次。原来直接拿缓存里的值，
-             *   于是「首屏时缓存填的是简体」在切了繁体后**永远是简体**——
-             *   实测线上三国：图例与 categories 都转对了，就这 6 条分组图注不动。 */
-          name: conv(state.bandLabels.get(g) || String(g)),
+          name: state.bandLabels.get(g) || String(g),
           symbol: 'circle',
           symbolSize: 3,
           x: bandX(band),
@@ -2481,17 +2329,17 @@
             const [first, second] = orderPair(rel.from, rel.to);
             const vis = visibleRelEvents(rel);
             const hidden = (rel.events || []).length - vis.length;
-            const evs = vis.map((e) => `· ${escBold(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(conv(e.chapter))}）</span>` : ''}`).join('<br>');
-            return `<b>${esc(charName(first))} — ${esc(conv(rel.type))} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
-              (hidden ? `<br><span style="color:${muted}">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</span>` : '');
+            const evs = vis.map((e) => `· ${escBold(e.text)}${e.chapter ? `<span style="color:${muted}">（${esc(e.chapter)}）</span>` : ''}`).join('<br>');
+            return `<b>${esc(charName(first))} — ${esc(rel.type)} — ${esc(charName(second))}</b>${kinBadge(rel)}${isDerived(rel) ? ' <span class="badge">推导</span>' : ''}${periodText(rel) ? ` <span style="color:${muted}">（${periodText(rel)}）</span>` : ''}<br>${evs}` +
+              (hidden ? `<br><span style="color:${muted}">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</span>` : '');
           }
           const c = state.byId.get(p.data.id);
           if (!c) return '';
           if (charLocked(c)) {
             return `🔒 <b>剧透保护中</b><br><span style="color:${muted}">这个${T().char}在第 ${charCh(c)} 章才${T().charVerb}；你现在读到第 ${state.progress} 章。读完再来看。</span>`;
           }
-          return `<b>${esc(conv(c.name))}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
-            `<span style="color:${muted}">${genPrefix(c)}${esc(conv(c.title))}</span><br>${escBold(c.desc)}<br>` +
+          return `<b>${esc(c.name)}</b>${c.aliases && c.aliases.length ? `（${esc(c.aliases.join('，'))}）` : ''}<br>` +
+            `<span style="color:${muted}">${genPrefix(c)}${esc(c.title)}</span><br>${escBold(c.desc)}<br>` +
             `<span style="color:${muted}">${T().fate}：${fateLocked(c) ? '🔒 在你读到的进度之后' : escBold(c.fate)}</span>` +
             (isMentioned(c) ? `<br><span style="color:${muted}">（仅被提及 · 未${T().charVerb}；第 ${charCh(c)} 章）</span>` : '');
         },
@@ -2525,7 +2373,7 @@
          * ⚠ `opts.keepView` 因此不再影响视图处理（调用点保留，以免大面积改签名）。 */
         zoom: state.zoom || 1,
         center: state.viewCenter || undefined,
-        categories: b.factions.map((f) => ({ name: conv(f.name), itemStyle: { color: f.color } })),
+        categories: b.factions.map((f) => ({ name: f.name, itemStyle: { color: f.color } })),
         // v92：只有 layout==='force' 时才会用到（聚焦态、还没冻结时的老路径）。
         // 「自由」视图走的是我们自己的 forceLayout()，这里用不到。
         force: { repulsion: 900, gravity: 0.04, edgeLength: [80, 190], friction: 0.6, initLayout: 'circular' },
@@ -2877,23 +2725,23 @@
     const fb = document.getElementById('fullscreen-btn');
     if (fb) {
       fb.setAttribute('aria-pressed', String(fs));
-      fb.textContent = conv(fs ? '⛶ 退出全屏' : '⛶ 全屏');
-      fb.title = conv(fs ? '退出全屏（Esc）' : '全屏展示（Esc 退出）');
+      fb.textContent = fs ? '⛶ 退出全屏' : '⛶ 全屏';
+      fb.title = fs ? '退出全屏（Esc）' : '全屏展示（Esc 退出）';
     }
     // 这两个只在全屏里有意义（全屏外右栏本来就一直显示、工具条本来就在文档流里）
     const sb = document.getElementById('side-btn');
     if (sb) {
       sb.hidden = !fs;
       sb.setAttribute('aria-expanded', String(fs && !state.sideHidden));
-      sb.textContent = conv(state.sideHidden ? '▤ 右栏' : '▥ 右栏');
-      sb.title = conv(state.sideHidden ? '展开右栏' : '收起右栏');
+      sb.textContent = state.sideHidden ? '▤ 右栏' : '▥ 右栏';
+      sb.title = state.sideHidden ? '展开右栏' : '收起右栏';
     }
     const tb = document.getElementById('tools-btn');
     if (tb) {
       tb.hidden = !fs;
       tb.setAttribute('aria-expanded', String(fs && !state.headCollapsed));
-      tb.textContent = conv(state.headCollapsed ? '⚙ 工具' : '⚙ 收起');
-      tb.title = conv(state.headCollapsed ? '展开工具条（搜索 / 视图 / 过滤）' : '收起工具条');
+      tb.textContent = state.headCollapsed ? '⚙ 工具' : '⚙ 收起';
+      tb.title = state.headCollapsed ? '展开工具条（搜索 / 视图 / 过滤）' : '收起工具条';
     }
   }
 
@@ -3051,7 +2899,7 @@
       const cy = isH ? 0 : mainAt;
       state.bands.set(g, mainAt);          // band 就是主轴坐标：gen-h 是 x、gen-v 是 y
       const sample = byGen.get(g)[0];
-      state.bandLabels.set(g, sample ? groupLabelRawOf(sample) : String(g));
+      state.bandLabels.set(g, sample ? groupLabelOf(sample) : String(g));
       const list = byGen.get(g);
       /* 块内网格。人数少的组用更少的列，并**在自己的中心上居中**
        * （原来 gen-v 是把所有人铺满整条 crossLen，窄视口下包围盒被拉成极扁的一条）。 */
@@ -3073,8 +2921,8 @@
     const fac = T().faction;
     const bh = document.querySelector('.seg[data-view="gen-h"]');
     const bv = document.querySelector('.seg[data-view="gen-v"]');
-    if (bh) { bh.textContent = conv(isGen ? '代际·横' : '分组·横'); bh.title = conv(isGen ? '按代际分列，从左到右' : `按${fac}分组分列，从左到右`); }
-    if (bv) { bv.textContent = conv(isGen ? '代际·纵' : '分组·纵'); bv.title = conv(isGen ? '按代际分行，从上到下' : `按${fac}分组分行，从上到下`); }
+    if (bh) { bh.textContent = isGen ? '代际·横' : '分组·横'; bh.title = isGen ? '按代际分列，从左到右' : `按${fac}分组分列，从左到右`; }
+    if (bv) { bv.textContent = isGen ? '代际·纵' : '分组·纵'; bv.title = isGen ? '按代际分行，从上到下' : `按${fac}分组分行，从上到下`; }
     document.querySelectorAll('.seg').forEach((btn) => btn.classList.toggle('active', btn.dataset.view === state.view));
   }
 
@@ -3606,20 +3454,16 @@
     const total = state.book.characters.length;
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const t = T();
-    /* v0.220：`text` 里混着已转换的 `t.*` 词条与简体字面量（「显示」）⇒ 用 convFill，
-     *   先转模板再填词条。原先把整串丢给 `conv()` 会把 `t.charN` 再转一遍（不幂等）。 */
-    let text = shown >= total
-      ? convFill('{total} {charN}', { total: String(total), charN: esc(t.charN) })
-      : convFill('显示 {shown} / {total} {charN}', { shown: String(shown), total: String(total), charN: esc(t.charN) });
+    let text = shown >= total ? `${total} ${t.charN}` : `显示 ${shown} / ${total} ${t.charN}`;
     // 关系数也报一下：过滤/剧透/折叠挡住多少条，一眼能看出来
     const rels = state.book.relations;
     const shownRels = rels.filter((r) =>
       state.byId.has(r.from) && state.byId.has(r.to) && !relLocked(r) && relVisible(r) && passEdgeFilter(r) && relVisibleAt(r)
       && !isCharHidden(state.byId.get(r.from)) && !isCharHidden(state.byId.get(r.to))
       && passSizeFilter(r.from) && passSizeFilter(r.to) && passFocus(r.from) && passFocus(r.to)).length;
-    if (shownRels < rels.length) text += `${t.rel} ${shownRels} / ${rels.length}`;
+    if (shownRels < rels.length) text += ` · ${t.rel} ${shownRels} / ${rels.length}`;
     const n = asOf();
-    el.textContent = (n !== null ? convFill('🕰 第 {n} 章 · ', { n: String(n) }) : '') + text;
+    el.textContent = (n !== null ? `🕰 第 ${n} 章 · ` : '') + text;
     updateAria();
   }
   function renderFocusBar() {
@@ -3629,7 +3473,7 @@
     const c = state.byId.get(state.focus.id) || { name: state.focus.id };
     const n = (focusSet() || new Set()).size;
     bar.hidden = false;
-    bar.innerHTML = `🎯 聚焦「${esc(conv(c.name))}」${esc(conv(`· ${state.focus.depth} 跳以内 · `))}${n} ${T().charN}
+    bar.innerHTML = `🎯 聚焦「${esc(c.name)}」· ${state.focus.depth} 跳以内 · ${n} ${T().charN}
       <button class="ghost tiny" type="button" data-focus-nav="dec">− 跳</button>
       <button class="ghost tiny" type="button" data-focus-nav="inc">＋ 跳</button>
       <button class="ghost tiny" type="button" data-focus-exit="1">看全部</button>`;
@@ -3911,7 +3755,7 @@
            <button class="ghost tiny" type="button" data-lock-depth="inc" ${lock.depth >= LOCK_DEPTH_MAX ? 'disabled' : ''} aria-label="扩大显示范围">＋跳</button>
          </span>`
       : '';
-    bar.innerHTML = `🔒 「${esc(lock.label)}」${esc(conv(`· 只看相关的${T().charMany}和线 `))}${depthCtl}
+    bar.innerHTML = `🔒 「${esc(lock.label)}」· 只看相关的${T().charMany}和线 ${depthCtl}
       <span class="lock-hint">「重置」或右栏${T().char}名后点「清除」可解除</span>`;
     stackBars();
   }
@@ -4173,25 +4017,15 @@
     setTimeout(() => { el.textContent = msg; }, 40);   // 先清空，重复内容也会被念
   }
   function graphAriaLabel() {
-    /* v0.219：整句是「`T()` 词条 + 数据 + 简体连接词」三样混排，读屏用户听到的
-     *  就是这句 —— 它一样都不走 escBold/unbold。改成一张模板 + `convFill`：
-     *  连接词由 convFill 转，词条与数据（`conv`/`T()` 给的）**已经是繁体**，
-     *  作为占位值填回去。反过来（先填后转）会把词条转两次。 */
     const t = T();
-    const V = { ...t };
-    if (!state.book) return convFill('{char}{rel}网络图（加载中）', V);
+    if (!state.book) return `${t.char}${t.rel}网络图（加载中）`;
     const shown = state.book.characters.filter((c) => !isCharHidden(c) && charVisibleAt(c) && passSizeFilter(c.id) && passFocus(c.id)).length;
     const cur = state.kbCursor ? state.byId.get(state.kbCursor) : null;
     const n = asOf();
-    const shown2 = String(shown);
-    const all2 = String(state.book.characters.length);
-    const tpl = `《${'{title}'}》${'{char}'}${'{rel}'}图：显示${'{shown}'} / ${'{all}'} ${'{charN}'}`;
-    return convFill(tpl, { ...V, title: titleOf(), shown: shown2, all: all2 })
-      + (n !== null ? convFill('，时间旅行在第 {n} 章', { n: String(n) }) : '')
-      + (state.progress !== null ? convFill('，剧透保护读到第 {p} 章', { p: String(state.progress) }) : '')
-      + (cur ? convFill('；当前选中 {name}（{rel} {n} 条，第 {ch} 章{verb}）', {
-        ...V, name: conv(cur.name), n: String((state.adj.get(cur.id) || []).length), ch: String(charCh(cur)),
-      }) : '')
+    return `《${titleOf()}》${t.char}${t.rel}图：显示 ${shown} / ${state.book.characters.length} ${t.charN}`
+      + (n !== null ? `，时间旅行在第 ${n} 章` : '')
+      + (state.progress !== null ? `，剧透保护读到第 ${state.progress} 章` : '')
+      + (cur ? `；当前选中 ${cur.name}（${t.rel} ${(state.adj.get(cur.id) || []).length} 条，第 ${charCh(cur)} 章${t.charVerb}）` : '')
       + TW('ariaKbTail', t.char);
   }
   function updateAria() {
@@ -4212,7 +4046,7 @@
     selectCharacter(id, false);                 // 面板 + 高亮（读屏读的是面板里的文字）；方向键浏览不闪
     updateAria();
     const c = state.byId.get(id);
-    if (c) announce(`${conv(c.name)}，${T().rel} ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章${T().charVerb}${c.title ? `，${c.title}` : ''}`);
+    if (c) announce(`${c.name}，${T().rel} ${(state.adj.get(id) || []).length} 条，第 ${charCh(c)} 章${T().charVerb}${c.title ? `，${c.title}` : ''}`);
   }
   /** 方向键在人物之间移动：选"最正对该方向、最近"的那个 */
   function moveCursor(key) {
@@ -4311,7 +4145,6 @@
   /* ══ 区域 33/68：右栏：人物 / 关系 / 事件 ══ */
 
   function selectCharacter(id, nav = true) {
-    state.lastSel = { kind: 'c', id };   // v0.219：切简/繁时按这个把面板重画一遍
     const c = state.byId.get(id);
     if (!c) return;
     if (charLocked(c)) { renderLockedPanel('character', c); return; }
@@ -4337,7 +4170,7 @@
          * 不加这一句的话：setHighlight 已经把锁丢了，而调用方（chooseCharById）接着会按
          * 「这个人自己的一跳邻域」重新上锁 —— 那个集合**不看地点筛选**，于是图上会冒出
          * 一堆和这个地点无关的人，比改之前还乱。所以这里按地点范围原地补一把（grow=false）。 */
-        lockFromHighlight(`${conv(c.name)}（${placeName(state.placeFilter) || T().placeLocal}）`, 'place', [...nodes], false);
+        lockFromHighlight(`${c.name}（${placeName(state.placeFilter) || T().placeLocal}）`, 'place', [...nodes], false);
         return;
       }
     }
@@ -4356,7 +4189,6 @@
   }
 
   function selectRelation(rel, nav = true, lock = true) {
-    state.lastSel = { kind: 'r', rel };   // v0.219：同 selectCharacter，切简/繁时重画
     const nodes = new Set([rel.from, rel.to]);
     const edges = new Set([edgeKey(rel.from, rel.to)]);
     state.panelKind = 'rel';
@@ -4420,7 +4252,6 @@
   }
 
   function selectEvent(id, lock = true) {
-    state.lastSel = { kind: 'e', id };   // v0.219：同 selectCharacter，切简/繁时重画
     const ev = state.book.events.find((e) => e.id === id);
     if (!ev) return;
     if (eventLocked(ev)) { renderLockedPanel('event', ev); return; }
@@ -4600,7 +4431,7 @@
     if (!p) { hidePlaceTip(); return; }
     const tip = placeTip();
     tip.id = 'place-tip';
-    tip.innerHTML = `<div class="pt-name">📍 ${esc(conv(p.name))}</div>
+    tip.innerHTML = `<div class="pt-name">📍 ${esc(p.name)}</div>
       <div class="pt-meta">${esc(p.type || T().place)}${p.firstCh != null ? ` · 首次出现：第 ${p.firstCh} 章` : ''}${p.aliases && p.aliases.length ? ` · 又称 ${esc(p.aliases.join('、'))}` : ''}</div>
       ${p.desc ? `<div class="pt-desc">${escBold(p.desc)}</div>` : '<div class="pt-desc" style="color:var(--muted)">（暂无介绍）</div>'}`;
     tip.hidden = false;
@@ -4626,7 +4457,7 @@
   function placeRef(id, { filter = false, cls = '', suffix = '' } = {}) {
     if (!id) return '';
     const p = placeOf(id);
-    const name = esc(conv(p ? p.name : id));
+    const name = esc(p ? p.name : id);
     const inner = `${filter ? '' : '📍'}${name}${suffix}`;
     return filter
       ? `<button type="button" class="${cls || 'linkbtn'}" data-place-filter="${esc(id)}" data-place-id="${esc(id)}">${inner}</button>`
@@ -4660,12 +4491,12 @@
     const p = placeOf(id);
     if (!p) return;
     panel().innerHTML = `
-      <div class="card-title">📍 ${esc(conv(p.name))}</div>
+      <div class="card-title">📍 ${esc(p.name)}</div>
       <div class="card-sub">${esc(p.type || T().place)} · 首次出现：第 ${p.firstCh ?? '?'} 章</div>
       <p class="card-desc">${escBold(p.desc || '')}</p>
       <h3 style="margin-top:12px;font-size:14px">${T().placeEventsH}（${evs.length}）</h3>
       ${evs.length ? foldSection({ key: `place:${id}`, n: 10, unit: '条', cls: 'rel-list', items: evs.map((e) => `<li class="rel">
-        <div class="rel-head">${esc(conv(e.name))} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
+        <div class="rel-head">${esc(e.name)} <span class="type">第 ${e.ch ?? '?'} 章</span></div>
         <div class="rel-event">· ${escBold(e.summary)}</div>
       </li>`) }) : '<ul class="rel-list"><li class="hint">暂无（或都在你读到的进度之后）</li></ul>'}
       <p style="margin-top:10px"><button class="ghost tiny" type="button" data-place-filter="">${T().placeAll}</button></p>`;
@@ -4722,7 +4553,7 @@
     const lifeEvs = state.book.events.filter((e) => (e.chars || []).includes(c.id)).sort((a, b) => (a.ch || 0) - (b.ch || 0));
     const lifeShown = lifeEvs.filter((e) => !eventLocked(e));
     const lifeItems = lifeShown.map((e) => `
-        <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(conv(e.name))}</button>
+        <li><button class="linkbtn" type="button" data-event="${esc(e.id)}"><span class="ch">第 ${e.ch ?? '?'} 章</span>${esc(e.name)}</button>
           <div class="rel-event">· ${escBold(e.summary)}${e.place ? ` ${placeRef(e.place, { filter: true })}` : ''}</div>
           ${e.quote ? `<div class="quote">「${esc(e.quote)}」</div>` : ''}
         </li>`);
@@ -4735,31 +4566,31 @@
       const vis = visibleRelEvents(r);
       const hidden = (r.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
-        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(conv(r.type))} —</span>${kinBadge(r)}${isDerived(r) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
-          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="${esc(conv(`在图上只高亮这一条${T().rel}`))}">${esc(conv('定位这条线'))}</button>
+        <div class="rel-head">${charLink(other)} <span class="type">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''}${periodText(r) ? ` <span class="badge">${esc(periodText(r))}</span>` : ''}
+          <button class="ghost tiny" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}" title="在图上只高亮这一条${T().rel}">定位这条线</button>
         </div>
-        ${evs}${hidden ? `<div class="rel-event">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
       </li>`;
     });
 
     panel().innerHTML = `
-      <div class="card-title">${esc(conv(c.name))}</div>
-      <div class="card-sub">${genPrefix(c)}${esc(conv(c.title))}</div>
+      <div class="card-title">${esc(c.name)}</div>
+      <div class="card-sub">${genPrefix(c)}${esc(c.title)}</div>
       ${c.note ? `<div class="note">⚠️ ${escBold(c.note)}</div>` : ''}
       <div class="badges">
-        ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(conv(faction.name))}</span>` : ''}
+        ${faction ? `<span class="badge faction" style="background:${esc(faction.color)}">${esc(faction.name)}</span>` : ''}
         ${isTheoryBook() ? '' : `<span class="badge">${c.gender === 'f' ? SEX_SVG.f : SEX_SVG.m}</span>`}
         ${isMentioned(c) ? '<span class="badge">仅被提及</span>' : ''}
-        ${(c.aliases || []).map((a) => `<span class="badge">${esc(conv('别名：'))}${esc(conv(a))}</span>`).join('')}
-        ${(c.altNames || []).map((a) => `<span class="badge">${esc(conv('又译：'))}${esc(conv(a))}</span>`).join('')}
-        <span class="badge">${esc(T().rel)} ${esc(conv(`${allRels.length} 条`))}</span>
+        ${(c.aliases || []).map((a) => `<span class="badge">别名：${esc(a)}</span>`).join('')}
+        ${(c.altNames || []).map((a) => `<span class="badge">又译：${esc(a)}</span>`).join('')}
+        <span class="badge">${T().rel} ${allRels.length} 条</span>
       </div>
       <p class="card-desc">${escBold(c.desc)}</p>
       ${factionHist.length > 1 ? `<p class="card-sub">${T().faction}变化：${factionHist.map((s) => `${esc((state.book.factions.find((f) => f.key === s.faction) || {}).name || s.faction)}（第 ${s.fromCh} 回起${s.label ? '，' + esc(s.label) : ''}）`).join(' → ')}${state.progress === null ? '' : `　<span class="hint">（按你读到的第 ${state.progress} 回显示：现在是「${esc(factionTextOf(c))}」）</span>`}</p>` : ''}
       <p class="card-fate"><b>${T().fate}：</b>${fateLocked(c) ? '🔒 在你读到的进度之后（读完再来看）' : escBold(c.fate)}</p>
-      <p class="hint" style="margin-top:8px">${esc(conv(`${T().charMany}太多看不清？只看这个${T().char}的`))}${esc(T().rel)}${esc(conv('网：'))}
+      <p class="hint" style="margin-top:8px">${T().charMany}太多看不清？只看这个${T().char}的${T().rel}网：
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="1">🎯 1 跳</button>
         <button class="ghost tiny" type="button" data-focus-node="${esc(c.id)}" data-focus-depth="2">🎯 2 跳</button>
         <button class="ghost tiny" type="button" data-char-card="${esc(c.id)}" title="导出这个${T().char}的 PNG 卡片：身份、${T().fate}、${T().keyRels}与依据${T().event}">🖼 ${T().char}卡</button>
@@ -4779,9 +4610,9 @@
         <button class="ghost tiny" type="button" data-edge-reset="1">显示全部</button></p>` : ''}
       ${relItems.length ? foldSection({ key: `rel:${c.id}`, n: 6, unit: '条', cls: 'rel-list', items: relItems }) : '<ul class="rel-list"><li class="hint">暂无记录</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">${esc(conv(`让 AI 讲讲这个${T().char} —— `))}<b>${esc(conv('只讲你读到的部分'))}</b>${esc(conv('，不上传原著正文'))}</p>
-        <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">${esc(conv(`🤖 讲讲这个${T().char}（不剧透）`))}</button>
-        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">${esc(conv('⚙️ AI 设置'))}</button>${esc(conv(' · 填 API Key、选模型'))}</p>
+        <p class="ai-entry-lead">让 AI 讲讲这个${T().char} —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <button class="primary ai-btn" type="button" data-ai="char" data-id="${esc(c.id)}">🤖 讲讲这个${T().char}（不剧透）</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
       </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
@@ -4790,10 +4621,10 @@
   function renderRelationPanel(r) {
     const [first, second] = orderPair(r.from, r.to);
     const evItems = (r.events || []).map((e) =>
-      `<div class="rel-event">· ${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`);
+      `<div class="rel-event">· ${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`);
     panel().innerHTML = `
-      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(conv(r.type))} —</span>${kinBadge(r)}${isDerived(r) ? ` <span class="badge">${esc(conv('推导'))}</span>` : ''} ${charLink(second)}</div>
-      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${esc(conv(KIN_LABEL[r.kin]))}：${esc(conv(KIN_HINT[r.kin] || ''))}）` : ''}</p>
+      <div class="card-title">${charLink(first)} <span style="color:var(--muted);font-weight:400">— ${esc(r.type)} —</span>${kinBadge(r)}${isDerived(r) ? ' <span class="badge">推导</span>' : ''} ${charLink(second)}</div>
+      <p class="card-sub">${isDerived(r) ? '这是<b>推导出来的亲属关系</b>（原文没有直接互动，由亲子关系推出来）' : `定义这段${T().rel}的${T().event}`}${r.kin ? `（${KIN_LABEL[r.kin]}：${KIN_HINT[r.kin] || ''}）` : ''}</p>
       ${periodText(r) ? `<p class="card-sub">${T().rel}时段：<b>${esc(periodText(r))}</b>${state.timeTravel ? `　<span class="hint">（图谱现在拨在第 ${state.chapter} 章）</span>` : ''}</p>` : ''}
       ${evItems.length ? foldSection({ key: `relev:${first}|${second}`, n: 10, unit: '条', cls: 'rel-events', wrap: 'div', bare: true, items: evItems }) : '<p class="hint">暂无记录</p>'}
       <p class="hint" style="margin-top:10px">提示：在图上点另一个节点可以顺着${T().rel}链继续走。</p>`;
@@ -4859,10 +4690,10 @@
   function runPath() {
     const a = pathCharId($('#path-a')), b = pathCharId($('#path-b'));
     const hint = $('#path-hint');
-    if (!a || !b) { hint.textContent = conv('请选择两个人'); return; }
+    if (!a || !b) { hint.textContent = '请选择两个人'; return; }
     const steps = bfs(a, b);
-    if (!steps) { hint.textContent = conv('在图里找不到通路'); return; }
-    hint.textContent = conv(`最短 ${steps.length} 跳`);
+    if (!steps) { hint.textContent = '在图里找不到通路'; return; }
+    hint.textContent = `最短 ${steps.length} 跳`;
     const nodes = new Set([a, ...steps.map((s) => s.to)]);
     const edges = new Set(steps.map((s) => edgeKey(s.from, s.to)));
     setHighlight(nodes, edges, null, null);
@@ -4873,10 +4704,10 @@
       const vis = visibleRelEvents(s.rel);
       const hidden = (s.rel.events || []).length - vis.length;
       const evs = vis.map((e) =>
-        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(conv(e.chapter))}</span>` : ''}</div>`).join('');
+        `<div class="rel-event">· ${e.place ? `${placeRef(e.place, { cls: 'chapter' })} ` : ''}${escBold(e.text)}${e.chapter ? `<span class="chapter">${esc(e.chapter)}</span>` : ''}</div>`).join('');
       return `<li class="rel">
         <div class="rel-head"><span class="idx">${i + 1}</span> ${charLink(s.from)} <span class="type">— ${esc(s.rel.type)} —</span>${kinBadge(s.rel)} ${charLink(s.to)}</div>
-        ${evs}${hidden ? `<div class="rel-event">${esc(convFill('🔒 还有 {n} 条{event}在你读到的进度之后', { n: String(hidden), event: T().event }))}</div>` : ''}
+        ${evs}${hidden ? `<div class="rel-event">🔒 还有 ${hidden} 条${T().event}在你读到的进度之后</div>` : ''}
       </li>`;
     });
     panel().innerHTML = `
@@ -4884,9 +4715,9 @@
       <p class="card-sub">共 ${steps.length} 跳 · 每一跳的「关系」与依据事件</p>
       ${stepItems.length ? foldSection({ key: `path:${a}|${b}`, n: 10, unit: '跳', cls: 'path-steps', items: stepItems }) : '<ul class="path-steps"><li class="hint">同一个人</li></ul>'}
       <div class="ai-entry">
-        <p class="ai-entry-lead">${esc(conv(`让 AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— `))}<b>${esc(conv('只讲你读到的部分'))}</b>${esc(conv('，不上传原著正文'))}</p>
-        <button class="primary ai-btn" type="button" data-ai="chain">${esc(conv('🤖 讲一遍（不剧透）'))}</button>
-        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">${esc(conv('⚙️ AI 设置'))}</button>${esc(conv(' · 填 API Key、选模型'))}</p>
+        <p class="ai-entry-lead">让 AI 把这 ${steps.length} 跳${T().rel}连起来讲 —— <b>只讲你读到的部分</b>，不上传原著正文</p>
+        <button class="primary ai-btn" type="button" data-ai="chain">🤖 讲一遍（不剧透）</button>
+        <p class="ai-entry-foot"><button class="ai-entry-settings linkbtn" type="button" data-ai-settings="1">⚙️ AI 设置</button> · 填 API Key、选模型</p>
       </div>
       <div id="ai-answer" class="ai-answer" hidden></div>`;
     bindGoto(panel());
@@ -4909,14 +4740,14 @@
         .sort((a, b) => a.order - b.order);
       if (!evs.length) return '';
       return `<div class="phase">
-        <div class="phase-title">${esc(conv(p.name))}</div>
+        <div class="phase-title">${esc(p.name)}</div>
         ${evs.map((e) => eventLocked(e)
-          ? `<button type="button" class="event-chip locked" disabled title="${esc(conv(`剧透保护：第 ${e.ch} 章的${T().event}`))}">
-               <span class="ev-name">${esc(conv(`🔒 第 ${e.ch} 章的事件`))}</span>
-               <span class="ev-sum">${esc(conv('剧透保护中 · 读到再解锁'))}</span>
+          ? `<button type="button" class="event-chip locked" disabled title="剧透保护：第 ${e.ch} 章的${T().event}">
+               <span class="ev-name">🔒 第 ${e.ch} 章的事件</span>
+               <span class="ev-sum">剧透保护中 · 读到再解锁</span>
              </button>`
           : `<button type="button" class="event-chip" data-event="${esc(e.id)}">
-               <span class="ev-name">${esc(conv(e.name))}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
+               <span class="ev-name">${esc(e.name)}${e.place ? ` ${placeRef(e.place, { cls: 'chapter' })}` : ''}</span>
                <span class="ev-sum" data-tip-full="${esc(unbold(e.summary))}">${escBold(e.summary)}</span>
              </button>`).join('')}
       </div>`;
@@ -4954,20 +4785,16 @@
     if (!annotationsReady()) return '';
     const g = Array.isArray(state.anno.global) ? state.anno.global : [];
     const mode = state.annoMode === 'global' ? 'global' : 'chapter';
-    /* v0.219：这一整个面板的字面量与条目标题都要转。
-     * ⚠ **不能**对返回的 HTML 整段 `conv()` —— `annoBody()` / `annoBasis()` 的输出
-     *   已经转过一次，而 conv **不幂等**，整段再转就等于转两次。
-     *   ⇒ 逐个出口转：字面量包 `conv()`，数据字段用 `esc(conv(x))`。 */
     const tabs = `
-      <div class="anno-tabs" role="tablist" aria-label="${esc(conv('拆书视角'))}">
-        <button type="button" role="tab" class="anno-tab${mode === 'chapter' ? ' active' : ''}" aria-selected="${mode === 'chapter'}" data-anno-mode="chapter">${esc(conv('本章拆解'))}</button>
-        <button type="button" role="tab" class="anno-tab${mode === 'global' ? ' active' : ''}" aria-selected="${mode === 'global'}" data-anno-mode="global">${esc(conv('全书拆解'))}${g.length ? `（${g.length}）` : ''}</button>
+      <div class="anno-tabs" role="tablist" aria-label="拆书视角">
+        <button type="button" role="tab" class="anno-tab${mode === 'chapter' ? ' active' : ''}" aria-selected="${mode === 'chapter'}" data-anno-mode="chapter">本章拆解</button>
+        <button type="button" role="tab" class="anno-tab${mode === 'global' ? ' active' : ''}" aria-selected="${mode === 'global'}" data-anno-mode="global">全书拆解${g.length ? `（${g.length}）` : ''}</button>
       </div>`;
 
     if (mode === 'global') {
-      if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">${esc(conv('这本书还没写全书层面的拆解。'))}</p></div>`;
+      if (!g.length) return `<div class="ch-sec anno-sec">${tabs}<p class="hint">这本书还没写全书层面的拆解。</p></div>`;
       return `<div class="ch-sec anno-sec">${tabs}
-        ${g.map((x) => `<div class="anno-item"><h4>${esc(conv(x.title))}</h4><p>${annoBody(x.body)}</p>${annoBasis(x)}</div>`).join('')}
+        ${g.map((x) => `<div class="anno-item"><h4>${esc(x.title)}</h4><p>${annoBody(x.body)}</p>${annoBasis(x)}</div>`).join('')}
       </div>`;
     }
 
@@ -4977,19 +4804,19 @@
     if (lockedCh(n)) {
       const cov0 = annoCoverage(total);
       return `<div class="ch-sec anno-sec">${tabs}
-        <p class="hint">${esc(conv(`已拆 ${cov0.written} / ${cov0.total} 章${cov0.written < cov0.total ? '（其余章节还没写，不是「无需拆解」）' : ''}`))}</p>
-        <p class="hint">${esc(conv('这一章还没解锁，拆书内容同样先锁起来。'))}</p></div>`;
+        <p class="hint">已拆 ${cov0.written} / ${cov0.total} 章${cov0.written < cov0.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>
+        <p class="hint">这一章还没解锁，拆书内容同样先锁起来。</p></div>`;
     }
     const cov = annoCoverage(total);
-    const head = `<p class="hint">${esc(conv(`已拆 ${cov.written} / ${cov.total} 章${cov.written < cov.total ? '（其余章节还没写，不是「无需拆解」）' : ''}`))}</p>`;
+    const head = `<p class="hint">已拆 ${cov.written} / ${cov.total} 章${cov.written < cov.total ? '（其余章节还没写，不是「无需拆解」）' : ''}</p>`;
     const items = annoOfChapter(n);
     if (!items.length) {
       return `<div class="ch-sec anno-sec">${tabs}${head}
-        <p class="hint">${esc(conv(`第 ${n} 章的拆解还没写。全书已有 ${state.anno.items.length} 条。`))}</p></div>`;
+        <p class="hint">第 ${n} 章的拆解还没写。全书已有 ${state.anno.items.length} 条。</p></div>`;
     }
     return `<div class="ch-sec anno-sec">${tabs}${head}
       ${items.map((it) => `<div class="anno-item">
-        <h4>${esc(conv(it.title))}</h4>
+        <h4>${esc(it.title)}</h4>
         <p>${annoBody(it.body)}</p>
         ${annoRefs(it)}
         ${annoBasis(it)}
@@ -5034,9 +4861,8 @@
    *        但它在句子里是**名词短语**，多数位置比 id 更好读 ——
    *        「e-40-1 和 e-40-3 的同构」变成「曹操杀孔融全家 和 蔡夫人废长立幼 的同构」。
    *     id 本身仍然留在 `data-event` 上 —— 点击、核对、测试口径都没变。 */
-  /* v0.219：拆解正文是**数据散文**，原来只 `esc()` 不走 escBold —— 繁体态下整段简体。 */
   function annoBody(text) {
-    return esc(conv(String(text == null ? '' : text)))
+    return esc(String(text == null ? '' : text))
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       /* ⚠⚠⚠ 不能写死 id 形态。
        *   三国是 `e-1-3`、罪与罚是 `e1`、百年孤独是 `e01` —— 三种形态都真实存在。
@@ -5047,8 +4873,8 @@
       .replace(/e-?\d[\w-]*/g, (id) => {
         const e = state.book.events.find((x) => x.id === id);
         if (!e) return id; // 数据里没有就保持纯文本，不要造出一个点不动的按钮
-        const label = conv(eventShortName(e.name) || id);
-        const tip = `第 ${e.ch ?? '?'} 章《${conv(e.name)}》：${unbold(e.summary || '')}`;
+        const label = eventShortName(e.name) || id;
+        const tip = `第 ${e.ch ?? '?'} 章《${e.name}》：${unbold(e.summary || '')}`;
         return `<button class="anno-inline-ref" type="button" data-event="${esc(id)}"`
           + ` title="${esc(tip)}">${esc(label)}</button>`;
       });
@@ -5059,7 +4885,7 @@
     const b = String(it.basis || '');
     const inferred = /推断|整理/.test(b);
     const rest = b.replace(/^(整理者推断|原文依据)/, '').replace(/^[（(]/, '').replace(/[)）]$/, '').trim();
-    return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${esc(conv(inferred ? '整理者推断' : '原文依据'))}</span>${esc(conv(rest))}</p>`;
+    return `<p class="anno-basis${inferred ? ' inferred' : ''}"><span class="anno-tag">${inferred ? '整理者推断' : '原文依据'}</span>${esc(rest)}</p>`;
   }
 
   /** 引用的${事件} / ${人物}：可点回去逐条核对 —— 「不编造」在界面上的出口
@@ -5075,11 +4901,11 @@
     if (!evs.length && !chs.length) return '';
     const evHtml = evs.map((id) => {
       const e = state.book.events.find((x) => x.id === id);
-      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc(unbold([t.event, e.summary || e.name].join(' · ')))}">${t.eventIcon} ${esc(conv(e.name))}</button>` : '';
+      return e ? `<button class="anno-ref" type="button" data-event="${esc(id)}" title="${esc(unbold([t.event, e.summary || e.name].join(' · ')))}">${t.eventIcon} ${esc(e.name)}</button>` : '';
     }).join('');
     const chHtml = chs.map((id) => {
       const c = state.byId.get(id);
-      return c ? `<button class="anno-ref" type="button" data-goto="${esc(id)}" title="${esc([t.char, c.title].filter(Boolean).join(' · '))}">${t.charIcon} ${esc(conv(c.name))}</button>` : '';
+      return c ? `<button class="anno-ref" type="button" data-goto="${esc(id)}" title="${esc([t.char, c.title].filter(Boolean).join(' · '))}">${t.charIcon} ${esc(c.name)}</button>` : '';
     }).join('');
     return (evHtml || chHtml) ? `<p class="anno-refs">${evHtml}${chHtml}</p>` : '';
   }
@@ -5127,7 +4953,7 @@
     const ceil = timeCeiling();
     if (btn) {
       const n = asOf();
-      btn.textContent = conv(state.timeTravel ? `🕰 时间旅行：第 ${n} 章` : '🕰 时间旅行：关');
+      btn.textContent = state.timeTravel ? `🕰 时间旅行：第 ${n} 章` : '🕰 时间旅行：关';
       btn.classList.toggle('on', !!state.timeTravel);
     }
     if (slider) {
@@ -5138,7 +4964,7 @@
     }
     if (hint) {
       if (!state.timeTravel) hint.textContent = '';
-      else if (state.progress !== null && state.chapter > state.progress) hint.textContent = conv(`（剧透保护：图谱最多拨到第 ${state.progress} 章）`);
+      else if (state.progress !== null && state.chapter > state.progress) hint.textContent = `（剧透保护：图谱最多拨到第 ${state.progress} 章）`;
       else hint.textContent = `只画当时已发生的${T().rel}`;
     }
   }
@@ -5203,7 +5029,7 @@
     const n = Math.max(1, Math.min(total, state.chapter || 1));
     state.chapter = n;
     const title = document.getElementById('ch-title');
-    if (title) title.textContent = conv(`📖 第 ${n} 章`);
+    if (title) title.textContent = `📖 第 ${n} 章`;
     const sel = document.getElementById('ch-select');
     if (sel) {
       if (sel.options.length !== total) sel.innerHTML = Array.from({ length: total }, (_, i) => `<option value="${i + 1}">第 ${i + 1} 章</option>`).join('');
@@ -5222,20 +5048,20 @@
       const d = chapterDigest(n);
       const nd = chapterDigest(n + 1);
       const parts = [];
-      if (nd.charsNew.length) parts.push(esc(convFill('{n} 个新{char}', { n: String(nd.charsNew.length), char: esc(T().char) })));
-      if (nd.relsNew.length) parts.push(esc(convFill('{n} 条新{rel}', { n: String(nd.relsNew.length), rel: esc(T().rel) })));
+      if (nd.charsNew.length) parts.push(`${nd.charsNew.length} 个新${T().char}`);
+      if (nd.relsNew.length) parts.push(`${nd.relsNew.length} 条新${T().rel}`);
       if (nd.events.length) parts.push(`${nd.events.length} ${T().eventN}`);
       const teaser = n < total
-        ? `<span>${esc(convFill('下一章（第 {n} 章）：{body}', { n: String(n + 1), body: parts.length ? esc(convFill('将解锁 {x}', { x: parts.join(' · ') })) : esc(conv('没有新的整理内容')) }))}</span>`
-        : `<span><b>${esc(conv('已是最后一章'))}</b></span>`;
+        ? `<span><b>下一章</b>（第 ${n + 1} 章）：${parts.length ? '将解锁 ' + parts.join(' · ') : '没有新的整理内容'}</span>`
+        : '<span><b>已是最后一章</b></span>';
       const mark = state.progress === n
-        ? `<span class="hint">${esc(convFill('✓ 剧透保护：正读到第 {n} 章', { n: String(n) }))}</span>`
-        : `<button class="primary tiny" type="button" data-ch-mark="${n}">${esc(state.progress === null ? conv('🔒 从这一章开始防剧透') : convFill('✓ 我读到第 {n} 章了', { n: String(n) }))}</button>`;
+        ? `<span class="hint">✓ 剧透保护：正读到第 ${n} 章</span>`
+        : `<button class="primary tiny" type="button" data-ch-mark="${n}">${state.progress === null ? '🔒 从这一章开始防剧透' : `✓ 我读到第 ${n} 章了`}</button>`;
       body.innerHTML = `
         <p class="card-sub">${TW('chHead', d.charsHere.length, d.relsNew.length, d.events.length, d.places.length)}</p>
-        ${d.charsNew.length ? `<div class="ch-sec"><h4>${T().secNewChar}</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(conv(c.name))}</button>`) })}</div>` : ''}
-        ${d.relsNew.length ? `<div class="ch-sec"><h4>${T().secNewRels}（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(conv(r.type))} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
-        ${d.events.length ? `<div class="ch-sec"><h4>${T().secEvents}（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(conv(e.name))}</button></li>`).join('')}</ul></div>` : ''}
+        ${d.charsNew.length ? `<div class="ch-sec"><h4>${T().secNewChar}</h4>${foldSection({ key: `newchars:${n}`, n: 16, unit: '个', cls: 'ch-chips', wrap: 'div', items: d.charsNew.map((c) => `<button class="ch-chip" type="button" data-goto="${esc(c.id)}">${esc(c.name)}</button>`) })}</div>` : ''}
+        ${d.relsNew.length ? `<div class="ch-sec"><h4>${T().secNewRels}（${d.relsNew.length}）</h4>${foldSection({ key: `chrels:${n}`, n: 10, unit: '条', cls: 'ch-list', items: d.relsNew.map((r) => `<li data-tip-full="${esc(`${charName(r.from)} — ${r.type} — ${charName(r.to)}`)}"><button class="linkbtn" type="button" data-focus-rel="${esc(r.from)}|${esc(r.to)}">${esc(charName(r.from))} — ${esc(r.type)} — ${esc(charName(r.to))}</button></li>`) })}</div>` : ''}
+        ${d.events.length ? `<div class="ch-sec"><h4>${T().secEvents}（${d.events.length}）</h4><ul class="ch-list">${d.events.map((e) => `<li><button class="linkbtn" type="button" data-event="${esc(e.id)}">${esc(e.name)}</button></li>`).join('')}</ul></div>` : ''}
         ${d.places.length ? `<div class="ch-sec"><h4>${T().secPlaces}</h4><div class="ch-chips">${d.places.map((id) => `${placeRef(id, { filter: true, cls: 'ch-chip', suffix: d.placesNew.includes(id) ? ' ✨' : '' })}`).join('')}</div></div>` : ''}
         ${renderAnnotations(n, total)}
         <div class="ch-teaser">${teaser}</div>
@@ -5349,7 +5175,7 @@
     html = html.replace(/\s*<link rel="apple-touch-icon"[^>]*>/, '');
     html = html.replace(/<img class="logo"[^>]*>/, () => `<img class="logo" alt="书脉" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(logo)}">`);
     html = html.replace(/\s*<a class="icon-btn" href="editor\.html"[\s\S]*?<\/a>/, '');
-    html = html.replace(/<a class="ghost tiny" href="editor\.html">打开编辑器<\/a>/, '<span class="hint">（单文件版不含编辑器；在线版可以自己整理一本书）</span>');
+    html = html.replace(/<a class="ghost tiny" href="editor\.html">打开编辑器<\/a>/, '<span class="hint">（单文件版不含编辑功能）</span>');
     // `<\/script>` 是必要的转义（不是无用转义）：单文件导出把 app.js 原文内联进 HTML 的
     // <script> 块，字面量 `</script>` 会让浏览器提前截断脚本。
     // eslint-disable-next-line no-useless-escape
@@ -5644,8 +5470,8 @@
     ctx.fillStyle = muted; ctx.font = font(19);
     /* v0.208：性别徽章对理论类**整条不画** —— 概念没有性别，`c.gender` 全缺 ⇒
      *   原来的 `c.gender === 'f' ? '♀ 女' : '♂ 男'` 会把每个概念都标成男性。 */
-    const badges = [conv(f.name || '其他'), isTheoryBook() ? '' : (c.gender === 'f' ? '♀ 女' : '♂ 男'),
-      state.groupMode === 'generation' ? genText(c.generation) : '', conv(c.title || ''),
+    const badges = [f.name || '其他', isTheoryBook() ? '' : (c.gender === 'f' ? '♀ 女' : '♂ 男'),
+      state.groupMode === 'generation' ? genText(c.generation) : '', c.title || '',
       `${T().rel} ${(state.adj.get(c.id) || []).length} 条`].filter(Boolean).join(' · ');
     ctx.fillText(badges, L, y + 30);
     y += 66;
@@ -5671,7 +5497,7 @@
       ctx.fillText(otherName, L, y);
       const w = ctx.measureText(otherName).width;
       ctx.fillStyle = muted; ctx.font = font(19);
-      ctx.fillText(`— ${conv(r.type)} —`, L + w + 8, y);
+      ctx.fillText(`— ${r.type} —`, L + w + 8, y);
       // 第二行：一条依据事件（小字、单行省略）
       const ev = (visibleRelEvents(r)[0] || {});
       ctx.font = font(17);
@@ -5738,7 +5564,7 @@
     if (model) model.value = cfg.model;
     if (key) key.value = cfg.key;
     const hint = document.getElementById('ai-hint');
-    if (hint) hint.textContent = conv(msg || 'DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。');
+    if (hint) hint.textContent = msg || 'DeepSeek 官方端点允许浏览器直连；换成别的端点若报 CORS，就用编辑器里的命令行方式。';
     modal.hidden = false;
   }
   function saveAiConfig() {
@@ -5768,7 +5594,7 @@
     return steps.map((s, i) => {
       const evs = visibleRelEvents(s.rel).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
       const period = periodText(s.rel) ? `（${T().rel}时段：${periodText(s.rel)}）` : '';
-      return `${i + 1}. ${charName(s.from)} — ${conv(s.rel.type)} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
+      return `${i + 1}. ${charName(s.from)} — ${s.rel.type} — ${charName(s.to)}${period}${evs ? `　依据：${evs}` : ''}`;
     }).join('\n');
   }
 
@@ -5776,7 +5602,7 @@
   function aiCharContext(c) {
     const t = T();
     const head = [
-      `${t.nameLabel}：${conv(c.name)}${(c.aliases || []).length ? conv(`（别名：${c.aliases.join('，')}）`) : ''}${(c.altNames || []).length ? conv(`（又译：${c.altNames.join('，')}）`) : ''}`,
+      `${t.nameLabel}：${c.name}${(c.aliases || []).length ? `（别名：${c.aliases.join('，')}）` : ''}${(c.altNames || []).length ? `（又译：${c.altNames.join('，')}）` : ''}`,
       c.title ? `身份：${c.title}` : '',
       state.groupMode === 'generation' ? `${t.gen}：${genText(c.generation)}` : `${t.faction}：${factionTextOf(c)}`,
       `首次${t.charVerb}：第 ${charCh(c)} 章`,
@@ -5789,12 +5615,12 @@
       .map((r) => {
         const other = r.from === c.id ? r.to : r.from;
         const evs = visibleRelEvents(r).map((e) => e.text).slice(0, 2).join('；');
-        return `- ${charName(other)}：${conv(r.type)}${periodText(r) ? `（${periodText(r)}）` : ''}${evs ? `　依据：${evs}` : ''}`;
+        return `- ${charName(other)}：${r.type}${periodText(r) ? `（${periodText(r)}）` : ''}${evs ? `　依据：${evs}` : ''}`;
       }).join('\n');
     const evs = state.book.events
       .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
       .slice(0, 16)
-      .map((e) => `- 第 ${e.ch} 章《${conv(e.name)}》：${e.summary}`)
+      .map((e) => `- 第 ${e.ch} 章《${e.name}》：${e.summary}`)
       .join('\n');
     return `${head}\n\n与${t.charPron}有关的${t.char}（只列你读到的部分）：\n${rels || '（暂无）'}\n\n相关${t.event}（只列你读到的部分）：\n${evs || '（暂无）'}`;
   }
@@ -5922,7 +5748,7 @@
     }).join('');
     const busy = status === 'busy';
     box.hidden = false;
-    box.innerHTML = `<div class="ai-head">${esc(conv('🤖 AI 讲解'))}</div>${turns}
+    box.innerHTML = `<div class="ai-head">🤖 AI 讲解</div>${turns}
       ${busy ? '<div class="ai-head">🤖 正在生成…</div>' : ''}
       ${aiThread.err ? `<div class="ai-err">${esc(aiThread.err)}</div>` : ''}
       <form class="ai-ask" data-ai-ask>
@@ -6095,7 +5921,7 @@ ${body}
     if (!window.fflate || !window.fflate.zipSync) throw new Error('缺少打包库 vendor/fflate.min.js');
     const f = window.fflate;
     const b = state.book, m = b.meta || {};
-    const title = convFill(`《{t}》阅读伴侣`, { t: titleOf() });
+    const title = `《${titleOf()}》阅读伴侣`;
     const date = new Date();
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const progNote = state.progress === null
@@ -6119,12 +5945,12 @@ ${body}
         const other = r.from === c.id ? r.to : r.from;
         const evs = visibleRelEvents(r).map((e) => `${e.text}${e.chapter ? `（${e.chapter}）` : ''}`).join('；');
         const period = periodText(r) ? `〔${periodText(r)}〕` : '';
-        return `<li><b>${esc(charName(other))}</b> — ${esc(conv(r.type))}${period}${evs ? `　依据：${evs}` : ''}</li>`;
+        return `<li><b>${esc(charName(other))}</b> — ${esc(r.type)}${period}${evs ? `　依据：${evs}` : ''}</li>`;
       }).join('');
       const life = b.events
         .filter((e) => (e.chars || []).includes(c.id) && !eventLocked(e) && eventVisibleAt(e))
         .sort((x, y) => (x.ch || 0) - (y.ch || 0))
-        .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(conv(e.name))}》：${escBold(e.summary)}</li>`)
+        .map((e) => `<li>第 ${e.ch ?? '?'} 章《${esc(e.name)}》：${escBold(e.summary)}</li>`)
         .join('');
       /* EPUB 人物小节标题里的那个人称：叙事类按性别（她/他），理论类用名词（概念）。
        * ⚠ 这不是"两套渲染分支"—— 换的只有 `{0}` 这一个词（`TERMS.lifeH`）。
@@ -6132,10 +5958,10 @@ ${body}
        *   人称由 `lifeWhoOf()` 统一给（网页端人物卡用的是同一个）。 */
       const lifeWho = lifeWhoOf(c);
       return `<section class="char">
-  <h2>${esc(conv(c.name))}</h2>
+  <h2>${esc(c.name)}</h2>
   <p class="meta">${esc([factionTextOf(c), isTheoryBook() ? '' : (c.gender === 'f' ? '女' : '男'), c.title, `第 ${charCh(c)} 章${T().charVerb}`].filter(Boolean).join(' · '))}</p>
-  ${(c.aliases || []).length ? `<p class="meta">${esc(conv('别名：'))}${esc(conv(c.aliases.join('，')))}</p>` : ''}
-  ${(c.altNames || []).length ? `<p class="meta">${esc(conv('又译：'))}${esc(conv(c.altNames.join('，')))}</p>` : ''}
+  ${(c.aliases || []).length ? `<p class="meta">别名：${esc(c.aliases.join('，'))}</p>` : ''}
+  ${(c.altNames || []).length ? `<p class="meta">又译：${esc(c.altNames.join('，'))}</p>` : ''}
   ${c.desc ? `<p>${escBold(c.desc)}</p>` : ''}
   <p class="meta">${T().fate}：${fateLocked(c) ? '（在你读到的进度之后）' : escBold(c.fate || '—')}</p>
   ${life ? `<h3>${TW('lifeH', lifeWho)}</h3><ul>${life}</ul>` : ''}
@@ -6148,8 +5974,8 @@ ${body}
     const evHtml = phases.map((p) => {
       const evs = b.events.filter((e) => e.phase === p.id && !eventLocked(e) && eventVisibleAt(e)).sort((x, y) => x.order - y.order);
       if (!evs.length) return '';
-      return `<h2>${esc(conv(p.name))}</h2>` + evs.map((e) => `<section class="ev">
-  <h3>第 ${e.ch ?? '?'} 章 · ${esc(conv(e.name))}</h3>
+      return `<h2>${esc(p.name)}</h2>` + evs.map((e) => `<section class="ev">
+  <h3>第 ${e.ch ?? '?'} 章 · ${esc(e.name)}</h3>
   <p>${escBold(e.summary)}</p>
   ${e.impact ? `<p class="meta">影响：${escBold(e.impact)}</p>` : ''}
   ${e.place ? `<p class="meta">${T().place}：${placeRef(e.place)}</p>` : ''}
@@ -6311,7 +6137,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   function syncSpoilerButton() {
     const btn = document.getElementById('spoiler-btn');
     if (!btn) return;
-    btn.textContent = conv(state.progress === null ? '🔓 剧透保护：关' : `🔒 剧透保护：读到第 ${state.progress} 章`);
+    btn.textContent = state.progress === null ? '🔓 剧透保护：关' : `🔒 剧透保护：读到第 ${state.progress} 章`;
   }
 
   function openSpoilerModal() {
@@ -6421,7 +6247,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
         state.showDerived = !state.showDerived;
         try { localStorage.setItem('ba-derived', state.showDerived ? '1' : '0'); } catch { /* 忽略 */ }
         const btn = document.getElementById('derived-btn');
-        if (btn) btn.textContent = conv(state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏');
+        if (btn) btn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏';
         if (state.chart) { freezeNow(); state.chart.setOption(buildOption({ keepView: true })); }
         refreshPanel();
         updateCountHint();
@@ -6430,8 +6256,11 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
       case 'chapter':
         goChapter(1);
         break;
-      /* v0.222：`case 'export'` 已删（入口跟着按钮/怎么用⑪一起摘掉了，
-       *   生成器仍留着 —— 见 bindExportAiUI 顶部那段明账）。 */
+      case 'export': {
+        const m = document.getElementById('export-modal');
+        if (m) { m.hidden = false; const h = document.getElementById('export-hint'); if (h) h.textContent = ''; }
+        break;
+      }
       case 'edge': {
         state.edgeKins = new Set(['blood', 'marriage', 'adopt', 'sworn']);
         state.edgeStyles = new Set();
@@ -6456,9 +6285,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     if (isMinor(c)) { state.showMinor = true; try { localStorage.setItem('ba-minor', '1'); } catch { /* 忽略 */ } }
     if (isMentioned(c)) { state.showMentioned = true; try { localStorage.setItem('ba-mentioned', '1'); } catch { /* 忽略 */ } }
     const minorBtn2 = document.getElementById('minor-btn');
-    if (minorBtn2) minorBtn2.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`);
+    if (minorBtn2) minorBtn2.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`;
     const mentionBtn2 = document.getElementById('mentioned-btn');
-    if (mentionBtn2) mentionBtn2.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`);
+    if (mentionBtn2) mentionBtn2.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`;
     updateCountHint();
     if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
@@ -6482,7 +6311,8 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
          ESLint 的 no-undef 也报了同一个（`5900:7 error syncDerivedBtn is not defined`）。
      这两个提到顶层，因为它们本来就只读 DOM + state，不依赖任何局部状态。 */
   const derivedBtn = document.getElementById('derived-btn');
-  const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = conv(state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'); };
+  const syncDerivedBtn = () => { if (derivedBtn) derivedBtn.textContent = state.showDerived ? '族谱补全：显示' : '族谱补全：隐藏'; };
+
   /* ---------------- 清空查询框（bindSearchUI 与 bindViewControls 都要用） ---------------- */
   /* ⚠ v0.197：它原先是 bindUI 内的局部 const，是那个函数里**唯一**被跨块引用的局部变量
      （定义于搜索块、被「复位视图」与「重置」两块调用）⇒ 拆成独立函数后就够不到了，
@@ -6551,7 +6381,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const labelBtn = $('#label-btn');
     labelBtn.addEventListener('click', () => {
       state.allLabels = !state.allLabels;
-      labelBtn.textContent = conv(state.allLabels ? '标签：全部' : '标签：主要');
+      labelBtn.textContent = state.allLabels ? '标签：全部' : '标签：主要';
       if (!state.allLabels) computeLabels();
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     });
@@ -6675,7 +6505,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     document.addEventListener('click', handlePanelClick);
 
     const mentionBtn = document.getElementById('mentioned-btn');
-    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`); };
+    const syncMentionBtn = () => { if (mentionBtn) mentionBtn.textContent = `提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`; };
     if (mentionBtn) mentionBtn.addEventListener('click', () => {
       state.showMentioned = !state.showMentioned;
       try { localStorage.setItem('ba-mentioned', state.showMentioned ? '1' : '0'); } catch { /* 忽略 */ }
@@ -6687,7 +6517,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
 
     // 次要人物折叠（大书默认收起）
     const minorBtn = document.getElementById('minor-btn');
-    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`); };
+    const syncMinorBtn = () => { if (minorBtn) minorBtn.textContent = `次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`; };
     if (minorBtn) minorBtn.addEventListener('click', () => {
       state.showMinor = !state.showMinor;
       try { localStorage.setItem('ba-minor', state.showMinor ? '1' : '0'); } catch { /* 忽略 */ }
@@ -6813,31 +6643,15 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   };
   function syncGraphHint() {
     const el = document.querySelector('.graph-pan-hint');
-    /* ⚠ 静态 HTML 里已逐段标了 `data-s2t`，本函数是唯一写者 ⇒ 整段 conv 一次。 */
-    if (el) el.innerHTML = conv(GRAPH_HINTS[state.nodeDrag ? 'on' : 'off']);
+    if (el) el.innerHTML = GRAPH_HINTS[state.nodeDrag ? 'on' : 'off'];
   }
   /** 「拖动节点」开关的唯一写者：按钮文案 + 图注 + 系列级 draggable（靠 setOption 生效）。
    *  工具条点击与「怎么用」里的演示都走这里 —— 别处再抄一份状态写入（v0.208 同款病）。 */
   function setNodeDrag(on) {
-    const changed = state.nodeDrag !== !!on;
     state.nodeDrag = !!on;
     const btn = document.getElementById('drag-btn');
-    if (btn) btn.textContent = conv(state.nodeDrag ? '拖动节点：开' : '拖动节点：关');
+    if (btn) btn.textContent = state.nodeDrag ? '拖动节点：开' : '拖动节点：关';
     syncGraphHint();
-    /* v92：系列级 `draggable` 只有 setOption 时才生效，所以切换后必须重建一次。
-     *
-     * ⚠⚠ v0.221：这里原来调 `resetRoam(false)` —— 它会**连视野一起复位**
-     *   （zoom→1、center→[0,0]，见 resetRoam 末尾那两行）。而 v92 的本意只是
-     *   "别把这次复位记进『上次视野』"（save=false）。
-     *
-     *   后果：查完「两人关系」时 `lockFromHighlight()` 末尾调了 `fitLockView()`，
-     *   视野是**贴着锁定集合**的；这时点一下「拖动节点」，视野被拽回原点，
-     *   锁定节点落在视口外 ⇒ 画布看着**整个空白**（自由视图实测：2 个节点只剩 1 个在屏内）。
-     *   用户报的就是这条：「拖动节点关闭 → 查两人关系 → 打开拖动节点 → 关系画布空白」。
-     *
-     *   ⇒ 换一个画布设置不等于要复位视野。改成 keepView 重建：draggable 照样生效，
-     *     视野原样不动；也顺手保住了正在看的那个锁定集合。 */
-    if (changed && state.chart) state.chart.setOption(buildOption({ keepView: true }));
   }
 
   /* ══ 区域 65/68：UI 绑定：画布 / 复位 / 使用说明 ══ */
@@ -6867,9 +6681,9 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     });
     const dragBtn = $('#drag-btn');
     dragBtn.addEventListener('click', () => {
-      /* v0.222：重建放在 setNodeDrag 里（keepView，不复位视野）。
-       *   原来这里是 `setNodeDrag(...); resetRoam(false);` —— 见 setNodeDrag 里的那段注释。 */
       setNodeDrag(!state.nodeDrag);
+      resetRoam(false);   // v92：开/关拖动节点是设置切换，别把它顺手造成的复位当成"用户选了这个视野"
+                        // （系列级 draggable 要在 setOption 时才生效，所以这一步也省不掉）
     });
 
     // 使用说明面板（每条都能在图上真演示一遍）
@@ -6982,7 +6796,7 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     }
     document.addEventListener('keydown', (ev) => {
       if (ev.target && /^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName)) return;
-      const modalOpen = ['#spoiler-modal', '#help-modal', '#ai-modal'].some((s) => {
+      const modalOpen = ['#export-modal', '#spoiler-modal', '#help-modal', '#ai-modal'].some((s) => {
         const el = document.querySelector(s); return el && !el.hidden;
       });
       if (modalOpen) return;
@@ -7018,19 +6832,25 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   /* ══ 区域 67/68：UI 绑定：导出 / AI / 主题 ══ */
 
   function bindExportAiUI() {
-    /* v0.222：**导出入口已从界面摘掉**（用户：「暂时不用」）。
-     *
-     * 摘掉的：工具条 `#export-btn`、`#export-modal` 及五个选项、怎么用 ⑪、`runHelpAct('export')`。
-     * **保留的**：这一文件里全部导出/分享**生成器**（`runExport` / `exportSelection` /
-     * `exportPositions` / `buildSharePng` / `buildGraphSvg` / `buildCharacterPng` /
-     * `buildCompanionEpub` / `ensureTextForExport` …）一个都没动，连 `data-term` 词条
-     * （`exportHint` / `exportPngDesc` / `exportEpubDesc`）也原样留着。
-     * ⇒ 想恢复：把 index.html 里那段（git 历史 v0.221 有原样）粘回来即可，逻辑无需改动。
-     *
-     * ⚠ 为什么不连生成器一起删：① 那是完整一摊（含 EPUB 排版、SVG 栅格化、单文件 HTML），
-     *   删了再想捡回来代价大；② `test/races.mjs` 用 `runExport('json')` 做竞态探针、
-     *   `test/browser.mjs` 用 `exportSelection().links.length` 判锁定，删了它们得连断言一起改。
-     */
+    // 导出 / 分享
+    // v85：导出与 AI 的逻辑本来就内联在本文件里，原先 js/export.js / js/ai.js 是同一套逻辑的第二份手抄
+    // （且那份把 buildCompanionEpub() 的返回对象当字节数组塞进 Blob，EPUB 直接坏掉），已删除。
+    // 这里直接调本文件的实现，少一次网络往返，也少一份会漂移的副本。
+    const exportModal = document.getElementById('export-modal');
+    const closeExport = () => { if (exportModal) exportModal.hidden = true; };
+    if (exportModal) {
+      document.addEventListener('click', (ev) => {
+        if (ev.target.closest('#export-btn')) {
+          exportModal.hidden = false;
+          const h = document.getElementById('export-hint'); if (h) h.textContent = '';
+          return;
+        }
+        if (ev.target.closest('[data-export-close]') || ev.target === exportModal) { closeExport(); return; }
+        const opt = ev.target.closest('[data-export]');
+        if (opt && !opt.disabled) runExport(opt.dataset.export);
+      });
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !exportModal.hidden) closeExport(); });
+    }
 
     // AI 讲解（不剧透）+ 继续追问（v93）
     document.addEventListener('submit', (ev) => {
@@ -7063,118 +6883,12 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
     const themeBtn = $('#theme-btn');
     const setTheme = (dark) => {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      /* v0.223：这里原来写的是 `dark ? '☀️ 日间' : '🌙 夜间'` —— **动作口径**：
-         已经进入白天了，按钮上却写着「夜间」（它想表达的是"点我会去夜间"）。
-         整条工具条只有它一个这样：拖动节点、次要人物、族谱补全、剧透保护
-         写的全是**当前态**（开/关、隐藏/显示）⇒ 统一改成当前态：
-         白天显示「☀️ 日间」、夜间显示「🌙 夜间」。
-         （用户报的就是这条：「明明是白天模式，按钮却显示夜间」。） */
-      themeBtn.textContent = conv(dark ? '🌙 夜间' : '☀️ 日间');
+      themeBtn.textContent = dark ? '☀️ 日间' : '🌙 夜间';
       localStorage.setItem('ba-theme', dark ? 'dark' : 'light');
       if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
     };
     themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme !== 'dark'));
     setTheme(localStorage.getItem('ba-theme') === 'dark');
-
-    /* v0.219：简／繁切换。
-     *
-     * 三个刻意的决定：
-     * ① **就地重画，不刷新页面**：切完要把静态文案、当前面板、图上标签三处都刷一遍。
-     *    静态文案走 `applyTypeTerms()`（`data-term` 那一路），面板按 `lastSel` 重来，
-     *    图上标签重跑 `buildOption`。刷新页面虽然更简单，但会把用户的滚动位置、
-     *    剧透进度、筛选条件全丢掉 —— 那是切个字形不该付的代价。
-     * ② **表没取到就退回简体**：`loadS2T()` 失败时不动 `state.script`，
-     *    宁可让用户点第二次，也不要停在"一半繁体"的中间态（转换不幂等，中间态最难查）。
-     * ③ **`<html lang>` 跟着变**：读屏软件靠它选语音引擎；`lang="zh-CN"` 下念繁体
-     *    会用大陆引擎念，仍是简体音。繁中读台湾引擎才对得上字形。 */
-    const scriptBtn = $('#script-btn');
-    const SCRIPT_LABEL = { han: '简体', hant: '繁體' };
-    const paintScriptBtn = () => {
-      if (!scriptBtn) return;
-      const hant = state.script === 'hant';
-      scriptBtn.querySelector('span').textContent = SCRIPT_LABEL[state.script];
-      scriptBtn.setAttribute('aria-pressed', hant ? 'true' : 'false');
-      // 「看回简体原文」这个入口就藏在这儿，所以繁体态下要把话说清楚：点了就是回原文
-      scriptBtn.title = hant
-        ? '当前：繁体。点这里回到简体原文（繁体只转换字形，不换词）'
-        : '切换正文用字：简体／繁体（只转换字形，不换词；随时切回简体看原文）';
-    };
-    /** 把当前看到的东西按 `state.script` 重画一遍。`save` 为假时只切不记账（首屏还原用）。 */
-    async function applyScript(mode, save = true) {
-      if (mode === 'hant' && !(await loadS2T())) return;   // ② 表没拿到就什么都不改
-      state.script = mode;
-      s2tCache.clear();
-      __termsCache = null;
-      if (save) {
-        try { localStorage.setItem('ba-script', mode); } catch { /* 隐私模式忽略 */ }
-        const u = new URL(location.href);
-        if (mode === 'hant') u.searchParams.set('t', 'hant'); else u.searchParams.delete('t');
-        history.replaceState(null, '', u);
-      }
-      document.documentElement.lang = mode === 'hant' ? 'zh-Hant' : 'zh-CN';   // ③
-      paintScriptBtn();
-      applyTypeTerms();
-      /* `data-s2t` 标的是**没挂 data-term**的静态文案（品牌名、按钮直接文本等）：它们不经术语层，
-         只能在这里就地转一次。已经过 `T()` 的那些不标这个属性，所以不会二次转换。
-         ⚠ `#script-btn` 里那个 span 要**排除**：它的文字由 `paintScriptBtn()` 按当前用字自己写
-         （简→「简体」、繁→「繁體」），再被这里转一遍就会在简体模式下显示「簡體」。 */
-      document.querySelectorAll('[data-s2t]').forEach((el) => {
-        if (el.closest('#script-btn')) return;
-        el.textContent = conv(el.textContent);
-      });
-      /* 书目下拉同理：它在 `loadBooks()` 里渲染，而那时转换表**还没取到**
-       *（`loadS2T()` 是异步的）⇒ 首屏切 `?t=hant` 时下拉里还是简体书名。 */
-      const bsel = $('#book-select');
-      if (bsel && state.books.length) {
-        const cur = bsel.value;
-        bsel.innerHTML = state.books.map((b) => `<option value="${esc(b.slug)}">${esc(conv(b.title))}</option>`).join('');
-        bsel.value = cur;
-      }
-      /* 还有两处「在转换表取到**之前**就渲染完了」的：主题按钮的文案（bindUI 里
-       * `setTheme` 首跑）与页眉页脚（`renderHeader` → `renderFooter`，它们各自的字面量
-       * 是当场 conv 的，所以切换用字后必须重画一次）。同理 `applyTypeTerms` 覆盖不到
-       * 它们——那函数只管 index.html 里的静态文案。 */
-      const themeBtn2 = $('#theme-btn');
-      if (themeBtn2) themeBtn2.textContent = conv(document.documentElement.dataset.theme === 'dark' ? '🌙 夜间' : '☀️ 日间');
-      if (state.book) renderHeader();
-      /* ⚠ 还有一批「在写入那一刻自己 conv」的同步函数（工具条开关、图注、边筛选…）。
-       *   它们首屏跑的时候转换表还没取到 ⇒ 首屏就是简体；光改写入点不够，
-       *   切了用字也得**重跑一遍**它们。（这就是为什么这一段要列名单，而不是"重刷 DOM"——
-       *   重刷 DOM 会把已经是繁体的再转一遍，conv 不幂等。） */
-      syncEdgeFilterUI();
-      syncGraphHint();
-      renderBuildStamp();
-      /* 图例 / 搜索框占位符 / 计数提示同理 —— 它们在 loadBook 里渲染，都在转换表取到之前 */
-      renderLegend();
-      updateSearchPlaceholder();
-      updateCountHint();
-      /* ⚠ `syncMinorBtn` / `syncMentionBtn` 两个写者声明在 `bindViewControls` 内部，
-       *   这里够不着（v0.208 同款：`no-undef` 当场报红）。照 `revealChar` 的写法内联。 */
-      const minorBtn3 = document.getElementById('minor-btn');
-      if (minorBtn3) minorBtn3.textContent = conv(`次要${T().char}：${state.showMinor ? '显示' : '隐藏'}`);
-      const mentionBtn3 = document.getElementById('mentioned-btn');
-      if (mentionBtn3) mentionBtn3.textContent = conv(`提及${T().char}：${state.showMentioned ? '显示' : '隐藏'}`);
-      if (typeof syncDerivedBtn === 'function') syncDerivedBtn();
-      if (typeof syncViewButtons === 'function') syncViewButtons();
-      if (typeof syncSpoilerButton === 'function') syncSpoilerButton();
-      const s = state.lastSel;
-      if (s?.kind === 'c') selectCharacter(s.id, false);
-      else if (s?.kind === 'e') selectEvent(s.id);
-      else if (s?.kind === 'r' && s.rel) selectRelation(s.rel, false);
-      else if (state.book) renderPanelWelcome();
-      if (state.chart) state.chart.setOption(buildOption({ keepView: true }));
-    }
-    if (scriptBtn) scriptBtn.addEventListener('click', () => applyScript(state.script === 'han' ? 'hant' : 'han'));
-    // 首屏：?t=hant 优先（可分享、可回查），其次记住的上次选择，最后简体。
-    // ⚠ 必须走 applyScript 而不是只改 state.script —— 取表是异步的，
-    //   只改状态不重画的话，书可能已经在简体态下渲染完了（欢迎面板就是活例子）。
-    (async () => {
-      const want = new URLSearchParams(location.search).get('t');
-      const saved = (() => { try { return localStorage.getItem('ba-script'); } catch { return null; } })();
-      const mode = want === 'hant' ? 'hant' : (want === 'han' ? 'han' : (saved === 'hant' ? 'hant' : 'han'));
-      paintScriptBtn();
-      if (mode !== state.script) await applyScript(mode, false);
-    })();
   }
 
   /* ---------------- 绑定所有控件（v0.197：由 503 行拆成 8 个函数） ---------------- */
@@ -7195,8 +6909,10 @@ ${Object.keys(pages).map((p, i) => `    <navPoint id="n${i}" playOrder="${i + 1}
   }
 
   /* ---------------- 启动 ---------------- */
-  /* v0.222：原来这里有一段「单文件版把 #export-btn 藏掉」—— 按钮已经不在 HTML 里了，
-   *   这段跟着删（`__BA_STANDALONE` 这个全局变量还在用：单文件导出的启动钩子）。 */
+  if (window.__BA_STANDALONE) {
+    const eb = document.getElementById('export-btn');
+    if (eb) eb.hidden = true;      // 单文件版：再导出会依赖 index.html / 资源，直接藏掉
+  }
   bindUI();
   bindFullscreenUI();   // v0.131：全屏 / 右栏折叠（要在 boot 之前挂好，
                         //   因为进全屏时会立刻 resize+量高度，早一刻少一帧闪动）

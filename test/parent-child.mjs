@@ -8,22 +8,17 @@
  *   · 漏「养」`scripts/archive/fix-gongsun.mjs` / `archive/fix-wu-tail.mjs`（一次性补丁脚本，
  *     v0.195 债二 B1 已归档到 `scripts/archive/`；v0.205.1 修正：豁免路径还写着归档前的
  *     `scripts/fix-*.mjs` ⇒ 本测试从 v0.195 起一直是红的，被 CI startup_failure 掩盖）
- *   · 只认血缘 `js/editor.js` 的「亲子成环」检测（v0.153 之前：`kin === 'blood'` 且 type 以 父/母 开头）
- *     ⇒ **全部收养亲子边对编辑器不可见**（三国 7 条、百年孤独 2 条）
+
  *
  * 这不是新问题：`scripts/lib/data-files.mjs` 的注释里把它列为「同一个定义抄多份」的
  * **第 ① 例**（v0.110：三个审计脚本各自内联、漏了「养」）。当时改了那三个脚本，
  * 但**没有加任何判据守着** —— 于是它又漂了一次（漂在编辑器）。
  *
  * ## 做法（三层）
- * ① 源码级：编辑器那份正则字面量必须与权威**逐字相同**（改一个字就红）
  * ② 结构级：全项目不许再出现第 3 份完整副本；也不许出现「缺 养」的变体
  * ③ 金标：`isParentChild` 的接受/拒绝表 —— 钉「正确」，而不只是钉「两边一样」
  *
  * ⚠ 只做 ①（对拍）抓不到「两边一起错」（一起删掉「养」照样一致）⇒ ③ 不能删。
- * 浏览器侧的两条（编辑器 `parentChildEdges` 与权威在真实数据上对拍、
- * 收养环能被「体检」报出来）在 `test/editor.mjs` 里，那边有现成的浏览器夹具。
- *
  * 用法：node test/parent-child.mjs
  */
 import fs from 'node:fs';
@@ -56,17 +51,8 @@ function walk(dir) {
 }
 
 const AUTH = 'scripts/kin-terms.mjs';
-const EDITOR = 'js/editor.js';
 
-console.log('\n▶ 源码级：编辑器那份必须与权威逐字相同');
-let authBody = null;
-try {
-  authBody = pickRe(AUTH, 'PARENT_CHILD');
-  ok(pickRe(EDITOR, 'PARENT_CHILD') === authBody,
-    `PARENT_CHILD 两处逐字一致（${AUTH} ⇄ ${EDITOR}）`);
-} catch (e) { ok(false, e.message); }
-
-console.log('\n▶ 结构级：全项目只有「权威 + 编辑器手抄」两份');
+console.log('\n▶ 结构级：全项目不得出现 `isParentChild` 的手抄副本');
 /* 一次性补丁脚本（已执行完、只留档）**显式豁免**：它们用的是「缺 养」的旧变体，
  * 改它们等于改一个跑完的补丁的行为，没意义。列在这里是为了让豁免是"看得见的决定"，
  * 而不是漏检 —— 真正该做的是把这类脚本清掉（见 CHANGELOG 遗留）。 */
@@ -89,10 +75,9 @@ for (const f of files) {
     if (s.includes('(亲生)?(父|母)(子|女)') && !s.includes('养(父|母)(子|女)')) partial.push(f);
   }
 }
-const dupUnexpected = fullDup.filter((f) => f !== EDITOR);
+const dupUnexpected = fullDup;
 ok(dupUnexpected.length === 0,
-  `除权威外只有 ${EDITOR} 持有完整副本${dupUnexpected.length ? `（多出：${dupUnexpected.join(' / ')}）` : ''}`);
-ok(fullDup.includes(EDITOR), `${EDITOR} 里能找到那份手抄（改路径了就把这条也改掉）`);
+  `除权威外，不应有任何文件持有 isParentChild 完整副本${dupUnexpected.length ? `（多出：${dupUnexpected.join(' / ')}）` : ''}`);
 const partialUnexpected = partial.filter((f) => !EXEMPT.includes(f));
 ok(partialUnexpected.length === 0,
   `除豁免的一次性脚本外，没有「缺 养」的变体${partialUnexpected.length ? `（${[...new Set(partialUnexpected)].join(' / ')}）` : ''}`);

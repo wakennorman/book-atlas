@@ -64,7 +64,7 @@ const skip = (why) => { console.log(`· 跳过版本 bump 检查：${why}`); pro
  *   · `./`        —— 目录本身，没有字节
  *   · `./data/*`  —— 走 stale-while-revalidate，会自己更新，不需要 bump
  *   （`sw.js` 自己不在 SHELL 里；它字节一变浏览器就重装，天然自触发。） */
-const FALLBACK = ['index.html', 'editor.html', 'manifest.webmanifest', 'css/', 'js/', 'vendor/', 'assets/'];
+const FALLBACK = ['index.html', 'manifest.webmanifest', 'css/', 'js/', 'vendor/', 'assets/'];
 function shellFiles() {
   let text;
   try { text = fs.readFileSync(SW, 'utf8'); } catch { return null; }

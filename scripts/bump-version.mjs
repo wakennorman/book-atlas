@@ -9,10 +9,8 @@
  *
  * 会更新：
  *   · index.html 里所有 ?v=NN
- *   · editor.html 里所有 ?v=NN
  *   · sw.js 里 CACHE = 'bookatlas-vNN'
  *   · sw.js SHELL 数组里所有 ?v=NN
- *   · js/editor.js 里 PDF_WORKER 的 ?v=NN
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,9 +28,7 @@ if (!newVer || !/^\d+$/.test(newVer)) {
 
 const FILES = [
   'index.html',
-  'editor.html',
   'sw.js',
-  'js/editor.js',
 ];
 
 const changes = [];
