@@ -2,7 +2,7 @@
 
 > 把一本书的**人物关系**、**定义关系的小事件**和**标志性事件**放在一张图上：关系网络 + 重大事件轴 + 「两人关系」最短链 + **剧透保护**；自带**命令行工具链**，可生成一本新书的数据。
 >
-> 在线地址：**https://bookatlas.existence.ac.cn/**
+> 在线地址：**https://wakennorman.github.io/book-atlas/**
 > 代码 MIT · 数据 CC BY-SA 4.0 · 更新记录见 [CHANGELOG.md](CHANGELOG.md)
 > 它是怎么做出来的：[docs/心路历程-主文.md](docs/心路历程-主文.md)
 
@@ -54,7 +54,7 @@
 
 ### 只想看
 
-打开 **https://bookatlas.existence.ac.cn/** 即可；手机可「添加到主屏幕」离线看。
+打开 **https://wakennorman.github.io/book-atlas/** 即可；手机可「添加到主屏幕」离线看。
 第一次用先点右上角 **「📖 怎么用」**：里面每条说明都配一张示意图，点「试一下」会**拿这本书在图上真做一遍**给你看（搜索、聚焦、看清 1:1、地点筛选、关系过滤、人物志与人物卡、两人关系链…）。
 
 > 这几条**会跟着书换口径**：叙事类说「人物 / 关系 / 事件 / 结局」，理论类（如《刻意练习》）说的是「概念 / 关联 / 案例 / 全书定位」；只对叙事类成立的那条（⑧ 虚线＝推导的亲属）在理论类整条藏掉——不会留一句"点了没反应"的说明。
@@ -413,7 +413,7 @@ book-atlas/
 ├── tools/                                      # gate-local / preview / push-via-api / local-sink
 ├── docs/                                       # 新书处理规程、设计规范、示意图、心路历程；历史设计稿见 docs/_wip-ignore.md
 ├── sw.js / manifest.webmanifest                # PWA 离线
-├── CNAME                                       # 自定义域名 bookatlas.existence.ac.cn
+
 └── THIRD-PARTY-NOTICES.md                      # 第三方组件版权声明
 ```
 
@@ -421,7 +421,7 @@ book-atlas/
 
 ## 部署与发布
 
-- 部署：GitHub 仓库 → Settings → Pages → 自定义域名 `bookatlas.existence.ac.cn`（见 `CNAME`）。
+- 部署：GitHub 仓库 → Settings → Pages → 选择 `main` 分支 / `/ (root)`
 - **发布门禁**：`.github/workflows/check.yml` —— push / PR 时自动跑（步骤以该文件为准）：JS 语法、**版本号一致性**、**改了预缓存资源却没 bump 版本号**、**版本号检查自身的守卫**、`data/*.json` 与拆分包同步、`sw.js` 预缓存清单、ESLint、网页版冒烟 / 核心单测 / Web E2E、浏览器行为测试（无头 Edge 真点一遍）、三份实现对拍、**竞态与导出守卫**、**落位与防重叠**、**关系线身份**、**锁定只显示相关**、**渲染尺度与「分组·横」布局**、**画布漫游与视野自救**、**画布手感与导航提示**、`validate --all`、`audit-search --all`、小程序数据包同步、小程序页面冒烟。都不需要网络（浏览器测试找不到 Edge/Chrome 会自行跳过）。
   - 本地一次跑完：`bash tools/gate-local.sh`（本机 node 起不了子进程，`npm run gate` 一步都跑不了）。
 - 分享缩略图：`assets/og-cover.jpg`（1200×630，63KB）由 `index.html` 里的 `og:*` meta 指向**绝对地址**；换封面图时连尺寸一起改。
